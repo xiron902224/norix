@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/d2le2/paas/control-plane/internal/gen/v1;paasv1";
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_OWNER = 1;
+  ROLE_ADMIN = 2;
+  ROLE_MEMBER = 3;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  Role role = 4;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+  User user = 2;
+}
+
+service AuthService {
+  rpc Login(LoginRequest) returns (LoginResponse);
+}

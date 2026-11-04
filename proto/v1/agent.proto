@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/d2le2/paas/control-plane/internal/gen/v1;paasv1";
+message NodeHeartbeat {
+  string node_id = 1;
+  double cpu_usage_percent = 2;
+  int64 memory_free_mb = 3;
+  uint32 kvm_level = 4;
+}
+
+message ConnectStreamRequest {
+  string node_id = 1;
+  string status = 2;
+  repeated string running_workload_ids = 3;
+}
+
+message ConnectStreamResponse {
+  string node_id = 1;
+  repeated string active_workload_ids = 2;
+}
+
+service AgentService {
+  rpc ConnectStream(stream ConnectStreamRequest) returns (stream ConnectStreamResponse);
+}

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package v1;
+
+
+option go_package = "github.com/d2le2/paas/control-plane/internal/gen/v1;paasv1";
+
+message StreamLogsRequest {
+  string workload_id = 1;
+  bool follow = 2;
+}
+
+message StreamLogsResponse {
+  string workload_id = 1;
+  string content = 2;
+  int64 timestamp = 3;
+}
+
+service MetricsService {
+  rpc StreamLogs(StreamLogsRequest) returns (stream StreamLogsResponse);
+}

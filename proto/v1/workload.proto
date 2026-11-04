@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package v1;
+
+
+option go_package = "github.com/d2le2/paas/control-plane/internal/gen/v1;paasv1";
+enum RuntimeType {
+  RUNTIME_TYPE_UNSPECIFIED = 0;
+  RUNTIME_TYPE_CONTAINER = 1;
+  RUNTIME_TYPE_DOCKER_COMPOSE = 2;
+  RUNTIME_TYPE_MICROVM = 3;
+  RUNTIME_TYPE_WASM = 4;
+  RUNTIME_TYPE_STATIC_SITE = 5;
+}
+
+message Workload {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  RuntimeType runtime = 4;
+  string image_or_source = 5;
+  map<string, string> env_vars = 6;
+  int32 cpu_shares = 7;
+  int64 memory_limit_mb = 8;
+  string domain = 9;
+}
+
+message DeployRequest {
+  Workload workload = 1;
+}
+
+message DeployResponse {
+  string deployment_id = 1;
+  string status = 2;
+}
+
+service WorkloadService {
+  rpc Deploy(DeployRequest) returns (DeployResponse);
+}
