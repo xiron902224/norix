@@ -1,0 +1,2 @@
+/images/kernel/**/*.vmlinux
+/images/rootfs/*.ext4
