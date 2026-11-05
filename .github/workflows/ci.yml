@@ -1,0 +1,63 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, dev, nightly, release]
+  pull_request:
+    branches: [main, dev, release]
+
+jobs:
+  validate-protos:
+    name: Validate Protobuf Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Buf CLI
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Run Buf Lint & Check breaking changes
+        run: |
+          buf lint
+          buf breaking --against ".git#branch=main"
+
+  build-control-plane:
+    name: Build Control Plane (Go)
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+
+      - name: Build Go binary
+        working-directory: control-plane
+        run: |
+          go mod download
+          CGO_ENABLED=0 go build -o bin/norix-control-plane ./cmd/server/main.go
+
+  build-agent-rust:
+    name: Build Agent & Runtimes (Rust)
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Install musl-tools
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build Agent (Rust Static binary)
+        working-directory: agent
+        run: |
+          cargo build --release --target x86_64-unknown-linux-musl
