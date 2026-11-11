@@ -86,9 +86,29 @@ message HeartbeatRequest {
   NodeCapabilities capabilities = 6;
 }
 
+message DesiredBuild {
+  string id = 1;
+  string workload_id = 2;
+  string git_url = 3;
+  string git_ref = 4;
+  string dockerfile_path = 5;
+  string image_tag = 6;
+  map<string, string> build_args = 7;
+  string registry = 8;
+}
+
+message ObservedBuild {
+  string id = 1;
+  string status = 2;
+  string image = 3;
+  string message = 4;
+  repeated string log_lines = 5;
+}
+
 message HeartbeatResponse {
   string node_id = 1;
   repeated DesiredWorkload desired_workloads = 2;
+  repeated DesiredBuild desired_builds = 3;
 }
 
 message ReportObservedRequest {
@@ -97,6 +117,13 @@ message ReportObservedRequest {
 }
 
 message ReportObservedResponse {}
+
+message ReportBuildRequest {
+  string node_id = 1;
+  ObservedBuild build = 2;
+}
+
+message ReportBuildResponse {}
 
 message ListNodesRequest {}
 
@@ -122,6 +149,7 @@ service AgentService {
   rpc EnrollNode(EnrollNodeRequest) returns (EnrollNodeResponse);
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc ReportObserved(ReportObservedRequest) returns (ReportObservedResponse);
+  rpc ReportBuild(ReportBuildRequest) returns (ReportBuildResponse);
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
   rpc ConnectStream(stream ConnectStreamRequest) returns (stream ConnectStreamResponse);
 }

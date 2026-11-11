@@ -54,7 +54,8 @@ func GetWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID s
 		SELECT id::text, organization_id::text, project_id::text, name, runtime, image_or_source, env_vars::text,
 		       cpu_shares, memory_limit_mb, COALESCE(domain, ''), status,
 		       desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
-		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action
+		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
+		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, '')
 		FROM workloads WHERE id = $1::uuid`, workloadID)
 	if err != nil {
 		return Workload{}, err
@@ -72,6 +73,7 @@ func scanWorkload(ctx context.Context, tx pgx.Tx, query string, args ...any) (Wo
 		&workload.Domain, &workload.Status, &workload.DesiredGeneration, &workload.ObservedGeneration,
 		&workload.HostPort, &workload.ContainerPort, &assignedNode, &workload.ContainerID,
 		&workload.LastError, &workload.DesiredAction,
+		&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 	)
 	if err != nil {
 		return Workload{}, fmt.Errorf("get workload: %w", err)
@@ -201,7 +203,8 @@ func DeployWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadI
 		RETURNING id::text, organization_id::text, project_id::text, name, runtime, image_or_source, env_vars::text,
 		          cpu_shares, memory_limit_mb, COALESCE(domain, ''), status,
 		          desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
-		          COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action`,
+		          COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
+		          source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, '')`,
 		workloadID, nodeID, hostPort, containerPort, tenantID,
 	).Scan(
 		&workload.ID, &workload.OrganizationID, &workload.ProjectID, &workload.Name, &workload.Runtime,
@@ -209,6 +212,7 @@ func DeployWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadI
 		&workload.Domain, &workload.Status, &workload.DesiredGeneration, &workload.ObservedGeneration,
 		&workload.HostPort, &workload.ContainerPort, &workload.AssignedNodeID, &workload.ContainerID,
 		&workload.LastError, &workload.DesiredAction,
+		&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {

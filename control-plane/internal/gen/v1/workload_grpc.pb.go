@@ -21,10 +21,13 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	WorkloadService_CreateWorkload_FullMethodName  = "/v1.WorkloadService/CreateWorkload"
 	WorkloadService_Deploy_FullMethodName          = "/v1.WorkloadService/Deploy"
+	WorkloadService_DeployFromGit_FullMethodName   = "/v1.WorkloadService/DeployFromGit"
 	WorkloadService_ListWorkloads_FullMethodName   = "/v1.WorkloadService/ListWorkloads"
 	WorkloadService_UpdateWorkload_FullMethodName  = "/v1.WorkloadService/UpdateWorkload"
 	WorkloadService_DeleteWorkload_FullMethodName  = "/v1.WorkloadService/DeleteWorkload"
 	WorkloadService_GetWorkloadLogs_FullMethodName = "/v1.WorkloadService/GetWorkloadLogs"
+	WorkloadService_ListBuilds_FullMethodName      = "/v1.WorkloadService/ListBuilds"
+	WorkloadService_GetBuildLogs_FullMethodName    = "/v1.WorkloadService/GetBuildLogs"
 )
 
 // WorkloadServiceClient is the client API for WorkloadService service.
@@ -33,10 +36,13 @@ const (
 type WorkloadServiceClient interface {
 	CreateWorkload(ctx context.Context, in *CreateWorkloadRequest, opts ...grpc.CallOption) (*CreateWorkloadResponse, error)
 	Deploy(ctx context.Context, in *DeployRequest, opts ...grpc.CallOption) (*DeployResponse, error)
+	DeployFromGit(ctx context.Context, in *DeployFromGitRequest, opts ...grpc.CallOption) (*DeployFromGitResponse, error)
 	ListWorkloads(ctx context.Context, in *ListWorkloadsRequest, opts ...grpc.CallOption) (*ListWorkloadsResponse, error)
 	UpdateWorkload(ctx context.Context, in *UpdateWorkloadRequest, opts ...grpc.CallOption) (*UpdateWorkloadResponse, error)
 	DeleteWorkload(ctx context.Context, in *DeleteWorkloadRequest, opts ...grpc.CallOption) (*DeleteWorkloadResponse, error)
 	GetWorkloadLogs(ctx context.Context, in *GetWorkloadLogsRequest, opts ...grpc.CallOption) (*GetWorkloadLogsResponse, error)
+	ListBuilds(ctx context.Context, in *ListBuildsRequest, opts ...grpc.CallOption) (*ListBuildsResponse, error)
+	GetBuildLogs(ctx context.Context, in *GetBuildLogsRequest, opts ...grpc.CallOption) (*GetBuildLogsResponse, error)
 }
 
 type workloadServiceClient struct {
@@ -61,6 +67,16 @@ func (c *workloadServiceClient) Deploy(ctx context.Context, in *DeployRequest, o
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeployResponse)
 	err := c.cc.Invoke(ctx, WorkloadService_Deploy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) DeployFromGit(ctx context.Context, in *DeployFromGitRequest, opts ...grpc.CallOption) (*DeployFromGitResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeployFromGitResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_DeployFromGit_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -107,16 +123,39 @@ func (c *workloadServiceClient) GetWorkloadLogs(ctx context.Context, in *GetWork
 	return out, nil
 }
 
+func (c *workloadServiceClient) ListBuilds(ctx context.Context, in *ListBuildsRequest, opts ...grpc.CallOption) (*ListBuildsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListBuildsResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_ListBuilds_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) GetBuildLogs(ctx context.Context, in *GetBuildLogsRequest, opts ...grpc.CallOption) (*GetBuildLogsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBuildLogsResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_GetBuildLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkloadServiceServer is the server API for WorkloadService service.
 // All implementations must embed UnimplementedWorkloadServiceServer
 // for forward compatibility.
 type WorkloadServiceServer interface {
 	CreateWorkload(context.Context, *CreateWorkloadRequest) (*CreateWorkloadResponse, error)
 	Deploy(context.Context, *DeployRequest) (*DeployResponse, error)
+	DeployFromGit(context.Context, *DeployFromGitRequest) (*DeployFromGitResponse, error)
 	ListWorkloads(context.Context, *ListWorkloadsRequest) (*ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *UpdateWorkloadRequest) (*UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *DeleteWorkloadRequest) (*DeleteWorkloadResponse, error)
 	GetWorkloadLogs(context.Context, *GetWorkloadLogsRequest) (*GetWorkloadLogsResponse, error)
+	ListBuilds(context.Context, *ListBuildsRequest) (*ListBuildsResponse, error)
+	GetBuildLogs(context.Context, *GetBuildLogsRequest) (*GetBuildLogsResponse, error)
 	mustEmbedUnimplementedWorkloadServiceServer()
 }
 
@@ -133,6 +172,9 @@ func (UnimplementedWorkloadServiceServer) CreateWorkload(context.Context, *Creat
 func (UnimplementedWorkloadServiceServer) Deploy(context.Context, *DeployRequest) (*DeployResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Deploy not implemented")
 }
+func (UnimplementedWorkloadServiceServer) DeployFromGit(context.Context, *DeployFromGitRequest) (*DeployFromGitResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeployFromGit not implemented")
+}
 func (UnimplementedWorkloadServiceServer) ListWorkloads(context.Context, *ListWorkloadsRequest) (*ListWorkloadsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListWorkloads not implemented")
 }
@@ -144,6 +186,12 @@ func (UnimplementedWorkloadServiceServer) DeleteWorkload(context.Context, *Delet
 }
 func (UnimplementedWorkloadServiceServer) GetWorkloadLogs(context.Context, *GetWorkloadLogsRequest) (*GetWorkloadLogsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetWorkloadLogs not implemented")
+}
+func (UnimplementedWorkloadServiceServer) ListBuilds(context.Context, *ListBuildsRequest) (*ListBuildsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListBuilds not implemented")
+}
+func (UnimplementedWorkloadServiceServer) GetBuildLogs(context.Context, *GetBuildLogsRequest) (*GetBuildLogsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBuildLogs not implemented")
 }
 func (UnimplementedWorkloadServiceServer) mustEmbedUnimplementedWorkloadServiceServer() {}
 func (UnimplementedWorkloadServiceServer) testEmbeddedByValue()                         {}
@@ -198,6 +246,24 @@ func _WorkloadService_Deploy_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WorkloadServiceServer).Deploy(ctx, req.(*DeployRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_DeployFromGit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeployFromGitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).DeployFromGit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_DeployFromGit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).DeployFromGit(ctx, req.(*DeployFromGitRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -274,6 +340,42 @@ func _WorkloadService_GetWorkloadLogs_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkloadService_ListBuilds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBuildsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).ListBuilds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_ListBuilds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).ListBuilds(ctx, req.(*ListBuildsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_GetBuildLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBuildLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).GetBuildLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_GetBuildLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).GetBuildLogs(ctx, req.(*GetBuildLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WorkloadService_ServiceDesc is the grpc.ServiceDesc for WorkloadService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -290,6 +392,10 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _WorkloadService_Deploy_Handler,
 		},
 		{
+			MethodName: "DeployFromGit",
+			Handler:    _WorkloadService_DeployFromGit_Handler,
+		},
+		{
 			MethodName: "ListWorkloads",
 			Handler:    _WorkloadService_ListWorkloads_Handler,
 		},
@@ -304,6 +410,14 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetWorkloadLogs",
 			Handler:    _WorkloadService_GetWorkloadLogs_Handler,
+		},
+		{
+			MethodName: "ListBuilds",
+			Handler:    _WorkloadService_ListBuilds_Handler,
+		},
+		{
+			MethodName: "GetBuildLogs",
+			Handler:    _WorkloadService_GetBuildLogs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

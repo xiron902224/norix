@@ -75,6 +75,21 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, runtime *Runtime, logger *
 		if _, err := db.ReclaimDesiredWorkloads(ctx, pool, orgID, node.ID); err != nil {
 			logger.Warn("reclaim desired for local node", "org", orgID, "error", err)
 		}
+		if _, err := db.ReclaimPendingBuilds(ctx, pool, orgID, node.ID); err != nil {
+			logger.Warn("reclaim builds for local node", "org", orgID, "error", err)
+		}
+		builds, err := db.ListDesiredBuildsForNode(ctx, pool, orgID, node.ID)
+		if err != nil {
+			logger.Warn("list desired builds for local node", "org", orgID, "error", err)
+		} else if len(builds) > 0 {
+			logger.Info("running local builds", "org", orgID, "count", len(builds))
+			for _, observedBuild := range runtime.RunBuilds(ctx, builds) {
+				if err := db.ApplyObservedBuild(ctx, pool, orgID, observedBuild, db.AuditActor{Email: "local-runtime"}); err != nil {
+					logger.Warn("apply observed build", "org", orgID, "build", observedBuild.ID, "error", err)
+				}
+			}
+		}
+
 		desired, err := db.ListDesiredWorkloadsForNode(ctx, pool, orgID, node.ID)
 		if err != nil {
 			logger.Warn("list desired for local node", "org", orgID, "error", err)

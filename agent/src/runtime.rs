@@ -124,6 +124,22 @@ impl Runtime {
         }
     }
 
+    pub(crate) async fn engine_capture(
+        &self,
+        args: &[String],
+        dir: Option<&std::path::Path>,
+    ) -> Result<(bool, String)> {
+        let mut command = Command::new(self.bin());
+        command.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
+        if let Some(path) = dir {
+            command.current_dir(path);
+        }
+        let output = command.output().await.context("engine command")?;
+        let mut text = String::from_utf8_lossy(&output.stdout).to_string();
+        text.push_str(&String::from_utf8_lossy(&output.stderr));
+        Ok((output.status.success(), text))
+    }
+
     async fn pull(&self, image: &str) -> Result<()> {
         let status = Command::new(self.bin())
             .args(["pull", image])

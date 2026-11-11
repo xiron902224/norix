@@ -99,8 +99,14 @@ type Workload struct {
 	Endpoint           string                 `protobuf:"bytes,16,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
 	LastError          string                 `protobuf:"bytes,17,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
 	ContainerId        string                 `protobuf:"bytes,18,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// image | git
+	SourceKind     string `protobuf:"bytes,19,opt,name=source_kind,json=sourceKind,proto3" json:"source_kind,omitempty"`
+	GitUrl         string `protobuf:"bytes,20,opt,name=git_url,json=gitUrl,proto3" json:"git_url,omitempty"`
+	GitRef         string `protobuf:"bytes,21,opt,name=git_ref,json=gitRef,proto3" json:"git_ref,omitempty"`
+	DockerfilePath string `protobuf:"bytes,22,opt,name=dockerfile_path,json=dockerfilePath,proto3" json:"dockerfile_path,omitempty"`
+	LatestBuildId  string `protobuf:"bytes,23,opt,name=latest_build_id,json=latestBuildId,proto3" json:"latest_build_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Workload) Reset() {
@@ -255,6 +261,41 @@ func (x *Workload) GetLastError() string {
 func (x *Workload) GetContainerId() string {
 	if x != nil {
 		return x.ContainerId
+	}
+	return ""
+}
+
+func (x *Workload) GetSourceKind() string {
+	if x != nil {
+		return x.SourceKind
+	}
+	return ""
+}
+
+func (x *Workload) GetGitUrl() string {
+	if x != nil {
+		return x.GitUrl
+	}
+	return ""
+}
+
+func (x *Workload) GetGitRef() string {
+	if x != nil {
+		return x.GitRef
+	}
+	return ""
+}
+
+func (x *Workload) GetDockerfilePath() string {
+	if x != nil {
+		return x.DockerfilePath
+	}
+	return ""
+}
+
+func (x *Workload) GetLatestBuildId() string {
+	if x != nil {
+		return x.LatestBuildId
 	}
 	return ""
 }
@@ -819,6 +860,467 @@ func (x *GetWorkloadLogsResponse) GetLines() []string {
 	return nil
 }
 
+type Build struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	WorkloadId     string                 `protobuf:"bytes,2,opt,name=workload_id,json=workloadId,proto3" json:"workload_id,omitempty"`
+	GitUrl         string                 `protobuf:"bytes,3,opt,name=git_url,json=gitUrl,proto3" json:"git_url,omitempty"`
+	GitRef         string                 `protobuf:"bytes,4,opt,name=git_ref,json=gitRef,proto3" json:"git_ref,omitempty"`
+	DockerfilePath string                 `protobuf:"bytes,5,opt,name=dockerfile_path,json=dockerfilePath,proto3" json:"dockerfile_path,omitempty"`
+	Status         string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	Image          string                 `protobuf:"bytes,7,opt,name=image,proto3" json:"image,omitempty"`
+	AssignedNodeId string                 `protobuf:"bytes,8,opt,name=assigned_node_id,json=assignedNodeId,proto3" json:"assigned_node_id,omitempty"`
+	LastError      string                 `protobuf:"bytes,9,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
+	CreatedAt      string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt      string                 `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Build) Reset() {
+	*x = Build{}
+	mi := &file_v1_workload_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Build) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Build) ProtoMessage() {}
+
+func (x *Build) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Build.ProtoReflect.Descriptor instead.
+func (*Build) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *Build) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Build) GetWorkloadId() string {
+	if x != nil {
+		return x.WorkloadId
+	}
+	return ""
+}
+
+func (x *Build) GetGitUrl() string {
+	if x != nil {
+		return x.GitUrl
+	}
+	return ""
+}
+
+func (x *Build) GetGitRef() string {
+	if x != nil {
+		return x.GitRef
+	}
+	return ""
+}
+
+func (x *Build) GetDockerfilePath() string {
+	if x != nil {
+		return x.DockerfilePath
+	}
+	return ""
+}
+
+func (x *Build) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Build) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *Build) GetAssignedNodeId() string {
+	if x != nil {
+		return x.AssignedNodeId
+	}
+	return ""
+}
+
+func (x *Build) GetLastError() string {
+	if x != nil {
+		return x.LastError
+	}
+	return ""
+}
+
+func (x *Build) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *Build) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type DeployFromGitRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	WorkloadId     string                 `protobuf:"bytes,1,opt,name=workload_id,json=workloadId,proto3" json:"workload_id,omitempty"`
+	GitUrl         string                 `protobuf:"bytes,2,opt,name=git_url,json=gitUrl,proto3" json:"git_url,omitempty"`
+	GitRef         string                 `protobuf:"bytes,3,opt,name=git_ref,json=gitRef,proto3" json:"git_ref,omitempty"`
+	DockerfilePath string                 `protobuf:"bytes,4,opt,name=dockerfile_path,json=dockerfilePath,proto3" json:"dockerfile_path,omitempty"`
+	ContainerPort  int32                  `protobuf:"varint,5,opt,name=container_port,json=containerPort,proto3" json:"container_port,omitempty"`
+	// optional plaintext build secrets (encrypted at rest)
+	BuildSecrets  map[string]string `protobuf:"bytes,6,rep,name=build_secrets,json=buildSecrets,proto3" json:"build_secrets,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeployFromGitRequest) Reset() {
+	*x = DeployFromGitRequest{}
+	mi := &file_v1_workload_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeployFromGitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeployFromGitRequest) ProtoMessage() {}
+
+func (x *DeployFromGitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeployFromGitRequest.ProtoReflect.Descriptor instead.
+func (*DeployFromGitRequest) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *DeployFromGitRequest) GetWorkloadId() string {
+	if x != nil {
+		return x.WorkloadId
+	}
+	return ""
+}
+
+func (x *DeployFromGitRequest) GetGitUrl() string {
+	if x != nil {
+		return x.GitUrl
+	}
+	return ""
+}
+
+func (x *DeployFromGitRequest) GetGitRef() string {
+	if x != nil {
+		return x.GitRef
+	}
+	return ""
+}
+
+func (x *DeployFromGitRequest) GetDockerfilePath() string {
+	if x != nil {
+		return x.DockerfilePath
+	}
+	return ""
+}
+
+func (x *DeployFromGitRequest) GetContainerPort() int32 {
+	if x != nil {
+		return x.ContainerPort
+	}
+	return 0
+}
+
+func (x *DeployFromGitRequest) GetBuildSecrets() map[string]string {
+	if x != nil {
+		return x.BuildSecrets
+	}
+	return nil
+}
+
+type DeployFromGitResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BuildId       string                 `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+	WorkloadId    string                 `protobuf:"bytes,2,opt,name=workload_id,json=workloadId,proto3" json:"workload_id,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeployFromGitResponse) Reset() {
+	*x = DeployFromGitResponse{}
+	mi := &file_v1_workload_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeployFromGitResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeployFromGitResponse) ProtoMessage() {}
+
+func (x *DeployFromGitResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeployFromGitResponse.ProtoReflect.Descriptor instead.
+func (*DeployFromGitResponse) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *DeployFromGitResponse) GetBuildId() string {
+	if x != nil {
+		return x.BuildId
+	}
+	return ""
+}
+
+func (x *DeployFromGitResponse) GetWorkloadId() string {
+	if x != nil {
+		return x.WorkloadId
+	}
+	return ""
+}
+
+func (x *DeployFromGitResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type ListBuildsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorkloadId    string                 `protobuf:"bytes,1,opt,name=workload_id,json=workloadId,proto3" json:"workload_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBuildsRequest) Reset() {
+	*x = ListBuildsRequest{}
+	mi := &file_v1_workload_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBuildsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBuildsRequest) ProtoMessage() {}
+
+func (x *ListBuildsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBuildsRequest.ProtoReflect.Descriptor instead.
+func (*ListBuildsRequest) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ListBuildsRequest) GetWorkloadId() string {
+	if x != nil {
+		return x.WorkloadId
+	}
+	return ""
+}
+
+type ListBuildsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Builds        []*Build               `protobuf:"bytes,1,rep,name=builds,proto3" json:"builds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBuildsResponse) Reset() {
+	*x = ListBuildsResponse{}
+	mi := &file_v1_workload_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBuildsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBuildsResponse) ProtoMessage() {}
+
+func (x *ListBuildsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBuildsResponse.ProtoReflect.Descriptor instead.
+func (*ListBuildsResponse) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ListBuildsResponse) GetBuilds() []*Build {
+	if x != nil {
+		return x.Builds
+	}
+	return nil
+}
+
+type GetBuildLogsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BuildId       string                 `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+	TailLines     int32                  `protobuf:"varint,2,opt,name=tail_lines,json=tailLines,proto3" json:"tail_lines,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBuildLogsRequest) Reset() {
+	*x = GetBuildLogsRequest{}
+	mi := &file_v1_workload_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBuildLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBuildLogsRequest) ProtoMessage() {}
+
+func (x *GetBuildLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBuildLogsRequest.ProtoReflect.Descriptor instead.
+func (*GetBuildLogsRequest) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetBuildLogsRequest) GetBuildId() string {
+	if x != nil {
+		return x.BuildId
+	}
+	return ""
+}
+
+func (x *GetBuildLogsRequest) GetTailLines() int32 {
+	if x != nil {
+		return x.TailLines
+	}
+	return 0
+}
+
+type GetBuildLogsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Build         *Build                 `protobuf:"bytes,1,opt,name=build,proto3" json:"build,omitempty"`
+	Lines         []string               `protobuf:"bytes,2,rep,name=lines,proto3" json:"lines,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBuildLogsResponse) Reset() {
+	*x = GetBuildLogsResponse{}
+	mi := &file_v1_workload_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBuildLogsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBuildLogsResponse) ProtoMessage() {}
+
+func (x *GetBuildLogsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBuildLogsResponse.ProtoReflect.Descriptor instead.
+func (*GetBuildLogsResponse) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetBuildLogsResponse) GetBuild() *Build {
+	if x != nil {
+		return x.Build
+	}
+	return nil
+}
+
+func (x *GetBuildLogsResponse) GetLines() []string {
+	if x != nil {
+		return x.Lines
+	}
+	return nil
+}
+
 type Project struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -830,7 +1332,7 @@ type Project struct {
 
 func (x *Project) Reset() {
 	*x = Project{}
-	mi := &file_v1_workload_proto_msgTypes[13]
+	mi := &file_v1_workload_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -842,7 +1344,7 @@ func (x *Project) String() string {
 func (*Project) ProtoMessage() {}
 
 func (x *Project) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[13]
+	mi := &file_v1_workload_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -855,7 +1357,7 @@ func (x *Project) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Project.ProtoReflect.Descriptor instead.
 func (*Project) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{13}
+	return file_v1_workload_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *Project) GetId() string {
@@ -888,7 +1390,7 @@ type CreateProjectRequest struct {
 
 func (x *CreateProjectRequest) Reset() {
 	*x = CreateProjectRequest{}
-	mi := &file_v1_workload_proto_msgTypes[14]
+	mi := &file_v1_workload_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -900,7 +1402,7 @@ func (x *CreateProjectRequest) String() string {
 func (*CreateProjectRequest) ProtoMessage() {}
 
 func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[14]
+	mi := &file_v1_workload_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -913,7 +1415,7 @@ func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
 func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{14}
+	return file_v1_workload_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CreateProjectRequest) GetName() string {
@@ -932,7 +1434,7 @@ type CreateProjectResponse struct {
 
 func (x *CreateProjectResponse) Reset() {
 	*x = CreateProjectResponse{}
-	mi := &file_v1_workload_proto_msgTypes[15]
+	mi := &file_v1_workload_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -944,7 +1446,7 @@ func (x *CreateProjectResponse) String() string {
 func (*CreateProjectResponse) ProtoMessage() {}
 
 func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[15]
+	mi := &file_v1_workload_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -957,7 +1459,7 @@ func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectResponse.ProtoReflect.Descriptor instead.
 func (*CreateProjectResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{15}
+	return file_v1_workload_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CreateProjectResponse) GetProject() *Project {
@@ -975,7 +1477,7 @@ type ListProjectsRequest struct {
 
 func (x *ListProjectsRequest) Reset() {
 	*x = ListProjectsRequest{}
-	mi := &file_v1_workload_proto_msgTypes[16]
+	mi := &file_v1_workload_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -987,7 +1489,7 @@ func (x *ListProjectsRequest) String() string {
 func (*ListProjectsRequest) ProtoMessage() {}
 
 func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[16]
+	mi := &file_v1_workload_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,7 +1502,7 @@ func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{16}
+	return file_v1_workload_proto_rawDescGZIP(), []int{23}
 }
 
 type ListProjectsResponse struct {
@@ -1012,7 +1514,7 @@ type ListProjectsResponse struct {
 
 func (x *ListProjectsResponse) Reset() {
 	*x = ListProjectsResponse{}
-	mi := &file_v1_workload_proto_msgTypes[17]
+	mi := &file_v1_workload_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1024,7 +1526,7 @@ func (x *ListProjectsResponse) String() string {
 func (*ListProjectsResponse) ProtoMessage() {}
 
 func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[17]
+	mi := &file_v1_workload_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1037,7 +1539,7 @@ func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{17}
+	return file_v1_workload_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListProjectsResponse) GetProjects() []*Project {
@@ -1056,7 +1558,7 @@ type DeleteProjectRequest struct {
 
 func (x *DeleteProjectRequest) Reset() {
 	*x = DeleteProjectRequest{}
-	mi := &file_v1_workload_proto_msgTypes[18]
+	mi := &file_v1_workload_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1068,7 +1570,7 @@ func (x *DeleteProjectRequest) String() string {
 func (*DeleteProjectRequest) ProtoMessage() {}
 
 func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[18]
+	mi := &file_v1_workload_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1081,7 +1583,7 @@ func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectRequest.ProtoReflect.Descriptor instead.
 func (*DeleteProjectRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{18}
+	return file_v1_workload_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *DeleteProjectRequest) GetId() string {
@@ -1099,7 +1601,7 @@ type DeleteProjectResponse struct {
 
 func (x *DeleteProjectResponse) Reset() {
 	*x = DeleteProjectResponse{}
-	mi := &file_v1_workload_proto_msgTypes[19]
+	mi := &file_v1_workload_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1111,7 +1613,7 @@ func (x *DeleteProjectResponse) String() string {
 func (*DeleteProjectResponse) ProtoMessage() {}
 
 func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[19]
+	mi := &file_v1_workload_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1124,14 +1626,14 @@ func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectResponse.ProtoReflect.Descriptor instead.
 func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{19}
+	return file_v1_workload_proto_rawDescGZIP(), []int{26}
 }
 
 var File_v1_workload_proto protoreflect.FileDescriptor
 
 const file_v1_workload_proto_rawDesc = "" +
 	"\n" +
-	"\x11v1/workload.proto\x12\x02v1\"\xb5\x05\n" +
+	"\x11v1/workload.proto\x12\x02v1\"\xd9\x06\n" +
 	"\bWorkload\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -1154,7 +1656,13 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\bendpoint\x18\x10 \x01(\tR\bendpoint\x12\x1d\n" +
 	"\n" +
 	"last_error\x18\x11 \x01(\tR\tlastError\x12!\n" +
-	"\fcontainer_id\x18\x12 \x01(\tR\vcontainerId\x1a:\n" +
+	"\fcontainer_id\x18\x12 \x01(\tR\vcontainerId\x12\x1f\n" +
+	"\vsource_kind\x18\x13 \x01(\tR\n" +
+	"sourceKind\x12\x17\n" +
+	"\agit_url\x18\x14 \x01(\tR\x06gitUrl\x12\x17\n" +
+	"\agit_ref\x18\x15 \x01(\tR\x06gitRef\x12'\n" +
+	"\x0fdockerfile_path\x18\x16 \x01(\tR\x0edockerfilePath\x12&\n" +
+	"\x0flatest_build_id\x18\x17 \x01(\tR\rlatestBuildId\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"5\n" +
@@ -1188,7 +1696,52 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\n" +
 	"tail_lines\x18\x02 \x01(\x05R\ttailLines\"/\n" +
 	"\x17GetWorkloadLogsResponse\x12\x14\n" +
-	"\x05lines\x18\x01 \x03(\tR\x05lines\"V\n" +
+	"\x05lines\x18\x01 \x03(\tR\x05lines\"\xc8\x02\n" +
+	"\x05Build\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vworkload_id\x18\x02 \x01(\tR\n" +
+	"workloadId\x12\x17\n" +
+	"\agit_url\x18\x03 \x01(\tR\x06gitUrl\x12\x17\n" +
+	"\agit_ref\x18\x04 \x01(\tR\x06gitRef\x12'\n" +
+	"\x0fdockerfile_path\x18\x05 \x01(\tR\x0edockerfilePath\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\tR\x06status\x12\x14\n" +
+	"\x05image\x18\a \x01(\tR\x05image\x12(\n" +
+	"\x10assigned_node_id\x18\b \x01(\tR\x0eassignedNodeId\x12\x1d\n" +
+	"\n" +
+	"last_error\x18\t \x01(\tR\tlastError\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\v \x01(\tR\tupdatedAt\"\xcb\x02\n" +
+	"\x14DeployFromGitRequest\x12\x1f\n" +
+	"\vworkload_id\x18\x01 \x01(\tR\n" +
+	"workloadId\x12\x17\n" +
+	"\agit_url\x18\x02 \x01(\tR\x06gitUrl\x12\x17\n" +
+	"\agit_ref\x18\x03 \x01(\tR\x06gitRef\x12'\n" +
+	"\x0fdockerfile_path\x18\x04 \x01(\tR\x0edockerfilePath\x12%\n" +
+	"\x0econtainer_port\x18\x05 \x01(\x05R\rcontainerPort\x12O\n" +
+	"\rbuild_secrets\x18\x06 \x03(\v2*.v1.DeployFromGitRequest.BuildSecretsEntryR\fbuildSecrets\x1a?\n" +
+	"\x11BuildSecretsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"k\n" +
+	"\x15DeployFromGitResponse\x12\x19\n" +
+	"\bbuild_id\x18\x01 \x01(\tR\abuildId\x12\x1f\n" +
+	"\vworkload_id\x18\x02 \x01(\tR\n" +
+	"workloadId\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"4\n" +
+	"\x11ListBuildsRequest\x12\x1f\n" +
+	"\vworkload_id\x18\x01 \x01(\tR\n" +
+	"workloadId\"7\n" +
+	"\x12ListBuildsResponse\x12!\n" +
+	"\x06builds\x18\x01 \x03(\v2\t.v1.BuildR\x06builds\"O\n" +
+	"\x13GetBuildLogsRequest\x12\x19\n" +
+	"\bbuild_id\x18\x01 \x01(\tR\abuildId\x12\x1d\n" +
+	"\n" +
+	"tail_lines\x18\x02 \x01(\x05R\ttailLines\"M\n" +
+	"\x14GetBuildLogsResponse\x12\x1f\n" +
+	"\x05build\x18\x01 \x01(\v2\t.v1.BuildR\x05build\x12\x14\n" +
+	"\x05lines\x18\x02 \x03(\tR\x05lines\"V\n" +
 	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0forganization_id\x18\x02 \x01(\tR\x0eorganizationId\x12\x12\n" +
@@ -1209,14 +1762,18 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\x1bRUNTIME_TYPE_DOCKER_COMPOSE\x10\x02\x12\x18\n" +
 	"\x14RUNTIME_TYPE_MICROVM\x10\x03\x12\x15\n" +
 	"\x11RUNTIME_TYPE_WASM\x10\x04\x12\x1c\n" +
-	"\x18RUNTIME_TYPE_STATIC_SITE\x10\x052\xaf\x03\n" +
+	"\x18RUNTIME_TYPE_STATIC_SITE\x10\x052\xf5\x04\n" +
 	"\x0fWorkloadService\x12G\n" +
 	"\x0eCreateWorkload\x12\x19.v1.CreateWorkloadRequest\x1a\x1a.v1.CreateWorkloadResponse\x12/\n" +
 	"\x06Deploy\x12\x11.v1.DeployRequest\x1a\x12.v1.DeployResponse\x12D\n" +
+	"\rDeployFromGit\x12\x18.v1.DeployFromGitRequest\x1a\x19.v1.DeployFromGitResponse\x12D\n" +
 	"\rListWorkloads\x12\x18.v1.ListWorkloadsRequest\x1a\x19.v1.ListWorkloadsResponse\x12G\n" +
 	"\x0eUpdateWorkload\x12\x19.v1.UpdateWorkloadRequest\x1a\x1a.v1.UpdateWorkloadResponse\x12G\n" +
 	"\x0eDeleteWorkload\x12\x19.v1.DeleteWorkloadRequest\x1a\x1a.v1.DeleteWorkloadResponse\x12J\n" +
-	"\x0fGetWorkloadLogs\x12\x1a.v1.GetWorkloadLogsRequest\x1a\x1b.v1.GetWorkloadLogsResponse2\xdf\x01\n" +
+	"\x0fGetWorkloadLogs\x12\x1a.v1.GetWorkloadLogsRequest\x1a\x1b.v1.GetWorkloadLogsResponse\x12;\n" +
+	"\n" +
+	"ListBuilds\x12\x15.v1.ListBuildsRequest\x1a\x16.v1.ListBuildsResponse\x12A\n" +
+	"\fGetBuildLogs\x12\x17.v1.GetBuildLogsRequest\x1a\x18.v1.GetBuildLogsResponse2\xdf\x01\n" +
 	"\x0eProjectService\x12D\n" +
 	"\rCreateProject\x12\x18.v1.CreateProjectRequest\x1a\x19.v1.CreateProjectResponse\x12A\n" +
 	"\fListProjects\x12\x17.v1.ListProjectsRequest\x1a\x18.v1.ListProjectsResponse\x12D\n" +
@@ -1236,7 +1793,7 @@ func file_v1_workload_proto_rawDescGZIP() []byte {
 }
 
 var file_v1_workload_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_v1_workload_proto_goTypes = []any{
 	(RuntimeType)(0),                // 0: v1.RuntimeType
 	(*Workload)(nil),                // 1: v1.Workload
@@ -1252,49 +1809,66 @@ var file_v1_workload_proto_goTypes = []any{
 	(*DeployResponse)(nil),          // 11: v1.DeployResponse
 	(*GetWorkloadLogsRequest)(nil),  // 12: v1.GetWorkloadLogsRequest
 	(*GetWorkloadLogsResponse)(nil), // 13: v1.GetWorkloadLogsResponse
-	(*Project)(nil),                 // 14: v1.Project
-	(*CreateProjectRequest)(nil),    // 15: v1.CreateProjectRequest
-	(*CreateProjectResponse)(nil),   // 16: v1.CreateProjectResponse
-	(*ListProjectsRequest)(nil),     // 17: v1.ListProjectsRequest
-	(*ListProjectsResponse)(nil),    // 18: v1.ListProjectsResponse
-	(*DeleteProjectRequest)(nil),    // 19: v1.DeleteProjectRequest
-	(*DeleteProjectResponse)(nil),   // 20: v1.DeleteProjectResponse
-	nil,                             // 21: v1.Workload.EnvVarsEntry
+	(*Build)(nil),                   // 14: v1.Build
+	(*DeployFromGitRequest)(nil),    // 15: v1.DeployFromGitRequest
+	(*DeployFromGitResponse)(nil),   // 16: v1.DeployFromGitResponse
+	(*ListBuildsRequest)(nil),       // 17: v1.ListBuildsRequest
+	(*ListBuildsResponse)(nil),      // 18: v1.ListBuildsResponse
+	(*GetBuildLogsRequest)(nil),     // 19: v1.GetBuildLogsRequest
+	(*GetBuildLogsResponse)(nil),    // 20: v1.GetBuildLogsResponse
+	(*Project)(nil),                 // 21: v1.Project
+	(*CreateProjectRequest)(nil),    // 22: v1.CreateProjectRequest
+	(*CreateProjectResponse)(nil),   // 23: v1.CreateProjectResponse
+	(*ListProjectsRequest)(nil),     // 24: v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),    // 25: v1.ListProjectsResponse
+	(*DeleteProjectRequest)(nil),    // 26: v1.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),   // 27: v1.DeleteProjectResponse
+	nil,                             // 28: v1.Workload.EnvVarsEntry
+	nil,                             // 29: v1.DeployFromGitRequest.BuildSecretsEntry
 }
 var file_v1_workload_proto_depIdxs = []int32{
 	0,  // 0: v1.Workload.runtime:type_name -> v1.RuntimeType
-	21, // 1: v1.Workload.env_vars:type_name -> v1.Workload.EnvVarsEntry
+	28, // 1: v1.Workload.env_vars:type_name -> v1.Workload.EnvVarsEntry
 	1,  // 2: v1.ListWorkloadsResponse.workloads:type_name -> v1.Workload
 	1,  // 3: v1.UpdateWorkloadRequest.workload:type_name -> v1.Workload
 	1,  // 4: v1.UpdateWorkloadResponse.workload:type_name -> v1.Workload
 	1,  // 5: v1.CreateWorkloadRequest.workload:type_name -> v1.Workload
 	1,  // 6: v1.CreateWorkloadResponse.workload:type_name -> v1.Workload
 	1,  // 7: v1.DeployRequest.workload:type_name -> v1.Workload
-	14, // 8: v1.CreateProjectResponse.project:type_name -> v1.Project
-	14, // 9: v1.ListProjectsResponse.projects:type_name -> v1.Project
-	8,  // 10: v1.WorkloadService.CreateWorkload:input_type -> v1.CreateWorkloadRequest
-	10, // 11: v1.WorkloadService.Deploy:input_type -> v1.DeployRequest
-	2,  // 12: v1.WorkloadService.ListWorkloads:input_type -> v1.ListWorkloadsRequest
-	4,  // 13: v1.WorkloadService.UpdateWorkload:input_type -> v1.UpdateWorkloadRequest
-	6,  // 14: v1.WorkloadService.DeleteWorkload:input_type -> v1.DeleteWorkloadRequest
-	12, // 15: v1.WorkloadService.GetWorkloadLogs:input_type -> v1.GetWorkloadLogsRequest
-	15, // 16: v1.ProjectService.CreateProject:input_type -> v1.CreateProjectRequest
-	17, // 17: v1.ProjectService.ListProjects:input_type -> v1.ListProjectsRequest
-	19, // 18: v1.ProjectService.DeleteProject:input_type -> v1.DeleteProjectRequest
-	9,  // 19: v1.WorkloadService.CreateWorkload:output_type -> v1.CreateWorkloadResponse
-	11, // 20: v1.WorkloadService.Deploy:output_type -> v1.DeployResponse
-	3,  // 21: v1.WorkloadService.ListWorkloads:output_type -> v1.ListWorkloadsResponse
-	5,  // 22: v1.WorkloadService.UpdateWorkload:output_type -> v1.UpdateWorkloadResponse
-	7,  // 23: v1.WorkloadService.DeleteWorkload:output_type -> v1.DeleteWorkloadResponse
-	13, // 24: v1.WorkloadService.GetWorkloadLogs:output_type -> v1.GetWorkloadLogsResponse
-	16, // 25: v1.ProjectService.CreateProject:output_type -> v1.CreateProjectResponse
-	18, // 26: v1.ProjectService.ListProjects:output_type -> v1.ListProjectsResponse
-	20, // 27: v1.ProjectService.DeleteProject:output_type -> v1.DeleteProjectResponse
-	19, // [19:28] is the sub-list for method output_type
-	10, // [10:19] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	29, // 8: v1.DeployFromGitRequest.build_secrets:type_name -> v1.DeployFromGitRequest.BuildSecretsEntry
+	14, // 9: v1.ListBuildsResponse.builds:type_name -> v1.Build
+	14, // 10: v1.GetBuildLogsResponse.build:type_name -> v1.Build
+	21, // 11: v1.CreateProjectResponse.project:type_name -> v1.Project
+	21, // 12: v1.ListProjectsResponse.projects:type_name -> v1.Project
+	8,  // 13: v1.WorkloadService.CreateWorkload:input_type -> v1.CreateWorkloadRequest
+	10, // 14: v1.WorkloadService.Deploy:input_type -> v1.DeployRequest
+	15, // 15: v1.WorkloadService.DeployFromGit:input_type -> v1.DeployFromGitRequest
+	2,  // 16: v1.WorkloadService.ListWorkloads:input_type -> v1.ListWorkloadsRequest
+	4,  // 17: v1.WorkloadService.UpdateWorkload:input_type -> v1.UpdateWorkloadRequest
+	6,  // 18: v1.WorkloadService.DeleteWorkload:input_type -> v1.DeleteWorkloadRequest
+	12, // 19: v1.WorkloadService.GetWorkloadLogs:input_type -> v1.GetWorkloadLogsRequest
+	17, // 20: v1.WorkloadService.ListBuilds:input_type -> v1.ListBuildsRequest
+	19, // 21: v1.WorkloadService.GetBuildLogs:input_type -> v1.GetBuildLogsRequest
+	22, // 22: v1.ProjectService.CreateProject:input_type -> v1.CreateProjectRequest
+	24, // 23: v1.ProjectService.ListProjects:input_type -> v1.ListProjectsRequest
+	26, // 24: v1.ProjectService.DeleteProject:input_type -> v1.DeleteProjectRequest
+	9,  // 25: v1.WorkloadService.CreateWorkload:output_type -> v1.CreateWorkloadResponse
+	11, // 26: v1.WorkloadService.Deploy:output_type -> v1.DeployResponse
+	16, // 27: v1.WorkloadService.DeployFromGit:output_type -> v1.DeployFromGitResponse
+	3,  // 28: v1.WorkloadService.ListWorkloads:output_type -> v1.ListWorkloadsResponse
+	5,  // 29: v1.WorkloadService.UpdateWorkload:output_type -> v1.UpdateWorkloadResponse
+	7,  // 30: v1.WorkloadService.DeleteWorkload:output_type -> v1.DeleteWorkloadResponse
+	13, // 31: v1.WorkloadService.GetWorkloadLogs:output_type -> v1.GetWorkloadLogsResponse
+	18, // 32: v1.WorkloadService.ListBuilds:output_type -> v1.ListBuildsResponse
+	20, // 33: v1.WorkloadService.GetBuildLogs:output_type -> v1.GetBuildLogsResponse
+	23, // 34: v1.ProjectService.CreateProject:output_type -> v1.CreateProjectResponse
+	25, // 35: v1.ProjectService.ListProjects:output_type -> v1.ListProjectsResponse
+	27, // 36: v1.ProjectService.DeleteProject:output_type -> v1.DeleteProjectResponse
+	25, // [25:37] is the sub-list for method output_type
+	13, // [13:25] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_v1_workload_proto_init() }
@@ -1308,7 +1882,7 @@ func file_v1_workload_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_workload_proto_rawDesc), len(file_v1_workload_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   21,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

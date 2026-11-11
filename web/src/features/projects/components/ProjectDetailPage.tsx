@@ -18,7 +18,9 @@ import { listNodes } from '../../nodes/services/nodes-api'
 import {
   createWorkload,
   deleteWorkload,
+  deployFromGit,
   deployWorkload,
+  getBuildLogs,
   getWorkloadLogs,
   listWorkloads,
 } from '../services/projects-api'
@@ -40,7 +42,9 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
   const [logWorkload, setLogWorkload] = useState<Workload | null>(null)
   const [logLines, setLogLines] = useState<string[]>([])
   const [logLoading, setLogLoading] = useState(false)
+  const [logTitle, setLogTitle] = useState('logs')
   const [selected, setSelected] = useState<Workload | null>(null)
+  const [gitBusyId, setGitBusyId] = useState('')
 
   async function refresh() {
     setError('')
@@ -116,6 +120,64 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
     }
   }
 
+  async function onCreateGit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setCreating(true)
+    setError('')
+    setNotice('')
+    const formEl = event.currentTarget
+    const form = new FormData(formEl)
+    try {
+      const workload = await createWorkload({
+        projectId: project.id,
+        name: String(form.get('name') ?? ''),
+        sourceKind: 'git',
+        gitUrl: String(form.get('gitUrl') ?? ''),
+        gitRef: String(form.get('gitRef') || 'main'),
+        dockerfilePath: String(form.get('dockerfile') || 'Dockerfile'),
+        containerPort: Number(form.get('port') || 8080),
+      })
+      const build = await deployFromGit({
+        workloadId: workload.id,
+        gitUrl: workload.gitUrl,
+        gitRef: workload.gitRef || 'main',
+        dockerfilePath: workload.dockerfilePath || 'Dockerfile',
+        containerPort: workload.containerPort || 8080,
+      })
+      formEl.reset()
+      setNotice(`Git build queued (${shortId(build.buildId)}). Watch build logs; deploy starts after the image is ready.`)
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not start git build')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  async function onRebuildGit(workload: Workload) {
+    setError('')
+    setNotice('')
+    setGitBusyId(workload.id)
+    try {
+      const build = await deployFromGit({
+        workloadId: workload.id,
+        gitUrl: workload.gitUrl,
+        gitRef: workload.gitRef || 'main',
+        dockerfilePath: workload.dockerfilePath || 'Dockerfile',
+        containerPort: workload.containerPort || 80,
+      })
+      setNotice(`Rebuild queued (${shortId(build.buildId)}).`)
+      await refresh()
+      if (build.buildId) {
+        await openBuildLogs(workload, build.buildId)
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not rebuild from git')
+    } finally {
+      setGitBusyId('')
+    }
+  }
+
   async function onDelete(workload: Workload) {
     setError('')
     setBusyId(workload.id)
@@ -150,6 +212,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
 
   async function openLogs(workload: Workload) {
     setLogWorkload(workload)
+    setLogTitle(`${workload.name} runtime logs`)
     setLogLoading(true)
     try {
       const lines = await getWorkloadLogs(workload.id, 150)
@@ -162,6 +225,31 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
       ])
     } catch (cause) {
       setLogLines([cause instanceof Error ? cause.message : 'Could not load logs'])
+    } finally {
+      setLogLoading(false)
+    }
+  }
+
+  async function openBuildLogs(workload: Workload, buildId?: string) {
+    const id = buildId || workload.latestBuildId
+    if (!id) {
+      setError('No build yet for this workload')
+      return
+    }
+    setLogWorkload(workload)
+    setLogTitle(`${workload.name} build logs`)
+    setLogLoading(true)
+    try {
+      const result = await getBuildLogs(id, 250)
+      const header = result.build
+        ? [`build ${result.build.id} · ${result.build.status} · image ${result.build.image || '—'}`, '']
+        : []
+      setLogLines([
+        ...header,
+        ...(result.lines.length ? result.lines : ['No build log lines yet. Wait for the builder node to clone/build.']),
+      ])
+    } catch (cause) {
+      setLogLines([cause instanceof Error ? cause.message : 'Could not load build logs'])
     } finally {
       setLogLoading(false)
     }
@@ -232,7 +320,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
       <section className="panel flux-shadow lift-card">
         <header className="panel-header">
           <div>
-            <h3>Add workload</h3>
+            <h3>Add from image</h3>
             <p className="muted">Example: image <code>nginx:alpine</code>, container port <code>80</code>.</p>
           </div>
         </header>
@@ -245,6 +333,25 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
           <FormField id="workload-image" name="image" label="Image" required placeholder="nginx:alpine" />
           <FormField id="workload-port" name="port" label="Container port" type="number" placeholder="80" defaultValue={80} />
           <Button type="submit" disabled={creating}>{creating ? 'Creating…' : 'Create workload'}</Button>
+        </form>
+      </section>
+
+      <section className="panel flux-shadow lift-card">
+        <header className="panel-header">
+          <div>
+            <h3>Build &amp; deploy from git</h3>
+            <p className="muted">Clones the repo, builds the Dockerfile, pushes to the local registry when available, then deploys.</p>
+          </div>
+        </header>
+        <form className="form-grid form-grid-4" onSubmit={(event) => void onCreateGit(event)}>
+          <FormField id="git-name" name="name" label="Workload name" required placeholder="hello-go" />
+          <FormField id="git-url" name="gitUrl" label="Git URL" required placeholder="https://github.com/org/repo.git" />
+          <FormField id="git-ref" name="gitRef" label="Ref" placeholder="main" defaultValue="main" />
+          <FormField id="git-dockerfile" name="dockerfile" label="Dockerfile path" placeholder="Dockerfile" defaultValue="Dockerfile" />
+          <FormField id="git-port" name="port" label="Container port" type="number" placeholder="8080" defaultValue={8080} />
+          <Button type="submit" disabled={creating || !hasOnlineNode}>
+            {creating ? 'Queuing…' : 'Build & deploy'}
+          </Button>
         </form>
       </section>
 
@@ -292,6 +399,21 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
                   <Button type="button" disabled={busyId === workload.id || !hasOnlineNode} onClick={() => void onDeploy(workload)}>
                     <Rocket size={14} /> Deploy
                   </Button>
+                  {workload.sourceKind === 'git' || workload.gitUrl ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={gitBusyId === workload.id || !hasOnlineNode || !workload.gitUrl}
+                      onClick={() => void onRebuildGit(workload)}
+                    >
+                      Rebuild
+                    </Button>
+                  ) : null}
+                  {workload.latestBuildId ? (
+                    <Button type="button" variant="secondary" onClick={() => void openBuildLogs(workload)}>
+                      Build logs
+                    </Button>
+                  ) : null}
                   <Button type="button" variant="secondary" disabled={busyId === workload.id} onClick={() => void openLogs(workload)}>
                     <ScrollText size={14} /> Logs
                   </Button>
@@ -323,7 +445,10 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
             <dl className="detail-grid">
               <div><dt>ID</dt><dd className="mono">{selected.id}</dd></div>
               <div><dt>Status</dt><dd><span className={`status-badge status-${selected.status}`}>{selected.status}</span></dd></div>
+              <div><dt>Source</dt><dd>{selected.sourceKind || 'image'}</dd></div>
               <div><dt>Image</dt><dd className="mono">{selected.imageOrSource}</dd></div>
+              {selected.gitUrl ? <div><dt>Git</dt><dd className="mono">{selected.gitUrl}@{selected.gitRef || 'main'}</dd></div> : null}
+              {selected.latestBuildId ? <div><dt>Latest build</dt><dd className="mono">{selected.latestBuildId}</dd></div> : null}
               <div><dt>Generations</dt><dd>observed {String(selected.observedGeneration)} / desired {String(selected.desiredGeneration)}</dd></div>
               <div><dt>Ports</dt><dd>host {selected.hostPort || '—'} → container {selected.containerPort || 80}</dd></div>
               <div><dt>Endpoint</dt><dd>{selected.endpoint ? <a className="endpoint-link" href={selected.endpoint} target="_blank" rel="noreferrer">{selected.endpoint} <ExternalLink size={12} /></a> : '—'}</dd></div>
@@ -347,8 +472,8 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
           >
             <header className="panel-header">
               <div>
-                <h3>{logWorkload.name} logs</h3>
-                <p className="muted">Reported by the agent after reconcile.</p>
+                <h3>{logTitle}</h3>
+                <p className="muted">Reported by the builder/runtime node.</p>
               </div>
               <button type="button" className="icon-button" aria-label="Close logs" onClick={() => setLogWorkload(null)}>
                 <X />

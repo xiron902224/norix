@@ -32,6 +32,12 @@ message Workload {
   string endpoint = 16;
   string last_error = 17;
   string container_id = 18;
+  // image | git
+  string source_kind = 19;
+  string git_url = 20;
+  string git_ref = 21;
+  string dockerfile_path = 22;
+  string latest_build_id = 23;
 }
 
 message ListWorkloadsRequest {
@@ -82,13 +88,64 @@ message GetWorkloadLogsResponse {
   repeated string lines = 1;
 }
 
+message Build {
+  string id = 1;
+  string workload_id = 2;
+  string git_url = 3;
+  string git_ref = 4;
+  string dockerfile_path = 5;
+  string status = 6;
+  string image = 7;
+  string assigned_node_id = 8;
+  string last_error = 9;
+  string created_at = 10;
+  string updated_at = 11;
+}
+
+message DeployFromGitRequest {
+  string workload_id = 1;
+  string git_url = 2;
+  string git_ref = 3;
+  string dockerfile_path = 4;
+  int32 container_port = 5;
+  // optional plaintext build secrets (encrypted at rest)
+  map<string, string> build_secrets = 6;
+}
+
+message DeployFromGitResponse {
+  string build_id = 1;
+  string workload_id = 2;
+  string status = 3;
+}
+
+message ListBuildsRequest {
+  string workload_id = 1;
+}
+
+message ListBuildsResponse {
+  repeated Build builds = 1;
+}
+
+message GetBuildLogsRequest {
+  string build_id = 1;
+  int32 tail_lines = 2;
+}
+
+message GetBuildLogsResponse {
+  Build build = 1;
+  repeated string lines = 2;
+}
+
 service WorkloadService {
   rpc CreateWorkload(CreateWorkloadRequest) returns (CreateWorkloadResponse);
   rpc Deploy(DeployRequest) returns (DeployResponse);
+  rpc DeployFromGit(DeployFromGitRequest) returns (DeployFromGitResponse);
   rpc ListWorkloads(ListWorkloadsRequest) returns (ListWorkloadsResponse);
   rpc UpdateWorkload(UpdateWorkloadRequest) returns (UpdateWorkloadResponse);
   rpc DeleteWorkload(DeleteWorkloadRequest) returns (DeleteWorkloadResponse);
   rpc GetWorkloadLogs(GetWorkloadLogsRequest) returns (GetWorkloadLogsResponse);
+  rpc ListBuilds(ListBuildsRequest) returns (ListBuildsResponse);
+  rpc GetBuildLogs(GetBuildLogsRequest) returns (GetBuildLogsResponse);
 }
 
 message Project {

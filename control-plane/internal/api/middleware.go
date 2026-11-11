@@ -60,6 +60,7 @@ func isAgentProcedure(procedure string) bool {
 	switch procedure {
 	case "/v1.AgentService/Heartbeat",
 		"/v1.AgentService/ReportObserved",
+		"/v1.AgentService/ReportBuild",
 		"/v1.AgentService/ConnectStream":
 		return true
 	default:

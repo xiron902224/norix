@@ -45,6 +45,10 @@ func newHandler(authService api.AuthService) http.Handler {
 		response.WriteHeader(http.StatusOK)
 		_, _ = response.Write([]byte("ok\n"))
 	})
+	if authService.BootstrapPool() != nil {
+		mux.HandleFunc("POST /hooks/github/{token}", api.GitHubWebhook(authService.BootstrapPool()))
+		mux.HandleFunc("POST /api/webhooks/workloads/{workloadID}", api.CreateWebhookTokenHandler(authService.BootstrapPool()))
+	}
 	mux.Handle("/", webui.Handler())
 
 	return mux

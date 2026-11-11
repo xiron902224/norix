@@ -3,9 +3,9 @@
 Norix is a PaaS platform in early production-oriented MVP phase. The repository combines:
 
 - control-plane: Go + Connect RPC + PostgreSQL
-- web: React + Vite frontend for bootstrap, login and dashboard shell
-- agent: planned Rust runtime node/agent for workloads, orchestration and health
-- deploy: Docker Compose stack for local development and validation
+- web: React + Vite frontend (embedded in the control-plane binary)
+- agent: Rust runtime node for enrollment, heartbeat, builds and container reconcile
+- deploy: Docker Compose stack (Postgres + optional zot registry)
 
 ## Project layout
 
@@ -74,7 +74,8 @@ HTTP_ADDR=:8080
 - **S2 delivered** — embedded React dashboard for projects/workloads (`docs/SPRINT_2_CIERRE.md`)
 - **S3 delivered** — Rust agent enrollment, heartbeat, nodes UI (`docs/SPRINT_3_CIERRE.md`)
 - **S4 delivered** — container reconcile + Deploy from dashboard (`docs/SPRINT_4_CIERRE.md`)
-- **Next: S5** — git → build → registry
+- **S5 delivered** — git → docker build → registry/deploy (`docs/SPRINT_5_CIERRE.md`)
+- **Next: S6** — edge, domain, TLS (Alpha 0.1)
 
 Operational plan through **v1.0**: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md)
 
@@ -89,7 +90,7 @@ make build
 
 - Never commit real secrets or production credentials. Keep `.env` files local only.
 - The repository ignores `.env` files by default via `.gitignore`.
-- The Rust agent enrolls, heartbeats, and reconciles containers (Docker/nerdctl). Git builds land in S5.
+- The Rust agent enrolls, heartbeats, builds from git (Dockerfile), and reconciles containers (Docker/nerdctl).
 
 ## Useful commands
 

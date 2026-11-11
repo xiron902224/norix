@@ -111,6 +111,9 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 	if _, err := db.ReclaimDesiredWorkloads(ctx, service.pool, node.OrganizationID, node.ID); err != nil {
 		return nil, internalError("reclaim desired workloads", err)
 	}
+	if _, err := db.ReclaimPendingBuilds(ctx, service.pool, node.OrganizationID, node.ID); err != nil {
+		return nil, internalError("reclaim pending builds", err)
+	}
 	desired, err := db.ListDesiredWorkloadsForNode(ctx, service.pool, node.OrganizationID, node.ID)
 	if err != nil {
 		return nil, internalError("list desired workloads", err)
@@ -124,7 +127,50 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 			DesiredGeneration: item.DesiredGeneration, Action: item.Action,
 		})
 	}
-	return &paasv1.HeartbeatResponse{NodeId: node.ID, DesiredWorkloads: items}, nil
+	builds, err := db.ListDesiredBuildsForNode(ctx, service.pool, node.OrganizationID, node.ID)
+	if err != nil {
+		return nil, internalError("list desired builds", err)
+	}
+	desiredBuilds := make([]*paasv1.DesiredBuild, 0, len(builds))
+	for _, item := range builds {
+		desiredBuilds = append(desiredBuilds, &paasv1.DesiredBuild{
+			Id: item.ID, WorkloadId: item.WorkloadID, GitUrl: item.GitURL, GitRef: item.GitRef,
+			DockerfilePath: item.DockerfilePath, ImageTag: item.ImageTag, BuildArgs: item.BuildArgs,
+			Registry: item.Registry,
+		})
+	}
+	return &paasv1.HeartbeatResponse{NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds}, nil
+}
+
+func (service AgentService) ReportBuild(ctx context.Context, request *paasv1.ReportBuildRequest) (*paasv1.ReportBuildResponse, error) {
+	node, ok := NodeFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "node credential required")
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		nodeID = node.ID
+	}
+	if nodeID != node.ID {
+		return nil, connect.NewError(connect.CodePermissionDenied, "node_id does not match credential")
+	}
+	build := request.GetBuild()
+	if build == nil || build.GetId() == "" {
+		return nil, invalidArgument("build is required")
+	}
+	if err := db.ApplyObservedBuild(ctx, service.pool, node.OrganizationID, db.ObservedBuild{
+		ID:       build.GetId(),
+		Status:   build.GetStatus(),
+		Image:    build.GetImage(),
+		Message:  build.GetMessage(),
+		LogLines: build.GetLogLines(),
+	}, db.AuditActor{Email: "node:" + node.ID}); err != nil {
+		if strings.Contains(err.Error(), "build not found") {
+			return nil, connect.NewError(connect.CodeNotFound, "build not found")
+		}
+		return nil, internalError("report build", err)
+	}
+	return &paasv1.ReportBuildResponse{}, nil
 }
 
 func (service AgentService) ReportObserved(ctx context.Context, request *paasv1.ReportObservedRequest) (*paasv1.ReportObservedResponse, error) {

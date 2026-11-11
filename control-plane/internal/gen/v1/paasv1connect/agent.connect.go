@@ -34,6 +34,8 @@ const (
 	// AgentServiceReportObservedProcedure is the procedure name of the AgentService's ReportObserved
 	// RPC.
 	AgentServiceReportObservedProcedure = "/v1.AgentService/ReportObserved"
+	// AgentServiceReportBuildProcedure is the procedure name of the AgentService's ReportBuild RPC.
+	AgentServiceReportBuildProcedure = "/v1.AgentService/ReportBuild"
 	// AgentServiceListNodesProcedure is the procedure name of the AgentService's ListNodes RPC.
 	AgentServiceListNodesProcedure = "/v1.AgentService/ListNodes"
 	// AgentServiceConnectStreamProcedure is the procedure name of the AgentService's ConnectStream RPC.
@@ -69,6 +71,13 @@ var (
 			Procedure:  AgentServiceReportObservedProcedure,
 		}
 	})
+	agentServiceReportBuildSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ReportBuild"),
+			Procedure:  AgentServiceReportBuildProcedure,
+		}
+	})
 	agentServiceListNodesSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -91,6 +100,7 @@ type AgentServiceClient interface {
 	EnrollNode(context.Context, *v1.EnrollNodeRequest) (*v1.EnrollNodeResponse, error)
 	Heartbeat(context.Context, *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error)
 	ReportObserved(context.Context, *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error)
+	ReportBuild(context.Context, *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error)
 	ListNodes(context.Context, *v1.ListNodesRequest) (*v1.ListNodesResponse, error)
 	ConnectStream(context.Context) (AgentServiceConnectStreamClientStream, error)
 }
@@ -144,6 +154,7 @@ type AgentServiceHandler interface {
 	EnrollNode(context.Context, *v1.EnrollNodeRequest) (*v1.EnrollNodeResponse, error)
 	Heartbeat(context.Context, *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error)
 	ReportObserved(context.Context, *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error)
+	ReportBuild(context.Context, *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error)
 	ListNodes(context.Context, *v1.ListNodesRequest) (*v1.ListNodesResponse, error)
 	ConnectStream(context.Context, AgentServiceConnectStreamServerStream) error
 }
@@ -156,6 +167,7 @@ func RegisterAgentServiceHandler(server *connect.Server, svc AgentServiceHandler
 		connect.Method{Spec: agentServiceEnrollNodeSpec(), Handler: adapter.enrollNode},
 		connect.Method{Spec: agentServiceHeartbeatSpec(), Handler: adapter.heartbeat},
 		connect.Method{Spec: agentServiceReportObservedSpec(), Handler: adapter.reportObserved},
+		connect.Method{Spec: agentServiceReportBuildSpec(), Handler: adapter.reportBuild},
 		connect.Method{Spec: agentServiceListNodesSpec(), Handler: adapter.listNodes},
 		connect.Method{Spec: agentServiceConnectStreamSpec(), Handler: adapter.connectStream},
 	)
@@ -205,6 +217,10 @@ func (UnimplementedAgentServiceHandler) ReportObserved(context.Context, *v1.Repo
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ReportObserved is not implemented")
 }
 
+func (UnimplementedAgentServiceHandler) ReportBuild(context.Context, *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ReportBuild is not implemented")
+}
+
 func (UnimplementedAgentServiceHandler) ListNodes(context.Context, *v1.ListNodesRequest) (*v1.ListNodesResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ListNodes is not implemented")
 }
@@ -244,6 +260,14 @@ func (c *agentServiceClient) Heartbeat(ctx context.Context, req *v1.HeartbeatReq
 func (c *agentServiceClient) ReportObserved(ctx context.Context, req *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error) {
 	var res v1.ReportObservedResponse
 	if err := c.client.CallUnary(ctx, agentServiceReportObservedSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) ReportBuild(ctx context.Context, req *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error) {
+	var res v1.ReportBuildResponse
+	if err := c.client.CallUnary(ctx, agentServiceReportBuildSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -309,6 +333,18 @@ func (h agentServiceHandler) reportObserved(ctx context.Context, _ connect.Spec,
 		return err
 	}
 	res, err := h.svc.ReportObserved(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) reportBuild(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReportBuildRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReportBuild(ctx, &req)
 	if err != nil {
 		return err
 	}

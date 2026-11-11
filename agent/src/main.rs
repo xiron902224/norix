@@ -1,3 +1,4 @@
+mod build;
 mod capabilities;
 mod client;
 mod config;
@@ -69,16 +70,24 @@ async fn main() -> Result<()> {
                             info!("heartbeat restored");
                         }
                         backoff = Duration::from_secs(1);
-                        if !desired.is_empty() {
-                            if let Some(runtime) = runtime.as_ref() {
-                                info!(count = desired.len(), "reconciling desired workloads");
-                                let observed = runtime.reconcile(&desired).await;
+                        if let Some(runtime) = runtime.as_ref() {
+                            if !desired.desired_builds.is_empty() {
+                                info!(count = desired.desired_builds.len(), "running desired builds");
+                                for observed in runtime.run_builds(&desired.desired_builds).await {
+                                    if let Err(error) = client.report_build(&state, &observed).await {
+                                        warn!(%error, "report build failed");
+                                    }
+                                }
+                            }
+                            if !desired.desired_workloads.is_empty() {
+                                info!(count = desired.desired_workloads.len(), "reconciling desired workloads");
+                                let observed = runtime.reconcile(&desired.desired_workloads).await;
                                 if let Err(error) = client.report_observed(&state, &observed).await {
                                     warn!(%error, "report observed failed");
                                 }
-                            } else {
-                                warn!(count = desired.len(), "desired workloads pending but no container runtime");
                             }
+                        } else if !desired.desired_workloads.is_empty() || !desired.desired_builds.is_empty() {
+                            warn!("desired builds/workloads pending but no container runtime");
                         }
                     }
                     Err(error) => {

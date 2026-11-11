@@ -80,9 +80,9 @@ jobs:
         run: |
           psql -h 127.0.0.1 -U norix -d norix -v ON_ERROR_STOP=1 <<'SQL'
           SELECT version, dirty FROM schema_migrations;
-          SELECT count(*) = 9 FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens', 'deployments', 'workload_logs');
+          SELECT count(*) = 13 FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens', 'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens');
           SELECT to_regclass('public.audit_events') IS NOT NULL;
-          SELECT count(*) = 9 FROM pg_class WHERE relname IN ('organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens', 'deployments', 'workload_logs') AND relrowsecurity AND relforcerowsecurity;
+          SELECT count(*) = 13 FROM pg_class WHERE relname IN ('organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens', 'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens') AND relrowsecurity AND relforcerowsecurity;
           SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE relname = 'audit_events';
           SQL
 

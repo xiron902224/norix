@@ -83,6 +83,42 @@ struct HeartbeatRequest<'a> {
     running_workload_ids: Vec<String>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredBuild {
+    pub id: String,
+    #[serde(default)]
+    pub workload_id: String,
+    #[serde(default)]
+    pub git_url: String,
+    #[serde(default)]
+    pub git_ref: String,
+    #[serde(default)]
+    pub dockerfile_path: String,
+    #[serde(default)]
+    pub image_tag: String,
+    #[serde(default)]
+    pub build_args: HashMap<String, String>,
+    #[serde(default)]
+    pub registry: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedBuild {
+    pub id: String,
+    pub status: String,
+    pub image: String,
+    pub message: String,
+    pub log_lines: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct HeartbeatResult {
+    pub desired_workloads: Vec<DesiredWorkload>,
+    pub desired_builds: Vec<DesiredBuild>,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct HeartbeatResponse {
@@ -91,6 +127,8 @@ struct HeartbeatResponse {
     node_id: String,
     #[serde(default)]
     desired_workloads: Vec<DesiredWorkload>,
+    #[serde(default)]
+    desired_builds: Vec<DesiredBuild>,
 }
 
 #[derive(Serialize)]
@@ -146,7 +184,7 @@ impl AgentClient {
         memory_free_mb: i64,
         cpu_usage_percent: f64,
         running_workload_ids: Vec<String>,
-    ) -> Result<Vec<DesiredWorkload>> {
+    ) -> Result<HeartbeatResult> {
         let body = HeartbeatRequest {
             node_id: &state.node_id,
             cpu_usage_percent,
@@ -162,29 +200,45 @@ impl AgentClient {
                 &body,
             )
             .await?;
-        // Heartbeat is presence-critical: never treat a successful Connect response as a
-        // reconnect failure just because desired_workloads JSON is awkward (int64 strings, etc).
         match serde_json::from_value::<HeartbeatResponse>(response.clone()) {
-            Ok(parsed) => Ok(parsed.desired_workloads),
+            Ok(parsed) => Ok(HeartbeatResult {
+                desired_workloads: parsed.desired_workloads,
+                desired_builds: parsed.desired_builds,
+            }),
             Err(error) => {
+                let mut result = HeartbeatResult::default();
                 if let Some(items) = response
                     .get("desiredWorkloads")
                     .or_else(|| response.get("desired_workloads"))
                     .and_then(|value| value.as_array())
                 {
-                    let mut desired = Vec::with_capacity(items.len());
                     for item in items {
                         match serde_json::from_value::<DesiredWorkload>(item.clone()) {
-                            Ok(workload) => desired.push(workload),
+                            Ok(workload) => result.desired_workloads.push(workload),
                             Err(item_error) => {
                                 tracing::warn!(%item_error, item = %item, "skip undecodable desired workload");
                             }
                         }
                     }
-                    return Ok(desired);
                 }
-                tracing::warn!(%error, body = %response, "heartbeat decode partial; treating desired as empty");
-                Ok(Vec::new())
+                if let Some(items) = response
+                    .get("desiredBuilds")
+                    .or_else(|| response.get("desired_builds"))
+                    .and_then(|value| value.as_array())
+                {
+                    for item in items {
+                        match serde_json::from_value::<DesiredBuild>(item.clone()) {
+                            Ok(build) => result.desired_builds.push(build),
+                            Err(item_error) => {
+                                tracing::warn!(%item_error, item = %item, "skip undecodable desired build");
+                            }
+                        }
+                    }
+                }
+                if result.desired_workloads.is_empty() && result.desired_builds.is_empty() {
+                    tracing::warn!(%error, body = %response, "heartbeat decode partial; treating desired as empty");
+                }
+                Ok(result)
             }
         }
     }
@@ -203,6 +257,26 @@ impl AgentClient {
         };
         self.post_json(
             "/v1.AgentService/ReportObserved",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn report_build(&self, state: &NodeState, build: &ObservedBuild) -> Result<()> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body<'a> {
+            node_id: &'a str,
+            build: &'a ObservedBuild,
+        }
+        let body = Body {
+            node_id: &state.node_id,
+            build,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportBuild",
             Some(&state.node_token),
             &body,
         )

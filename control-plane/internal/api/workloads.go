@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -38,17 +39,30 @@ func workloadFromProto(workload *paasv1.Workload) (db.Workload, error) {
 	if err != nil {
 		return db.Workload{}, err
 	}
+	sourceKind := strings.TrimSpace(workload.GetSourceKind())
+	gitURL := strings.TrimSpace(workload.GetGitUrl())
+	if sourceKind == "" {
+		if gitURL != "" {
+			sourceKind = "git"
+		} else {
+			sourceKind = "image"
+		}
+	}
 	return db.Workload{
-		ID:            workload.GetId(),
-		ProjectID:     workload.GetProjectId(),
-		Name:          strings.TrimSpace(workload.GetName()),
-		Runtime:       runtime,
-		ImageOrSource: workload.GetImageOrSource(),
-		Environment:   workload.GetEnvVars(),
-		CPUShares:     workload.GetCpuShares(),
-		MemoryLimitMB: workload.GetMemoryLimitMb(),
-		Domain:        strings.TrimSpace(workload.GetDomain()),
-		ContainerPort: workload.GetContainerPort(),
+		ID:             workload.GetId(),
+		ProjectID:      workload.GetProjectId(),
+		Name:           strings.TrimSpace(workload.GetName()),
+		Runtime:        runtime,
+		ImageOrSource:  workload.GetImageOrSource(),
+		Environment:    workload.GetEnvVars(),
+		CPUShares:      workload.GetCpuShares(),
+		MemoryLimitMB:  workload.GetMemoryLimitMb(),
+		Domain:         strings.TrimSpace(workload.GetDomain()),
+		ContainerPort:  workload.GetContainerPort(),
+		SourceKind:     sourceKind,
+		GitURL:         gitURL,
+		GitRef:         strings.TrimSpace(workload.GetGitRef()),
+		DockerfilePath: strings.TrimSpace(workload.GetDockerfilePath()),
 	}, nil
 }
 
@@ -77,6 +91,8 @@ func workloadToProto(workload db.Workload) *paasv1.Workload {
 		HostPort: workload.HostPort, ContainerPort: workload.ContainerPort,
 		AssignedNodeId: workload.AssignedNodeID, Endpoint: endpoint,
 		LastError: workload.LastError, ContainerId: workload.ContainerID,
+		SourceKind: workload.SourceKind, GitUrl: workload.GitURL, GitRef: workload.GitRef,
+		DockerfilePath: workload.DockerfilePath, LatestBuildId: workload.LatestBuildID,
 	}
 }
 
@@ -246,4 +262,109 @@ func (service WorkloadService) GetWorkloadLogs(ctx context.Context, request *paa
 		return nil, internalError("list workload logs", err)
 	}
 	return &paasv1.GetWorkloadLogsResponse{Lines: lines}, nil
+}
+
+func (service WorkloadService) DeployFromGit(ctx context.Context, request *paasv1.DeployFromGitRequest) (*paasv1.DeployFromGitResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	workloadID := strings.TrimSpace(request.GetWorkloadId())
+	if workloadID == "" {
+		return nil, invalidArgument("workload id is required")
+	}
+	gitURL := strings.TrimSpace(request.GetGitUrl())
+	if gitURL == "" {
+		existing, err := db.GetWorkload(ctx, service.pool, identity.OrganizationID, workloadID)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
+		}
+		gitURL = existing.GitURL
+	}
+	if gitURL == "" {
+		return nil, invalidArgument("git url is required")
+	}
+	build, err := db.CreateBuild(
+		ctx,
+		service.pool,
+		identity.OrganizationID,
+		workloadID,
+		gitURL,
+		request.GetGitRef(),
+		request.GetDockerfilePath(),
+		request.GetContainerPort(),
+		request.GetBuildSecrets(),
+		db.AuditActor{UserID: identity.UserID, Email: identity.Email},
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "no online agent") || strings.Contains(err.Error(), "no runtime") {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, err.Error())
+		}
+		if strings.Contains(err.Error(), "workload not found") {
+			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
+		}
+		if strings.Contains(err.Error(), "required") || strings.Contains(err.Error(), "NORIX_BUILD_SECRETS_KEY") {
+			return nil, invalidArgument(err.Error())
+		}
+		return nil, internalError("create build", err)
+	}
+	return &paasv1.DeployFromGitResponse{
+		BuildId:    build.ID,
+		WorkloadId: build.WorkloadID,
+		Status:     build.Status,
+	}, nil
+}
+
+func (service WorkloadService) ListBuilds(ctx context.Context, request *paasv1.ListBuildsRequest) (*paasv1.ListBuildsResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if request.GetWorkloadId() == "" {
+		return nil, invalidArgument("workload id is required")
+	}
+	builds, err := db.ListBuilds(ctx, service.pool, identity.OrganizationID, request.GetWorkloadId())
+	if err != nil {
+		return nil, internalError("list builds", err)
+	}
+	result := make([]*paasv1.Build, 0, len(builds))
+	for _, build := range builds {
+		result = append(result, buildToProto(build))
+	}
+	return &paasv1.ListBuildsResponse{Builds: result}, nil
+}
+
+func (service WorkloadService) GetBuildLogs(ctx context.Context, request *paasv1.GetBuildLogsRequest) (*paasv1.GetBuildLogsResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if request.GetBuildId() == "" {
+		return nil, invalidArgument("build id is required")
+	}
+	build, err := db.GetBuild(ctx, service.pool, identity.OrganizationID, request.GetBuildId())
+	if err != nil {
+		if strings.Contains(err.Error(), "build not found") {
+			return nil, connect.NewError(connect.CodeNotFound, "build not found")
+		}
+		return nil, internalError("get build", err)
+	}
+	lines, err := db.ListBuildLogs(ctx, service.pool, identity.OrganizationID, request.GetBuildId(), request.GetTailLines())
+	if err != nil {
+		return nil, internalError("list build logs", err)
+	}
+	return &paasv1.GetBuildLogsResponse{Build: buildToProto(build), Lines: lines}, nil
+}
+
+func buildToProto(build db.Build) *paasv1.Build {
+	return &paasv1.Build{
+		Id: build.ID, WorkloadId: build.WorkloadID, GitUrl: build.GitURL, GitRef: build.GitRef,
+		DockerfilePath: build.DockerfilePath, Status: build.Status, Image: build.Image,
+		AssignedNodeId: build.AssignedNodeID, LastError: build.LastError,
+		CreatedAt: build.CreatedAt.UTC().Format(time.RFC3339),
+		UpdatedAt: build.UpdatedAt.UTC().Format(time.RFC3339),
+	}
 }

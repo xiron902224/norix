@@ -5,12 +5,16 @@ import {
   CreateWorkloadRequestSchema,
   DeleteProjectRequestSchema,
   DeleteWorkloadRequestSchema,
+  DeployFromGitRequestSchema,
   DeployRequestSchema,
+  GetBuildLogsRequestSchema,
   GetWorkloadLogsRequestSchema,
+  ListBuildsRequestSchema,
   ListProjectsRequestSchema,
   ListWorkloadsRequestSchema,
   RuntimeType,
   WorkloadSchema,
+  type Build,
   type Project,
   type Workload,
 } from '../../../gen/v1/workload_pb'
@@ -38,18 +42,27 @@ export async function listWorkloads(projectId: string): Promise<Workload[]> {
 export async function createWorkload(input: {
   projectId: string
   name: string
-  imageOrSource: string
+  imageOrSource?: string
   containerPort?: number
+  sourceKind?: 'image' | 'git'
+  gitUrl?: string
+  gitRef?: string
+  dockerfilePath?: string
 }): Promise<Workload> {
+  const sourceKind = input.sourceKind ?? (input.gitUrl ? 'git' : 'image')
   const response = await workloadClient.createWorkload(create(CreateWorkloadRequestSchema, {
     workload: create(WorkloadSchema, {
       projectId: input.projectId,
       name: input.name,
-      imageOrSource: input.imageOrSource,
+      imageOrSource: input.imageOrSource || (sourceKind === 'git' ? 'pending-build' : ''),
       runtime: RuntimeType.CONTAINER,
       cpuShares: 1024,
       memoryLimitMb: BigInt(512),
       containerPort: input.containerPort ?? 80,
+      sourceKind,
+      gitUrl: input.gitUrl ?? '',
+      gitRef: input.gitRef ?? 'main',
+      dockerfilePath: input.dockerfilePath ?? 'Dockerfile',
     }),
   }))
   if (!response.workload) throw new Error('Workload was not returned')
@@ -74,4 +87,33 @@ export async function getWorkloadLogs(workloadId: string, tailLines = 100): Prom
     tailLines,
   }))
   return response.lines
+}
+
+export async function deployFromGit(input: {
+  workloadId: string
+  gitUrl: string
+  gitRef?: string
+  dockerfilePath?: string
+  containerPort?: number
+}) {
+  return workloadClient.deployFromGit(create(DeployFromGitRequestSchema, {
+    workloadId: input.workloadId,
+    gitUrl: input.gitUrl,
+    gitRef: input.gitRef ?? 'main',
+    dockerfilePath: input.dockerfilePath ?? 'Dockerfile',
+    containerPort: input.containerPort ?? 80,
+  }))
+}
+
+export async function listBuilds(workloadId: string): Promise<Build[]> {
+  const response = await workloadClient.listBuilds(create(ListBuildsRequestSchema, { workloadId }))
+  return response.builds
+}
+
+export async function getBuildLogs(buildId: string, tailLines = 200): Promise<{ build?: Build; lines: string[] }> {
+  const response = await workloadClient.getBuildLogs(create(GetBuildLogsRequestSchema, {
+    buildId,
+    tailLines,
+  }))
+  return { build: response.build, lines: response.lines }
 }

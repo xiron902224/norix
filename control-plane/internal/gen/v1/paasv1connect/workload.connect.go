@@ -31,6 +31,9 @@ const (
 	WorkloadServiceCreateWorkloadProcedure = "/v1.WorkloadService/CreateWorkload"
 	// WorkloadServiceDeployProcedure is the procedure name of the WorkloadService's Deploy RPC.
 	WorkloadServiceDeployProcedure = "/v1.WorkloadService/Deploy"
+	// WorkloadServiceDeployFromGitProcedure is the procedure name of the WorkloadService's
+	// DeployFromGit RPC.
+	WorkloadServiceDeployFromGitProcedure = "/v1.WorkloadService/DeployFromGit"
 	// WorkloadServiceListWorkloadsProcedure is the procedure name of the WorkloadService's
 	// ListWorkloads RPC.
 	WorkloadServiceListWorkloadsProcedure = "/v1.WorkloadService/ListWorkloads"
@@ -43,6 +46,11 @@ const (
 	// WorkloadServiceGetWorkloadLogsProcedure is the procedure name of the WorkloadService's
 	// GetWorkloadLogs RPC.
 	WorkloadServiceGetWorkloadLogsProcedure = "/v1.WorkloadService/GetWorkloadLogs"
+	// WorkloadServiceListBuildsProcedure is the procedure name of the WorkloadService's ListBuilds RPC.
+	WorkloadServiceListBuildsProcedure = "/v1.WorkloadService/ListBuilds"
+	// WorkloadServiceGetBuildLogsProcedure is the procedure name of the WorkloadService's GetBuildLogs
+	// RPC.
+	WorkloadServiceGetBuildLogsProcedure = "/v1.WorkloadService/GetBuildLogs"
 	// ProjectServiceCreateProjectProcedure is the procedure name of the ProjectService's CreateProject
 	// RPC.
 	ProjectServiceCreateProjectProcedure = "/v1.ProjectService/CreateProject"
@@ -67,6 +75,13 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("Deploy"),
 			Procedure:  WorkloadServiceDeployProcedure,
+		}
+	})
+	workloadServiceDeployFromGitSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("DeployFromGit"),
+			Procedure:  WorkloadServiceDeployFromGitProcedure,
 		}
 	})
 	workloadServiceListWorkloadsSpec = sync.OnceValue(func() connect.Spec {
@@ -97,16 +112,33 @@ var (
 			Procedure:  WorkloadServiceGetWorkloadLogsProcedure,
 		}
 	})
+	workloadServiceListBuildsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("ListBuilds"),
+			Procedure:  WorkloadServiceListBuildsProcedure,
+		}
+	})
+	workloadServiceGetBuildLogsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("GetBuildLogs"),
+			Procedure:  WorkloadServiceGetBuildLogsProcedure,
+		}
+	})
 )
 
 // WorkloadServiceClient is a client for the v1.WorkloadService service.
 type WorkloadServiceClient interface {
 	CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error)
 	Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error)
+	DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error)
 	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
 	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
+	ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error)
+	GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error)
 }
 
 // NewWorkloadServiceClient constructs a client for the v1.WorkloadService service. Multiple service
@@ -119,10 +151,13 @@ func NewWorkloadServiceClient(client *connect.Client) WorkloadServiceClient {
 type WorkloadServiceHandler interface {
 	CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error)
 	Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error)
+	DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error)
 	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
 	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
+	ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error)
+	GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error)
 }
 
 // RegisterWorkloadServiceHandler registers svc as the v1.WorkloadService implementation on server.
@@ -131,10 +166,13 @@ func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceH
 	server.Register(
 		connect.Method{Spec: workloadServiceCreateWorkloadSpec(), Handler: adapter.createWorkload},
 		connect.Method{Spec: workloadServiceDeploySpec(), Handler: adapter.deploy},
+		connect.Method{Spec: workloadServiceDeployFromGitSpec(), Handler: adapter.deployFromGit},
 		connect.Method{Spec: workloadServiceListWorkloadsSpec(), Handler: adapter.listWorkloads},
 		connect.Method{Spec: workloadServiceUpdateWorkloadSpec(), Handler: adapter.updateWorkload},
 		connect.Method{Spec: workloadServiceDeleteWorkloadSpec(), Handler: adapter.deleteWorkload},
 		connect.Method{Spec: workloadServiceGetWorkloadLogsSpec(), Handler: adapter.getWorkloadLogs},
+		connect.Method{Spec: workloadServiceListBuildsSpec(), Handler: adapter.listBuilds},
+		connect.Method{Spec: workloadServiceGetBuildLogsSpec(), Handler: adapter.getBuildLogs},
 	)
 }
 
@@ -147,6 +185,10 @@ func (UnimplementedWorkloadServiceHandler) CreateWorkload(context.Context, *v1.C
 
 func (UnimplementedWorkloadServiceHandler) Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.Deploy is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeployFromGit is not implemented")
 }
 
 func (UnimplementedWorkloadServiceHandler) ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error) {
@@ -165,6 +207,14 @@ func (UnimplementedWorkloadServiceHandler) GetWorkloadLogs(context.Context, *v1.
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.GetWorkloadLogs is not implemented")
 }
 
+func (UnimplementedWorkloadServiceHandler) ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.ListBuilds is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.GetBuildLogs is not implemented")
+}
+
 type workloadServiceClient struct {
 	client *connect.Client
 }
@@ -180,6 +230,14 @@ func (c *workloadServiceClient) CreateWorkload(ctx context.Context, req *v1.Crea
 func (c *workloadServiceClient) Deploy(ctx context.Context, req *v1.DeployRequest) (*v1.DeployResponse, error) {
 	var res v1.DeployResponse
 	if err := c.client.CallUnary(ctx, workloadServiceDeploySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) DeployFromGit(ctx context.Context, req *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error) {
+	var res v1.DeployFromGitResponse
+	if err := c.client.CallUnary(ctx, workloadServiceDeployFromGitSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -217,6 +275,22 @@ func (c *workloadServiceClient) GetWorkloadLogs(ctx context.Context, req *v1.Get
 	return &res, nil
 }
 
+func (c *workloadServiceClient) ListBuilds(ctx context.Context, req *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error) {
+	var res v1.ListBuildsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceListBuildsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) GetBuildLogs(ctx context.Context, req *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error) {
+	var res v1.GetBuildLogsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceGetBuildLogsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 type workloadServiceHandler struct{ svc WorkloadServiceHandler }
 
 func (h workloadServiceHandler) createWorkload(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
@@ -237,6 +311,18 @@ func (h workloadServiceHandler) deploy(ctx context.Context, _ connect.Spec, stre
 		return err
 	}
 	res, err := h.svc.Deploy(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) deployFromGit(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeployFromGitRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeployFromGit(ctx, &req)
 	if err != nil {
 		return err
 	}
@@ -285,6 +371,30 @@ func (h workloadServiceHandler) getWorkloadLogs(ctx context.Context, _ connect.S
 		return err
 	}
 	res, err := h.svc.GetWorkloadLogs(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) listBuilds(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListBuildsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListBuilds(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) getBuildLogs(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetBuildLogsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetBuildLogs(ctx, &req)
 	if err != nil {
 		return err
 	}

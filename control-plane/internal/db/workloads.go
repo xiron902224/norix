@@ -29,11 +29,40 @@ type Workload struct {
 	ContainerID        string
 	LastError          string
 	DesiredAction      string
+	SourceKind         string
+	GitURL             string
+	GitRef             string
+	DockerfilePath     string
+	LatestBuildID      string
 }
 
 func CreateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, workload Workload, actor AuditActor) (Workload, error) {
 	workload.Name = strings.TrimSpace(workload.Name)
-	if workload.ProjectID == "" || workload.Name == "" || workload.ImageOrSource == "" {
+	workload.GitURL = strings.TrimSpace(workload.GitURL)
+	if workload.SourceKind == "" {
+		if workload.GitURL != "" {
+			workload.SourceKind = "git"
+		} else {
+			workload.SourceKind = "image"
+		}
+	}
+	if workload.ProjectID == "" || workload.Name == "" {
+		return Workload{}, fmt.Errorf("project and name are required")
+	}
+	if workload.SourceKind == "git" {
+		if workload.GitURL == "" {
+			return Workload{}, fmt.Errorf("git url is required for git workloads")
+		}
+		if workload.ImageOrSource == "" {
+			workload.ImageOrSource = "pending-build"
+		}
+		if workload.GitRef == "" {
+			workload.GitRef = "main"
+		}
+		if workload.DockerfilePath == "" {
+			workload.DockerfilePath = "Dockerfile"
+		}
+	} else if workload.ImageOrSource == "" {
 		return Workload{}, fmt.Errorf("project, name and image or source are required")
 	}
 	if workload.CPUShares <= 0 {
@@ -54,18 +83,22 @@ func CreateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 		return Workload{}, err
 	}
 	if err := tx.QueryRow(ctx, `
-		INSERT INTO workloads (organization_id, project_id, name, runtime, image_or_source, env_vars, cpu_shares, memory_limit_mb, domain, container_port)
-		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, NULLIF($9, ''), $10)
+		INSERT INTO workloads (organization_id, project_id, name, runtime, image_or_source, env_vars, cpu_shares, memory_limit_mb, domain, container_port,
+		                       source_kind, git_url, git_ref, dockerfile_path)
+		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, NULLIF($9, ''), $10, $11, $12, $13, $14)
 		RETURNING id::text, organization_id::text, project_id::text, name, runtime, image_or_source, cpu_shares, memory_limit_mb, COALESCE(domain, ''), status,
 		          desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
-		          COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action`,
+		          COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
+		          source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, '')`,
 		tenantID, workload.ProjectID, workload.Name, workload.Runtime, workload.ImageOrSource,
 		mapToJSON(workload.Environment), workload.CPUShares, workload.MemoryLimitMB, workload.Domain, workload.ContainerPort,
+		workload.SourceKind, workload.GitURL, workload.GitRef, workload.DockerfilePath,
 	).Scan(
 		&workload.ID, &workload.OrganizationID, &workload.ProjectID, &workload.Name, &workload.Runtime, &workload.ImageOrSource,
 		&workload.CPUShares, &workload.MemoryLimitMB, &workload.Domain, &workload.Status,
 		&workload.DesiredGeneration, &workload.ObservedGeneration, &workload.HostPort, &workload.ContainerPort,
 		&workload.AssignedNodeID, &workload.ContainerID, &workload.LastError, &workload.DesiredAction,
+		&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 	); err != nil {
 		return Workload{}, fmt.Errorf("create workload: %w", err)
 	}
@@ -102,7 +135,8 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 		SELECT id::text, organization_id::text, project_id::text, name, runtime, image_or_source, env_vars::text,
 		       cpu_shares, memory_limit_mb, COALESCE(domain, ''), status,
 		       desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
-		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action
+		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
+		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, '')
 		FROM workloads WHERE project_id = $1::uuid ORDER BY created_at, name`, projectID)
 	if err != nil {
 		return nil, err
@@ -118,6 +152,7 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 			&workload.MemoryLimitMB, &workload.Domain, &workload.Status,
 			&workload.DesiredGeneration, &workload.ObservedGeneration, &workload.HostPort, &workload.ContainerPort,
 			&workload.AssignedNodeID, &workload.ContainerID, &workload.LastError, &workload.DesiredAction,
+			&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 		); err != nil {
 			return nil, err
 		}

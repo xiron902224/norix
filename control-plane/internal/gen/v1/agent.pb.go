@@ -797,17 +797,194 @@ func (x *HeartbeatRequest) GetCapabilities() *NodeCapabilities {
 	return nil
 }
 
+type DesiredBuild struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	WorkloadId     string                 `protobuf:"bytes,2,opt,name=workload_id,json=workloadId,proto3" json:"workload_id,omitempty"`
+	GitUrl         string                 `protobuf:"bytes,3,opt,name=git_url,json=gitUrl,proto3" json:"git_url,omitempty"`
+	GitRef         string                 `protobuf:"bytes,4,opt,name=git_ref,json=gitRef,proto3" json:"git_ref,omitempty"`
+	DockerfilePath string                 `protobuf:"bytes,5,opt,name=dockerfile_path,json=dockerfilePath,proto3" json:"dockerfile_path,omitempty"`
+	ImageTag       string                 `protobuf:"bytes,6,opt,name=image_tag,json=imageTag,proto3" json:"image_tag,omitempty"`
+	BuildArgs      map[string]string      `protobuf:"bytes,7,rep,name=build_args,json=buildArgs,proto3" json:"build_args,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Registry       string                 `protobuf:"bytes,8,opt,name=registry,proto3" json:"registry,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DesiredBuild) Reset() {
+	*x = DesiredBuild{}
+	mi := &file_v1_agent_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DesiredBuild) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DesiredBuild) ProtoMessage() {}
+
+func (x *DesiredBuild) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_agent_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DesiredBuild.ProtoReflect.Descriptor instead.
+func (*DesiredBuild) Descriptor() ([]byte, []int) {
+	return file_v1_agent_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *DesiredBuild) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *DesiredBuild) GetWorkloadId() string {
+	if x != nil {
+		return x.WorkloadId
+	}
+	return ""
+}
+
+func (x *DesiredBuild) GetGitUrl() string {
+	if x != nil {
+		return x.GitUrl
+	}
+	return ""
+}
+
+func (x *DesiredBuild) GetGitRef() string {
+	if x != nil {
+		return x.GitRef
+	}
+	return ""
+}
+
+func (x *DesiredBuild) GetDockerfilePath() string {
+	if x != nil {
+		return x.DockerfilePath
+	}
+	return ""
+}
+
+func (x *DesiredBuild) GetImageTag() string {
+	if x != nil {
+		return x.ImageTag
+	}
+	return ""
+}
+
+func (x *DesiredBuild) GetBuildArgs() map[string]string {
+	if x != nil {
+		return x.BuildArgs
+	}
+	return nil
+}
+
+func (x *DesiredBuild) GetRegistry() string {
+	if x != nil {
+		return x.Registry
+	}
+	return ""
+}
+
+type ObservedBuild struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Image         string                 `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
+	Message       string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	LogLines      []string               `protobuf:"bytes,5,rep,name=log_lines,json=logLines,proto3" json:"log_lines,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ObservedBuild) Reset() {
+	*x = ObservedBuild{}
+	mi := &file_v1_agent_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ObservedBuild) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ObservedBuild) ProtoMessage() {}
+
+func (x *ObservedBuild) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_agent_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ObservedBuild.ProtoReflect.Descriptor instead.
+func (*ObservedBuild) Descriptor() ([]byte, []int) {
+	return file_v1_agent_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ObservedBuild) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ObservedBuild) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ObservedBuild) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *ObservedBuild) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ObservedBuild) GetLogLines() []string {
+	if x != nil {
+		return x.LogLines
+	}
+	return nil
+}
+
 type HeartbeatResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	NodeId           string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	DesiredWorkloads []*DesiredWorkload     `protobuf:"bytes,2,rep,name=desired_workloads,json=desiredWorkloads,proto3" json:"desired_workloads,omitempty"`
+	DesiredBuilds    []*DesiredBuild        `protobuf:"bytes,3,rep,name=desired_builds,json=desiredBuilds,proto3" json:"desired_builds,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
 
 func (x *HeartbeatResponse) Reset() {
 	*x = HeartbeatResponse{}
-	mi := &file_v1_agent_proto_msgTypes[10]
+	mi := &file_v1_agent_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -819,7 +996,7 @@ func (x *HeartbeatResponse) String() string {
 func (*HeartbeatResponse) ProtoMessage() {}
 
 func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[10]
+	mi := &file_v1_agent_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -832,7 +1009,7 @@ func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartbeatResponse.ProtoReflect.Descriptor instead.
 func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{10}
+	return file_v1_agent_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *HeartbeatResponse) GetNodeId() string {
@@ -849,6 +1026,13 @@ func (x *HeartbeatResponse) GetDesiredWorkloads() []*DesiredWorkload {
 	return nil
 }
 
+func (x *HeartbeatResponse) GetDesiredBuilds() []*DesiredBuild {
+	if x != nil {
+		return x.DesiredBuilds
+	}
+	return nil
+}
+
 type ReportObservedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
@@ -859,7 +1043,7 @@ type ReportObservedRequest struct {
 
 func (x *ReportObservedRequest) Reset() {
 	*x = ReportObservedRequest{}
-	mi := &file_v1_agent_proto_msgTypes[11]
+	mi := &file_v1_agent_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -871,7 +1055,7 @@ func (x *ReportObservedRequest) String() string {
 func (*ReportObservedRequest) ProtoMessage() {}
 
 func (x *ReportObservedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[11]
+	mi := &file_v1_agent_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -884,7 +1068,7 @@ func (x *ReportObservedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportObservedRequest.ProtoReflect.Descriptor instead.
 func (*ReportObservedRequest) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{11}
+	return file_v1_agent_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ReportObservedRequest) GetNodeId() string {
@@ -909,7 +1093,7 @@ type ReportObservedResponse struct {
 
 func (x *ReportObservedResponse) Reset() {
 	*x = ReportObservedResponse{}
-	mi := &file_v1_agent_proto_msgTypes[12]
+	mi := &file_v1_agent_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -921,7 +1105,7 @@ func (x *ReportObservedResponse) String() string {
 func (*ReportObservedResponse) ProtoMessage() {}
 
 func (x *ReportObservedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[12]
+	mi := &file_v1_agent_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -934,7 +1118,95 @@ func (x *ReportObservedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportObservedResponse.ProtoReflect.Descriptor instead.
 func (*ReportObservedResponse) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{12}
+	return file_v1_agent_proto_rawDescGZIP(), []int{14}
+}
+
+type ReportBuildRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Build         *ObservedBuild         `protobuf:"bytes,2,opt,name=build,proto3" json:"build,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportBuildRequest) Reset() {
+	*x = ReportBuildRequest{}
+	mi := &file_v1_agent_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportBuildRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportBuildRequest) ProtoMessage() {}
+
+func (x *ReportBuildRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_agent_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportBuildRequest.ProtoReflect.Descriptor instead.
+func (*ReportBuildRequest) Descriptor() ([]byte, []int) {
+	return file_v1_agent_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ReportBuildRequest) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *ReportBuildRequest) GetBuild() *ObservedBuild {
+	if x != nil {
+		return x.Build
+	}
+	return nil
+}
+
+type ReportBuildResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportBuildResponse) Reset() {
+	*x = ReportBuildResponse{}
+	mi := &file_v1_agent_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportBuildResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportBuildResponse) ProtoMessage() {}
+
+func (x *ReportBuildResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_agent_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportBuildResponse.ProtoReflect.Descriptor instead.
+func (*ReportBuildResponse) Descriptor() ([]byte, []int) {
+	return file_v1_agent_proto_rawDescGZIP(), []int{16}
 }
 
 type ListNodesRequest struct {
@@ -945,7 +1217,7 @@ type ListNodesRequest struct {
 
 func (x *ListNodesRequest) Reset() {
 	*x = ListNodesRequest{}
-	mi := &file_v1_agent_proto_msgTypes[13]
+	mi := &file_v1_agent_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -957,7 +1229,7 @@ func (x *ListNodesRequest) String() string {
 func (*ListNodesRequest) ProtoMessage() {}
 
 func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[13]
+	mi := &file_v1_agent_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -970,7 +1242,7 @@ func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodesRequest.ProtoReflect.Descriptor instead.
 func (*ListNodesRequest) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{13}
+	return file_v1_agent_proto_rawDescGZIP(), []int{17}
 }
 
 type ListNodesResponse struct {
@@ -982,7 +1254,7 @@ type ListNodesResponse struct {
 
 func (x *ListNodesResponse) Reset() {
 	*x = ListNodesResponse{}
-	mi := &file_v1_agent_proto_msgTypes[14]
+	mi := &file_v1_agent_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -994,7 +1266,7 @@ func (x *ListNodesResponse) String() string {
 func (*ListNodesResponse) ProtoMessage() {}
 
 func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[14]
+	mi := &file_v1_agent_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1007,7 +1279,7 @@ func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodesResponse.ProtoReflect.Descriptor instead.
 func (*ListNodesResponse) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{14}
+	return file_v1_agent_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ListNodesResponse) GetNodes() []*Node {
@@ -1029,7 +1301,7 @@ type ConnectStreamRequest struct {
 
 func (x *ConnectStreamRequest) Reset() {
 	*x = ConnectStreamRequest{}
-	mi := &file_v1_agent_proto_msgTypes[15]
+	mi := &file_v1_agent_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1041,7 +1313,7 @@ func (x *ConnectStreamRequest) String() string {
 func (*ConnectStreamRequest) ProtoMessage() {}
 
 func (x *ConnectStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[15]
+	mi := &file_v1_agent_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1054,7 +1326,7 @@ func (x *ConnectStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectStreamRequest.ProtoReflect.Descriptor instead.
 func (*ConnectStreamRequest) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{15}
+	return file_v1_agent_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ConnectStreamRequest) GetNodeId() string {
@@ -1096,7 +1368,7 @@ type ConnectStreamResponse struct {
 
 func (x *ConnectStreamResponse) Reset() {
 	*x = ConnectStreamResponse{}
-	mi := &file_v1_agent_proto_msgTypes[16]
+	mi := &file_v1_agent_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1108,7 +1380,7 @@ func (x *ConnectStreamResponse) String() string {
 func (*ConnectStreamResponse) ProtoMessage() {}
 
 func (x *ConnectStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[16]
+	mi := &file_v1_agent_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1121,7 +1393,7 @@ func (x *ConnectStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectStreamResponse.ProtoReflect.Descriptor instead.
 func (*ConnectStreamResponse) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{16}
+	return file_v1_agent_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ConnectStreamResponse) GetNodeId() string {
@@ -1222,14 +1494,39 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x0ememory_free_mb\x18\x03 \x01(\x03R\fmemoryFreeMb\x12\x16\n" +
 	"\x06status\x18\x04 \x01(\tR\x06status\x120\n" +
 	"\x14running_workload_ids\x18\x05 \x03(\tR\x12runningWorkloadIds\x128\n" +
-	"\fcapabilities\x18\x06 \x01(\v2\x14.v1.NodeCapabilitiesR\fcapabilities\"n\n" +
+	"\fcapabilities\x18\x06 \x01(\v2\x14.v1.NodeCapabilitiesR\fcapabilities\"\xd1\x02\n" +
+	"\fDesiredBuild\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vworkload_id\x18\x02 \x01(\tR\n" +
+	"workloadId\x12\x17\n" +
+	"\agit_url\x18\x03 \x01(\tR\x06gitUrl\x12\x17\n" +
+	"\agit_ref\x18\x04 \x01(\tR\x06gitRef\x12'\n" +
+	"\x0fdockerfile_path\x18\x05 \x01(\tR\x0edockerfilePath\x12\x1b\n" +
+	"\timage_tag\x18\x06 \x01(\tR\bimageTag\x12>\n" +
+	"\n" +
+	"build_args\x18\a \x03(\v2\x1f.v1.DesiredBuild.BuildArgsEntryR\tbuildArgs\x12\x1a\n" +
+	"\bregistry\x18\b \x01(\tR\bregistry\x1a<\n" +
+	"\x0eBuildArgsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x84\x01\n" +
+	"\rObservedBuild\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x14\n" +
+	"\x05image\x18\x03 \x01(\tR\x05image\x12\x18\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\x12\x1b\n" +
+	"\tlog_lines\x18\x05 \x03(\tR\blogLines\"\xa7\x01\n" +
 	"\x11HeartbeatResponse\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12@\n" +
-	"\x11desired_workloads\x18\x02 \x03(\v2\x13.v1.DesiredWorkloadR\x10desiredWorkloads\"d\n" +
+	"\x11desired_workloads\x18\x02 \x03(\v2\x13.v1.DesiredWorkloadR\x10desiredWorkloads\x127\n" +
+	"\x0edesired_builds\x18\x03 \x03(\v2\x10.v1.DesiredBuildR\rdesiredBuilds\"d\n" +
 	"\x15ReportObservedRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x122\n" +
 	"\tworkloads\x18\x02 \x03(\v2\x14.v1.ObservedWorkloadR\tworkloads\"\x18\n" +
-	"\x16ReportObservedResponse\"\x12\n" +
+	"\x16ReportObservedResponse\"V\n" +
+	"\x12ReportBuildRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12'\n" +
+	"\x05build\x18\x02 \x01(\v2\x11.v1.ObservedBuildR\x05build\"\x15\n" +
+	"\x13ReportBuildResponse\"\x12\n" +
 	"\x10ListNodesRequest\"3\n" +
 	"\x11ListNodesResponse\x12\x1e\n" +
 	"\x05nodes\x18\x01 \x03(\v2\b.v1.NodeR\x05nodes\"\xaa\x01\n" +
@@ -1241,13 +1538,14 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x15ConnectStreamResponse\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12@\n" +
 	"\x11desired_workloads\x18\x02 \x03(\v2\x13.v1.DesiredWorkloadR\x10desiredWorkloads\x12\x18\n" +
-	"\acommand\x18\x03 \x01(\tR\acommand2\x9e\x03\n" +
+	"\acommand\x18\x03 \x01(\tR\acommand2\xde\x03\n" +
 	"\fAgentService\x12J\n" +
 	"\x0fCreateJoinToken\x12\x1a.v1.CreateJoinTokenRequest\x1a\x1b.v1.CreateJoinTokenResponse\x12;\n" +
 	"\n" +
 	"EnrollNode\x12\x15.v1.EnrollNodeRequest\x1a\x16.v1.EnrollNodeResponse\x128\n" +
 	"\tHeartbeat\x12\x14.v1.HeartbeatRequest\x1a\x15.v1.HeartbeatResponse\x12G\n" +
-	"\x0eReportObserved\x12\x19.v1.ReportObservedRequest\x1a\x1a.v1.ReportObservedResponse\x128\n" +
+	"\x0eReportObserved\x12\x19.v1.ReportObservedRequest\x1a\x1a.v1.ReportObservedResponse\x12>\n" +
+	"\vReportBuild\x12\x16.v1.ReportBuildRequest\x1a\x17.v1.ReportBuildResponse\x128\n" +
 	"\tListNodes\x12\x14.v1.ListNodesRequest\x1a\x15.v1.ListNodesResponse\x12H\n" +
 	"\rConnectStream\x12\x18.v1.ConnectStreamRequest\x1a\x19.v1.ConnectStreamResponse(\x010\x01B\x7f\n" +
 	"\x06com.v1B\n" +
@@ -1265,7 +1563,7 @@ func file_v1_agent_proto_rawDescGZIP() []byte {
 	return file_v1_agent_proto_rawDescData
 }
 
-var file_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_v1_agent_proto_goTypes = []any{
 	(*NodeCapabilities)(nil),        // 0: v1.NodeCapabilities
 	(*NodeHeartbeat)(nil),           // 1: v1.NodeHeartbeat
@@ -1277,42 +1575,52 @@ var file_v1_agent_proto_goTypes = []any{
 	(*DesiredWorkload)(nil),         // 7: v1.DesiredWorkload
 	(*ObservedWorkload)(nil),        // 8: v1.ObservedWorkload
 	(*HeartbeatRequest)(nil),        // 9: v1.HeartbeatRequest
-	(*HeartbeatResponse)(nil),       // 10: v1.HeartbeatResponse
-	(*ReportObservedRequest)(nil),   // 11: v1.ReportObservedRequest
-	(*ReportObservedResponse)(nil),  // 12: v1.ReportObservedResponse
-	(*ListNodesRequest)(nil),        // 13: v1.ListNodesRequest
-	(*ListNodesResponse)(nil),       // 14: v1.ListNodesResponse
-	(*ConnectStreamRequest)(nil),    // 15: v1.ConnectStreamRequest
-	(*ConnectStreamResponse)(nil),   // 16: v1.ConnectStreamResponse
-	nil,                             // 17: v1.DesiredWorkload.EnvVarsEntry
+	(*DesiredBuild)(nil),            // 10: v1.DesiredBuild
+	(*ObservedBuild)(nil),           // 11: v1.ObservedBuild
+	(*HeartbeatResponse)(nil),       // 12: v1.HeartbeatResponse
+	(*ReportObservedRequest)(nil),   // 13: v1.ReportObservedRequest
+	(*ReportObservedResponse)(nil),  // 14: v1.ReportObservedResponse
+	(*ReportBuildRequest)(nil),      // 15: v1.ReportBuildRequest
+	(*ReportBuildResponse)(nil),     // 16: v1.ReportBuildResponse
+	(*ListNodesRequest)(nil),        // 17: v1.ListNodesRequest
+	(*ListNodesResponse)(nil),       // 18: v1.ListNodesResponse
+	(*ConnectStreamRequest)(nil),    // 19: v1.ConnectStreamRequest
+	(*ConnectStreamResponse)(nil),   // 20: v1.ConnectStreamResponse
+	nil,                             // 21: v1.DesiredWorkload.EnvVarsEntry
+	nil,                             // 22: v1.DesiredBuild.BuildArgsEntry
 }
 var file_v1_agent_proto_depIdxs = []int32{
 	0,  // 0: v1.Node.capabilities:type_name -> v1.NodeCapabilities
 	0,  // 1: v1.EnrollNodeRequest.capabilities:type_name -> v1.NodeCapabilities
-	17, // 2: v1.DesiredWorkload.env_vars:type_name -> v1.DesiredWorkload.EnvVarsEntry
+	21, // 2: v1.DesiredWorkload.env_vars:type_name -> v1.DesiredWorkload.EnvVarsEntry
 	0,  // 3: v1.HeartbeatRequest.capabilities:type_name -> v1.NodeCapabilities
-	7,  // 4: v1.HeartbeatResponse.desired_workloads:type_name -> v1.DesiredWorkload
-	8,  // 5: v1.ReportObservedRequest.workloads:type_name -> v1.ObservedWorkload
-	2,  // 6: v1.ListNodesResponse.nodes:type_name -> v1.Node
-	1,  // 7: v1.ConnectStreamRequest.heartbeat:type_name -> v1.NodeHeartbeat
-	7,  // 8: v1.ConnectStreamResponse.desired_workloads:type_name -> v1.DesiredWorkload
-	3,  // 9: v1.AgentService.CreateJoinToken:input_type -> v1.CreateJoinTokenRequest
-	5,  // 10: v1.AgentService.EnrollNode:input_type -> v1.EnrollNodeRequest
-	9,  // 11: v1.AgentService.Heartbeat:input_type -> v1.HeartbeatRequest
-	11, // 12: v1.AgentService.ReportObserved:input_type -> v1.ReportObservedRequest
-	13, // 13: v1.AgentService.ListNodes:input_type -> v1.ListNodesRequest
-	15, // 14: v1.AgentService.ConnectStream:input_type -> v1.ConnectStreamRequest
-	4,  // 15: v1.AgentService.CreateJoinToken:output_type -> v1.CreateJoinTokenResponse
-	6,  // 16: v1.AgentService.EnrollNode:output_type -> v1.EnrollNodeResponse
-	10, // 17: v1.AgentService.Heartbeat:output_type -> v1.HeartbeatResponse
-	12, // 18: v1.AgentService.ReportObserved:output_type -> v1.ReportObservedResponse
-	14, // 19: v1.AgentService.ListNodes:output_type -> v1.ListNodesResponse
-	16, // 20: v1.AgentService.ConnectStream:output_type -> v1.ConnectStreamResponse
-	15, // [15:21] is the sub-list for method output_type
-	9,  // [9:15] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	22, // 4: v1.DesiredBuild.build_args:type_name -> v1.DesiredBuild.BuildArgsEntry
+	7,  // 5: v1.HeartbeatResponse.desired_workloads:type_name -> v1.DesiredWorkload
+	10, // 6: v1.HeartbeatResponse.desired_builds:type_name -> v1.DesiredBuild
+	8,  // 7: v1.ReportObservedRequest.workloads:type_name -> v1.ObservedWorkload
+	11, // 8: v1.ReportBuildRequest.build:type_name -> v1.ObservedBuild
+	2,  // 9: v1.ListNodesResponse.nodes:type_name -> v1.Node
+	1,  // 10: v1.ConnectStreamRequest.heartbeat:type_name -> v1.NodeHeartbeat
+	7,  // 11: v1.ConnectStreamResponse.desired_workloads:type_name -> v1.DesiredWorkload
+	3,  // 12: v1.AgentService.CreateJoinToken:input_type -> v1.CreateJoinTokenRequest
+	5,  // 13: v1.AgentService.EnrollNode:input_type -> v1.EnrollNodeRequest
+	9,  // 14: v1.AgentService.Heartbeat:input_type -> v1.HeartbeatRequest
+	13, // 15: v1.AgentService.ReportObserved:input_type -> v1.ReportObservedRequest
+	15, // 16: v1.AgentService.ReportBuild:input_type -> v1.ReportBuildRequest
+	17, // 17: v1.AgentService.ListNodes:input_type -> v1.ListNodesRequest
+	19, // 18: v1.AgentService.ConnectStream:input_type -> v1.ConnectStreamRequest
+	4,  // 19: v1.AgentService.CreateJoinToken:output_type -> v1.CreateJoinTokenResponse
+	6,  // 20: v1.AgentService.EnrollNode:output_type -> v1.EnrollNodeResponse
+	12, // 21: v1.AgentService.Heartbeat:output_type -> v1.HeartbeatResponse
+	14, // 22: v1.AgentService.ReportObserved:output_type -> v1.ReportObservedResponse
+	16, // 23: v1.AgentService.ReportBuild:output_type -> v1.ReportBuildResponse
+	18, // 24: v1.AgentService.ListNodes:output_type -> v1.ListNodesResponse
+	20, // 25: v1.AgentService.ConnectStream:output_type -> v1.ConnectStreamResponse
+	19, // [19:26] is the sub-list for method output_type
+	12, // [12:19] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_v1_agent_proto_init() }
@@ -1326,7 +1634,7 @@ func file_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_agent_proto_rawDesc), len(file_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
