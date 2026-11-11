@@ -7,7 +7,7 @@ package paasv1connect
 import (
 	connect "connectrpc.com/connect/v2"
 	context "context"
-	v1 "github.com/d2le2/paas/control-plane/internal/gen/v1"
+	v1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
 	sync "sync"
 )
 

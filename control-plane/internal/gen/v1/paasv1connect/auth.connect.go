@@ -7,7 +7,7 @@ package paasv1connect
 import (
 	connect "connectrpc.com/connect/v2"
 	context "context"
-	v1 "github.com/d2le2/paas/control-plane/internal/gen/v1"
+	v1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
 	sync "sync"
 )
 
@@ -26,6 +26,16 @@ const (
 const (
 	// AuthServiceLoginProcedure is the procedure name of the AuthService's Login RPC.
 	AuthServiceLoginProcedure = "/v1.AuthService/Login"
+	// AuthServiceGetBootstrapStatusProcedure is the procedure name of the AuthService's
+	// GetBootstrapStatus RPC.
+	AuthServiceGetBootstrapStatusProcedure = "/v1.AuthService/GetBootstrapStatus"
+	// AuthServiceCreateInitialAdminProcedure is the procedure name of the AuthService's
+	// CreateInitialAdmin RPC.
+	AuthServiceCreateInitialAdminProcedure = "/v1.AuthService/CreateInitialAdmin"
+	// AuthServiceLogoutProcedure is the procedure name of the AuthService's Logout RPC.
+	AuthServiceLogoutProcedure = "/v1.AuthService/Logout"
+	// AuthServiceRenewSessionProcedure is the procedure name of the AuthService's RenewSession RPC.
+	AuthServiceRenewSessionProcedure = "/v1.AuthService/RenewSession"
 )
 
 var (
@@ -36,11 +46,43 @@ var (
 			Procedure:  AuthServiceLoginProcedure,
 		}
 	})
+	authServiceGetBootstrapStatusSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_auth_proto.Services().ByName("AuthService").Methods().ByName("GetBootstrapStatus"),
+			Procedure:  AuthServiceGetBootstrapStatusProcedure,
+		}
+	})
+	authServiceCreateInitialAdminSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_auth_proto.Services().ByName("AuthService").Methods().ByName("CreateInitialAdmin"),
+			Procedure:  AuthServiceCreateInitialAdminProcedure,
+		}
+	})
+	authServiceLogoutSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_auth_proto.Services().ByName("AuthService").Methods().ByName("Logout"),
+			Procedure:  AuthServiceLogoutProcedure,
+		}
+	})
+	authServiceRenewSessionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_auth_proto.Services().ByName("AuthService").Methods().ByName("RenewSession"),
+			Procedure:  AuthServiceRenewSessionProcedure,
+		}
+	})
 )
 
 // AuthServiceClient is a client for the v1.AuthService service.
 type AuthServiceClient interface {
 	Login(context.Context, *v1.LoginRequest) (*v1.LoginResponse, error)
+	GetBootstrapStatus(context.Context, *v1.GetBootstrapStatusRequest) (*v1.GetBootstrapStatusResponse, error)
+	CreateInitialAdmin(context.Context, *v1.CreateInitialAdminRequest) (*v1.CreateInitialAdminResponse, error)
+	Logout(context.Context, *v1.LogoutRequest) (*v1.LogoutResponse, error)
+	RenewSession(context.Context, *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error)
 }
 
 // NewAuthServiceClient constructs a client for the v1.AuthService service. Multiple service clients
@@ -52,6 +94,10 @@ func NewAuthServiceClient(client *connect.Client) AuthServiceClient {
 // AuthServiceHandler is an implementation of the v1.AuthService service.
 type AuthServiceHandler interface {
 	Login(context.Context, *v1.LoginRequest) (*v1.LoginResponse, error)
+	GetBootstrapStatus(context.Context, *v1.GetBootstrapStatusRequest) (*v1.GetBootstrapStatusResponse, error)
+	CreateInitialAdmin(context.Context, *v1.CreateInitialAdminRequest) (*v1.CreateInitialAdminResponse, error)
+	Logout(context.Context, *v1.LogoutRequest) (*v1.LogoutResponse, error)
+	RenewSession(context.Context, *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error)
 }
 
 // RegisterAuthServiceHandler registers svc as the v1.AuthService implementation on server.
@@ -59,6 +105,10 @@ func RegisterAuthServiceHandler(server *connect.Server, svc AuthServiceHandler) 
 	adapter := authServiceHandler{svc: svc}
 	server.Register(
 		connect.Method{Spec: authServiceLoginSpec(), Handler: adapter.login},
+		connect.Method{Spec: authServiceGetBootstrapStatusSpec(), Handler: adapter.getBootstrapStatus},
+		connect.Method{Spec: authServiceCreateInitialAdminSpec(), Handler: adapter.createInitialAdmin},
+		connect.Method{Spec: authServiceLogoutSpec(), Handler: adapter.logout},
+		connect.Method{Spec: authServiceRenewSessionSpec(), Handler: adapter.renewSession},
 	)
 }
 
@@ -67,6 +117,22 @@ type UnimplementedAuthServiceHandler struct{}
 
 func (UnimplementedAuthServiceHandler) Login(context.Context, *v1.LoginRequest) (*v1.LoginResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.Login is not implemented")
+}
+
+func (UnimplementedAuthServiceHandler) GetBootstrapStatus(context.Context, *v1.GetBootstrapStatusRequest) (*v1.GetBootstrapStatusResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.GetBootstrapStatus is not implemented")
+}
+
+func (UnimplementedAuthServiceHandler) CreateInitialAdmin(context.Context, *v1.CreateInitialAdminRequest) (*v1.CreateInitialAdminResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.CreateInitialAdmin is not implemented")
+}
+
+func (UnimplementedAuthServiceHandler) Logout(context.Context, *v1.LogoutRequest) (*v1.LogoutResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.Logout is not implemented")
+}
+
+func (UnimplementedAuthServiceHandler) RenewSession(context.Context, *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.RenewSession is not implemented")
 }
 
 type authServiceClient struct {
@@ -81,6 +147,38 @@ func (c *authServiceClient) Login(ctx context.Context, req *v1.LoginRequest) (*v
 	return &res, nil
 }
 
+func (c *authServiceClient) GetBootstrapStatus(ctx context.Context, req *v1.GetBootstrapStatusRequest) (*v1.GetBootstrapStatusResponse, error) {
+	var res v1.GetBootstrapStatusResponse
+	if err := c.client.CallUnary(ctx, authServiceGetBootstrapStatusSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authServiceClient) CreateInitialAdmin(ctx context.Context, req *v1.CreateInitialAdminRequest) (*v1.CreateInitialAdminResponse, error) {
+	var res v1.CreateInitialAdminResponse
+	if err := c.client.CallUnary(ctx, authServiceCreateInitialAdminSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authServiceClient) Logout(ctx context.Context, req *v1.LogoutRequest) (*v1.LogoutResponse, error) {
+	var res v1.LogoutResponse
+	if err := c.client.CallUnary(ctx, authServiceLogoutSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authServiceClient) RenewSession(ctx context.Context, req *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error) {
+	var res v1.RenewSessionResponse
+	if err := c.client.CallUnary(ctx, authServiceRenewSessionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 type authServiceHandler struct{ svc AuthServiceHandler }
 
 func (h authServiceHandler) login(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
@@ -89,6 +187,54 @@ func (h authServiceHandler) login(ctx context.Context, _ connect.Spec, stream co
 		return err
 	}
 	res, err := h.svc.Login(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authServiceHandler) getBootstrapStatus(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetBootstrapStatusRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetBootstrapStatus(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authServiceHandler) createInitialAdmin(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateInitialAdminRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateInitialAdmin(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authServiceHandler) logout(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.LogoutRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.Logout(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authServiceHandler) renewSession(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RenewSessionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RenewSession(ctx, &req)
 	if err != nil {
 		return err
 	}

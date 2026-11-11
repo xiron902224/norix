@@ -7,13 +7,15 @@ package paasv1connect
 import (
 	connect "connectrpc.com/connect/v2"
 	context "context"
-	v1 "github.com/d2le2/paas/control-plane/internal/gen/v1"
+	v1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
 	sync "sync"
 )
 
 const (
 	// WorkloadServiceName is the fully-qualified name of the WorkloadService service.
 	WorkloadServiceName = "v1.WorkloadService"
+	// ProjectServiceName is the fully-qualified name of the ProjectService service.
+	ProjectServiceName = "v1.ProjectService"
 )
 
 // These constants are the procedure names of the RPCs defined in this package. They're exposed at
@@ -24,11 +26,42 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// WorkloadServiceCreateWorkloadProcedure is the procedure name of the WorkloadService's
+	// CreateWorkload RPC.
+	WorkloadServiceCreateWorkloadProcedure = "/v1.WorkloadService/CreateWorkload"
 	// WorkloadServiceDeployProcedure is the procedure name of the WorkloadService's Deploy RPC.
 	WorkloadServiceDeployProcedure = "/v1.WorkloadService/Deploy"
+	// WorkloadServiceListWorkloadsProcedure is the procedure name of the WorkloadService's
+	// ListWorkloads RPC.
+	WorkloadServiceListWorkloadsProcedure = "/v1.WorkloadService/ListWorkloads"
+	// WorkloadServiceUpdateWorkloadProcedure is the procedure name of the WorkloadService's
+	// UpdateWorkload RPC.
+	WorkloadServiceUpdateWorkloadProcedure = "/v1.WorkloadService/UpdateWorkload"
+	// WorkloadServiceDeleteWorkloadProcedure is the procedure name of the WorkloadService's
+	// DeleteWorkload RPC.
+	WorkloadServiceDeleteWorkloadProcedure = "/v1.WorkloadService/DeleteWorkload"
+	// WorkloadServiceGetWorkloadLogsProcedure is the procedure name of the WorkloadService's
+	// GetWorkloadLogs RPC.
+	WorkloadServiceGetWorkloadLogsProcedure = "/v1.WorkloadService/GetWorkloadLogs"
+	// ProjectServiceCreateProjectProcedure is the procedure name of the ProjectService's CreateProject
+	// RPC.
+	ProjectServiceCreateProjectProcedure = "/v1.ProjectService/CreateProject"
+	// ProjectServiceListProjectsProcedure is the procedure name of the ProjectService's ListProjects
+	// RPC.
+	ProjectServiceListProjectsProcedure = "/v1.ProjectService/ListProjects"
+	// ProjectServiceDeleteProjectProcedure is the procedure name of the ProjectService's DeleteProject
+	// RPC.
+	ProjectServiceDeleteProjectProcedure = "/v1.ProjectService/DeleteProject"
 )
 
 var (
+	workloadServiceCreateWorkloadSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("CreateWorkload"),
+			Procedure:  WorkloadServiceCreateWorkloadProcedure,
+		}
+	})
 	workloadServiceDeploySpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -36,11 +69,44 @@ var (
 			Procedure:  WorkloadServiceDeployProcedure,
 		}
 	})
+	workloadServiceListWorkloadsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("ListWorkloads"),
+			Procedure:  WorkloadServiceListWorkloadsProcedure,
+		}
+	})
+	workloadServiceUpdateWorkloadSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("UpdateWorkload"),
+			Procedure:  WorkloadServiceUpdateWorkloadProcedure,
+		}
+	})
+	workloadServiceDeleteWorkloadSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("DeleteWorkload"),
+			Procedure:  WorkloadServiceDeleteWorkloadProcedure,
+		}
+	})
+	workloadServiceGetWorkloadLogsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("GetWorkloadLogs"),
+			Procedure:  WorkloadServiceGetWorkloadLogsProcedure,
+		}
+	})
 )
 
 // WorkloadServiceClient is a client for the v1.WorkloadService service.
 type WorkloadServiceClient interface {
+	CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error)
 	Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error)
+	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
+	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
+	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
+	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
 }
 
 // NewWorkloadServiceClient constructs a client for the v1.WorkloadService service. Multiple service
@@ -51,26 +117,64 @@ func NewWorkloadServiceClient(client *connect.Client) WorkloadServiceClient {
 
 // WorkloadServiceHandler is an implementation of the v1.WorkloadService service.
 type WorkloadServiceHandler interface {
+	CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error)
 	Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error)
+	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
+	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
+	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
+	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
 }
 
 // RegisterWorkloadServiceHandler registers svc as the v1.WorkloadService implementation on server.
 func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceHandler) {
 	adapter := workloadServiceHandler{svc: svc}
 	server.Register(
+		connect.Method{Spec: workloadServiceCreateWorkloadSpec(), Handler: adapter.createWorkload},
 		connect.Method{Spec: workloadServiceDeploySpec(), Handler: adapter.deploy},
+		connect.Method{Spec: workloadServiceListWorkloadsSpec(), Handler: adapter.listWorkloads},
+		connect.Method{Spec: workloadServiceUpdateWorkloadSpec(), Handler: adapter.updateWorkload},
+		connect.Method{Spec: workloadServiceDeleteWorkloadSpec(), Handler: adapter.deleteWorkload},
+		connect.Method{Spec: workloadServiceGetWorkloadLogsSpec(), Handler: adapter.getWorkloadLogs},
 	)
 }
 
 // UnimplementedWorkloadServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedWorkloadServiceHandler struct{}
 
+func (UnimplementedWorkloadServiceHandler) CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.CreateWorkload is not implemented")
+}
+
 func (UnimplementedWorkloadServiceHandler) Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.Deploy is not implemented")
 }
 
+func (UnimplementedWorkloadServiceHandler) ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.ListWorkloads is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.UpdateWorkload is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeleteWorkload is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.GetWorkloadLogs is not implemented")
+}
+
 type workloadServiceClient struct {
 	client *connect.Client
+}
+
+func (c *workloadServiceClient) CreateWorkload(ctx context.Context, req *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error) {
+	var res v1.CreateWorkloadResponse
+	if err := c.client.CallUnary(ctx, workloadServiceCreateWorkloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 func (c *workloadServiceClient) Deploy(ctx context.Context, req *v1.DeployRequest) (*v1.DeployResponse, error) {
@@ -81,7 +185,51 @@ func (c *workloadServiceClient) Deploy(ctx context.Context, req *v1.DeployReques
 	return &res, nil
 }
 
+func (c *workloadServiceClient) ListWorkloads(ctx context.Context, req *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error) {
+	var res v1.ListWorkloadsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceListWorkloadsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) UpdateWorkload(ctx context.Context, req *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error) {
+	var res v1.UpdateWorkloadResponse
+	if err := c.client.CallUnary(ctx, workloadServiceUpdateWorkloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) DeleteWorkload(ctx context.Context, req *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error) {
+	var res v1.DeleteWorkloadResponse
+	if err := c.client.CallUnary(ctx, workloadServiceDeleteWorkloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) GetWorkloadLogs(ctx context.Context, req *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error) {
+	var res v1.GetWorkloadLogsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceGetWorkloadLogsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 type workloadServiceHandler struct{ svc WorkloadServiceHandler }
+
+func (h workloadServiceHandler) createWorkload(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateWorkloadRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateWorkload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
 
 func (h workloadServiceHandler) deploy(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
 	var req v1.DeployRequest
@@ -89,6 +237,189 @@ func (h workloadServiceHandler) deploy(ctx context.Context, _ connect.Spec, stre
 		return err
 	}
 	res, err := h.svc.Deploy(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) listWorkloads(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListWorkloadsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListWorkloads(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) updateWorkload(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateWorkloadRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateWorkload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) deleteWorkload(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteWorkloadRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteWorkload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) getWorkloadLogs(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetWorkloadLogsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetWorkloadLogs(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+var (
+	projectServiceCreateProjectSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("ProjectService").Methods().ByName("CreateProject"),
+			Procedure:  ProjectServiceCreateProjectProcedure,
+		}
+	})
+	projectServiceListProjectsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("ProjectService").Methods().ByName("ListProjects"),
+			Procedure:  ProjectServiceListProjectsProcedure,
+		}
+	})
+	projectServiceDeleteProjectSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("ProjectService").Methods().ByName("DeleteProject"),
+			Procedure:  ProjectServiceDeleteProjectProcedure,
+		}
+	})
+)
+
+// ProjectServiceClient is a client for the v1.ProjectService service.
+type ProjectServiceClient interface {
+	CreateProject(context.Context, *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error)
+	ListProjects(context.Context, *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error)
+	DeleteProject(context.Context, *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error)
+}
+
+// NewProjectServiceClient constructs a client for the v1.ProjectService service. Multiple service
+// clients may share a single connect.Client.
+func NewProjectServiceClient(client *connect.Client) ProjectServiceClient {
+	return &projectServiceClient{client: client}
+}
+
+// ProjectServiceHandler is an implementation of the v1.ProjectService service.
+type ProjectServiceHandler interface {
+	CreateProject(context.Context, *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error)
+	ListProjects(context.Context, *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error)
+	DeleteProject(context.Context, *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error)
+}
+
+// RegisterProjectServiceHandler registers svc as the v1.ProjectService implementation on server.
+func RegisterProjectServiceHandler(server *connect.Server, svc ProjectServiceHandler) {
+	adapter := projectServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: projectServiceCreateProjectSpec(), Handler: adapter.createProject},
+		connect.Method{Spec: projectServiceListProjectsSpec(), Handler: adapter.listProjects},
+		connect.Method{Spec: projectServiceDeleteProjectSpec(), Handler: adapter.deleteProject},
+	)
+}
+
+// UnimplementedProjectServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedProjectServiceHandler struct{}
+
+func (UnimplementedProjectServiceHandler) CreateProject(context.Context, *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.CreateProject is not implemented")
+}
+
+func (UnimplementedProjectServiceHandler) ListProjects(context.Context, *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.ListProjects is not implemented")
+}
+
+func (UnimplementedProjectServiceHandler) DeleteProject(context.Context, *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.DeleteProject is not implemented")
+}
+
+type projectServiceClient struct {
+	client *connect.Client
+}
+
+func (c *projectServiceClient) CreateProject(ctx context.Context, req *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error) {
+	var res v1.CreateProjectResponse
+	if err := c.client.CallUnary(ctx, projectServiceCreateProjectSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *projectServiceClient) ListProjects(ctx context.Context, req *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error) {
+	var res v1.ListProjectsResponse
+	if err := c.client.CallUnary(ctx, projectServiceListProjectsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *projectServiceClient) DeleteProject(ctx context.Context, req *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error) {
+	var res v1.DeleteProjectResponse
+	if err := c.client.CallUnary(ctx, projectServiceDeleteProjectSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type projectServiceHandler struct{ svc ProjectServiceHandler }
+
+func (h projectServiceHandler) createProject(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateProjectRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateProject(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h projectServiceHandler) listProjects(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListProjectsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListProjects(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h projectServiceHandler) deleteProject(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteProjectRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteProject(ctx, &req)
 	if err != nil {
 		return err
 	}

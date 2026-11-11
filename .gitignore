@@ -1,2 +1,78 @@
-/images/kernel/**/*.vmlinux
-/images/rootfs/*.ext4
+# Seguridad y configuración local
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+**/secrets/
+
+# Go
+bin/
+**/bin/
+*.exe
+*.test
+coverage/
+coverage.out
+control-plane/server
+
+# Rust
+target/
+**/target/
+agent/.agent/
+**/.agent/
+
+# Node.js y frontend
+node_modules/
+dist/
+!control-plane/internal/webui/dist/
+!control-plane/internal/webui/dist/**
+build/
+.vite/
+coverage/
+*.tsbuildinfo
+web/playwright-report/
+web/test-results/
+web/playwright/.cache/
+
+# Bases locales y backups
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+
+# Editor, SO y logs
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+*.log
+logs/
+
+# Kernels y artefactos de micro-VMs
+images/kernel/**/*.vmlinux
+images/kernel/**/vmlinux
+images/rootfs/*.ext4
+
+# Datos temporales, certificados y volúmenes locales de Docker
+deploy/caddy-pebble/data/
+deploy/caddy-pebble/config/
+deploy/caddy-pebble/*.crt
+deploy/caddy-pebble/*.pem
+deploy/**/volumes/
+deploy/**/data/
+
+# Docs: track markdown/ADRs; skip Office sources and local progress dumps
+docs/**/*.docx
+docs/progress/

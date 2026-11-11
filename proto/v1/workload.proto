@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package v1;
 
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
 
-option go_package = "github.com/d2le2/paas/control-plane/internal/gen/v1;paasv1";
 enum RuntimeType {
   RUNTIME_TYPE_UNSPECIFIED = 0;
   RUNTIME_TYPE_CONTAINER = 1;
@@ -23,17 +23,102 @@ message Workload {
   int32 cpu_shares = 7;
   int64 memory_limit_mb = 8;
   string domain = 9;
+  string status = 10;
+  int64 desired_generation = 11;
+  int64 observed_generation = 12;
+  int32 host_port = 13;
+  int32 container_port = 14;
+  string assigned_node_id = 15;
+  string endpoint = 16;
+  string last_error = 17;
+  string container_id = 18;
 }
+
+message ListWorkloadsRequest {
+  string project_id = 1;
+}
+
+message ListWorkloadsResponse {
+  repeated Workload workloads = 1;
+}
+
+message UpdateWorkloadRequest {
+  Workload workload = 1;
+}
+
+message UpdateWorkloadResponse {
+  Workload workload = 1;
+}
+
+message DeleteWorkloadRequest {
+  string id = 1;
+}
+
+message DeleteWorkloadResponse {}
+
+message CreateWorkloadRequest {
+  Workload workload = 1;
+}
+message CreateWorkloadResponse { Workload workload = 1; }
 
 message DeployRequest {
   Workload workload = 1;
+  int32 container_port = 2;
 }
 
 message DeployResponse {
   string deployment_id = 1;
   string status = 2;
+  int32 host_port = 3;
+  string assigned_node_id = 4;
+}
+
+message GetWorkloadLogsRequest {
+  string workload_id = 1;
+  int32 tail_lines = 2;
+}
+
+message GetWorkloadLogsResponse {
+  repeated string lines = 1;
 }
 
 service WorkloadService {
+  rpc CreateWorkload(CreateWorkloadRequest) returns (CreateWorkloadResponse);
   rpc Deploy(DeployRequest) returns (DeployResponse);
+  rpc ListWorkloads(ListWorkloadsRequest) returns (ListWorkloadsResponse);
+  rpc UpdateWorkload(UpdateWorkloadRequest) returns (UpdateWorkloadResponse);
+  rpc DeleteWorkload(DeleteWorkloadRequest) returns (DeleteWorkloadResponse);
+  rpc GetWorkloadLogs(GetWorkloadLogsRequest) returns (GetWorkloadLogsResponse);
+}
+
+message Project {
+  string id = 1;
+  string organization_id = 2;
+  string name = 3;
+}
+
+message CreateProjectRequest {
+  string name = 1;
+}
+
+message CreateProjectResponse {
+  Project project = 1;
+}
+
+message ListProjectsRequest {}
+
+message ListProjectsResponse {
+  repeated Project projects = 1;
+}
+
+message DeleteProjectRequest {
+  string id = 1;
+}
+
+message DeleteProjectResponse {}
+
+service ProjectService {
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
 }

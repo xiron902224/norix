@@ -2,7 +2,8 @@ syntax = "proto3";
 
 package v1;
 
-option go_package = "github.com/d2le2/paas/control-plane/internal/gen/v1;paasv1";
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
+
 enum Role {
   ROLE_UNSPECIFIED = 0;
   ROLE_OWNER = 1;
@@ -27,6 +28,43 @@ message LoginResponse {
   User user = 2;
 }
 
+message GetBootstrapStatusRequest {}
+
+message GetBootstrapStatusResponse {
+  bool configured = 1;
+}
+
+message CreateInitialAdminRequest {
+  string organization_name = 1;
+  string admin_name = 2;
+  string admin_email = 3;
+  string admin_password = 4;
+}
+
+message CreateInitialAdminResponse {
+  string token = 1;
+  User user = 2;
+}
+
+message LogoutRequest {
+  string token = 1;
+}
+
+message LogoutResponse {}
+
+message RenewSessionRequest {
+  string token = 1;
+}
+
+message RenewSessionResponse {
+  string token = 1;
+  int64 expires_at_unix = 2;
+}
+
 service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse);
+  rpc GetBootstrapStatus(GetBootstrapStatusRequest) returns (GetBootstrapStatusResponse);
+  rpc CreateInitialAdmin(CreateInitialAdminRequest) returns (CreateInitialAdminResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc RenewSession(RenewSessionRequest) returns (RenewSessionResponse);
 }

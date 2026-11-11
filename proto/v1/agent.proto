@@ -2,7 +2,18 @@ syntax = "proto3";
 
 package v1;
 
-option go_package = "github.com/d2le2/paas/control-plane/internal/gen/v1;paasv1";
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
+
+message NodeCapabilities {
+  int32 cpu_cores = 1;
+  int64 memory_total_mb = 2;
+  bool docker_socket = 3;
+  bool containerd_socket = 4;
+  uint32 kvm_level = 5;
+  string hostname = 6;
+  string agent_version = 7;
+}
+
 message NodeHeartbeat {
   string node_id = 1;
   double cpu_usage_percent = 2;
@@ -10,17 +21,107 @@ message NodeHeartbeat {
   uint32 kvm_level = 4;
 }
 
+message Node {
+  string id = 1;
+  string organization_id = 2;
+  string name = 3;
+  string status = 4;
+  string last_seen_at = 5;
+  NodeCapabilities capabilities = 6;
+  bool is_local = 7;
+}
+
+message CreateJoinTokenRequest {
+  string node_name = 1;
+  int64 ttl_seconds = 2;
+}
+
+message CreateJoinTokenResponse {
+  string token = 1;
+  string expires_at = 2;
+}
+
+message EnrollNodeRequest {
+  string join_token = 1;
+  string node_name = 2;
+  NodeCapabilities capabilities = 3;
+}
+
+message EnrollNodeResponse {
+  string node_id = 1;
+  string node_token = 2;
+  string organization_id = 3;
+}
+
+message DesiredWorkload {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string image = 4;
+  map<string, string> env_vars = 5;
+  int32 cpu_shares = 6;
+  int64 memory_limit_mb = 7;
+  int32 host_port = 8;
+  int32 container_port = 9;
+  int64 desired_generation = 10;
+  string action = 11;
+}
+
+message ObservedWorkload {
+  string id = 1;
+  string status = 2;
+  string container_id = 3;
+  int64 observed_generation = 4;
+  string message = 5;
+  int32 host_port = 6;
+  repeated string log_lines = 7;
+}
+
+message HeartbeatRequest {
+  string node_id = 1;
+  double cpu_usage_percent = 2;
+  int64 memory_free_mb = 3;
+  string status = 4;
+  repeated string running_workload_ids = 5;
+  NodeCapabilities capabilities = 6;
+}
+
+message HeartbeatResponse {
+  string node_id = 1;
+  repeated DesiredWorkload desired_workloads = 2;
+}
+
+message ReportObservedRequest {
+  string node_id = 1;
+  repeated ObservedWorkload workloads = 2;
+}
+
+message ReportObservedResponse {}
+
+message ListNodesRequest {}
+
+message ListNodesResponse {
+  repeated Node nodes = 1;
+}
+
 message ConnectStreamRequest {
   string node_id = 1;
   string status = 2;
   repeated string running_workload_ids = 3;
+  NodeHeartbeat heartbeat = 4;
 }
 
 message ConnectStreamResponse {
   string node_id = 1;
-  repeated string active_workload_ids = 2;
+  repeated DesiredWorkload desired_workloads = 2;
+  string command = 3;
 }
 
 service AgentService {
+  rpc CreateJoinToken(CreateJoinTokenRequest) returns (CreateJoinTokenResponse);
+  rpc EnrollNode(EnrollNodeRequest) returns (EnrollNodeResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ReportObserved(ReportObservedRequest) returns (ReportObservedResponse);
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
   rpc ConnectStream(stream ConnectStreamRequest) returns (stream ConnectStreamResponse);
 }
