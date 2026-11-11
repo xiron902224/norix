@@ -3,6 +3,7 @@ mod capabilities;
 mod client;
 mod config;
 mod edge;
+mod network;
 mod proto_num;
 mod runtime;
 
@@ -96,6 +97,13 @@ async fn main() -> Result<()> {
                             let observed = edge::apply_edge(plan).await;
                             if let Err(error) = client.report_edge(&state, &observed).await {
                                 warn!(%error, "report edge failed");
+                            }
+                        }
+                        if let Some(plan) = desired.desired_network.as_ref() {
+                            info!(generation = plan.generation, "applying network plan");
+                            let observed = network::apply_network(plan, &config.workdir).await;
+                            if let Err(error) = client.report_network(&state, &observed).await {
+                                warn!(%error, "report network failed");
                             }
                         }
                     }

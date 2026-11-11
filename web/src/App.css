@@ -238,6 +238,19 @@
 .inline-form label,
 .stack-form label,
 .panel label,
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: end;
+  min-height: 2.5rem;
+}
+
+.checkbox-row input[type='checkbox'] {
+  width: auto;
+  margin: 0;
+}
+
 .form-grid label {
   display: grid;
   gap: 6px;

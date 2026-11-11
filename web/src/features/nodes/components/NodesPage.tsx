@@ -13,7 +13,7 @@ import { Button } from '../../../shared/ui/Button'
 import { FormField } from '../../../shared/ui/FormField'
 import { formatWhen, relativeAge, shortId } from '../../../shared/lib/format'
 import type { Node } from '../../../gen/v1/agent_pb'
-import { createJoinToken, listNodes } from '../services/nodes-api'
+import { cordonNode, createJoinToken, drainNode, listNodes, updateNodeSchedule } from '../services/nodes-api'
 
 function statusClass(status: string) {
   if (status === 'online') return 'status-running'
@@ -29,6 +29,9 @@ export function NodesPage() {
   const [creating, setCreating] = useState(false)
   const [joinToken, setJoinToken] = useState<{ token: string; expiresAt: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [actionBusy, setActionBusy] = useState('')
+  const [scheduleRole, setScheduleRole] = useState('worker')
+  const [scheduleZone, setScheduleZone] = useState('default')
 
   useEffect(() => {
     let cancelled = false
@@ -89,6 +92,72 @@ export function NodesPage() {
     await navigator.clipboard.writeText(joinToken.token)
     setCopied(true)
     window.setTimeout(() => setCopied(false), 2000)
+  }
+
+  function selectNode(node: Node) {
+    setSelected(node)
+    setScheduleRole(node.role || 'worker')
+    setScheduleZone(node.zone || 'default')
+  }
+
+  async function refreshNodes(preferId?: string) {
+    const items = await listNodes()
+    setNodes(items)
+    const id = preferId ?? selected?.id
+    const next = id ? items.find((item) => item.id === id) ?? null : null
+    setSelected(next)
+    if (next) {
+      setScheduleRole(next.role || 'worker')
+      setScheduleZone(next.zone || 'default')
+    }
+  }
+
+  async function onCordon(cordoned: boolean) {
+    if (!selected) return
+    setActionBusy(cordoned ? 'cordon' : 'uncordon')
+    setError('')
+    try {
+      await cordonNode(selected.id, cordoned)
+      await refreshNodes(selected.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not update cordon')
+    } finally {
+      setActionBusy('')
+    }
+  }
+
+  async function onDrain(draining: boolean) {
+    if (!selected) return
+    setActionBusy(draining ? 'drain' : 'undrain')
+    setError('')
+    try {
+      await drainNode(selected.id, draining)
+      await refreshNodes(selected.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not update drain')
+    } finally {
+      setActionBusy('')
+    }
+  }
+
+  async function onSaveSchedule(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selected) return
+    setActionBusy('schedule')
+    setError('')
+    try {
+      await updateNodeSchedule({
+        nodeId: selected.id,
+        role: scheduleRole,
+        zone: scheduleZone,
+        labels: selected.labels ?? {},
+      })
+      await refreshNodes(selected.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not update schedule meta')
+    } finally {
+      setActionBusy('')
+    }
   }
 
   const online = nodes.filter((node) => node.status === 'online').length
@@ -191,14 +260,17 @@ export function NodesPage() {
           <ul className="resource-list">
             {nodes.map((node) => (
               <li key={node.id} className={selected?.id === node.id ? 'is-selected' : ''}>
-                <button type="button" className="resource-link" onClick={() => setSelected(node)}>
+                <button type="button" className="resource-link" onClick={() => selectNode(node)}>
                   <strong>{node.name}{node.isLocal ? ' · local' : ''}</strong>
                   <div className="resource-meta">
                     <span className={`status-badge ${statusClass(node.status)}`}>{node.status}</span>
+                    <span className="chip">{node.role || 'worker'}</span>
+                    {node.cordoned ? <span className="chip">cordoned</span> : null}
+                    {node.draining ? <span className="chip">draining</span> : null}
                     <span className="mono">seen {relativeAge(node.lastSeenAt)}</span>
                   </div>
                   <p className="hint-line">
-                    {node.capabilities?.hostname || 'unknown host'} · {node.isLocal ? 'control-plane' : `agent v${node.capabilities?.agentVersion || '?'}`}
+                    {node.zone || 'default'} · {node.capabilities?.hostname || 'unknown host'} · {node.isLocal ? 'control-plane' : `agent v${node.capabilities?.agentVersion || '?'}`}
                   </p>
                 </button>
                 {node.isLocal
@@ -225,9 +297,13 @@ export function NodesPage() {
               <p className="muted">Pick a fleet member to inspect hardware and runtime sockets.</p>
             </div>
           ) : (
+            <>
             <dl className="detail-grid">
               <div><dt>ID</dt><dd className="mono">{selected.id}</dd></div>
               <div><dt>Status</dt><dd><span className={`status-badge ${statusClass(selected.status)}`}>{selected.status}</span></dd></div>
+              <div><dt>Role</dt><dd>{selected.role || 'worker'}</dd></div>
+              <div><dt>Zone</dt><dd>{selected.zone || 'default'}</dd></div>
+              <div><dt>Schedule</dt><dd>{selected.cordoned ? 'cordoned' : 'schedulable'}{selected.draining ? ' · draining' : ''}</dd></div>
               <div><dt>Last seen</dt><dd>{formatWhen(selected.lastSeenAt)} ({relativeAge(selected.lastSeenAt)})</dd></div>
               <div><dt>Kind</dt><dd>{selected.isLocal ? 'Control-plane host (embedded)' : 'Remote agent'}</dd></div>
               <div><dt>Hostname</dt><dd>{selected.capabilities?.hostname || '—'}</dd></div>
@@ -275,6 +351,34 @@ export function NodesPage() {
                 <dd className="mono">{shortId(selected.organizationId, 18)}</dd>
               </div>
             </dl>
+            <div className="detail-actions">
+              <Button type="button" variant="secondary" disabled={!!actionBusy || selected.cordoned} onClick={() => void onCordon(true)}>
+                {actionBusy === 'cordon' ? 'Cordoning…' : 'Cordon'}
+              </Button>
+              <Button type="button" variant="secondary" disabled={!!actionBusy || !selected.cordoned} onClick={() => void onCordon(false)}>
+                {actionBusy === 'uncordon' ? '…' : 'Uncordon'}
+              </Button>
+              <Button type="button" variant="secondary" disabled={!!actionBusy || selected.draining} onClick={() => void onDrain(true)}>
+                {actionBusy === 'drain' ? 'Draining…' : 'Drain'}
+              </Button>
+              <Button type="button" variant="secondary" disabled={!!actionBusy || !selected.draining} onClick={() => void onDrain(false)}>
+                {actionBusy === 'undrain' ? '…' : 'Stop drain'}
+              </Button>
+            </div>
+            <form className="form-grid form-grid-4" style={{ marginTop: 16 }} onSubmit={(event) => void onSaveSchedule(event)}>
+              <label>
+                <span>Role</span>
+                <select value={scheduleRole} onChange={(event) => setScheduleRole(event.target.value)}>
+                  <option value="worker">worker</option>
+                  <option value="edge">edge</option>
+                </select>
+              </label>
+              <FormField id="node-zone" label="Zone" value={scheduleZone} onChange={(event) => setScheduleZone(event.target.value)} placeholder="default" />
+              <Button type="submit" disabled={!!actionBusy}>
+                {actionBusy === 'schedule' ? 'Saving…' : 'Save schedule'}
+              </Button>
+            </form>
+            </>
           )}
         </aside>
       </div>

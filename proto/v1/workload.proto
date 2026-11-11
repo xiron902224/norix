@@ -38,6 +38,13 @@ message Workload {
   string git_ref = 21;
   string dockerfile_path = 22;
   string latest_build_id = 23;
+  int32 replica_count = 24;
+  // spread | binpack
+  string schedule_strategy = 25;
+  bool require_kvm = 26;
+  string preferred_zone = 27;
+  map<string, string> affinity_labels = 28;
+  map<string, string> anti_affinity_labels = 29;
 }
 
 message ListWorkloadsRequest {

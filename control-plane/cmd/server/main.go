@@ -151,6 +151,22 @@ func main() {
 				if marked > 0 {
 					logger.Info("marked stale nodes offline", "count", marked)
 				}
+				moved, rescheduleErr := norixdb.RescheduleAllOrphans(context.Background(), bootstrapPool)
+				if rescheduleErr != nil {
+					logger.Error("replica reschedule failed", "error", rescheduleErr)
+					return
+				}
+				if moved > 0 {
+					logger.Info("rescheduled orphan replicas", "count", moved)
+				}
+				purged, purgeErr := norixdb.PurgeAllDeletingWorkloads(context.Background(), bootstrapPool)
+				if purgeErr != nil {
+					logger.Error("purge deleting workloads failed", "error", purgeErr)
+					return
+				}
+				if purged > 0 {
+					logger.Info("purged deleted workloads", "count", purged)
+				}
 			}
 			cleanupSessions()
 			cleanupNodes()

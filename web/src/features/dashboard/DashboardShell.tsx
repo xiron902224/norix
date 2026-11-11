@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  Network,
   PanelLeftClose,
   PanelLeftOpen,
   PanelsTopLeft,
@@ -23,6 +24,7 @@ import { ProjectsPage } from '../projects/components/ProjectsPage'
 import { ProjectDetailPage } from '../projects/components/ProjectDetailPage'
 import { NodesPage } from '../nodes/components/NodesPage'
 import { DomainsPage } from '../domains/components/DomainsPage'
+import { NetworkPage } from '../network/components/NetworkPage'
 import { OpsPage } from '../ops/components/OpsPage'
 import { OverviewPage } from './OverviewPage'
 
@@ -31,7 +33,7 @@ interface DashboardShellProps {
   onSignOut: () => void
 }
 
-type NavKey = 'overview' | 'projects' | 'nodes' | 'domains' | 'ops'
+type NavKey = 'overview' | 'projects' | 'nodes' | 'domains' | 'network' | 'ops'
 
 function roleLabel(role: number) {
   if (role === 1) return 'owner'
@@ -114,9 +116,11 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
         ? 'Nodes'
         : nav === 'domains'
           ? 'Domains'
-          : nav === 'ops'
-            ? 'Operations'
-            : 'Projects'
+          : nav === 'network'
+            ? 'Network'
+            : nav === 'ops'
+              ? 'Operations'
+              : 'Projects'
 
   const shellClass = [
     'app-shell',
@@ -183,6 +187,15 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
           >
             <Globe />
             <span className="nav-label">Domains</span>
+          </button>
+          <button
+            type="button"
+            className={`nav-item ${nav === 'network' ? 'active' : ''}`}
+            onClick={() => go('network')}
+            title="Network"
+          >
+            <Network />
+            <span className="nav-label">Network</span>
           </button>
           <button
             type="button"
@@ -283,6 +296,7 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
 
             {nav === 'nodes' ? <NodesPage /> : null}
             {nav === 'domains' ? <DomainsPage /> : null}
+            {nav === 'network' ? <NetworkPage /> : null}
             {nav === 'ops' ? <OpsPage /> : null}
 
             {nav === 'projects' && selected ? (

@@ -48,9 +48,25 @@ type ObservedBuild struct {
 
 func RegistryHost() string {
 	if value := strings.TrimSpace(os.Getenv("NORIX_REGISTRY")); value != "" {
+		if strings.EqualFold(value, "none") || value == "-" {
+			return ""
+		}
 		return strings.TrimSuffix(value, "/")
 	}
-	return "127.0.0.1:5000"
+	// Empty = local image tags only (no registry required).
+	return ""
+}
+
+func ImageTagFor(workloadName, buildID string) string {
+	short := buildID
+	if len(short) > 8 {
+		short = short[:8]
+	}
+	safeName := sanitizeImageName(workloadName)
+	if registry := RegistryHost(); registry != "" {
+		return fmt.Sprintf("%s/norix/%s:%s", registry, safeName, short)
+	}
+	return fmt.Sprintf("norix/%s:%s", safeName, short)
 }
 
 func CreateBuild(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID, gitURL, gitRef, dockerfilePath string, containerPort int32, plainSecrets map[string]string, actor AuditActor) (Build, error) {
@@ -295,13 +311,8 @@ func ListDesiredBuildsForNode(ctx context.Context, pool *pgxpool.Pool, organizat
 		if err := rows.Scan(&item.ID, &item.WorkloadID, &item.GitURL, &item.GitRef, &item.DockerfilePath, &workloadName); err != nil {
 			return nil, err
 		}
-		short := item.ID
-		if len(short) > 8 {
-			short = short[:8]
-		}
-		safeName := sanitizeImageName(workloadName)
 		item.Registry = registry
-		item.ImageTag = fmt.Sprintf("%s/norix/%s:%s", registry, safeName, short)
+		item.ImageTag = ImageTagFor(workloadName, item.ID)
 		item.BuildArgs = map[string]string{}
 		result = append(result, item)
 	}
@@ -382,7 +393,8 @@ func ApplyObservedBuild(ctx context.Context, pool *pgxpool.Pool, organizationID 
 	).Scan(&workloadID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return fmt.Errorf("build not found")
+			// Workload/build may have been deleted while the builder was still running.
+			return nil
 		}
 		return err
 	}
@@ -447,8 +459,15 @@ func ApplyObservedBuild(ctx context.Context, pool *pgxpool.Pool, organizationID 
 
 	if status == "failed" {
 		_, _ = tx.Exec(ctx, `
-			UPDATE workloads SET status = 'failed', last_error = $2, updated_at = NOW()
+			UPDATE workloads SET status = 'failed', last_error = $2, desired_action = 'none', updated_at = NOW()
 			WHERE id = $1::uuid`, workloadID, observed.Message)
+		_, _ = tx.Exec(ctx, `
+			UPDATE workload_replicas SET
+				desired_action = 'none',
+				status = 'failed',
+				last_error = $2,
+				updated_at = NOW()
+			WHERE workload_id = $1::uuid AND desired_action IN ('run', 'stop')`, workloadID, observed.Message)
 		_ = writeAudit(ctx, tx, organizationID, "build.failed", "build", observed.ID, actor, map[string]string{
 			"error": observed.Message,
 		})
@@ -470,9 +489,10 @@ func FindWorkloadByGitURL(ctx context.Context, pool *pgxpool.Pool, tenantID, git
 		       cpu_shares, memory_limit_mb, COALESCE(domain, ''), status,
 		       desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
 		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
-		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, '')
+		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
+		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text
 		FROM workloads
-		WHERE source_kind = 'git' AND git_url = $1
+		WHERE source_kind = 'git' AND git_url = $1 AND status <> 'deleting'
 		ORDER BY updated_at DESC
 		LIMIT 1`, gitURL)
 	if err != nil {

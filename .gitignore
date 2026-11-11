@@ -78,3 +78,5 @@ deploy/**/data/
 # Docs: track markdown/ADRs; skip Office sources and local progress dumps
 docs/**/*.docx
 docs/progress/
+
+.cursor

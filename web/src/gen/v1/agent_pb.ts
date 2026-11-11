@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/agent.proto.
  */
 export const file_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("Cg52MS9hZ2VudC5wcm90bxICdjEirAEKEE5vZGVDYXBhYmlsaXRpZXMSEQoJY3B1X2NvcmVzGAEgASgFEhcKD21lbW9yeV90b3RhbF9tYhgCIAEoAxIVCg1kb2NrZXJfc29ja2V0GAMgASgIEhkKEWNvbnRhaW5lcmRfc29ja2V0GAQgASgIEhEKCWt2bV9sZXZlbBgFIAEoDRIQCghob3N0bmFtZRgGIAEoCRIVCg1hZ2VudF92ZXJzaW9uGAcgASgJImYKDU5vZGVIZWFydGJlYXQSDwoHbm9kZV9pZBgBIAEoCRIZChFjcHVfdXNhZ2VfcGVyY2VudBgCIAEoARIWCg5tZW1vcnlfZnJlZV9tYhgDIAEoAxIRCglrdm1fbGV2ZWwYBCABKA0i5gEKBE5vZGUSCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDgoGc3RhdHVzGAQgASgJEhQKDGxhc3Rfc2Vlbl9hdBgFIAEoCRIqCgxjYXBhYmlsaXRpZXMYBiABKAsyFC52MS5Ob2RlQ2FwYWJpbGl0aWVzEhAKCGlzX2xvY2FsGAcgASgIEhkKEWNwdV91c2FnZV9wZXJjZW50GAggASgBEhYKDm1lbW9yeV9mcmVlX21iGAkgASgDEhQKDGRpc2tfZnJlZV9tYhgKIAEoAyJAChZDcmVhdGVKb2luVG9rZW5SZXF1ZXN0EhEKCW5vZGVfbmFtZRgBIAEoCRITCgt0dGxfc2Vjb25kcxgCIAEoAyI8ChdDcmVhdGVKb2luVG9rZW5SZXNwb25zZRINCgV0b2tlbhgBIAEoCRISCgpleHBpcmVzX2F0GAIgASgJImYKEUVucm9sbE5vZGVSZXF1ZXN0EhIKCmpvaW5fdG9rZW4YASABKAkSEQoJbm9kZV9uYW1lGAIgASgJEioKDGNhcGFiaWxpdGllcxgDIAEoCzIULnYxLk5vZGVDYXBhYmlsaXRpZXMiUgoSRW5yb2xsTm9kZVJlc3BvbnNlEg8KB25vZGVfaWQYASABKAkSEgoKbm9kZV90b2tlbhgCIAEoCRIXCg9vcmdhbml6YXRpb25faWQYAyABKAkitgIKD0Rlc2lyZWRXb3JrbG9hZBIKCgJpZBgBIAEoCRISCgpwcm9qZWN0X2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDQoFaW1hZ2UYBCABKAkSMgoIZW52X3ZhcnMYBSADKAsyIC52MS5EZXNpcmVkV29ya2xvYWQuRW52VmFyc0VudHJ5EhIKCmNwdV9zaGFyZXMYBiABKAUSFwoPbWVtb3J5X2xpbWl0X21iGAcgASgDEhEKCWhvc3RfcG9ydBgIIAEoBRIWCg5jb250YWluZXJfcG9ydBgJIAEoBRIaChJkZXNpcmVkX2dlbmVyYXRpb24YCiABKAMSDgoGYWN0aW9uGAsgASgJGi4KDEVudlZhcnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIpgBChBPYnNlcnZlZFdvcmtsb2FkEgoKAmlkGAEgASgJEg4KBnN0YXR1cxgCIAEoCRIUCgxjb250YWluZXJfaWQYAyABKAkSGwoTb2JzZXJ2ZWRfZ2VuZXJhdGlvbhgEIAEoAxIPCgdtZXNzYWdlGAUgASgJEhEKCWhvc3RfcG9ydBgGIAEoBRIRCglsb2dfbGluZXMYByADKAkisAEKEEhlYXJ0YmVhdFJlcXVlc3QSDwoHbm9kZV9pZBgBIAEoCRIZChFjcHVfdXNhZ2VfcGVyY2VudBgCIAEoARIWCg5tZW1vcnlfZnJlZV9tYhgDIAEoAxIOCgZzdGF0dXMYBCABKAkSHAoUcnVubmluZ193b3JrbG9hZF9pZHMYBSADKAkSKgoMY2FwYWJpbGl0aWVzGAYgASgLMhQudjEuTm9kZUNhcGFiaWxpdGllcyL2AQoMRGVzaXJlZEJ1aWxkEgoKAmlkGAEgASgJEhMKC3dvcmtsb2FkX2lkGAIgASgJEg8KB2dpdF91cmwYAyABKAkSDwoHZ2l0X3JlZhgEIAEoCRIXCg9kb2NrZXJmaWxlX3BhdGgYBSABKAkSEQoJaW1hZ2VfdGFnGAYgASgJEjMKCmJ1aWxkX2FyZ3MYByADKAsyHy52MS5EZXNpcmVkQnVpbGQuQnVpbGRBcmdzRW50cnkSEAoIcmVnaXN0cnkYCCABKAkaMAoOQnVpbGRBcmdzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJeCg1PYnNlcnZlZEJ1aWxkEgoKAmlkGAEgASgJEg4KBnN0YXR1cxgCIAEoCRINCgVpbWFnZRgDIAEoCRIPCgdtZXNzYWdlGAQgASgJEhEKCWxvZ19saW5lcxgFIAMoCSKEAQoQRGVzaXJlZEVkZ2VSb3V0ZRIRCglkb21haW5faWQYASABKAkSEAoIaG9zdG5hbWUYAiABKAkSEAoIdXBzdHJlYW0YAyABKAkSEAoIdGxzX21vZGUYBCABKAkSFwoPZWRnZV9nZW5lcmF0aW9uGAUgASgDEg4KBmFjdGlvbhgGIAEoCSJ1Cg9EZXNpcmVkRWRnZVBsYW4SEgoKZ2VuZXJhdGlvbhgBIAEoAxIkCgZyb3V0ZXMYAiADKAsyFC52MS5EZXNpcmVkRWRnZVJvdXRlEg8KB2FjbWVfY2EYAyABKAkSFwoPY2FkZHlfYWRtaW5fdXJsGAQgASgJIskBCgxPYnNlcnZlZEVkZ2USEgoKZ2VuZXJhdGlvbhgBIAEoAxIOCgZzdGF0dXMYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRIRCglsb2dfbGluZXMYBCADKAkSOwoOcm91dGVfc3RhdHVzZXMYBSADKAsyIy52MS5PYnNlcnZlZEVkZ2UuUm91dGVTdGF0dXNlc0VudHJ5GjQKElJvdXRlU3RhdHVzZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIqkBChFIZWFydGJlYXRSZXNwb25zZRIPCgdub2RlX2lkGAEgASgJEi4KEWRlc2lyZWRfd29ya2xvYWRzGAIgAygLMhMudjEuRGVzaXJlZFdvcmtsb2FkEigKDmRlc2lyZWRfYnVpbGRzGAMgAygLMhAudjEuRGVzaXJlZEJ1aWxkEikKDGRlc2lyZWRfZWRnZRgEIAEoCzITLnYxLkRlc2lyZWRFZGdlUGxhbiJRChVSZXBvcnRPYnNlcnZlZFJlcXVlc3QSDwoHbm9kZV9pZBgBIAEoCRInCgl3b3JrbG9hZHMYAiADKAsyFC52MS5PYnNlcnZlZFdvcmtsb2FkIhgKFlJlcG9ydE9ic2VydmVkUmVzcG9uc2UiRwoSUmVwb3J0QnVpbGRSZXF1ZXN0Eg8KB25vZGVfaWQYASABKAkSIAoFYnVpbGQYAiABKAsyES52MS5PYnNlcnZlZEJ1aWxkIhUKE1JlcG9ydEJ1aWxkUmVzcG9uc2UiRAoRUmVwb3J0RWRnZVJlcXVlc3QSDwoHbm9kZV9pZBgBIAEoCRIeCgRlZGdlGAIgASgLMhAudjEuT2JzZXJ2ZWRFZGdlIhQKElJlcG9ydEVkZ2VSZXNwb25zZSISChBMaXN0Tm9kZXNSZXF1ZXN0IiwKEUxpc3ROb2Rlc1Jlc3BvbnNlEhcKBW5vZGVzGAEgAygLMggudjEuTm9kZSJ7ChRDb25uZWN0U3RyZWFtUmVxdWVzdBIPCgdub2RlX2lkGAEgASgJEg4KBnN0YXR1cxgCIAEoCRIcChRydW5uaW5nX3dvcmtsb2FkX2lkcxgDIAMoCRIkCgloZWFydGJlYXQYBCABKAsyES52MS5Ob2RlSGVhcnRiZWF0ImkKFUNvbm5lY3RTdHJlYW1SZXNwb25zZRIPCgdub2RlX2lkGAEgASgJEi4KEWRlc2lyZWRfd29ya2xvYWRzGAIgAygLMhMudjEuRGVzaXJlZFdvcmtsb2FkEg8KB2NvbW1hbmQYAyABKAkymwQKDEFnZW50U2VydmljZRJKCg9DcmVhdGVKb2luVG9rZW4SGi52MS5DcmVhdGVKb2luVG9rZW5SZXF1ZXN0GhsudjEuQ3JlYXRlSm9pblRva2VuUmVzcG9uc2USOwoKRW5yb2xsTm9kZRIVLnYxLkVucm9sbE5vZGVSZXF1ZXN0GhYudjEuRW5yb2xsTm9kZVJlc3BvbnNlEjgKCUhlYXJ0YmVhdBIULnYxLkhlYXJ0YmVhdFJlcXVlc3QaFS52MS5IZWFydGJlYXRSZXNwb25zZRJHCg5SZXBvcnRPYnNlcnZlZBIZLnYxLlJlcG9ydE9ic2VydmVkUmVxdWVzdBoaLnYxLlJlcG9ydE9ic2VydmVkUmVzcG9uc2USPgoLUmVwb3J0QnVpbGQSFi52MS5SZXBvcnRCdWlsZFJlcXVlc3QaFy52MS5SZXBvcnRCdWlsZFJlc3BvbnNlEjsKClJlcG9ydEVkZ2USFS52MS5SZXBvcnRFZGdlUmVxdWVzdBoWLnYxLlJlcG9ydEVkZ2VSZXNwb25zZRI4CglMaXN0Tm9kZXMSFC52MS5MaXN0Tm9kZXNSZXF1ZXN0GhUudjEuTGlzdE5vZGVzUmVzcG9uc2USSAoNQ29ubmVjdFN0cmVhbRIYLnYxLkNvbm5lY3RTdHJlYW1SZXF1ZXN0GhkudjEuQ29ubmVjdFN0cmVhbVJlc3BvbnNlKAEwAUJ/CgZjb20udjFCCkFnZW50UHJvdG9QAVpBZ2l0aHViLmNvbS94aXJvbjkwMjIyNC9ub3JpeC9jb250cm9sLXBsYW5lL2ludGVybmFsL2dlbi92MTtwYWFzdjGiAgNWWFiqAgJWMcoCAlYx4gIOVjFcR1BCTWV0YWRhdGHqAgJWMWIGcHJvdG8z");
+  fileDesc("Cg52MS9hZ2VudC5wcm90bxICdjEirAEKEE5vZGVDYXBhYmlsaXRpZXMSEQoJY3B1X2NvcmVzGAEgASgFEhcKD21lbW9yeV90b3RhbF9tYhgCIAEoAxIVCg1kb2NrZXJfc29ja2V0GAMgASgIEhkKEWNvbnRhaW5lcmRfc29ja2V0GAQgASgIEhEKCWt2bV9sZXZlbBgFIAEoDRIQCghob3N0bmFtZRgGIAEoCRIVCg1hZ2VudF92ZXJzaW9uGAcgASgJImYKDU5vZGVIZWFydGJlYXQSDwoHbm9kZV9pZBgBIAEoCRIZChFjcHVfdXNhZ2VfcGVyY2VudBgCIAEoARIWCg5tZW1vcnlfZnJlZV9tYhgDIAEoAxIRCglrdm1fbGV2ZWwYBCABKA0i+wIKBE5vZGUSCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDgoGc3RhdHVzGAQgASgJEhQKDGxhc3Rfc2Vlbl9hdBgFIAEoCRIqCgxjYXBhYmlsaXRpZXMYBiABKAsyFC52MS5Ob2RlQ2FwYWJpbGl0aWVzEhAKCGlzX2xvY2FsGAcgASgIEhkKEWNwdV91c2FnZV9wZXJjZW50GAggASgBEhYKDm1lbW9yeV9mcmVlX21iGAkgASgDEhQKDGRpc2tfZnJlZV9tYhgKIAEoAxIMCgRyb2xlGAsgASgJEhAKCGNvcmRvbmVkGAwgASgIEhAKCGRyYWluaW5nGA0gASgIEgwKBHpvbmUYDiABKAkSJAoGbGFiZWxzGA8gAygLMhQudjEuTm9kZS5MYWJlbHNFbnRyeRotCgtMYWJlbHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIjYKEUNvcmRvbk5vZGVSZXF1ZXN0Eg8KB25vZGVfaWQYASABKAkSEAoIY29yZG9uZWQYAiABKAgiLAoSQ29yZG9uTm9kZVJlc3BvbnNlEhYKBG5vZGUYASABKAsyCC52MS5Ob2RlIjUKEERyYWluTm9kZVJlcXVlc3QSDwoHbm9kZV9pZBgBIAEoCRIQCghkcmFpbmluZxgCIAEoCCIrChFEcmFpbk5vZGVSZXNwb25zZRIWCgRub2RlGAEgASgLMggudjEuTm9kZSKyAQoZVXBkYXRlTm9kZVNjaGVkdWxlUmVxdWVzdBIPCgdub2RlX2lkGAEgASgJEgwKBHJvbGUYAiABKAkSDAoEem9uZRgDIAEoCRI5CgZsYWJlbHMYBCADKAsyKS52MS5VcGRhdGVOb2RlU2NoZWR1bGVSZXF1ZXN0LkxhYmVsc0VudHJ5Gi0KC0xhYmVsc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiNAoaVXBkYXRlTm9kZVNjaGVkdWxlUmVzcG9uc2USFgoEbm9kZRgBIAEoCzIILnYxLk5vZGUiQAoWQ3JlYXRlSm9pblRva2VuUmVxdWVzdBIRCglub2RlX25hbWUYASABKAkSEwoLdHRsX3NlY29uZHMYAiABKAMiPAoXQ3JlYXRlSm9pblRva2VuUmVzcG9uc2USDQoFdG9rZW4YASABKAkSEgoKZXhwaXJlc19hdBgCIAEoCSJmChFFbnJvbGxOb2RlUmVxdWVzdBISCgpqb2luX3Rva2VuGAEgASgJEhEKCW5vZGVfbmFtZRgCIAEoCRIqCgxjYXBhYmlsaXRpZXMYAyABKAsyFC52MS5Ob2RlQ2FwYWJpbGl0aWVzIlIKEkVucm9sbE5vZGVSZXNwb25zZRIPCgdub2RlX2lkGAEgASgJEhIKCm5vZGVfdG9rZW4YAiABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAMgASgJIrYCCg9EZXNpcmVkV29ya2xvYWQSCgoCaWQYASABKAkSEgoKcHJvamVjdF9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEg0KBWltYWdlGAQgASgJEjIKCGVudl92YXJzGAUgAygLMiAudjEuRGVzaXJlZFdvcmtsb2FkLkVudlZhcnNFbnRyeRISCgpjcHVfc2hhcmVzGAYgASgFEhcKD21lbW9yeV9saW1pdF9tYhgHIAEoAxIRCglob3N0X3BvcnQYCCABKAUSFgoOY29udGFpbmVyX3BvcnQYCSABKAUSGgoSZGVzaXJlZF9nZW5lcmF0aW9uGAogASgDEg4KBmFjdGlvbhgLIAEoCRouCgxFbnZWYXJzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASKYAQoQT2JzZXJ2ZWRXb3JrbG9hZBIKCgJpZBgBIAEoCRIOCgZzdGF0dXMYAiABKAkSFAoMY29udGFpbmVyX2lkGAMgASgJEhsKE29ic2VydmVkX2dlbmVyYXRpb24YBCABKAMSDwoHbWVzc2FnZRgFIAEoCRIRCglob3N0X3BvcnQYBiABKAUSEQoJbG9nX2xpbmVzGAcgAygJIrABChBIZWFydGJlYXRSZXF1ZXN0Eg8KB25vZGVfaWQYASABKAkSGQoRY3B1X3VzYWdlX3BlcmNlbnQYAiABKAESFgoObWVtb3J5X2ZyZWVfbWIYAyABKAMSDgoGc3RhdHVzGAQgASgJEhwKFHJ1bm5pbmdfd29ya2xvYWRfaWRzGAUgAygJEioKDGNhcGFiaWxpdGllcxgGIAEoCzIULnYxLk5vZGVDYXBhYmlsaXRpZXMi9gEKDERlc2lyZWRCdWlsZBIKCgJpZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIPCgdnaXRfdXJsGAMgASgJEg8KB2dpdF9yZWYYBCABKAkSFwoPZG9ja2VyZmlsZV9wYXRoGAUgASgJEhEKCWltYWdlX3RhZxgGIAEoCRIzCgpidWlsZF9hcmdzGAcgAygLMh8udjEuRGVzaXJlZEJ1aWxkLkJ1aWxkQXJnc0VudHJ5EhAKCHJlZ2lzdHJ5GAggASgJGjAKDkJ1aWxkQXJnc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiXgoNT2JzZXJ2ZWRCdWlsZBIKCgJpZBgBIAEoCRIOCgZzdGF0dXMYAiABKAkSDQoFaW1hZ2UYAyABKAkSDwoHbWVzc2FnZRgEIAEoCRIRCglsb2dfbGluZXMYBSADKAkihAEKEERlc2lyZWRFZGdlUm91dGUSEQoJZG9tYWluX2lkGAEgASgJEhAKCGhvc3RuYW1lGAIgASgJEhAKCHVwc3RyZWFtGAMgASgJEhAKCHRsc19tb2RlGAQgASgJEhcKD2VkZ2VfZ2VuZXJhdGlvbhgFIAEoAxIOCgZhY3Rpb24YBiABKAkidQoPRGVzaXJlZEVkZ2VQbGFuEhIKCmdlbmVyYXRpb24YASABKAMSJAoGcm91dGVzGAIgAygLMhQudjEuRGVzaXJlZEVkZ2VSb3V0ZRIPCgdhY21lX2NhGAMgASgJEhcKD2NhZGR5X2FkbWluX3VybBgEIAEoCSLJAQoMT2JzZXJ2ZWRFZGdlEhIKCmdlbmVyYXRpb24YASABKAMSDgoGc3RhdHVzGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSEQoJbG9nX2xpbmVzGAQgAygJEjsKDnJvdXRlX3N0YXR1c2VzGAUgAygLMiMudjEuT2JzZXJ2ZWRFZGdlLlJvdXRlU3RhdHVzZXNFbnRyeRo0ChJSb3V0ZVN0YXR1c2VzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASKEAQoSRGVzaXJlZE5ldHdvcmtQZWVyEg8KB25vZGVfaWQYASABKAkSEQoJbm9kZV9uYW1lGAIgASgJEhIKCnB1YmxpY19rZXkYAyABKAkSDwoHYWRkcmVzcxgEIAEoCRIQCghlbmRwb2ludBgFIAEoCRITCgthbGxvd2VkX2lwcxgGIAEoCSJZChdEZXNpcmVkTmV0d29ya0ROU1JlY29yZBIMCgRuYW1lGAEgASgJEgwKBHR5cGUYAiABKAkSDQoFdmFsdWUYAyABKAkSEwoLdHRsX3NlY29uZHMYBCABKAUicwoZRGVzaXJlZE5ldHdvcmtDZXJ0aWZpY2F0ZRIQCghob3N0bmFtZRgBIAEoCRIQCghjZXJ0X3BlbRgCIAEoCRIPCgdrZXlfcGVtGAMgASgJEhEKCW5vdF9hZnRlchgEIAEoCRIOCgZpc3N1ZXIYBSABKAkizAIKEkRlc2lyZWROZXR3b3JrUGxhbhISCgpnZW5lcmF0aW9uGAEgASgDEhEKCWludGVyZmFjZRgCIAEoCRIPCgdhZGRyZXNzGAMgASgJEhMKC2xpc3Rlbl9wb3J0GAQgASgFEhMKC3ByaXZhdGVfa2V5GAUgASgJEhIKCnB1YmxpY19rZXkYBiABKAkSJQoFcGVlcnMYByADKAsyFi52MS5EZXNpcmVkTmV0d29ya1BlZXISMAoLZG5zX3JlY29yZHMYCCADKAsyGy52MS5EZXNpcmVkTmV0d29ya0ROU1JlY29yZBIQCghuZnRhYmxlcxgJIAEoCRIRCgl3Z19jb25maWcYCiABKAkSMwoMY2VydGlmaWNhdGVzGAsgAygLMh0udjEuRGVzaXJlZE5ldHdvcmtDZXJ0aWZpY2F0ZRINCgVhcHBseRgMIAEoCCJZCg9PYnNlcnZlZE5ldHdvcmsSEgoKZ2VuZXJhdGlvbhgBIAEoAxIOCgZzdGF0dXMYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRIRCglsb2dfbGluZXMYBCADKAki2gEKEUhlYXJ0YmVhdFJlc3BvbnNlEg8KB25vZGVfaWQYASABKAkSLgoRZGVzaXJlZF93b3JrbG9hZHMYAiADKAsyEy52MS5EZXNpcmVkV29ya2xvYWQSKAoOZGVzaXJlZF9idWlsZHMYAyADKAsyEC52MS5EZXNpcmVkQnVpbGQSKQoMZGVzaXJlZF9lZGdlGAQgASgLMhMudjEuRGVzaXJlZEVkZ2VQbGFuEi8KD2Rlc2lyZWRfbmV0d29yaxgFIAEoCzIWLnYxLkRlc2lyZWROZXR3b3JrUGxhbiJRChVSZXBvcnRPYnNlcnZlZFJlcXVlc3QSDwoHbm9kZV9pZBgBIAEoCRInCgl3b3JrbG9hZHMYAiADKAsyFC52MS5PYnNlcnZlZFdvcmtsb2FkIhgKFlJlcG9ydE9ic2VydmVkUmVzcG9uc2UiRwoSUmVwb3J0QnVpbGRSZXF1ZXN0Eg8KB25vZGVfaWQYASABKAkSIAoFYnVpbGQYAiABKAsyES52MS5PYnNlcnZlZEJ1aWxkIhUKE1JlcG9ydEJ1aWxkUmVzcG9uc2UiRAoRUmVwb3J0RWRnZVJlcXVlc3QSDwoHbm9kZV9pZBgBIAEoCRIeCgRlZGdlGAIgASgLMhAudjEuT2JzZXJ2ZWRFZGdlIhQKElJlcG9ydEVkZ2VSZXNwb25zZSJNChRSZXBvcnROZXR3b3JrUmVxdWVzdBIPCgdub2RlX2lkGAEgASgJEiQKB25ldHdvcmsYAiABKAsyEy52MS5PYnNlcnZlZE5ldHdvcmsiFwoVUmVwb3J0TmV0d29ya1Jlc3BvbnNlIhkKF0dldE5ldHdvcmtTdGF0dXNSZXF1ZXN0ItgBChFOb2RlTmV0d29ya1N0YXR1cxIPCgdub2RlX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcm9sZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSEgoKd2dfYWRkcmVzcxgFIAEoCRIVCg13Z19wdWJsaWNfa2V5GAYgASgJEhYKDm5ldHdvcmtfc3RhdHVzGAcgASgJEhIKCmxhc3RfZXJyb3IYCCABKAkSEgoKZ2VuZXJhdGlvbhgJIAEoAxIbChNvYnNlcnZlZF9nZW5lcmF0aW9uGAogASgDIoQCChhHZXROZXR3b3JrU3RhdHVzUmVzcG9uc2USEwoLbm9kZXNfcmVhZHkYASABKAUSEwoLbm9kZXNfdG90YWwYAiABKAUSEwoLZG5zX3JlY29yZHMYAyABKAUSFAoMY2VydGlmaWNhdGVzGAQgASgFEhQKDG92ZXJsYXlfY2lkchgFIAEoCRISCgpkbnNfc3VmZml4GAYgASgJEhUKDWFwcGx5X2VuYWJsZWQYByABKAgSJAoFbm9kZXMYCCADKAsyFS52MS5Ob2RlTmV0d29ya1N0YXR1cxIsCgdyZWNvcmRzGAkgAygLMhsudjEuRGVzaXJlZE5ldHdvcmtETlNSZWNvcmQiUQoZVXBzZXJ0RWdyZXNzUG9saWN5UmVxdWVzdBITCgt3b3JrbG9hZF9pZBgBIAEoCRIMCgRtb2RlGAIgASgJEhEKCWFsbG93bGlzdBgDIAMoCSJSChpVcHNlcnRFZ3Jlc3NQb2xpY3lSZXNwb25zZRITCgt3b3JrbG9hZF9pZBgBIAEoCRIMCgRtb2RlGAIgASgJEhEKCWFsbG93bGlzdBgDIAMoCSIbChlMaXN0RWdyZXNzUG9saWNpZXNSZXF1ZXN0IlAKDEVncmVzc1BvbGljeRIKCgJpZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIMCgRtb2RlGAMgASgJEhEKCWFsbG93bGlzdBgEIAMoCSJAChpMaXN0RWdyZXNzUG9saWNpZXNSZXNwb25zZRIiCghwb2xpY2llcxgBIAMoCzIQLnYxLkVncmVzc1BvbGljeSISChBMaXN0Tm9kZXNSZXF1ZXN0IiwKEUxpc3ROb2Rlc1Jlc3BvbnNlEhcKBW5vZGVzGAEgAygLMggudjEuTm9kZSJ7ChRDb25uZWN0U3RyZWFtUmVxdWVzdBIPCgdub2RlX2lkGAEgASgJEg4KBnN0YXR1cxgCIAEoCRIcChRydW5uaW5nX3dvcmtsb2FkX2lkcxgDIAMoCRIkCgloZWFydGJlYXQYBCABKAsyES52MS5Ob2RlSGVhcnRiZWF0ImkKFUNvbm5lY3RTdHJlYW1SZXNwb25zZRIPCgdub2RlX2lkGAEgASgJEi4KEWRlc2lyZWRfd29ya2xvYWRzGAIgAygLMhMudjEuRGVzaXJlZFdvcmtsb2FkEg8KB2NvbW1hbmQYAyABKAkypggKDEFnZW50U2VydmljZRJKCg9DcmVhdGVKb2luVG9rZW4SGi52MS5DcmVhdGVKb2luVG9rZW5SZXF1ZXN0GhsudjEuQ3JlYXRlSm9pblRva2VuUmVzcG9uc2USOwoKRW5yb2xsTm9kZRIVLnYxLkVucm9sbE5vZGVSZXF1ZXN0GhYudjEuRW5yb2xsTm9kZVJlc3BvbnNlEjgKCUhlYXJ0YmVhdBIULnYxLkhlYXJ0YmVhdFJlcXVlc3QaFS52MS5IZWFydGJlYXRSZXNwb25zZRJHCg5SZXBvcnRPYnNlcnZlZBIZLnYxLlJlcG9ydE9ic2VydmVkUmVxdWVzdBoaLnYxLlJlcG9ydE9ic2VydmVkUmVzcG9uc2USPgoLUmVwb3J0QnVpbGQSFi52MS5SZXBvcnRCdWlsZFJlcXVlc3QaFy52MS5SZXBvcnRCdWlsZFJlc3BvbnNlEjsKClJlcG9ydEVkZ2USFS52MS5SZXBvcnRFZGdlUmVxdWVzdBoWLnYxLlJlcG9ydEVkZ2VSZXNwb25zZRJECg1SZXBvcnROZXR3b3JrEhgudjEuUmVwb3J0TmV0d29ya1JlcXVlc3QaGS52MS5SZXBvcnROZXR3b3JrUmVzcG9uc2USTQoQR2V0TmV0d29ya1N0YXR1cxIbLnYxLkdldE5ldHdvcmtTdGF0dXNSZXF1ZXN0GhwudjEuR2V0TmV0d29ya1N0YXR1c1Jlc3BvbnNlElMKElVwc2VydEVncmVzc1BvbGljeRIdLnYxLlVwc2VydEVncmVzc1BvbGljeVJlcXVlc3QaHi52MS5VcHNlcnRFZ3Jlc3NQb2xpY3lSZXNwb25zZRJTChJMaXN0RWdyZXNzUG9saWNpZXMSHS52MS5MaXN0RWdyZXNzUG9saWNpZXNSZXF1ZXN0Gh4udjEuTGlzdEVncmVzc1BvbGljaWVzUmVzcG9uc2USOAoJTGlzdE5vZGVzEhQudjEuTGlzdE5vZGVzUmVxdWVzdBoVLnYxLkxpc3ROb2Rlc1Jlc3BvbnNlEjsKCkNvcmRvbk5vZGUSFS52MS5Db3Jkb25Ob2RlUmVxdWVzdBoWLnYxLkNvcmRvbk5vZGVSZXNwb25zZRI4CglEcmFpbk5vZGUSFC52MS5EcmFpbk5vZGVSZXF1ZXN0GhUudjEuRHJhaW5Ob2RlUmVzcG9uc2USUwoSVXBkYXRlTm9kZVNjaGVkdWxlEh0udjEuVXBkYXRlTm9kZVNjaGVkdWxlUmVxdWVzdBoeLnYxLlVwZGF0ZU5vZGVTY2hlZHVsZVJlc3BvbnNlEkgKDUNvbm5lY3RTdHJlYW0SGC52MS5Db25uZWN0U3RyZWFtUmVxdWVzdBoZLnYxLkNvbm5lY3RTdHJlYW1SZXNwb25zZSgBMAFCfwoGY29tLnYxQgpBZ2VudFByb3RvUAFaQWdpdGh1Yi5jb20veGlyb245MDIyMjQvbm9yaXgvY29udHJvbC1wbGFuZS9pbnRlcm5hbC9nZW4vdjE7cGFhc3YxogIDVlhYqgICVjHKAgJWMeICDlYxXEdQQk1ldGFkYXRh6gICVjFiBnByb3RvMw");
 
 /**
  * @generated from message v1.NodeCapabilities
@@ -144,6 +144,33 @@ export type Node = Message<"v1.Node"> & {
    * @generated from field: int64 disk_free_mb = 10;
    */
   diskFreeMb: bigint;
+
+  /**
+   * worker | edge
+   *
+   * @generated from field: string role = 11;
+   */
+  role: string;
+
+  /**
+   * @generated from field: bool cordoned = 12;
+   */
+  cordoned: boolean;
+
+  /**
+   * @generated from field: bool draining = 13;
+   */
+  draining: boolean;
+
+  /**
+   * @generated from field: string zone = 14;
+   */
+  zone: string;
+
+  /**
+   * @generated from field: map<string, string> labels = 15;
+   */
+  labels: { [key: string]: string };
 };
 
 /**
@@ -152,6 +179,133 @@ export type Node = Message<"v1.Node"> & {
  */
 export const NodeSchema: GenMessage<Node> = /*@__PURE__*/
   messageDesc(file_v1_agent, 2);
+
+/**
+ * @generated from message v1.CordonNodeRequest
+ */
+export type CordonNodeRequest = Message<"v1.CordonNodeRequest"> & {
+  /**
+   * @generated from field: string node_id = 1;
+   */
+  nodeId: string;
+
+  /**
+   * @generated from field: bool cordoned = 2;
+   */
+  cordoned: boolean;
+};
+
+/**
+ * Describes the message v1.CordonNodeRequest.
+ * Use `create(CordonNodeRequestSchema)` to create a new message.
+ */
+export const CordonNodeRequestSchema: GenMessage<CordonNodeRequest> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 3);
+
+/**
+ * @generated from message v1.CordonNodeResponse
+ */
+export type CordonNodeResponse = Message<"v1.CordonNodeResponse"> & {
+  /**
+   * @generated from field: v1.Node node = 1;
+   */
+  node?: Node | undefined;
+};
+
+/**
+ * Describes the message v1.CordonNodeResponse.
+ * Use `create(CordonNodeResponseSchema)` to create a new message.
+ */
+export const CordonNodeResponseSchema: GenMessage<CordonNodeResponse> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 4);
+
+/**
+ * @generated from message v1.DrainNodeRequest
+ */
+export type DrainNodeRequest = Message<"v1.DrainNodeRequest"> & {
+  /**
+   * @generated from field: string node_id = 1;
+   */
+  nodeId: string;
+
+  /**
+   * @generated from field: bool draining = 2;
+   */
+  draining: boolean;
+};
+
+/**
+ * Describes the message v1.DrainNodeRequest.
+ * Use `create(DrainNodeRequestSchema)` to create a new message.
+ */
+export const DrainNodeRequestSchema: GenMessage<DrainNodeRequest> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 5);
+
+/**
+ * @generated from message v1.DrainNodeResponse
+ */
+export type DrainNodeResponse = Message<"v1.DrainNodeResponse"> & {
+  /**
+   * @generated from field: v1.Node node = 1;
+   */
+  node?: Node | undefined;
+};
+
+/**
+ * Describes the message v1.DrainNodeResponse.
+ * Use `create(DrainNodeResponseSchema)` to create a new message.
+ */
+export const DrainNodeResponseSchema: GenMessage<DrainNodeResponse> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 6);
+
+/**
+ * @generated from message v1.UpdateNodeScheduleRequest
+ */
+export type UpdateNodeScheduleRequest = Message<"v1.UpdateNodeScheduleRequest"> & {
+  /**
+   * @generated from field: string node_id = 1;
+   */
+  nodeId: string;
+
+  /**
+   * @generated from field: string role = 2;
+   */
+  role: string;
+
+  /**
+   * @generated from field: string zone = 3;
+   */
+  zone: string;
+
+  /**
+   * @generated from field: map<string, string> labels = 4;
+   */
+  labels: { [key: string]: string };
+};
+
+/**
+ * Describes the message v1.UpdateNodeScheduleRequest.
+ * Use `create(UpdateNodeScheduleRequestSchema)` to create a new message.
+ */
+export const UpdateNodeScheduleRequestSchema: GenMessage<UpdateNodeScheduleRequest> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 7);
+
+/**
+ * @generated from message v1.UpdateNodeScheduleResponse
+ */
+export type UpdateNodeScheduleResponse = Message<"v1.UpdateNodeScheduleResponse"> & {
+  /**
+   * @generated from field: v1.Node node = 1;
+   */
+  node?: Node | undefined;
+};
+
+/**
+ * Describes the message v1.UpdateNodeScheduleResponse.
+ * Use `create(UpdateNodeScheduleResponseSchema)` to create a new message.
+ */
+export const UpdateNodeScheduleResponseSchema: GenMessage<UpdateNodeScheduleResponse> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 8);
 
 /**
  * @generated from message v1.CreateJoinTokenRequest
@@ -173,7 +327,7 @@ export type CreateJoinTokenRequest = Message<"v1.CreateJoinTokenRequest"> & {
  * Use `create(CreateJoinTokenRequestSchema)` to create a new message.
  */
 export const CreateJoinTokenRequestSchema: GenMessage<CreateJoinTokenRequest> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 3);
+  messageDesc(file_v1_agent, 9);
 
 /**
  * @generated from message v1.CreateJoinTokenResponse
@@ -195,7 +349,7 @@ export type CreateJoinTokenResponse = Message<"v1.CreateJoinTokenResponse"> & {
  * Use `create(CreateJoinTokenResponseSchema)` to create a new message.
  */
 export const CreateJoinTokenResponseSchema: GenMessage<CreateJoinTokenResponse> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 4);
+  messageDesc(file_v1_agent, 10);
 
 /**
  * @generated from message v1.EnrollNodeRequest
@@ -222,7 +376,7 @@ export type EnrollNodeRequest = Message<"v1.EnrollNodeRequest"> & {
  * Use `create(EnrollNodeRequestSchema)` to create a new message.
  */
 export const EnrollNodeRequestSchema: GenMessage<EnrollNodeRequest> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 5);
+  messageDesc(file_v1_agent, 11);
 
 /**
  * @generated from message v1.EnrollNodeResponse
@@ -249,7 +403,7 @@ export type EnrollNodeResponse = Message<"v1.EnrollNodeResponse"> & {
  * Use `create(EnrollNodeResponseSchema)` to create a new message.
  */
 export const EnrollNodeResponseSchema: GenMessage<EnrollNodeResponse> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 6);
+  messageDesc(file_v1_agent, 12);
 
 /**
  * @generated from message v1.DesiredWorkload
@@ -316,7 +470,7 @@ export type DesiredWorkload = Message<"v1.DesiredWorkload"> & {
  * Use `create(DesiredWorkloadSchema)` to create a new message.
  */
 export const DesiredWorkloadSchema: GenMessage<DesiredWorkload> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 7);
+  messageDesc(file_v1_agent, 13);
 
 /**
  * @generated from message v1.ObservedWorkload
@@ -363,7 +517,7 @@ export type ObservedWorkload = Message<"v1.ObservedWorkload"> & {
  * Use `create(ObservedWorkloadSchema)` to create a new message.
  */
 export const ObservedWorkloadSchema: GenMessage<ObservedWorkload> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 8);
+  messageDesc(file_v1_agent, 14);
 
 /**
  * @generated from message v1.HeartbeatRequest
@@ -405,7 +559,7 @@ export type HeartbeatRequest = Message<"v1.HeartbeatRequest"> & {
  * Use `create(HeartbeatRequestSchema)` to create a new message.
  */
 export const HeartbeatRequestSchema: GenMessage<HeartbeatRequest> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 9);
+  messageDesc(file_v1_agent, 15);
 
 /**
  * @generated from message v1.DesiredBuild
@@ -457,7 +611,7 @@ export type DesiredBuild = Message<"v1.DesiredBuild"> & {
  * Use `create(DesiredBuildSchema)` to create a new message.
  */
 export const DesiredBuildSchema: GenMessage<DesiredBuild> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 10);
+  messageDesc(file_v1_agent, 16);
 
 /**
  * @generated from message v1.ObservedBuild
@@ -494,7 +648,7 @@ export type ObservedBuild = Message<"v1.ObservedBuild"> & {
  * Use `create(ObservedBuildSchema)` to create a new message.
  */
 export const ObservedBuildSchema: GenMessage<ObservedBuild> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 11);
+  messageDesc(file_v1_agent, 17);
 
 /**
  * @generated from message v1.DesiredEdgeRoute
@@ -538,7 +692,7 @@ export type DesiredEdgeRoute = Message<"v1.DesiredEdgeRoute"> & {
  * Use `create(DesiredEdgeRouteSchema)` to create a new message.
  */
 export const DesiredEdgeRouteSchema: GenMessage<DesiredEdgeRoute> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 12);
+  messageDesc(file_v1_agent, 18);
 
 /**
  * @generated from message v1.DesiredEdgePlan
@@ -570,7 +724,7 @@ export type DesiredEdgePlan = Message<"v1.DesiredEdgePlan"> & {
  * Use `create(DesiredEdgePlanSchema)` to create a new message.
  */
 export const DesiredEdgePlanSchema: GenMessage<DesiredEdgePlan> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 13);
+  messageDesc(file_v1_agent, 19);
 
 /**
  * @generated from message v1.ObservedEdge
@@ -607,7 +761,222 @@ export type ObservedEdge = Message<"v1.ObservedEdge"> & {
  * Use `create(ObservedEdgeSchema)` to create a new message.
  */
 export const ObservedEdgeSchema: GenMessage<ObservedEdge> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 14);
+  messageDesc(file_v1_agent, 20);
+
+/**
+ * @generated from message v1.DesiredNetworkPeer
+ */
+export type DesiredNetworkPeer = Message<"v1.DesiredNetworkPeer"> & {
+  /**
+   * @generated from field: string node_id = 1;
+   */
+  nodeId: string;
+
+  /**
+   * @generated from field: string node_name = 2;
+   */
+  nodeName: string;
+
+  /**
+   * @generated from field: string public_key = 3;
+   */
+  publicKey: string;
+
+  /**
+   * @generated from field: string address = 4;
+   */
+  address: string;
+
+  /**
+   * @generated from field: string endpoint = 5;
+   */
+  endpoint: string;
+
+  /**
+   * @generated from field: string allowed_ips = 6;
+   */
+  allowedIps: string;
+};
+
+/**
+ * Describes the message v1.DesiredNetworkPeer.
+ * Use `create(DesiredNetworkPeerSchema)` to create a new message.
+ */
+export const DesiredNetworkPeerSchema: GenMessage<DesiredNetworkPeer> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 21);
+
+/**
+ * @generated from message v1.DesiredNetworkDNSRecord
+ */
+export type DesiredNetworkDNSRecord = Message<"v1.DesiredNetworkDNSRecord"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string type = 2;
+   */
+  type: string;
+
+  /**
+   * @generated from field: string value = 3;
+   */
+  value: string;
+
+  /**
+   * @generated from field: int32 ttl_seconds = 4;
+   */
+  ttlSeconds: number;
+};
+
+/**
+ * Describes the message v1.DesiredNetworkDNSRecord.
+ * Use `create(DesiredNetworkDNSRecordSchema)` to create a new message.
+ */
+export const DesiredNetworkDNSRecordSchema: GenMessage<DesiredNetworkDNSRecord> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 22);
+
+/**
+ * @generated from message v1.DesiredNetworkCertificate
+ */
+export type DesiredNetworkCertificate = Message<"v1.DesiredNetworkCertificate"> & {
+  /**
+   * @generated from field: string hostname = 1;
+   */
+  hostname: string;
+
+  /**
+   * @generated from field: string cert_pem = 2;
+   */
+  certPem: string;
+
+  /**
+   * @generated from field: string key_pem = 3;
+   */
+  keyPem: string;
+
+  /**
+   * @generated from field: string not_after = 4;
+   */
+  notAfter: string;
+
+  /**
+   * @generated from field: string issuer = 5;
+   */
+  issuer: string;
+};
+
+/**
+ * Describes the message v1.DesiredNetworkCertificate.
+ * Use `create(DesiredNetworkCertificateSchema)` to create a new message.
+ */
+export const DesiredNetworkCertificateSchema: GenMessage<DesiredNetworkCertificate> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 23);
+
+/**
+ * @generated from message v1.DesiredNetworkPlan
+ */
+export type DesiredNetworkPlan = Message<"v1.DesiredNetworkPlan"> & {
+  /**
+   * @generated from field: int64 generation = 1;
+   */
+  generation: bigint;
+
+  /**
+   * @generated from field: string interface = 2;
+   */
+  interface: string;
+
+  /**
+   * @generated from field: string address = 3;
+   */
+  address: string;
+
+  /**
+   * @generated from field: int32 listen_port = 4;
+   */
+  listenPort: number;
+
+  /**
+   * @generated from field: string private_key = 5;
+   */
+  privateKey: string;
+
+  /**
+   * @generated from field: string public_key = 6;
+   */
+  publicKey: string;
+
+  /**
+   * @generated from field: repeated v1.DesiredNetworkPeer peers = 7;
+   */
+  peers: DesiredNetworkPeer[];
+
+  /**
+   * @generated from field: repeated v1.DesiredNetworkDNSRecord dns_records = 8;
+   */
+  dnsRecords: DesiredNetworkDNSRecord[];
+
+  /**
+   * @generated from field: string nftables = 9;
+   */
+  nftables: string;
+
+  /**
+   * @generated from field: string wg_config = 10;
+   */
+  wgConfig: string;
+
+  /**
+   * @generated from field: repeated v1.DesiredNetworkCertificate certificates = 11;
+   */
+  certificates: DesiredNetworkCertificate[];
+
+  /**
+   * @generated from field: bool apply = 12;
+   */
+  apply: boolean;
+};
+
+/**
+ * Describes the message v1.DesiredNetworkPlan.
+ * Use `create(DesiredNetworkPlanSchema)` to create a new message.
+ */
+export const DesiredNetworkPlanSchema: GenMessage<DesiredNetworkPlan> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 24);
+
+/**
+ * @generated from message v1.ObservedNetwork
+ */
+export type ObservedNetwork = Message<"v1.ObservedNetwork"> & {
+  /**
+   * @generated from field: int64 generation = 1;
+   */
+  generation: bigint;
+
+  /**
+   * @generated from field: string status = 2;
+   */
+  status: string;
+
+  /**
+   * @generated from field: string message = 3;
+   */
+  message: string;
+
+  /**
+   * @generated from field: repeated string log_lines = 4;
+   */
+  logLines: string[];
+};
+
+/**
+ * Describes the message v1.ObservedNetwork.
+ * Use `create(ObservedNetworkSchema)` to create a new message.
+ */
+export const ObservedNetworkSchema: GenMessage<ObservedNetwork> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 25);
 
 /**
  * @generated from message v1.HeartbeatResponse
@@ -632,6 +1001,11 @@ export type HeartbeatResponse = Message<"v1.HeartbeatResponse"> & {
    * @generated from field: v1.DesiredEdgePlan desired_edge = 4;
    */
   desiredEdge?: DesiredEdgePlan | undefined;
+
+  /**
+   * @generated from field: v1.DesiredNetworkPlan desired_network = 5;
+   */
+  desiredNetwork?: DesiredNetworkPlan | undefined;
 };
 
 /**
@@ -639,7 +1013,7 @@ export type HeartbeatResponse = Message<"v1.HeartbeatResponse"> & {
  * Use `create(HeartbeatResponseSchema)` to create a new message.
  */
 export const HeartbeatResponseSchema: GenMessage<HeartbeatResponse> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 15);
+  messageDesc(file_v1_agent, 26);
 
 /**
  * @generated from message v1.ReportObservedRequest
@@ -661,7 +1035,7 @@ export type ReportObservedRequest = Message<"v1.ReportObservedRequest"> & {
  * Use `create(ReportObservedRequestSchema)` to create a new message.
  */
 export const ReportObservedRequestSchema: GenMessage<ReportObservedRequest> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 16);
+  messageDesc(file_v1_agent, 27);
 
 /**
  * @generated from message v1.ReportObservedResponse
@@ -674,7 +1048,7 @@ export type ReportObservedResponse = Message<"v1.ReportObservedResponse"> & {
  * Use `create(ReportObservedResponseSchema)` to create a new message.
  */
 export const ReportObservedResponseSchema: GenMessage<ReportObservedResponse> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 17);
+  messageDesc(file_v1_agent, 28);
 
 /**
  * @generated from message v1.ReportBuildRequest
@@ -696,7 +1070,7 @@ export type ReportBuildRequest = Message<"v1.ReportBuildRequest"> & {
  * Use `create(ReportBuildRequestSchema)` to create a new message.
  */
 export const ReportBuildRequestSchema: GenMessage<ReportBuildRequest> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 18);
+  messageDesc(file_v1_agent, 29);
 
 /**
  * @generated from message v1.ReportBuildResponse
@@ -709,7 +1083,7 @@ export type ReportBuildResponse = Message<"v1.ReportBuildResponse"> & {
  * Use `create(ReportBuildResponseSchema)` to create a new message.
  */
 export const ReportBuildResponseSchema: GenMessage<ReportBuildResponse> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 19);
+  messageDesc(file_v1_agent, 30);
 
 /**
  * @generated from message v1.ReportEdgeRequest
@@ -731,7 +1105,7 @@ export type ReportEdgeRequest = Message<"v1.ReportEdgeRequest"> & {
  * Use `create(ReportEdgeRequestSchema)` to create a new message.
  */
 export const ReportEdgeRequestSchema: GenMessage<ReportEdgeRequest> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 20);
+  messageDesc(file_v1_agent, 31);
 
 /**
  * @generated from message v1.ReportEdgeResponse
@@ -744,7 +1118,292 @@ export type ReportEdgeResponse = Message<"v1.ReportEdgeResponse"> & {
  * Use `create(ReportEdgeResponseSchema)` to create a new message.
  */
 export const ReportEdgeResponseSchema: GenMessage<ReportEdgeResponse> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 21);
+  messageDesc(file_v1_agent, 32);
+
+/**
+ * @generated from message v1.ReportNetworkRequest
+ */
+export type ReportNetworkRequest = Message<"v1.ReportNetworkRequest"> & {
+  /**
+   * @generated from field: string node_id = 1;
+   */
+  nodeId: string;
+
+  /**
+   * @generated from field: v1.ObservedNetwork network = 2;
+   */
+  network?: ObservedNetwork | undefined;
+};
+
+/**
+ * Describes the message v1.ReportNetworkRequest.
+ * Use `create(ReportNetworkRequestSchema)` to create a new message.
+ */
+export const ReportNetworkRequestSchema: GenMessage<ReportNetworkRequest> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 33);
+
+/**
+ * @generated from message v1.ReportNetworkResponse
+ */
+export type ReportNetworkResponse = Message<"v1.ReportNetworkResponse"> & {
+};
+
+/**
+ * Describes the message v1.ReportNetworkResponse.
+ * Use `create(ReportNetworkResponseSchema)` to create a new message.
+ */
+export const ReportNetworkResponseSchema: GenMessage<ReportNetworkResponse> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 34);
+
+/**
+ * @generated from message v1.GetNetworkStatusRequest
+ */
+export type GetNetworkStatusRequest = Message<"v1.GetNetworkStatusRequest"> & {
+};
+
+/**
+ * Describes the message v1.GetNetworkStatusRequest.
+ * Use `create(GetNetworkStatusRequestSchema)` to create a new message.
+ */
+export const GetNetworkStatusRequestSchema: GenMessage<GetNetworkStatusRequest> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 35);
+
+/**
+ * @generated from message v1.NodeNetworkStatus
+ */
+export type NodeNetworkStatus = Message<"v1.NodeNetworkStatus"> & {
+  /**
+   * @generated from field: string node_id = 1;
+   */
+  nodeId: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string role = 3;
+   */
+  role: string;
+
+  /**
+   * @generated from field: string status = 4;
+   */
+  status: string;
+
+  /**
+   * @generated from field: string wg_address = 5;
+   */
+  wgAddress: string;
+
+  /**
+   * @generated from field: string wg_public_key = 6;
+   */
+  wgPublicKey: string;
+
+  /**
+   * @generated from field: string network_status = 7;
+   */
+  networkStatus: string;
+
+  /**
+   * @generated from field: string last_error = 8;
+   */
+  lastError: string;
+
+  /**
+   * @generated from field: int64 generation = 9;
+   */
+  generation: bigint;
+
+  /**
+   * @generated from field: int64 observed_generation = 10;
+   */
+  observedGeneration: bigint;
+};
+
+/**
+ * Describes the message v1.NodeNetworkStatus.
+ * Use `create(NodeNetworkStatusSchema)` to create a new message.
+ */
+export const NodeNetworkStatusSchema: GenMessage<NodeNetworkStatus> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 36);
+
+/**
+ * @generated from message v1.GetNetworkStatusResponse
+ */
+export type GetNetworkStatusResponse = Message<"v1.GetNetworkStatusResponse"> & {
+  /**
+   * @generated from field: int32 nodes_ready = 1;
+   */
+  nodesReady: number;
+
+  /**
+   * @generated from field: int32 nodes_total = 2;
+   */
+  nodesTotal: number;
+
+  /**
+   * @generated from field: int32 dns_records = 3;
+   */
+  dnsRecords: number;
+
+  /**
+   * @generated from field: int32 certificates = 4;
+   */
+  certificates: number;
+
+  /**
+   * @generated from field: string overlay_cidr = 5;
+   */
+  overlayCidr: string;
+
+  /**
+   * @generated from field: string dns_suffix = 6;
+   */
+  dnsSuffix: string;
+
+  /**
+   * @generated from field: bool apply_enabled = 7;
+   */
+  applyEnabled: boolean;
+
+  /**
+   * @generated from field: repeated v1.NodeNetworkStatus nodes = 8;
+   */
+  nodes: NodeNetworkStatus[];
+
+  /**
+   * @generated from field: repeated v1.DesiredNetworkDNSRecord records = 9;
+   */
+  records: DesiredNetworkDNSRecord[];
+};
+
+/**
+ * Describes the message v1.GetNetworkStatusResponse.
+ * Use `create(GetNetworkStatusResponseSchema)` to create a new message.
+ */
+export const GetNetworkStatusResponseSchema: GenMessage<GetNetworkStatusResponse> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 37);
+
+/**
+ * @generated from message v1.UpsertEgressPolicyRequest
+ */
+export type UpsertEgressPolicyRequest = Message<"v1.UpsertEgressPolicyRequest"> & {
+  /**
+   * @generated from field: string workload_id = 1;
+   */
+  workloadId: string;
+
+  /**
+   * allow | deny | allowlist
+   *
+   * @generated from field: string mode = 2;
+   */
+  mode: string;
+
+  /**
+   * @generated from field: repeated string allowlist = 3;
+   */
+  allowlist: string[];
+};
+
+/**
+ * Describes the message v1.UpsertEgressPolicyRequest.
+ * Use `create(UpsertEgressPolicyRequestSchema)` to create a new message.
+ */
+export const UpsertEgressPolicyRequestSchema: GenMessage<UpsertEgressPolicyRequest> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 38);
+
+/**
+ * @generated from message v1.UpsertEgressPolicyResponse
+ */
+export type UpsertEgressPolicyResponse = Message<"v1.UpsertEgressPolicyResponse"> & {
+  /**
+   * @generated from field: string workload_id = 1;
+   */
+  workloadId: string;
+
+  /**
+   * @generated from field: string mode = 2;
+   */
+  mode: string;
+
+  /**
+   * @generated from field: repeated string allowlist = 3;
+   */
+  allowlist: string[];
+};
+
+/**
+ * Describes the message v1.UpsertEgressPolicyResponse.
+ * Use `create(UpsertEgressPolicyResponseSchema)` to create a new message.
+ */
+export const UpsertEgressPolicyResponseSchema: GenMessage<UpsertEgressPolicyResponse> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 39);
+
+/**
+ * @generated from message v1.ListEgressPoliciesRequest
+ */
+export type ListEgressPoliciesRequest = Message<"v1.ListEgressPoliciesRequest"> & {
+};
+
+/**
+ * Describes the message v1.ListEgressPoliciesRequest.
+ * Use `create(ListEgressPoliciesRequestSchema)` to create a new message.
+ */
+export const ListEgressPoliciesRequestSchema: GenMessage<ListEgressPoliciesRequest> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 40);
+
+/**
+ * @generated from message v1.EgressPolicy
+ */
+export type EgressPolicy = Message<"v1.EgressPolicy"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string workload_id = 2;
+   */
+  workloadId: string;
+
+  /**
+   * @generated from field: string mode = 3;
+   */
+  mode: string;
+
+  /**
+   * @generated from field: repeated string allowlist = 4;
+   */
+  allowlist: string[];
+};
+
+/**
+ * Describes the message v1.EgressPolicy.
+ * Use `create(EgressPolicySchema)` to create a new message.
+ */
+export const EgressPolicySchema: GenMessage<EgressPolicy> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 41);
+
+/**
+ * @generated from message v1.ListEgressPoliciesResponse
+ */
+export type ListEgressPoliciesResponse = Message<"v1.ListEgressPoliciesResponse"> & {
+  /**
+   * @generated from field: repeated v1.EgressPolicy policies = 1;
+   */
+  policies: EgressPolicy[];
+};
+
+/**
+ * Describes the message v1.ListEgressPoliciesResponse.
+ * Use `create(ListEgressPoliciesResponseSchema)` to create a new message.
+ */
+export const ListEgressPoliciesResponseSchema: GenMessage<ListEgressPoliciesResponse> = /*@__PURE__*/
+  messageDesc(file_v1_agent, 42);
 
 /**
  * @generated from message v1.ListNodesRequest
@@ -757,7 +1416,7 @@ export type ListNodesRequest = Message<"v1.ListNodesRequest"> & {
  * Use `create(ListNodesRequestSchema)` to create a new message.
  */
 export const ListNodesRequestSchema: GenMessage<ListNodesRequest> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 22);
+  messageDesc(file_v1_agent, 43);
 
 /**
  * @generated from message v1.ListNodesResponse
@@ -774,7 +1433,7 @@ export type ListNodesResponse = Message<"v1.ListNodesResponse"> & {
  * Use `create(ListNodesResponseSchema)` to create a new message.
  */
 export const ListNodesResponseSchema: GenMessage<ListNodesResponse> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 23);
+  messageDesc(file_v1_agent, 44);
 
 /**
  * @generated from message v1.ConnectStreamRequest
@@ -806,7 +1465,7 @@ export type ConnectStreamRequest = Message<"v1.ConnectStreamRequest"> & {
  * Use `create(ConnectStreamRequestSchema)` to create a new message.
  */
 export const ConnectStreamRequestSchema: GenMessage<ConnectStreamRequest> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 24);
+  messageDesc(file_v1_agent, 45);
 
 /**
  * @generated from message v1.ConnectStreamResponse
@@ -833,7 +1492,7 @@ export type ConnectStreamResponse = Message<"v1.ConnectStreamResponse"> & {
  * Use `create(ConnectStreamResponseSchema)` to create a new message.
  */
 export const ConnectStreamResponseSchema: GenMessage<ConnectStreamResponse> = /*@__PURE__*/
-  messageDesc(file_v1_agent, 25);
+  messageDesc(file_v1_agent, 46);
 
 /**
  * @generated from service v1.AgentService
@@ -888,12 +1547,68 @@ export const AgentService: GenService<{
     output: typeof ReportEdgeResponseSchema;
   },
   /**
+   * @generated from rpc v1.AgentService.ReportNetwork
+   */
+  reportNetwork: {
+    methodKind: "unary";
+    input: typeof ReportNetworkRequestSchema;
+    output: typeof ReportNetworkResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AgentService.GetNetworkStatus
+   */
+  getNetworkStatus: {
+    methodKind: "unary";
+    input: typeof GetNetworkStatusRequestSchema;
+    output: typeof GetNetworkStatusResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AgentService.UpsertEgressPolicy
+   */
+  upsertEgressPolicy: {
+    methodKind: "unary";
+    input: typeof UpsertEgressPolicyRequestSchema;
+    output: typeof UpsertEgressPolicyResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AgentService.ListEgressPolicies
+   */
+  listEgressPolicies: {
+    methodKind: "unary";
+    input: typeof ListEgressPoliciesRequestSchema;
+    output: typeof ListEgressPoliciesResponseSchema;
+  },
+  /**
    * @generated from rpc v1.AgentService.ListNodes
    */
   listNodes: {
     methodKind: "unary";
     input: typeof ListNodesRequestSchema;
     output: typeof ListNodesResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AgentService.CordonNode
+   */
+  cordonNode: {
+    methodKind: "unary";
+    input: typeof CordonNodeRequestSchema;
+    output: typeof CordonNodeResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AgentService.DrainNode
+   */
+  drainNode: {
+    methodKind: "unary";
+    input: typeof DrainNodeRequestSchema;
+    output: typeof DrainNodeResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AgentService.UpdateNodeSchedule
+   */
+  updateNodeSchedule: {
+    methodKind: "unary";
+    input: typeof UpdateNodeScheduleRequestSchema;
+    output: typeof UpdateNodeScheduleResponseSchema;
   },
   /**
    * @generated from rpc v1.AgentService.ConnectStream

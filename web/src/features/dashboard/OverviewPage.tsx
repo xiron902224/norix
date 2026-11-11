@@ -24,7 +24,7 @@ interface OverviewPageProps {
 }
 
 const ACTIVITY = [
-  { title: 'Ops backups & alerts', detail: 'pg_dump + node.down / deploy.failed in Ops (S7)', time: 'Just now', tone: 'success' },
+  { title: 'Multi-node scheduler', detail: 'Replicas, spread/binpack, cordon/drain, orphan reschedule (S7)', time: 'Just now', tone: 'success' },
   { title: 'Edge HTTPS on :8443', detail: 'Open domains as https://host:8443 (Caddy)', time: '2m ago', tone: 'info' },
   { title: 'Git builds & deploys', detail: 'Build from git or public images in Projects', time: '12m ago', tone: 'success' },
   { title: 'Node live metrics', detail: 'CPU / memory / disk on the Nodes detail pane', time: '1h ago', tone: 'success' },

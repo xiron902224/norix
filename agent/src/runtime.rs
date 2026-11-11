@@ -140,7 +140,22 @@ impl Runtime {
         Ok((output.status.success(), text))
     }
 
+    async fn image_exists(&self, image: &str) -> bool {
+        Command::new(self.bin())
+            .args(["image", "inspect", image])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .await
+            .map(|status| status.success())
+            .unwrap_or(false)
+    }
+
     async fn pull(&self, image: &str) -> Result<()> {
+        // Local builds tag images on the node; don't require a reachable registry.
+        if self.image_exists(image).await {
+            return Ok(());
+        }
         let status = Command::new(self.bin())
             .args(["pull", image])
             .stdout(Stdio::null())

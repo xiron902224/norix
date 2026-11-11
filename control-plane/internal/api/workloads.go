@@ -48,6 +48,14 @@ func workloadFromProto(workload *paasv1.Workload) (db.Workload, error) {
 			sourceKind = "image"
 		}
 	}
+	strategy := strings.ToLower(strings.TrimSpace(workload.GetScheduleStrategy()))
+	if strategy == "" {
+		strategy = "spread"
+	}
+	replicas := workload.GetReplicaCount()
+	if replicas <= 0 {
+		replicas = 1
+	}
 	return db.Workload{
 		ID:             workload.GetId(),
 		ProjectID:      workload.GetProjectId(),
@@ -63,6 +71,12 @@ func workloadFromProto(workload *paasv1.Workload) (db.Workload, error) {
 		GitURL:         gitURL,
 		GitRef:         strings.TrimSpace(workload.GetGitRef()),
 		DockerfilePath: strings.TrimSpace(workload.GetDockerfilePath()),
+		ReplicaCount:       replicas,
+		ScheduleStrategy:   strategy,
+		RequireKVM:         workload.GetRequireKvm() || db.RequireKVMForRuntime(runtime),
+		PreferredZone:      strings.TrimSpace(workload.GetPreferredZone()),
+		AffinityLabels:     workload.GetAffinityLabels(),
+		AntiAffinityLabels: workload.GetAntiAffinityLabels(),
 	}, nil
 }
 
@@ -93,6 +107,9 @@ func workloadToProto(workload db.Workload) *paasv1.Workload {
 		LastError: workload.LastError, ContainerId: workload.ContainerID,
 		SourceKind: workload.SourceKind, GitUrl: workload.GitURL, GitRef: workload.GitRef,
 		DockerfilePath: workload.DockerfilePath, LatestBuildId: workload.LatestBuildID,
+		ReplicaCount: workload.ReplicaCount, ScheduleStrategy: workload.ScheduleStrategy,
+		RequireKvm: workload.RequireKVM, PreferredZone: workload.PreferredZone,
+		AffinityLabels: workload.AffinityLabels, AntiAffinityLabels: workload.AntiAffinityLabels,
 	}
 }
 
@@ -203,26 +220,12 @@ func (service WorkloadService) Deploy(ctx context.Context, request *paasv1.Deplo
 	if service.pool == nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, "no runtime agent enrolled; create a join token and enroll a node first")
 	}
-	node, err := db.PickOnlineNode(ctx, service.pool, identity.OrganizationID)
-	if err != nil {
-		if strings.Contains(err.Error(), "no online agent") || strings.Contains(err.Error(), "no runtime agent enrolled") {
-			return nil, connect.NewError(connect.CodeFailedPrecondition, err.Error())
-		}
-		return nil, internalError("pick node", err)
-	}
 	existing, err := db.GetWorkload(ctx, service.pool, identity.OrganizationID, workloadID)
 	if err != nil {
 		if strings.Contains(err.Error(), "get workload") {
 			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
 		}
 		return nil, internalError("get workload", err)
-	}
-	hostPort := existing.HostPort
-	if hostPort <= 0 {
-		hostPort, err = db.AllocateHostPort(ctx, service.pool, identity.OrganizationID)
-		if err != nil {
-			return nil, internalError("allocate port", err)
-		}
 	}
 	containerPort := request.GetContainerPort()
 	if containerPort <= 0 {
@@ -231,13 +234,16 @@ func (service WorkloadService) Deploy(ctx context.Context, request *paasv1.Deplo
 	if containerPort <= 0 {
 		containerPort = 80
 	}
-	deployment, _, err := db.DeployWorkload(ctx, service.pool, identity.OrganizationID, workloadID, node.ID, hostPort, containerPort, db.AuditActor{
+	deployment, _, err := db.DeployWorkload(ctx, service.pool, identity.OrganizationID, workloadID, "", 0, containerPort, db.AuditActor{
 		UserID: identity.UserID,
 		Email:  identity.Email,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "workload not found") {
 			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
+		}
+		if strings.Contains(err.Error(), "unschedulable") || strings.Contains(err.Error(), "no feasible") || strings.Contains(err.Error(), "no online") {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, err.Error())
 		}
 		return nil, internalError("deploy workload", err)
 	}

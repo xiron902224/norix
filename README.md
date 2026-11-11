@@ -1,108 +1,183 @@
-# Norix
+<h1 align="center">Norix</h1>
 
-Norix is a PaaS platform in early production-oriented MVP phase. The repository combines:
+<p align="center">
+  Open-source, self-hostable PaaS control plane.<br>
+  Point it at a Git repo or container image — it builds, schedules, routes, and TLS-terminates your app.<br>
+  Drive it from the web dashboard today; agent + edge on your own VPS.
+</p>
 
-- control-plane: Go + Connect RPC + PostgreSQL
-- web: React + Vite frontend (embedded in the control-plane binary)
-- agent: Rust runtime node for enrollment, heartbeat, builds and container reconcile
-- deploy: Docker Compose stack (Postgres + optional zot registry)
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-TBD-lightgrey" alt="License" /></a>
+  <a href="https://github.com/xiron902224/norix"><img src="https://img.shields.io/badge/github-xiron902224%2Fnorix-0b7285" alt="GitHub" /></a>
+  <a href="docs/ESTADO_Y_PLAN_V1.md"><img src="https://img.shields.io/badge/status-alpha-0b7285" alt="Status" /></a>
+</p>
 
-## Project layout
+<p align="center">
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#how-it-works">How It Works</a> ·
+  <a href="#interfaces">Interfaces</a> ·
+  <a href="#features">Features</a> ·
+  <a href="docs/ESTADO_Y_PLAN_V1.md">Docs</a>
+</p>
 
-- control-plane/: Connect server, migrations, auth and DB logic
-- web/: React frontend for first-run bootstrap and access control
-- agent/: future runtime agent for orchestration and workers
-- proto/: protobuf contracts used by Go, Rust and TypeScript
-- deploy/: local deployment and Docker recipes
-- docs/: architecture and sprint documentation (operational plan: `docs/ESTADO_Y_PLAN_V1.md`)
+---
 
-## Local stack
+## Quick Start
 
-The project is designed to run locally with:
+There's one decision first: **how you run Norix itself** (the control plane). Apps then land on enrolled agents (or the embedded local runtime on the same box).
 
-- PostgreSQL 16
-- control-plane on port 8080
-- web on Vite dev server (default 5173)
-- optional agent runtime once the Rust side is implemented
+| If you're… | Run Norix as | Where your apps run |
+|---|---|---|
+| **Solo / learning on one machine** | **Local stack** (Postgres + control plane + Vite) | Embedded local runtime (Docker) on that box |
+| **A VPS / always-on host** | **Control plane + agent** on the server | Docker/nerdctl on that host (and more nodes later) |
+| **Multi-node** | Same control plane | Scheduler places replicas across online workers |
 
-## Quick start
+> [!TIP]
+> **Local first.** Bring up Postgres + control plane + the dashboard. Deploy `nginx:alpine` before you wire git builds or domains — that validates reconcile end to end in minutes.
 
-1. Copy the environment examples:
+### Local stack
 
 ```bash
+git clone https://github.com/xiron902224/norix.git && cd norix
+
 cp .env.example .env
 cp control-plane/.env.example control-plane/.env
 cp web/.env.example web/.env
-cp agent/.env.example agent/.env
+
+# Postgres (+ optional edge / registry profiles)
+docker compose --env-file .env -f deploy/norix/docker-compose.yml up -d postgres
+
+# Control plane (migrates DB on boot)
+cd control-plane && set -a && . ./.env && set +a && go run ./cmd/server
+
+# Dashboard (another terminal)
+cd web && npm install && npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-2. Start PostgreSQL and the control plane:
+| Service | URL |
+|---|---|
+| Dashboard | http://127.0.0.1:5173 |
+| Control plane / health | http://127.0.0.1:8080/healthz |
+| Postgres | `127.0.0.1:5432` |
+| Caddy HTTPS (optional edge profile) | https://127.0.0.1:8443 |
+
+Bootstrap the first org/user in the UI, create a project, add a workload (`nginx:alpine`), and **Deploy**. The embedded local node reconciles containers when Docker is available on the host.
+
+<details>
+<summary>Optional: edge (Caddy + Pebble ACME) and registry (zot)</summary>
 
 ```bash
-docker compose --env-file .env -f deploy/norix/docker-compose.yml up -d --build
+docker compose --env-file .env -f deploy/norix/docker-compose.yml up -d postgres pebble caddy
+# registry (optional):
+docker compose --env-file .env -f deploy/norix/docker-compose.yml --profile registry up -d
 ```
 
-3. Start the web frontend:
+Domains are managed in the dashboard; TLS for local/dev uses Pebble. See `docs/SPRINT_6_CIERRE.md`.
+
+</details>
+
+<details>
+<summary>Optional: remote Rust agent</summary>
 
 ```bash
-cd web
-npm install
-npm run dev -- --host 0.0.0.0
+# From the Nodes page: create a join token, then:
+cd agent
+NORIX_JOIN_TOKEN='…' NORIX_CONTROL_PLANE_URL=http://127.0.0.1:8080 \
+  cargo +1.88.0 run --release
 ```
 
-4. Open the web app at http://127.0.0.1:5173
+The agent enrolls, heartbeats, runs git builds, and reconciles desired containers.
 
-5. Open the control plane at http://127.0.0.1:8080/healthz
+</details>
 
-## Root environment variables
-
-The root `.env` is used for Docker Compose local deployment. Example values:
-
-```dotenv
-POSTGRES_DB=norix
-POSTGRES_USER=norix
-POSTGRES_PASSWORD=change-me-local
-POSTGRES_APP_PASSWORD=change-me-local
-DATABASE_URL=postgres://norix_app:change-me-local@postgres:5432/norix?sslmode=disable
-MIGRATION_DATABASE_URL=postgres://norix:change-me-local@postgres:5432/norix?sslmode=disable
-HTTP_ADDR=:8080
-```
-
-## Sprint status
-
-- **S1 closed** — auth, RLS, RBAC, projects/workloads API, audit (`docs/SPRINT_1_CIERRE.md`)
-- **S2 delivered** — embedded React dashboard for projects/workloads (`docs/SPRINT_2_CIERRE.md`)
-- **S3 delivered** — Rust agent enrollment, heartbeat, nodes UI (`docs/SPRINT_3_CIERRE.md`)
-- **S4 delivered** — container reconcile + Deploy from dashboard (`docs/SPRINT_4_CIERRE.md`)
-- **S5 delivered** — git → docker build → registry/deploy (`docs/SPRINT_5_CIERRE.md`)
-- **S6 delivered** — Caddy edge, domains, TLS/Pebble (`docs/SPRINT_6_CIERRE.md`)
-- **S7 delivered** — backups, metrics, alerts (`docs/SPRINT_7_CIERRE.md`)
-- **Next: S8** — hardening / threat model
-
-Operational plan through **v1.0**: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md)
+**Single binary (embedded UI):**
 
 ```bash
-# build UI into the Go binary, then compile
 make build
 ./control-plane/bin/norix-control-plane
 # open http://127.0.0.1:8080
 ```
 
-## Important notes
+---
 
-- Never commit real secrets or production credentials. Keep `.env` files local only.
-- The repository ignores `.env` files by default via `.gitignore`.
-- The Rust agent enrolls, heartbeats, builds from git (Dockerfile), and reconciles containers (Docker/nerdctl).
+## How It Works
 
-## Useful commands
+Point Norix at a source — a **container image** or a **Git repo** — and it runs one loop end to end:
+
+1. **Declare.** Create a project/workload in the dashboard (image, port, replicas, schedule strategy, optional git URL).
+2. **Build (git).** An online node clones the repo, auto-detects a `Dockerfile` / `Containerfile` or `compose.yaml` / `docker-compose.yml`, builds an image, and optionally pushes to the local registry.
+3. **Schedule.** The control plane places replicas across online, non-cordoned workers (spread / binpack, zones, KVM filter).
+4. **Reconcile.** Agents (or the embedded local runtime) apply desired `run` / `stop` until observed state matches.
+5. **Route + TLS.** Domains map through the Caddy edge; local ACME via Pebble when the edge stack is up.
+6. **Operate.** Heartbeats, node metrics, backups, and alerts live under Ops. Cordon/drain evacuates workloads with an ordered stop before reschedule.
+
+Deleting a workload marks it **deleting**, sends `stop` to the node that owns the container, then purges the row once the container is gone — so Docker containers are not left behind.
+
+---
+
+## Interfaces
+
+- **Web dashboard** — projects, workloads, nodes (cordon/drain/zones), domains, ops.
+- **Connect RPC / protobuf API** — `proto/v1` contracts shared by Go, TypeScript, and the Rust agent.
+- **Rust agent** — enroll, heartbeat, build, reconcile, edge plan apply.
+- **Embedded local runtime** — same reconcile/build path inside the control plane when no remote agent is required.
+
+---
+
+## Features
+
+| | |
+|---|---|
+| **Git → image → deploy** | Dockerfile / Containerfile auto-detect, Compose build fallback, build logs in UI |
+| **Image deploys** | Public images (e.g. `nginx:alpine`) with host port allocation |
+| **Multi-replica scheduler** | Spread / binpack, zones, affinity hooks, require-KVM for micro-VMs |
+| **Cordon / drain** | Block scheduling; ordered evacuate + reschedule orphans (&lt; ~60s target) |
+| **Domains & TLS** | Caddy edge + Pebble (dev) / ACME path for HTTPS hostnames |
+| **Ops** | pg backups, node metrics, `node.down` / `deploy.failed` alerts |
+| **Tenancy** | Postgres RLS, sessions, RBAC (owner/admin/member) |
+
+---
+
+## Repository layout
+
+| Path | Role |
+|---|---|
+| `control-plane/` | Go Connect server, migrations, scheduler, local runtime |
+| `web/` | React + Vite dashboard |
+| `agent/` | Rust node agent |
+| `proto/` | Shared protobuf contracts |
+| `deploy/norix/` | Compose stack (Postgres, Caddy, Pebble, optional zot) |
+| `docs/` | Sprint plan and architecture (`docs/ESTADO_Y_PLAN_V1.md`) |
+
+---
+
+## Status
+
+**Alpha / learning-oriented PaaS** on the path to v1.0 (full sprint map in `docs/Plan de sprints de cero a producción.md`).
+
+**Delivered in tree:** auth/RLS, dashboard, agent enroll, container reconcile, git builds, edge/domains, ops basics, multi-node scheduler (replicas, cordon/drain, orphan reschedule).
+
+**Coming next (full plan S0–S22 → v1.0):** S9+ per `docs/Plan de sprints de cero a producción.md` (not the cut-to-10 hardening track). Private networking (S8 WireGuard mesh / DNS / nftables) is in tree.
+
+---
+
+## Contributing
+
+Use the sprint docs under `docs/` as the source of truth for scope. Keep secrets out of git (`.env` is ignored). Prefer small, reviewable PRs against `develop`.
 
 ```bash
-# local control plane tests
 cd control-plane && go test ./...
-
-# build control plane
-cd control-plane && CGO_ENABLED=0 go build -o bin/norix-control-plane ./cmd/server/main.go
-
-# web build
-cd web && npm run build
+cd web && npm run build && npm run lint
 ```
+
+---
+
+## Security
+
+Report vulnerabilities **privately** to the maintainers — not in public issues. Do not commit production credentials or join tokens.
+
+---
+
+## License
+
+License file is not finalized yet (badge TBD). Third-party components retain their own licenses.

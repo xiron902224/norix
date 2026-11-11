@@ -105,8 +105,15 @@ type Workload struct {
 	GitRef         string `protobuf:"bytes,21,opt,name=git_ref,json=gitRef,proto3" json:"git_ref,omitempty"`
 	DockerfilePath string `protobuf:"bytes,22,opt,name=dockerfile_path,json=dockerfilePath,proto3" json:"dockerfile_path,omitempty"`
 	LatestBuildId  string `protobuf:"bytes,23,opt,name=latest_build_id,json=latestBuildId,proto3" json:"latest_build_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	ReplicaCount   int32  `protobuf:"varint,24,opt,name=replica_count,json=replicaCount,proto3" json:"replica_count,omitempty"`
+	// spread | binpack
+	ScheduleStrategy   string            `protobuf:"bytes,25,opt,name=schedule_strategy,json=scheduleStrategy,proto3" json:"schedule_strategy,omitempty"`
+	RequireKvm         bool              `protobuf:"varint,26,opt,name=require_kvm,json=requireKvm,proto3" json:"require_kvm,omitempty"`
+	PreferredZone      string            `protobuf:"bytes,27,opt,name=preferred_zone,json=preferredZone,proto3" json:"preferred_zone,omitempty"`
+	AffinityLabels     map[string]string `protobuf:"bytes,28,rep,name=affinity_labels,json=affinityLabels,proto3" json:"affinity_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	AntiAffinityLabels map[string]string `protobuf:"bytes,29,rep,name=anti_affinity_labels,json=antiAffinityLabels,proto3" json:"anti_affinity_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *Workload) Reset() {
@@ -298,6 +305,48 @@ func (x *Workload) GetLatestBuildId() string {
 		return x.LatestBuildId
 	}
 	return ""
+}
+
+func (x *Workload) GetReplicaCount() int32 {
+	if x != nil {
+		return x.ReplicaCount
+	}
+	return 0
+}
+
+func (x *Workload) GetScheduleStrategy() string {
+	if x != nil {
+		return x.ScheduleStrategy
+	}
+	return ""
+}
+
+func (x *Workload) GetRequireKvm() bool {
+	if x != nil {
+		return x.RequireKvm
+	}
+	return false
+}
+
+func (x *Workload) GetPreferredZone() string {
+	if x != nil {
+		return x.PreferredZone
+	}
+	return ""
+}
+
+func (x *Workload) GetAffinityLabels() map[string]string {
+	if x != nil {
+		return x.AffinityLabels
+	}
+	return nil
+}
+
+func (x *Workload) GetAntiAffinityLabels() map[string]string {
+	if x != nil {
+		return x.AntiAffinityLabels
+	}
+	return nil
 }
 
 type ListWorkloadsRequest struct {
@@ -2006,7 +2055,8 @@ var File_v1_workload_proto protoreflect.FileDescriptor
 
 const file_v1_workload_proto_rawDesc = "" +
 	"\n" +
-	"\x11v1/workload.proto\x12\x02v1\"\xd9\x06\n" +
+	"\x11v1/workload.proto\x12\x02v1\"\xa0\n" +
+	"\n" +
 	"\bWorkload\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -2035,8 +2085,21 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\agit_url\x18\x14 \x01(\tR\x06gitUrl\x12\x17\n" +
 	"\agit_ref\x18\x15 \x01(\tR\x06gitRef\x12'\n" +
 	"\x0fdockerfile_path\x18\x16 \x01(\tR\x0edockerfilePath\x12&\n" +
-	"\x0flatest_build_id\x18\x17 \x01(\tR\rlatestBuildId\x1a:\n" +
+	"\x0flatest_build_id\x18\x17 \x01(\tR\rlatestBuildId\x12#\n" +
+	"\rreplica_count\x18\x18 \x01(\x05R\freplicaCount\x12+\n" +
+	"\x11schedule_strategy\x18\x19 \x01(\tR\x10scheduleStrategy\x12\x1f\n" +
+	"\vrequire_kvm\x18\x1a \x01(\bR\n" +
+	"requireKvm\x12%\n" +
+	"\x0epreferred_zone\x18\x1b \x01(\tR\rpreferredZone\x12I\n" +
+	"\x0faffinity_labels\x18\x1c \x03(\v2 .v1.Workload.AffinityLabelsEntryR\x0eaffinityLabels\x12V\n" +
+	"\x14anti_affinity_labels\x18\x1d \x03(\v2$.v1.Workload.AntiAffinityLabelsEntryR\x12antiAffinityLabels\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aA\n" +
+	"\x13AffinityLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aE\n" +
+	"\x17AntiAffinityLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"5\n" +
 	"\x14ListWorkloadsRequest\x12\x1d\n" +
@@ -2195,7 +2258,7 @@ func file_v1_workload_proto_rawDescGZIP() []byte {
 }
 
 var file_v1_workload_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
+var file_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
 var file_v1_workload_proto_goTypes = []any{
 	(RuntimeType)(0),                // 0: v1.RuntimeType
 	(*Workload)(nil),                // 1: v1.Workload
@@ -2233,59 +2296,63 @@ var file_v1_workload_proto_goTypes = []any{
 	(*DeleteProjectRequest)(nil),    // 33: v1.DeleteProjectRequest
 	(*DeleteProjectResponse)(nil),   // 34: v1.DeleteProjectResponse
 	nil,                             // 35: v1.Workload.EnvVarsEntry
-	nil,                             // 36: v1.DeployFromGitRequest.BuildSecretsEntry
+	nil,                             // 36: v1.Workload.AffinityLabelsEntry
+	nil,                             // 37: v1.Workload.AntiAffinityLabelsEntry
+	nil,                             // 38: v1.DeployFromGitRequest.BuildSecretsEntry
 }
 var file_v1_workload_proto_depIdxs = []int32{
 	0,  // 0: v1.Workload.runtime:type_name -> v1.RuntimeType
 	35, // 1: v1.Workload.env_vars:type_name -> v1.Workload.EnvVarsEntry
-	1,  // 2: v1.ListWorkloadsResponse.workloads:type_name -> v1.Workload
-	1,  // 3: v1.UpdateWorkloadRequest.workload:type_name -> v1.Workload
-	1,  // 4: v1.UpdateWorkloadResponse.workload:type_name -> v1.Workload
-	1,  // 5: v1.CreateWorkloadRequest.workload:type_name -> v1.Workload
-	1,  // 6: v1.CreateWorkloadResponse.workload:type_name -> v1.Workload
-	1,  // 7: v1.DeployRequest.workload:type_name -> v1.Workload
-	36, // 8: v1.DeployFromGitRequest.build_secrets:type_name -> v1.DeployFromGitRequest.BuildSecretsEntry
-	14, // 9: v1.ListBuildsResponse.builds:type_name -> v1.Build
-	14, // 10: v1.GetBuildLogsResponse.build:type_name -> v1.Build
-	21, // 11: v1.AssignDomainResponse.route:type_name -> v1.DomainRoute
-	21, // 12: v1.ListDomainsResponse.routes:type_name -> v1.DomainRoute
-	28, // 13: v1.CreateProjectResponse.project:type_name -> v1.Project
-	28, // 14: v1.ListProjectsResponse.projects:type_name -> v1.Project
-	8,  // 15: v1.WorkloadService.CreateWorkload:input_type -> v1.CreateWorkloadRequest
-	10, // 16: v1.WorkloadService.Deploy:input_type -> v1.DeployRequest
-	15, // 17: v1.WorkloadService.DeployFromGit:input_type -> v1.DeployFromGitRequest
-	2,  // 18: v1.WorkloadService.ListWorkloads:input_type -> v1.ListWorkloadsRequest
-	4,  // 19: v1.WorkloadService.UpdateWorkload:input_type -> v1.UpdateWorkloadRequest
-	6,  // 20: v1.WorkloadService.DeleteWorkload:input_type -> v1.DeleteWorkloadRequest
-	12, // 21: v1.WorkloadService.GetWorkloadLogs:input_type -> v1.GetWorkloadLogsRequest
-	17, // 22: v1.WorkloadService.ListBuilds:input_type -> v1.ListBuildsRequest
-	19, // 23: v1.WorkloadService.GetBuildLogs:input_type -> v1.GetBuildLogsRequest
-	22, // 24: v1.WorkloadService.AssignDomain:input_type -> v1.AssignDomainRequest
-	24, // 25: v1.WorkloadService.ListDomains:input_type -> v1.ListDomainsRequest
-	26, // 26: v1.WorkloadService.UnassignDomain:input_type -> v1.UnassignDomainRequest
-	29, // 27: v1.ProjectService.CreateProject:input_type -> v1.CreateProjectRequest
-	31, // 28: v1.ProjectService.ListProjects:input_type -> v1.ListProjectsRequest
-	33, // 29: v1.ProjectService.DeleteProject:input_type -> v1.DeleteProjectRequest
-	9,  // 30: v1.WorkloadService.CreateWorkload:output_type -> v1.CreateWorkloadResponse
-	11, // 31: v1.WorkloadService.Deploy:output_type -> v1.DeployResponse
-	16, // 32: v1.WorkloadService.DeployFromGit:output_type -> v1.DeployFromGitResponse
-	3,  // 33: v1.WorkloadService.ListWorkloads:output_type -> v1.ListWorkloadsResponse
-	5,  // 34: v1.WorkloadService.UpdateWorkload:output_type -> v1.UpdateWorkloadResponse
-	7,  // 35: v1.WorkloadService.DeleteWorkload:output_type -> v1.DeleteWorkloadResponse
-	13, // 36: v1.WorkloadService.GetWorkloadLogs:output_type -> v1.GetWorkloadLogsResponse
-	18, // 37: v1.WorkloadService.ListBuilds:output_type -> v1.ListBuildsResponse
-	20, // 38: v1.WorkloadService.GetBuildLogs:output_type -> v1.GetBuildLogsResponse
-	23, // 39: v1.WorkloadService.AssignDomain:output_type -> v1.AssignDomainResponse
-	25, // 40: v1.WorkloadService.ListDomains:output_type -> v1.ListDomainsResponse
-	27, // 41: v1.WorkloadService.UnassignDomain:output_type -> v1.UnassignDomainResponse
-	30, // 42: v1.ProjectService.CreateProject:output_type -> v1.CreateProjectResponse
-	32, // 43: v1.ProjectService.ListProjects:output_type -> v1.ListProjectsResponse
-	34, // 44: v1.ProjectService.DeleteProject:output_type -> v1.DeleteProjectResponse
-	30, // [30:45] is the sub-list for method output_type
-	15, // [15:30] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	36, // 2: v1.Workload.affinity_labels:type_name -> v1.Workload.AffinityLabelsEntry
+	37, // 3: v1.Workload.anti_affinity_labels:type_name -> v1.Workload.AntiAffinityLabelsEntry
+	1,  // 4: v1.ListWorkloadsResponse.workloads:type_name -> v1.Workload
+	1,  // 5: v1.UpdateWorkloadRequest.workload:type_name -> v1.Workload
+	1,  // 6: v1.UpdateWorkloadResponse.workload:type_name -> v1.Workload
+	1,  // 7: v1.CreateWorkloadRequest.workload:type_name -> v1.Workload
+	1,  // 8: v1.CreateWorkloadResponse.workload:type_name -> v1.Workload
+	1,  // 9: v1.DeployRequest.workload:type_name -> v1.Workload
+	38, // 10: v1.DeployFromGitRequest.build_secrets:type_name -> v1.DeployFromGitRequest.BuildSecretsEntry
+	14, // 11: v1.ListBuildsResponse.builds:type_name -> v1.Build
+	14, // 12: v1.GetBuildLogsResponse.build:type_name -> v1.Build
+	21, // 13: v1.AssignDomainResponse.route:type_name -> v1.DomainRoute
+	21, // 14: v1.ListDomainsResponse.routes:type_name -> v1.DomainRoute
+	28, // 15: v1.CreateProjectResponse.project:type_name -> v1.Project
+	28, // 16: v1.ListProjectsResponse.projects:type_name -> v1.Project
+	8,  // 17: v1.WorkloadService.CreateWorkload:input_type -> v1.CreateWorkloadRequest
+	10, // 18: v1.WorkloadService.Deploy:input_type -> v1.DeployRequest
+	15, // 19: v1.WorkloadService.DeployFromGit:input_type -> v1.DeployFromGitRequest
+	2,  // 20: v1.WorkloadService.ListWorkloads:input_type -> v1.ListWorkloadsRequest
+	4,  // 21: v1.WorkloadService.UpdateWorkload:input_type -> v1.UpdateWorkloadRequest
+	6,  // 22: v1.WorkloadService.DeleteWorkload:input_type -> v1.DeleteWorkloadRequest
+	12, // 23: v1.WorkloadService.GetWorkloadLogs:input_type -> v1.GetWorkloadLogsRequest
+	17, // 24: v1.WorkloadService.ListBuilds:input_type -> v1.ListBuildsRequest
+	19, // 25: v1.WorkloadService.GetBuildLogs:input_type -> v1.GetBuildLogsRequest
+	22, // 26: v1.WorkloadService.AssignDomain:input_type -> v1.AssignDomainRequest
+	24, // 27: v1.WorkloadService.ListDomains:input_type -> v1.ListDomainsRequest
+	26, // 28: v1.WorkloadService.UnassignDomain:input_type -> v1.UnassignDomainRequest
+	29, // 29: v1.ProjectService.CreateProject:input_type -> v1.CreateProjectRequest
+	31, // 30: v1.ProjectService.ListProjects:input_type -> v1.ListProjectsRequest
+	33, // 31: v1.ProjectService.DeleteProject:input_type -> v1.DeleteProjectRequest
+	9,  // 32: v1.WorkloadService.CreateWorkload:output_type -> v1.CreateWorkloadResponse
+	11, // 33: v1.WorkloadService.Deploy:output_type -> v1.DeployResponse
+	16, // 34: v1.WorkloadService.DeployFromGit:output_type -> v1.DeployFromGitResponse
+	3,  // 35: v1.WorkloadService.ListWorkloads:output_type -> v1.ListWorkloadsResponse
+	5,  // 36: v1.WorkloadService.UpdateWorkload:output_type -> v1.UpdateWorkloadResponse
+	7,  // 37: v1.WorkloadService.DeleteWorkload:output_type -> v1.DeleteWorkloadResponse
+	13, // 38: v1.WorkloadService.GetWorkloadLogs:output_type -> v1.GetWorkloadLogsResponse
+	18, // 39: v1.WorkloadService.ListBuilds:output_type -> v1.ListBuildsResponse
+	20, // 40: v1.WorkloadService.GetBuildLogs:output_type -> v1.GetBuildLogsResponse
+	23, // 41: v1.WorkloadService.AssignDomain:output_type -> v1.AssignDomainResponse
+	25, // 42: v1.WorkloadService.ListDomains:output_type -> v1.ListDomainsResponse
+	27, // 43: v1.WorkloadService.UnassignDomain:output_type -> v1.UnassignDomainResponse
+	30, // 44: v1.ProjectService.CreateProject:output_type -> v1.CreateProjectResponse
+	32, // 45: v1.ProjectService.ListProjects:output_type -> v1.ListProjectsResponse
+	34, // 46: v1.ProjectService.DeleteProject:output_type -> v1.DeleteProjectResponse
+	32, // [32:47] is the sub-list for method output_type
+	17, // [17:32] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_v1_workload_proto_init() }
@@ -2299,7 +2366,7 @@ func file_v1_workload_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_workload_proto_rawDesc), len(file_v1_workload_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   36,
+			NumMessages:   38,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

@@ -13,6 +13,7 @@ import {
   ListProjectsRequestSchema,
   ListWorkloadsRequestSchema,
   RuntimeType,
+  UpdateWorkloadRequestSchema,
   WorkloadSchema,
   type Build,
   type Project,
@@ -48,6 +49,10 @@ export async function createWorkload(input: {
   gitUrl?: string
   gitRef?: string
   dockerfilePath?: string
+  replicaCount?: number
+  scheduleStrategy?: string
+  requireKvm?: boolean
+  preferredZone?: string
 }): Promise<Workload> {
   const sourceKind = input.sourceKind ?? (input.gitUrl ? 'git' : 'image')
   const response = await workloadClient.createWorkload(create(CreateWorkloadRequestSchema, {
@@ -63,6 +68,10 @@ export async function createWorkload(input: {
       gitUrl: input.gitUrl ?? '',
       gitRef: input.gitRef ?? 'main',
       dockerfilePath: input.dockerfilePath ?? 'Dockerfile',
+      replicaCount: input.replicaCount ?? 1,
+      scheduleStrategy: input.scheduleStrategy ?? 'spread',
+      requireKvm: input.requireKvm ?? false,
+      preferredZone: input.preferredZone ?? 'default',
     }),
   }))
   if (!response.workload) throw new Error('Workload was not returned')
@@ -71,6 +80,47 @@ export async function createWorkload(input: {
 
 export async function deleteWorkload(id: string): Promise<void> {
   await workloadClient.deleteWorkload(create(DeleteWorkloadRequestSchema, { id }))
+}
+
+export async function updateWorkload(input: {
+  id: string
+  projectId: string
+  name: string
+  imageOrSource?: string
+  containerPort?: number
+  replicaCount?: number
+  scheduleStrategy?: string
+  requireKvm?: boolean
+  preferredZone?: string
+  sourceKind?: string
+  gitUrl?: string
+  gitRef?: string
+  dockerfilePath?: string
+  memoryLimitMb?: number
+  cpuShares?: number
+}): Promise<Workload> {
+  const response = await workloadClient.updateWorkload(create(UpdateWorkloadRequestSchema, {
+    workload: create(WorkloadSchema, {
+      id: input.id,
+      projectId: input.projectId,
+      name: input.name,
+      imageOrSource: input.imageOrSource || '',
+      runtime: RuntimeType.CONTAINER,
+      cpuShares: input.cpuShares ?? 1024,
+      memoryLimitMb: BigInt(input.memoryLimitMb ?? 512),
+      containerPort: input.containerPort ?? 80,
+      sourceKind: input.sourceKind || (input.gitUrl ? 'git' : 'image'),
+      gitUrl: input.gitUrl ?? '',
+      gitRef: input.gitRef ?? 'main',
+      dockerfilePath: input.dockerfilePath ?? 'Dockerfile',
+      replicaCount: input.replicaCount ?? 1,
+      scheduleStrategy: input.scheduleStrategy ?? 'spread',
+      requireKvm: input.requireKvm ?? false,
+      preferredZone: input.preferredZone ?? 'default',
+    }),
+  }))
+  if (!response.workload) throw new Error('Workload was not returned')
+  return response.workload
 }
 
 export async function deployWorkload(id: string, containerPort?: number) {

@@ -153,11 +153,95 @@ pub struct ObservedEdge {
     pub route_statuses: HashMap<String, String>,
 }
 
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredNetworkPeer {
+    #[serde(default)]
+    pub node_id: String,
+    #[serde(default)]
+    pub node_name: String,
+    #[serde(default)]
+    pub public_key: String,
+    #[serde(default)]
+    pub address: String,
+    #[serde(default)]
+    pub endpoint: String,
+    #[serde(default)]
+    pub allowed_ips: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredNetworkDNSRecord {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default, rename = "type")]
+    pub r#type: String,
+    #[serde(default)]
+    pub value: String,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub ttl_seconds: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredNetworkCertificate {
+    #[serde(default)]
+    pub hostname: String,
+    #[serde(default)]
+    pub cert_pem: String,
+    #[serde(default)]
+    pub key_pem: String,
+    #[serde(default)]
+    pub not_after: String,
+    #[serde(default)]
+    pub issuer: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredNetworkPlan {
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub generation: i64,
+    #[serde(default)]
+    pub interface: String,
+    #[serde(default)]
+    pub address: String,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub listen_port: i32,
+    #[serde(default)]
+    pub private_key: String,
+    #[serde(default)]
+    pub public_key: String,
+    #[serde(default)]
+    pub peers: Vec<DesiredNetworkPeer>,
+    #[serde(default)]
+    pub dns_records: Vec<DesiredNetworkDNSRecord>,
+    #[serde(default)]
+    pub nftables: String,
+    #[serde(default)]
+    pub wg_config: String,
+    #[serde(default)]
+    pub certificates: Vec<DesiredNetworkCertificate>,
+    #[serde(default)]
+    pub apply: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedNetwork {
+    pub generation: i64,
+    pub status: String,
+    pub message: String,
+    pub log_lines: Vec<String>,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct HeartbeatResult {
     pub desired_workloads: Vec<DesiredWorkload>,
     pub desired_builds: Vec<DesiredBuild>,
     pub desired_edge: Option<DesiredEdgePlan>,
+    pub desired_network: Option<DesiredNetworkPlan>,
 }
 
 #[derive(Deserialize)]
@@ -172,6 +256,8 @@ struct HeartbeatResponse {
     desired_builds: Vec<DesiredBuild>,
     #[serde(default)]
     desired_edge: Option<DesiredEdgePlan>,
+    #[serde(default)]
+    desired_network: Option<DesiredNetworkPlan>,
 }
 
 #[derive(Serialize)]
@@ -248,6 +334,7 @@ impl AgentClient {
                 desired_workloads: parsed.desired_workloads,
                 desired_builds: parsed.desired_builds,
                 desired_edge: parsed.desired_edge,
+                desired_network: parsed.desired_network.filter(|plan| plan.generation > 0),
             }),
             Err(error) => {
                 let mut result = HeartbeatResult::default();
@@ -289,9 +376,21 @@ impl AgentClient {
                         }
                     }
                 }
+                if let Some(network) = response
+                    .get("desiredNetwork")
+                    .or_else(|| response.get("desired_network"))
+                {
+                    if let Ok(parsed) = serde_json::from_value::<DesiredNetworkPlan>(network.clone())
+                    {
+                        if parsed.generation > 0 {
+                            result.desired_network = Some(parsed);
+                        }
+                    }
+                }
                 if result.desired_workloads.is_empty()
                     && result.desired_builds.is_empty()
                     && result.desired_edge.is_none()
+                    && result.desired_network.is_none()
                 {
                     tracing::warn!(%error, body = %response, "heartbeat decode partial; treating desired as empty");
                 }
@@ -313,6 +412,26 @@ impl AgentClient {
         };
         self.post_json(
             "/v1.AgentService/ReportEdge",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn report_network(&self, state: &NodeState, network: &ObservedNetwork) -> Result<()> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body<'a> {
+            node_id: &'a str,
+            network: &'a ObservedNetwork,
+        }
+        let body = Body {
+            node_id: &state.node_id,
+            network,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportNetwork",
             Some(&state.node_token),
             &body,
         )

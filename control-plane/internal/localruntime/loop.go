@@ -78,24 +78,12 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, runtime *Runtime, logger *
 		if _, err := db.ReclaimPendingBuilds(ctx, pool, orgID, node.ID); err != nil {
 			logger.Warn("reclaim builds for local node", "org", orgID, "error", err)
 		}
-		builds, err := db.ListDesiredBuildsForNode(ctx, pool, orgID, node.ID)
-		if err != nil {
-			logger.Warn("list desired builds for local node", "org", orgID, "error", err)
-		} else if len(builds) > 0 {
-			logger.Info("running local builds", "org", orgID, "count", len(builds))
-			for _, observedBuild := range runtime.RunBuilds(ctx, builds) {
-				if err := db.ApplyObservedBuild(ctx, pool, orgID, observedBuild, db.AuditActor{Email: "local-runtime"}); err != nil {
-					logger.Warn("apply observed build", "org", orgID, "build", observedBuild.ID, "error", err)
-				}
-			}
-		}
 
+		// Reconcile containers first so a slow git build cannot block deploys/deletes.
 		desired, err := db.ListDesiredWorkloadsForNode(ctx, pool, orgID, node.ID)
 		if err != nil {
 			logger.Warn("list desired for local node", "org", orgID, "error", err)
-			continue
-		}
-		if len(desired) > 0 {
+		} else if len(desired) > 0 {
 			observed := runtime.Reconcile(ctx, desired)
 			if err := db.ApplyObservedWorkloads(ctx, pool, orgID, observed); err != nil {
 				logger.Warn("apply observed local workloads", "org", orgID, "error", err)
@@ -105,13 +93,36 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, runtime *Runtime, logger *
 		edgePlan, err := db.GetDesiredEdgePlan(ctx, pool, orgID, node.ID)
 		if err != nil {
 			logger.Warn("desired edge plan", "org", orgID, "error", err)
-			continue
-		}
-		if edgePlan.Generation > 0 && len(edgePlan.Routes) > 0 {
+		} else if edgePlan.Generation > 0 && len(edgePlan.Routes) > 0 {
 			observedEdge := runtime.ApplyEdge(ctx, edgePlan)
-			_ = db.SaveEdgeConfigSnapshot(ctx, pool, orgID, edgePlan.Generation, "") // config stored on node state; CP tracks status
+			_ = db.SaveEdgeConfigSnapshot(ctx, pool, orgID, edgePlan.Generation, "")
 			if err := db.ApplyObservedEdge(ctx, pool, orgID, observedEdge, db.AuditActor{Email: "local-runtime"}); err != nil {
 				logger.Warn("apply observed edge", "org", orgID, "error", err)
+			}
+		}
+
+		networkPlan, err := db.GetDesiredNetworkPlan(ctx, pool, orgID, node.ID)
+		if err != nil {
+			logger.Warn("desired network plan", "org", orgID, "error", err)
+		} else if networkPlan.Generation > 0 {
+			observedNetwork := runtime.ApplyNetwork(ctx, networkPlan)
+			if err := db.ApplyObservedNetwork(ctx, pool, orgID, node.ID, observedNetwork); err != nil {
+				logger.Warn("apply observed network", "org", orgID, "error", err)
+			}
+		}
+
+		builds, err := db.ListDesiredBuildsForNode(ctx, pool, orgID, node.ID)
+		if err != nil {
+			logger.Warn("list desired builds for local node", "org", orgID, "error", err)
+		} else if len(builds) > 0 {
+			logger.Info("running local builds", "org", orgID, "count", len(builds))
+			buildCtx, cancel := context.WithTimeout(ctx, 8*time.Minute)
+			observedBuilds := runtime.RunBuilds(buildCtx, builds)
+			cancel()
+			for _, observedBuild := range observedBuilds {
+				if err := db.ApplyObservedBuild(ctx, pool, orgID, observedBuild, db.AuditActor{Email: "local-runtime"}); err != nil {
+					logger.Warn("apply observed build", "org", orgID, "build", observedBuild.ID, "error", err)
+				}
 			}
 		}
 	}

@@ -167,8 +167,17 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 			AcmeCa: edgePlan.ACMECA, CaddyAdminUrl: edgePlan.CaddyAdminURL,
 		}
 	}
+	var desiredNetwork *paasv1.DesiredNetworkPlan
+	networkPlan, err := db.GetDesiredNetworkPlan(ctx, service.pool, node.OrganizationID, node.ID)
+	if err != nil {
+		return nil, internalError("desired network plan", err)
+	}
+	if networkPlan.Generation > 0 {
+		desiredNetwork = desiredNetworkToProto(networkPlan)
+	}
 	return &paasv1.HeartbeatResponse{
-		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds, DesiredEdge: desiredEdge,
+		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds,
+		DesiredEdge: desiredEdge, DesiredNetwork: desiredNetwork,
 	}, nil
 }
 
@@ -198,6 +207,139 @@ func (service AgentService) ReportEdge(ctx context.Context, request *paasv1.Repo
 		return nil, internalError("report edge", err)
 	}
 	return &paasv1.ReportEdgeResponse{}, nil
+}
+
+func (service AgentService) ReportNetwork(ctx context.Context, request *paasv1.ReportNetworkRequest) (*paasv1.ReportNetworkResponse, error) {
+	node, ok := NodeFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "node credential required")
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		nodeID = node.ID
+	}
+	if nodeID != node.ID {
+		return nil, connect.NewError(connect.CodePermissionDenied, "node_id does not match credential")
+	}
+	network := request.GetNetwork()
+	if network == nil {
+		return nil, invalidArgument("network is required")
+	}
+	if err := db.ApplyObservedNetwork(ctx, service.pool, node.OrganizationID, node.ID, db.ObservedNetwork{
+		Generation: network.GetGeneration(),
+		Status:     network.GetStatus(),
+		Message:    network.GetMessage(),
+		LogLines:   network.GetLogLines(),
+	}); err != nil {
+		return nil, internalError("report network", err)
+	}
+	return &paasv1.ReportNetworkResponse{}, nil
+}
+
+func (service AgentService) GetNetworkStatus(ctx context.Context, _ *paasv1.GetNetworkStatusRequest) (*paasv1.GetNetworkStatusResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	status, err := db.GetNetworkStatus(ctx, service.pool, identity.OrganizationID)
+	if err != nil {
+		return nil, internalError("network status", err)
+	}
+	records, err := db.ListDNSRecords(ctx, service.pool, identity.OrganizationID)
+	if err != nil {
+		return nil, internalError("list dns records", err)
+	}
+	nodes := make([]*paasv1.NodeNetworkStatus, 0, len(status.Nodes))
+	for _, item := range status.Nodes {
+		nodes = append(nodes, &paasv1.NodeNetworkStatus{
+			NodeId: item.NodeID, Name: item.Name, Role: item.Role, Status: item.Status,
+			WgAddress: item.WGAddress, WgPublicKey: item.WGPublicKey,
+			NetworkStatus: item.NetworkStatus, LastError: item.LastError,
+			Generation: item.Generation, ObservedGeneration: item.ObservedGen,
+		})
+	}
+	dns := make([]*paasv1.DesiredNetworkDNSRecord, 0, len(records))
+	for _, item := range records {
+		dns = append(dns, &paasv1.DesiredNetworkDNSRecord{
+			Name: item.Name, Type: item.Type, Value: item.Value, TtlSeconds: item.TTL,
+		})
+	}
+	return &paasv1.GetNetworkStatusResponse{
+		NodesReady: int32(status.NodesReady), NodesTotal: int32(status.NodesTotal),
+		DnsRecords: int32(status.DNSRecords), Certificates: int32(status.Certificates),
+		OverlayCidr: status.OverlayCIDR, DnsSuffix: status.DNSSuffix,
+		ApplyEnabled: status.ApplyEnabled, Nodes: nodes, Records: dns,
+	}, nil
+}
+
+func (service AgentService) UpsertEgressPolicy(ctx context.Context, request *paasv1.UpsertEgressPolicyRequest) (*paasv1.UpsertEgressPolicyResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	workloadID := strings.TrimSpace(request.GetWorkloadId())
+	if workloadID == "" {
+		return nil, invalidArgument("workload_id is required")
+	}
+	policy, err := db.UpsertEgressPolicy(ctx, service.pool, identity.OrganizationID, workloadID, request.GetMode(), request.GetAllowlist(), db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.UpsertEgressPolicyResponse{
+		WorkloadId: policy.WorkloadID, Mode: policy.Mode, Allowlist: policy.Allowlist,
+	}, nil
+}
+
+func (service AgentService) ListEgressPolicies(ctx context.Context, _ *paasv1.ListEgressPoliciesRequest) (*paasv1.ListEgressPoliciesResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	policies, err := db.ListEgressPolicies(ctx, service.pool, identity.OrganizationID)
+	if err != nil {
+		return nil, internalError("list egress policies", err)
+	}
+	items := make([]*paasv1.EgressPolicy, 0, len(policies))
+	for _, item := range policies {
+		items = append(items, &paasv1.EgressPolicy{
+			Id: item.ID, WorkloadId: item.WorkloadID, Mode: item.Mode, Allowlist: item.Allowlist,
+		})
+	}
+	return &paasv1.ListEgressPoliciesResponse{Policies: items}, nil
+}
+
+func desiredNetworkToProto(plan db.DesiredNetworkPlan) *paasv1.DesiredNetworkPlan {
+	peers := make([]*paasv1.DesiredNetworkPeer, 0, len(plan.Peers))
+	for _, peer := range plan.Peers {
+		peers = append(peers, &paasv1.DesiredNetworkPeer{
+			NodeId: peer.NodeID, NodeName: peer.NodeName, PublicKey: peer.PublicKey,
+			Address: peer.Address, Endpoint: peer.Endpoint, AllowedIps: peer.AllowedIPs,
+		})
+	}
+	dns := make([]*paasv1.DesiredNetworkDNSRecord, 0, len(plan.DNSRecords))
+	for _, item := range plan.DNSRecords {
+		dns = append(dns, &paasv1.DesiredNetworkDNSRecord{
+			Name: item.Name, Type: item.Type, Value: item.Value, TtlSeconds: item.TTL,
+		})
+	}
+	certs := make([]*paasv1.DesiredNetworkCertificate, 0, len(plan.Certificates))
+	for _, item := range plan.Certificates {
+		certs = append(certs, &paasv1.DesiredNetworkCertificate{
+			Hostname: item.Hostname, CertPem: item.CertPEM, KeyPem: item.KeyPEM,
+			NotAfter: item.NotAfter.UTC().Format(time.RFC3339), Issuer: item.Issuer,
+		})
+	}
+	return &paasv1.DesiredNetworkPlan{
+		Generation: plan.Generation, Interface: plan.Interface, Address: plan.Address,
+		ListenPort: plan.ListenPort, PrivateKey: plan.PrivateKey, PublicKey: plan.PublicKey,
+		Peers: peers, DnsRecords: dns, Nftables: plan.Nftables, WgConfig: plan.WGConfig,
+		Certificates: certs, Apply: plan.Apply,
+	}
 }
 
 func (service AgentService) ReportBuild(ctx context.Context, request *paasv1.ReportBuildRequest) (*paasv1.ReportBuildResponse, error) {
@@ -365,6 +507,14 @@ func nodeToProto(node db.Node) *paasv1.Node {
 	if node.LastSeenAt != nil {
 		lastSeen = node.LastSeenAt.UTC().Format(time.RFC3339)
 	}
+	role := node.Role
+	if role == "" {
+		role = "worker"
+	}
+	zone := node.Zone
+	if zone == "" {
+		zone = "default"
+	}
 	return &paasv1.Node{
 		Id:             node.ID,
 		OrganizationId: node.OrganizationID,
@@ -375,6 +525,11 @@ func nodeToProto(node db.Node) *paasv1.Node {
 		CpuUsagePercent: node.CPUUsagePercent,
 		MemoryFreeMb:    node.MemoryFreeMB,
 		DiskFreeMb:      node.DiskFreeMB,
+		Role:            role,
+		Cordoned:        node.Cordoned,
+		Draining:        node.Draining,
+		Zone:            zone,
+		Labels:          node.Labels,
 		Capabilities: &paasv1.NodeCapabilities{
 			CpuCores:         node.Capabilities.CPUCores,
 			MemoryTotalMb:    node.Capabilities.MemoryTotalMB,
@@ -385,4 +540,67 @@ func nodeToProto(node db.Node) *paasv1.Node {
 			AgentVersion:     node.Capabilities.AgentVersion,
 		},
 	}
+}
+
+func (service AgentService) CordonNode(ctx context.Context, request *paasv1.CordonNodeRequest) (*paasv1.CordonNodeResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		return nil, invalidArgument("node_id is required")
+	}
+	node, err := db.SetNodeCordon(ctx, service.pool, identity.OrganizationID, nodeID, request.GetCordoned(), db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.CordonNodeResponse{Node: nodeToProto(node)}, nil
+}
+
+func (service AgentService) DrainNode(ctx context.Context, request *paasv1.DrainNodeRequest) (*paasv1.DrainNodeResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		return nil, invalidArgument("node_id is required")
+	}
+	node, err := db.SetNodeDrain(ctx, service.pool, identity.OrganizationID, nodeID, request.GetDraining(), db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.DrainNodeResponse{Node: nodeToProto(node)}, nil
+}
+
+func (service AgentService) UpdateNodeSchedule(ctx context.Context, request *paasv1.UpdateNodeScheduleRequest) (*paasv1.UpdateNodeScheduleResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		return nil, invalidArgument("node_id is required")
+	}
+	node, err := db.UpdateNodeScheduleMeta(ctx, service.pool, identity.OrganizationID, nodeID, request.GetRole(), request.GetZone(), request.GetLabels(), db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.UpdateNodeScheduleResponse{Node: nodeToProto(node)}, nil
 }

@@ -32,6 +32,41 @@ message Node {
   double cpu_usage_percent = 8;
   int64 memory_free_mb = 9;
   int64 disk_free_mb = 10;
+  // worker | edge
+  string role = 11;
+  bool cordoned = 12;
+  bool draining = 13;
+  string zone = 14;
+  map<string, string> labels = 15;
+}
+
+message CordonNodeRequest {
+  string node_id = 1;
+  bool cordoned = 2;
+}
+
+message CordonNodeResponse {
+  Node node = 1;
+}
+
+message DrainNodeRequest {
+  string node_id = 1;
+  bool draining = 2;
+}
+
+message DrainNodeResponse {
+  Node node = 1;
+}
+
+message UpdateNodeScheduleRequest {
+  string node_id = 1;
+  string role = 2;
+  string zone = 3;
+  map<string, string> labels = 4;
+}
+
+message UpdateNodeScheduleResponse {
+  Node node = 1;
 }
 
 message CreateJoinTokenRequest {
@@ -132,11 +167,58 @@ message ObservedEdge {
   map<string, string> route_statuses = 5;
 }
 
+message DesiredNetworkPeer {
+  string node_id = 1;
+  string node_name = 2;
+  string public_key = 3;
+  string address = 4;
+  string endpoint = 5;
+  string allowed_ips = 6;
+}
+
+message DesiredNetworkDNSRecord {
+  string name = 1;
+  string type = 2;
+  string value = 3;
+  int32 ttl_seconds = 4;
+}
+
+message DesiredNetworkCertificate {
+  string hostname = 1;
+  string cert_pem = 2;
+  string key_pem = 3;
+  string not_after = 4;
+  string issuer = 5;
+}
+
+message DesiredNetworkPlan {
+  int64 generation = 1;
+  string interface = 2;
+  string address = 3;
+  int32 listen_port = 4;
+  string private_key = 5;
+  string public_key = 6;
+  repeated DesiredNetworkPeer peers = 7;
+  repeated DesiredNetworkDNSRecord dns_records = 8;
+  string nftables = 9;
+  string wg_config = 10;
+  repeated DesiredNetworkCertificate certificates = 11;
+  bool apply = 12;
+}
+
+message ObservedNetwork {
+  int64 generation = 1;
+  string status = 2;
+  string message = 3;
+  repeated string log_lines = 4;
+}
+
 message HeartbeatResponse {
   string node_id = 1;
   repeated DesiredWorkload desired_workloads = 2;
   repeated DesiredBuild desired_builds = 3;
   DesiredEdgePlan desired_edge = 4;
+  DesiredNetworkPlan desired_network = 5;
 }
 
 message ReportObservedRequest {
@@ -159,6 +241,66 @@ message ReportEdgeRequest {
 }
 
 message ReportEdgeResponse {}
+
+message ReportNetworkRequest {
+  string node_id = 1;
+  ObservedNetwork network = 2;
+}
+
+message ReportNetworkResponse {}
+
+message GetNetworkStatusRequest {}
+
+message NodeNetworkStatus {
+  string node_id = 1;
+  string name = 2;
+  string role = 3;
+  string status = 4;
+  string wg_address = 5;
+  string wg_public_key = 6;
+  string network_status = 7;
+  string last_error = 8;
+  int64 generation = 9;
+  int64 observed_generation = 10;
+}
+
+message GetNetworkStatusResponse {
+  int32 nodes_ready = 1;
+  int32 nodes_total = 2;
+  int32 dns_records = 3;
+  int32 certificates = 4;
+  string overlay_cidr = 5;
+  string dns_suffix = 6;
+  bool apply_enabled = 7;
+  repeated NodeNetworkStatus nodes = 8;
+  repeated DesiredNetworkDNSRecord records = 9;
+}
+
+message UpsertEgressPolicyRequest {
+  string workload_id = 1;
+  // allow | deny | allowlist
+  string mode = 2;
+  repeated string allowlist = 3;
+}
+
+message UpsertEgressPolicyResponse {
+  string workload_id = 1;
+  string mode = 2;
+  repeated string allowlist = 3;
+}
+
+message ListEgressPoliciesRequest {}
+
+message EgressPolicy {
+  string id = 1;
+  string workload_id = 2;
+  string mode = 3;
+  repeated string allowlist = 4;
+}
+
+message ListEgressPoliciesResponse {
+  repeated EgressPolicy policies = 1;
+}
 
 message ListNodesRequest {}
 
@@ -186,6 +328,13 @@ service AgentService {
   rpc ReportObserved(ReportObservedRequest) returns (ReportObservedResponse);
   rpc ReportBuild(ReportBuildRequest) returns (ReportBuildResponse);
   rpc ReportEdge(ReportEdgeRequest) returns (ReportEdgeResponse);
+  rpc ReportNetwork(ReportNetworkRequest) returns (ReportNetworkResponse);
+  rpc GetNetworkStatus(GetNetworkStatusRequest) returns (GetNetworkStatusResponse);
+  rpc UpsertEgressPolicy(UpsertEgressPolicyRequest) returns (UpsertEgressPolicyResponse);
+  rpc ListEgressPolicies(ListEgressPoliciesRequest) returns (ListEgressPoliciesResponse);
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+  rpc CordonNode(CordonNodeRequest) returns (CordonNodeResponse);
+  rpc DrainNode(DrainNodeRequest) returns (DrainNodeResponse);
+  rpc UpdateNodeSchedule(UpdateNodeScheduleRequest) returns (UpdateNodeScheduleResponse);
   rpc ConnectStream(stream ConnectStreamRequest) returns (stream ConnectStreamResponse);
 }

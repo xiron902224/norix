@@ -104,7 +104,16 @@ func (runtime *Runtime) bin() string {
 	return string(runtime.engine)
 }
 
+func (runtime *Runtime) imageExists(ctx context.Context, image string) bool {
+	cmd := exec.CommandContext(ctx, runtime.bin(), "image", "inspect", image)
+	return cmd.Run() == nil
+}
+
 func (runtime *Runtime) pull(ctx context.Context, image string) error {
+	// Local builds tag images on the node; don't require a reachable registry.
+	if runtime.imageExists(ctx, image) {
+		return nil
+	}
 	cmd := exec.CommandContext(ctx, runtime.bin(), "pull", image)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

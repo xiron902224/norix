@@ -32,6 +32,11 @@ type Node struct {
 	CPUUsagePercent  float64
 	MemoryFreeMB     int64
 	DiskFreeMB       int64
+	Role             string
+	Cordoned         bool
+	Draining         bool
+	Zone             string
+	Labels           map[string]string
 }
 
 type JoinToken struct {
@@ -221,7 +226,8 @@ func ListNodes(ctx context.Context, pool *pgxpool.Pool, organizationID string) (
 		SELECT id::text, organization_id::text, name, status, last_seen_at,
 		       cpu_cores, memory_total_mb, docker_socket, containerd_socket,
 		       kvm_level, hostname, agent_version, is_local,
-		       cpu_usage_percent, memory_free_mb, disk_free_mb
+		       cpu_usage_percent, memory_free_mb, disk_free_mb,
+		       role, cordoned, draining, zone, labels::text
 		FROM nodes
 		ORDER BY is_local DESC, COALESCE(last_seen_at, created_at) DESC, name`)
 	if err != nil {
@@ -233,16 +239,25 @@ func ListNodes(ctx context.Context, pool *pgxpool.Pool, organizationID string) (
 	for rows.Next() {
 		var node Node
 		var lastSeen *time.Time
+		var labelsText string
 		if err := rows.Scan(
 			&node.ID, &node.OrganizationID, &node.Name, &node.Status, &lastSeen,
 			&node.Capabilities.CPUCores, &node.Capabilities.MemoryTotalMB,
 			&node.Capabilities.DockerSocket, &node.Capabilities.ContainerdSocket,
 			&node.Capabilities.KVMLevel, &node.Capabilities.Hostname, &node.Capabilities.AgentVersion,
 			&node.IsLocal, &node.CPUUsagePercent, &node.MemoryFreeMB, &node.DiskFreeMB,
+			&node.Role, &node.Cordoned, &node.Draining, &node.Zone, &labelsText,
 		); err != nil {
 			return nil, fmt.Errorf("scan node: %w", err)
 		}
 		node.LastSeenAt = lastSeen
+		node.Labels = decodeLabels([]byte(labelsText))
+		if node.Role == "" {
+			node.Role = "worker"
+		}
+		if node.Zone == "" {
+			node.Zone = "default"
+		}
 		nodes = append(nodes, node)
 	}
 	if err := rows.Err(); err != nil {
