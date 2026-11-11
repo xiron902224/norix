@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  Activity,
   FolderKanban,
   Globe,
   LayoutDashboard,
@@ -22,6 +23,7 @@ import { ProjectsPage } from '../projects/components/ProjectsPage'
 import { ProjectDetailPage } from '../projects/components/ProjectDetailPage'
 import { NodesPage } from '../nodes/components/NodesPage'
 import { DomainsPage } from '../domains/components/DomainsPage'
+import { OpsPage } from '../ops/components/OpsPage'
 import { OverviewPage } from './OverviewPage'
 
 interface DashboardShellProps {
@@ -29,7 +31,7 @@ interface DashboardShellProps {
   onSignOut: () => void
 }
 
-type NavKey = 'overview' | 'projects' | 'nodes' | 'domains'
+type NavKey = 'overview' | 'projects' | 'nodes' | 'domains' | 'ops'
 
 function roleLabel(role: number) {
   if (role === 1) return 'owner'
@@ -112,7 +114,9 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
         ? 'Nodes'
         : nav === 'domains'
           ? 'Domains'
-          : 'Projects'
+          : nav === 'ops'
+            ? 'Operations'
+            : 'Projects'
 
   const shellClass = [
     'app-shell',
@@ -179,6 +183,15 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
           >
             <Globe />
             <span className="nav-label">Domains</span>
+          </button>
+          <button
+            type="button"
+            className={`nav-item ${nav === 'ops' ? 'active' : ''}`}
+            onClick={() => go('ops')}
+            title="Operations"
+          >
+            <Activity />
+            <span className="nav-label">Ops</span>
           </button>
         </nav>
 
@@ -270,6 +283,7 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
 
             {nav === 'nodes' ? <NodesPage /> : null}
             {nav === 'domains' ? <DomainsPage /> : null}
+            {nav === 'ops' ? <OpsPage /> : null}
 
             {nav === 'projects' && selected ? (
               <ProjectDetailPage project={selected} onBack={() => setSelected(null)} />

@@ -22,13 +22,16 @@ type NodeCapabilities struct {
 }
 
 type Node struct {
-	ID             string
-	OrganizationID string
-	Name           string
-	Status         string
-	LastSeenAt     *time.Time
-	Capabilities   NodeCapabilities
-	IsLocal        bool
+	ID               string
+	OrganizationID   string
+	Name             string
+	Status           string
+	LastSeenAt       *time.Time
+	Capabilities     NodeCapabilities
+	IsLocal          bool
+	CPUUsagePercent  float64
+	MemoryFreeMB     int64
+	DiskFreeMB       int64
 }
 
 type JoinToken struct {
@@ -217,7 +220,8 @@ func ListNodes(ctx context.Context, pool *pgxpool.Pool, organizationID string) (
 	rows, err := tx.Query(ctx, `
 		SELECT id::text, organization_id::text, name, status, last_seen_at,
 		       cpu_cores, memory_total_mb, docker_socket, containerd_socket,
-		       kvm_level, hostname, agent_version, is_local
+		       kvm_level, hostname, agent_version, is_local,
+		       cpu_usage_percent, memory_free_mb, disk_free_mb
 		FROM nodes
 		ORDER BY is_local DESC, COALESCE(last_seen_at, created_at) DESC, name`)
 	if err != nil {
@@ -234,7 +238,7 @@ func ListNodes(ctx context.Context, pool *pgxpool.Pool, organizationID string) (
 			&node.Capabilities.CPUCores, &node.Capabilities.MemoryTotalMB,
 			&node.Capabilities.DockerSocket, &node.Capabilities.ContainerdSocket,
 			&node.Capabilities.KVMLevel, &node.Capabilities.Hostname, &node.Capabilities.AgentVersion,
-			&node.IsLocal,
+			&node.IsLocal, &node.CPUUsagePercent, &node.MemoryFreeMB, &node.DiskFreeMB,
 		); err != nil {
 			return nil, fmt.Errorf("scan node: %w", err)
 		}
@@ -269,7 +273,7 @@ func HasEnrolledNode(ctx context.Context, pool *pgxpool.Pool, organizationID str
 	return exists, nil
 }
 
-func RecordHeartbeat(ctx context.Context, pool *pgxpool.Pool, organizationID, nodeID, status string, caps *NodeCapabilities) error {
+func RecordHeartbeat(ctx context.Context, pool *pgxpool.Pool, organizationID, nodeID, status string, caps *NodeCapabilities, cpuUsage float64, memoryFreeMB, diskFreeMB int64) error {
 	if status == "" {
 		status = "online"
 	}
@@ -296,11 +300,15 @@ func RecordHeartbeat(ctx context.Context, pool *pgxpool.Pool, organizationID, no
 				containerd_socket = $8,
 				kvm_level = $9,
 				hostname = CASE WHEN $10 = '' THEN hostname ELSE $10 END,
-				agent_version = CASE WHEN $11 = '' THEN agent_version ELSE $11 END
+				agent_version = CASE WHEN $11 = '' THEN agent_version ELSE $11 END,
+				cpu_usage_percent = $12,
+				memory_free_mb = $13,
+				disk_free_mb = $14
 			WHERE id = $1::uuid AND organization_id = $2::uuid`,
 			nodeID, organizationID, status, now,
 			caps.CPUCores, caps.MemoryTotalMB, caps.DockerSocket, caps.ContainerdSocket,
 			int32(caps.KVMLevel), caps.Hostname, caps.AgentVersion,
+			cpuUsage, memoryFreeMB, diskFreeMB,
 		)
 		if execErr != nil {
 			return fmt.Errorf("update heartbeat: %w", execErr)
@@ -308,9 +316,10 @@ func RecordHeartbeat(ctx context.Context, pool *pgxpool.Pool, organizationID, no
 		affected = commandTag.RowsAffected()
 	} else {
 		commandTag, execErr := tx.Exec(ctx, `
-			UPDATE nodes SET status = $3, last_seen_at = $4, updated_at = $4
+			UPDATE nodes SET status = $3, last_seen_at = $4, updated_at = $4,
+				cpu_usage_percent = $5, memory_free_mb = $6, disk_free_mb = $7
 			WHERE id = $1::uuid AND organization_id = $2::uuid`,
-			nodeID, organizationID, status, now,
+			nodeID, organizationID, status, now, cpuUsage, memoryFreeMB, diskFreeMB,
 		)
 		if execErr != nil {
 			return fmt.Errorf("update heartbeat: %w", execErr)

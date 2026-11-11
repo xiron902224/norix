@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -71,6 +73,46 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
+// SampleHostMetrics returns coarse CPU%, free memory MB, and free root disk MB.
+func SampleHostMetrics() (cpuPercent float64, memoryFreeMB, diskFreeMB int64) {
+	if data, err := os.ReadFile("/proc/meminfo"); err == nil {
+		for _, line := range strings.Split(string(data), "\n") {
+			if strings.HasPrefix(line, "MemAvailable:") {
+				fields := strings.Fields(line)
+				if len(fields) >= 2 {
+					var kb int64
+					_, _ = fmt.Sscanf(fields[1], "%d", &kb)
+					memoryFreeMB = kb / 1024
+				}
+				break
+			}
+		}
+	}
+	var st syscall.Statfs_t
+	if err := syscall.Statfs("/", &st); err == nil && st.Bsize > 0 {
+		diskFreeMB = int64(st.Bavail*uint64(st.Bsize)) / (1024 * 1024)
+	}
+	if data, err := os.ReadFile("/proc/loadavg"); err == nil {
+		fields := strings.Fields(string(data))
+		if len(fields) > 0 {
+			if load, parseErr := strconv.ParseFloat(fields[0], 64); parseErr == nil {
+				cores := float64(runtime.NumCPU())
+				if cores < 1 {
+					cores = 1
+				}
+				cpuPercent = (load / cores) * 100
+				if cpuPercent > 100 {
+					cpuPercent = 100
+				}
+				if cpuPercent < 0 {
+					cpuPercent = 0
+				}
+			}
+		}
+	}
+	return cpuPercent, memoryFreeMB, diskFreeMB
+}
+
 func detectKVMLevel() uint32 {
 	if !fileExists("/dev/kvm") {
 		return 0
@@ -106,11 +148,13 @@ func EnsureLocalNode(ctx context.Context, pool *pgxpool.Pool, organizationID str
 	}
 
 	now := time.Now().UTC()
+	cpuUsage, memFree, diskFree := SampleHostMetrics()
 	var node Node
 	err = tx.QueryRow(ctx, `
 		SELECT id::text, organization_id::text, name, status, last_seen_at,
 		       cpu_cores, memory_total_mb, docker_socket, containerd_socket,
-		       kvm_level, hostname, agent_version, is_local
+		       kvm_level, hostname, agent_version, is_local,
+		       cpu_usage_percent, memory_free_mb, disk_free_mb
 		FROM nodes
 		WHERE is_local
 		LIMIT 1`).Scan(
@@ -118,7 +162,7 @@ func EnsureLocalNode(ctx context.Context, pool *pgxpool.Pool, organizationID str
 		&node.Capabilities.CPUCores, &node.Capabilities.MemoryTotalMB,
 		&node.Capabilities.DockerSocket, &node.Capabilities.ContainerdSocket,
 		&node.Capabilities.KVMLevel, &node.Capabilities.Hostname, &node.Capabilities.AgentVersion,
-		&node.IsLocal,
+		&node.IsLocal, &node.CPUUsagePercent, &node.MemoryFreeMB, &node.DiskFreeMB,
 	)
 	if err == nil {
 		_, err = tx.Exec(ctx, `
@@ -132,11 +176,15 @@ func EnsureLocalNode(ctx context.Context, pool *pgxpool.Pool, organizationID str
 				containerd_socket = $6,
 				kvm_level = $7,
 				hostname = $8,
-				agent_version = $9
+				agent_version = $9,
+				cpu_usage_percent = $10,
+				memory_free_mb = $11,
+				disk_free_mb = $12
 			WHERE id = $1::uuid`,
 			node.ID, now,
 			caps.CPUCores, caps.MemoryTotalMB, caps.DockerSocket, caps.ContainerdSocket,
 			int32(caps.KVMLevel), caps.Hostname, caps.AgentVersion,
+			cpuUsage, memFree, diskFree,
 		)
 		if err != nil {
 			return Node{}, fmt.Errorf("refresh local node: %w", err)
@@ -145,6 +193,9 @@ func EnsureLocalNode(ctx context.Context, pool *pgxpool.Pool, organizationID str
 		node.LastSeenAt = &now
 		node.Capabilities = caps
 		node.IsLocal = true
+		node.CPUUsagePercent = cpuUsage
+		node.MemoryFreeMB = memFree
+		node.DiskFreeMB = diskFree
 		if err := tx.Commit(ctx); err != nil {
 			return Node{}, err
 		}

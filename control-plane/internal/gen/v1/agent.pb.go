@@ -182,16 +182,19 @@ func (x *NodeHeartbeat) GetKvmLevel() uint32 {
 }
 
 type Node struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrganizationId string                 `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	Name           string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Status         string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
-	LastSeenAt     string                 `protobuf:"bytes,5,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"last_seen_at,omitempty"`
-	Capabilities   *NodeCapabilities      `protobuf:"bytes,6,opt,name=capabilities,proto3" json:"capabilities,omitempty"`
-	IsLocal        bool                   `protobuf:"varint,7,opt,name=is_local,json=isLocal,proto3" json:"is_local,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrganizationId  string                 `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	Name            string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Status          string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	LastSeenAt      string                 `protobuf:"bytes,5,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"last_seen_at,omitempty"`
+	Capabilities    *NodeCapabilities      `protobuf:"bytes,6,opt,name=capabilities,proto3" json:"capabilities,omitempty"`
+	IsLocal         bool                   `protobuf:"varint,7,opt,name=is_local,json=isLocal,proto3" json:"is_local,omitempty"`
+	CpuUsagePercent float64                `protobuf:"fixed64,8,opt,name=cpu_usage_percent,json=cpuUsagePercent,proto3" json:"cpu_usage_percent,omitempty"`
+	MemoryFreeMb    int64                  `protobuf:"varint,9,opt,name=memory_free_mb,json=memoryFreeMb,proto3" json:"memory_free_mb,omitempty"`
+	DiskFreeMb      int64                  `protobuf:"varint,10,opt,name=disk_free_mb,json=diskFreeMb,proto3" json:"disk_free_mb,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Node) Reset() {
@@ -271,6 +274,27 @@ func (x *Node) GetIsLocal() bool {
 		return x.IsLocal
 	}
 	return false
+}
+
+func (x *Node) GetCpuUsagePercent() float64 {
+	if x != nil {
+		return x.CpuUsagePercent
+	}
+	return 0
+}
+
+func (x *Node) GetMemoryFreeMb() int64 {
+	if x != nil {
+		return x.MemoryFreeMb
+	}
+	return 0
+}
+
+func (x *Node) GetDiskFreeMb() int64 {
+	if x != nil {
+		return x.DiskFreeMb
+	}
+	return 0
 }
 
 type CreateJoinTokenRequest struct {
@@ -1758,7 +1782,7 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12*\n" +
 	"\x11cpu_usage_percent\x18\x02 \x01(\x01R\x0fcpuUsagePercent\x12$\n" +
 	"\x0ememory_free_mb\x18\x03 \x01(\x03R\fmemoryFreeMb\x12\x1b\n" +
-	"\tkvm_level\x18\x04 \x01(\rR\bkvmLevel\"\xe2\x01\n" +
+	"\tkvm_level\x18\x04 \x01(\rR\bkvmLevel\"\xd6\x02\n" +
 	"\x04Node\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0forganization_id\x18\x02 \x01(\tR\x0eorganizationId\x12\x12\n" +
@@ -1767,7 +1791,12 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\flast_seen_at\x18\x05 \x01(\tR\n" +
 	"lastSeenAt\x128\n" +
 	"\fcapabilities\x18\x06 \x01(\v2\x14.v1.NodeCapabilitiesR\fcapabilities\x12\x19\n" +
-	"\bis_local\x18\a \x01(\bR\aisLocal\"V\n" +
+	"\bis_local\x18\a \x01(\bR\aisLocal\x12*\n" +
+	"\x11cpu_usage_percent\x18\b \x01(\x01R\x0fcpuUsagePercent\x12$\n" +
+	"\x0ememory_free_mb\x18\t \x01(\x03R\fmemoryFreeMb\x12 \n" +
+	"\fdisk_free_mb\x18\n" +
+	" \x01(\x03R\n" +
+	"diskFreeMb\"V\n" +
 	"\x16CreateJoinTokenRequest\x12\x1b\n" +
 	"\tnode_name\x18\x01 \x01(\tR\bnodeName\x12\x1f\n" +
 	"\vttl_seconds\x18\x02 \x01(\x03R\n" +

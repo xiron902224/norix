@@ -76,7 +76,8 @@ HTTP_ADDR=:8080
 - **S4 delivered** — container reconcile + Deploy from dashboard (`docs/SPRINT_4_CIERRE.md`)
 - **S5 delivered** — git → docker build → registry/deploy (`docs/SPRINT_5_CIERRE.md`)
 - **S6 delivered** — Caddy edge, domains, TLS/Pebble (`docs/SPRINT_6_CIERRE.md`)
-- **Next: S7** — ops, backup, observability
+- **S7 delivered** — backups, metrics, alerts (`docs/SPRINT_7_CIERRE.md`)
+- **Next: S8** — hardening / threat model
 
 Operational plan through **v1.0**: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md)
 

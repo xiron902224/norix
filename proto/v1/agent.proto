@@ -29,6 +29,9 @@ message Node {
   string last_seen_at = 5;
   NodeCapabilities capabilities = 6;
   bool is_local = 7;
+  double cpu_usage_percent = 8;
+  int64 memory_free_mb = 9;
+  int64 disk_free_mb = 10;
 }
 
 message CreateJoinTokenRequest {

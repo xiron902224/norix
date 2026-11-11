@@ -224,7 +224,11 @@ fn build_config(plan: &DesiredEdgePlan) -> Result<(String, HashMap<String, Strin
         apps["tls"] = json!({"automation": {"policies": policies}});
     }
 
-    let payload = json!({"apps": apps});
+    // Keep admin reachable from the published host port after /load.
+    let payload = json!({
+        "admin": {"listen": "0.0.0.0:2019"},
+        "apps": apps
+    });
     Ok((payload.to_string(), route_statuses, logs))
 }
 

@@ -438,10 +438,9 @@ func (service WorkloadService) UnassignDomain(ctx context.Context, request *paas
 }
 
 func domainToProto(route db.DomainRoute) *paasv1.DomainRoute {
-	scheme := "https"
 	return &paasv1.DomainRoute{
 		Id: route.ID, WorkloadId: route.WorkloadID, Hostname: route.Hostname,
 		Status: route.Status, TlsMode: route.TLSMode, LastError: route.LastError,
-		HttpsUrl: fmt.Sprintf("%s://%s", scheme, route.Hostname), EdgeGeneration: route.EdgeGeneration,
+		HttpsUrl: db.DomainPublicURL(route.Hostname), EdgeGeneration: route.EdgeGeneration,
 	}
 }

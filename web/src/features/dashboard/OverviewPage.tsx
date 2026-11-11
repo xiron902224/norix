@@ -24,11 +24,11 @@ interface OverviewPageProps {
 }
 
 const ACTIVITY = [
-  { title: 'Container reconcile online', detail: 'Desired→observed via agent heartbeat (S4)', time: 'Just now', tone: 'success' },
-  { title: 'Deploy public images', detail: 'nginx:alpine and friends from the project page', time: '2m ago', tone: 'info' },
-  { title: 'Nodes + join tokens', detail: 'Enroll agents from the Nodes page', time: '12m ago', tone: 'success' },
-  { title: 'Session renew healthy', detail: 'Control plane auth refresh OK', time: '1h ago', tone: 'success' },
-  { title: 'Git builds next', detail: 'BuildKit + registry arrive in Sprint 5', time: '3h ago', tone: 'muted' },
+  { title: 'Ops backups & alerts', detail: 'pg_dump + node.down / deploy.failed in Ops (S7)', time: 'Just now', tone: 'success' },
+  { title: 'Edge HTTPS on :8443', detail: 'Open domains as https://host:8443 (Caddy)', time: '2m ago', tone: 'info' },
+  { title: 'Git builds & deploys', detail: 'Build from git or public images in Projects', time: '12m ago', tone: 'success' },
+  { title: 'Node live metrics', detail: 'CPU / memory / disk on the Nodes detail pane', time: '1h ago', tone: 'success' },
+  { title: 'Next: hardening', detail: 'Threat model and release signing in Sprint 8', time: '3h ago', tone: 'muted' },
 ] as const
 
 function greeting() {

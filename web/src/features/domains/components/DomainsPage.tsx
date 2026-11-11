@@ -1,30 +1,36 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Globe, Trash2 } from 'lucide-react'
+import { ExternalLink, Globe, Link2, Trash2, TriangleAlert } from 'lucide-react'
 import { Button } from '../../../shared/ui/Button'
 import { FormField } from '../../../shared/ui/FormField'
+import { SelectField } from '../../../shared/ui/SelectField'
+import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
+import { domainHttpUrl, domainPublicUrl } from '../../../shared/lib/edge'
 import type { DomainRoute, Project, Workload } from '../../../gen/v1/workload_pb'
 import { listProjects, listWorkloads } from '../../projects/services/projects-api'
 import { assignDomain, listDomains, unassignDomain } from '../services/domains-api'
+
+function busyStatus(status: string) {
+  return status === 'pending' || status === 'provisioning' || status === 'deleting'
+}
 
 export function DomainsPage() {
   const [routes, setRoutes] = useState<DomainRoute[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [workloads, setWorkloads] = useState<Workload[]>([])
   const [projectId, setProjectId] = useState('')
+  const [workloadId, setWorkloadId] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [removingId, setRemovingId] = useState('')
 
   async function refresh() {
-    setError('')
     try {
       const [domainRoutes, projectItems] = await Promise.all([listDomains(), listProjects()])
       setRoutes(domainRoutes)
       setProjects(projectItems)
-      if (!projectId && projectItems[0]) {
-        setProjectId(projectItems[0].id)
-      }
+      if (!projectId && projectItems[0]) setProjectId(projectItems[0].id)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load domains')
     } finally {
@@ -36,17 +42,21 @@ export function DomainsPage() {
     void refresh()
     const timer = window.setInterval(() => {
       void listDomains().then(setRoutes).catch(() => { /* keep last */ })
-    }, 5000)
+    }, 4000)
     return () => window.clearInterval(timer)
   }, [])
 
   useEffect(() => {
     if (!projectId) {
       setWorkloads([])
+      setWorkloadId('')
       return
     }
     void listWorkloads(projectId)
-      .then(setWorkloads)
+      .then((items) => {
+        setWorkloads(items)
+        setWorkloadId((current) => current && items.some((item) => item.id === current) ? current : (items[0]?.id ?? ''))
+      })
       .catch((cause) => setError(cause instanceof Error ? cause.message : 'Could not load workloads'))
   }, [projectId])
 
@@ -56,13 +66,15 @@ export function DomainsPage() {
     setError('')
     setNotice('')
     const form = new FormData(event.currentTarget)
+    const hostname = String(form.get('hostname') ?? '').trim()
     try {
       const route = await assignDomain({
-        workloadId: String(form.get('workloadId') ?? ''),
-        hostname: String(form.get('hostname') ?? ''),
+        workloadId: String(form.get('workloadId') ?? workloadId),
+        hostname,
         tlsMode: String(form.get('tlsMode') ?? ''),
       })
-      setNotice(`Domain ${route.hostname} queued (tls=${route.tlsMode}). Edge applies on the next reconcile.`)
+      const url = domainPublicUrl(route.hostname, route.httpsUrl)
+      setNotice(`Domain ${route.hostname} queued (${route.tlsMode}). When status is active, open ${url}`)
       event.currentTarget.reset()
       await refresh()
     } catch (cause) {
@@ -73,7 +85,7 @@ export function DomainsPage() {
   }
 
   async function onRemove(route: DomainRoute) {
-    setBusy(true)
+    setRemovingId(route.id)
     setError('')
     try {
       await unassignDomain(route.id)
@@ -81,60 +93,112 @@ export function DomainsPage() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not remove domain')
     } finally {
-      setBusy(false)
+      setRemovingId('')
     }
   }
+
+  const provisioning = routes.filter((route) => busyStatus(route.status)).length
+  const active = routes.filter((route) => route.status === 'active').length
+  const selectedWorkload = workloads.find((item) => item.id === workloadId)
 
   return (
     <section className="page">
       <header className="page-header">
         <div>
           <h2>Domains</h2>
-          <p>Map hostnames to running workloads through the Caddy edge (HTTPS).</p>
+          <p>Publish a running workload on a hostname through the Caddy edge.</p>
         </div>
       </header>
 
-      {error && <div className="error" role="alert">{error}</div>}
-      {notice && <div className="notice" role="status">{notice}</div>}
+      {error ? <div className="error" role="alert">{error}</div> : null}
+      {notice ? <div className="notice" role="status">{notice}</div> : null}
+
+      {provisioning > 0 ? (
+        <ActivityBanner
+          title={`Provisioning ${provisioning} domain route${provisioning === 1 ? '' : 's'}`}
+          detail="Caddy reloads config, checks the upstream, then marks the route active (or rolls back)."
+        />
+      ) : null}
+
+      {!selectedWorkload?.hostPort && workloadId ? (
+        <div className="callout callout-warn" role="status">
+          <TriangleAlert size={18} />
+          <div>
+            <strong>Selected workload has no host port yet</strong>
+            <p>Deploy the workload first so the edge can proxy to it. Domains stay pending until a port exists.</p>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="stats-grid stats-grid-4">
+        <article className="stat-card flux-shadow lift-card">
+          <div className="stat-label"><Globe /> Routes</div>
+          <strong>{loading ? '—' : routes.length}</strong>
+        </article>
+        <article className="stat-card flux-shadow lift-card">
+          <div className="stat-label">Active</div>
+          <strong>{loading ? '—' : active}</strong>
+        </article>
+        <article className="stat-card flux-shadow lift-card">
+          <div className="stat-label">Provisioning</div>
+          <strong>{loading ? '—' : provisioning}</strong>
+        </article>
+        <article className="stat-card flux-shadow lift-card">
+          <div className="stat-label">Workloads</div>
+          <strong>{workloads.length}</strong>
+        </article>
+      </div>
 
       <section className="panel flux-shadow lift-card">
         <header className="panel-header">
           <div>
             <h3>Assign domain</h3>
-            <p className="muted">Local tip: use <code>app.localhost</code> with tls <code>internal</code>, then open <code>https://app.localhost:8443</code>.</p>
+            <p className="muted">Local demo: <code>app.localhost</code> + TLS internal → <code>https://app.localhost:8443</code></p>
           </div>
         </header>
-        <form className="form-grid form-grid-4" onSubmit={(event) => void onAssign(event)}>
-          <label className="form-field">
-            <span>Project</span>
-            <select value={projectId} onChange={(event) => setProjectId(event.target.value)} required>
-              <option value="" disabled>Select project</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>{project.name}</option>
-              ))}
-            </select>
-          </label>
-          <label className="form-field">
-            <span>Workload</span>
-            <select name="workloadId" required defaultValue="">
-              <option value="" disabled>Select workload</option>
-              {workloads.map((workload) => (
-                <option key={workload.id} value={workload.id}>
-                  {workload.name} ({workload.status || 'pending'})
-                </option>
-              ))}
-            </select>
-          </label>
+
+        <form className="form-grid form-grid-domains" onSubmit={(event) => void onAssign(event)}>
+          <SelectField
+            id="domain-project"
+            label="Project"
+            value={projectId}
+            onChange={(event) => setProjectId(event.target.value)}
+            required
+          >
+            <option value="" disabled>Select project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </SelectField>
+
+          <SelectField
+            id="domain-workload"
+            name="workloadId"
+            label="Workload"
+            value={workloadId}
+            onChange={(event) => setWorkloadId(event.target.value)}
+            required
+          >
+            <option value="" disabled>Select workload</option>
+            {workloads.map((workload) => (
+              <option key={workload.id} value={workload.id}>
+                {workload.name} · {workload.status || 'pending'}
+                {workload.hostPort ? ` · :${workload.hostPort}` : ' · no port'}
+              </option>
+            ))}
+          </SelectField>
+
           <FormField id="hostname" name="hostname" label="Hostname" required placeholder="app.localhost" />
-          <label className="form-field">
-            <span>TLS mode</span>
-            <select name="tlsMode" defaultValue="">
-              <option value="">auto</option>
-              <option value="internal">internal</option>
-              <option value="acme">acme (Pebble/LE)</option>
-            </select>
-          </label>
-          <Button type="submit" disabled={busy || !workloads.length}>{busy ? 'Saving…' : 'Assign domain'}</Button>
+
+          <SelectField id="tls-mode" name="tlsMode" label="TLS" defaultValue="internal">
+            <option value="internal">internal</option>
+            <option value="acme">acme</option>
+            <option value="">auto</option>
+          </SelectField>
+
+          <Button type="submit" disabled={busy || !workloadId}>
+            {busy ? 'Assigning…' : 'Assign domain'}
+          </Button>
         </form>
       </section>
 
@@ -142,45 +206,78 @@ export function DomainsPage() {
         <header className="panel-header">
           <div>
             <h3>Routes</h3>
-            <p className="muted">Polled every 5s. Status becomes active after Caddy load + upstream health check.</p>
+            <p className="muted">Links open the edge listener on port 8443 (HTTPS) or 8088 (HTTP).</p>
           </div>
         </header>
+
         {loading ? (
           <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading domains…</span></div>
         ) : null}
+
         {!loading && routes.length === 0 ? (
           <div className="empty-state">
             <Globe />
             <strong>No domains yet</strong>
-            <p className="muted">Deploy a workload first, then assign a hostname.</p>
+            <p className="muted">Deploy a workload, then assign a hostname above.</p>
           </div>
         ) : null}
+
         <ul className="resource-list">
-          {routes.map((route) => (
-            <li key={route.id} className="workload-row">
-              <div className="resource-link">
-                <strong>{route.hostname}</strong>
-                <div className="resource-meta">
-                  <span className={`status-badge status-${route.status || 'pending'}`}>{route.status}</span>
-                  <span className="chip">tls {route.tlsMode}</span>
-                  <span className="mono">gen {String(route.edgeGeneration)}</span>
+          {routes.map((route) => {
+            const https = domainPublicUrl(route.hostname, route.httpsUrl)
+            const http = domainHttpUrl(route.hostname)
+            const isBusy = busyStatus(route.status)
+            return (
+              <li key={route.id} className="workload-row">
+                <div className="resource-link">
+                  <strong>{route.hostname}</strong>
+                  <div className="resource-meta">
+                    <span className={`status-badge status-${route.status || 'pending'} ${isBusy ? 'is-busy' : ''}`}>
+                      {route.status || 'pending'}
+                    </span>
+                    <span className="chip">tls {route.tlsMode}</span>
+                    <span className="mono">gen {String(route.edgeGeneration)}</span>
+                  </div>
+                  <p className="hint-line">
+                    {route.status === 'active' ? (
+                      <>
+                        <a className="endpoint-link" href={https} target="_blank" rel="noreferrer">
+                          {https} <ExternalLink size={12} />
+                        </a>
+                        {' · '}
+                        <a className="endpoint-link" href={http} target="_blank" rel="noreferrer">
+                          {http}
+                        </a>
+                      </>
+                    ) : isBusy ? (
+                      'Waiting for edge reconcile…'
+                    ) : (
+                      route.lastError || 'Not active yet'
+                    )}
+                  </p>
                 </div>
-                <p className="hint-line">
-                  {route.httpsUrl ? (
-                    <a className="endpoint-link" href={route.httpsUrl.replace('https://', 'https://').replace(/^(https:\/\/[^/]+)$/, '$1:8443')} target="_blank" rel="noreferrer">
-                      {route.httpsUrl}:8443
-                    </a>
+                <div className="row-actions">
+                  {route.status === 'active' ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => window.open(https, '_blank', 'noopener,noreferrer')}
+                    >
+                      <Link2 size={14} /> Open HTTPS
+                    </Button>
                   ) : null}
-                  {route.lastError ? ` · ${route.lastError}` : ''}
-                </p>
-              </div>
-              <div className="row-actions">
-                <Button variant="danger" type="button" disabled={busy} onClick={() => void onRemove(route)}>
-                  <Trash2 size={14} /> Remove
-                </Button>
-              </div>
-            </li>
-          ))}
+                  <Button
+                    variant="danger"
+                    type="button"
+                    disabled={removingId === route.id}
+                    onClick={() => void onRemove(route)}
+                  >
+                    <Trash2 size={14} /> {removingId === route.id ? 'Removing…' : 'Remove'}
+                  </Button>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       </section>
     </section>

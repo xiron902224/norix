@@ -238,6 +238,39 @@ export function NodesPage() {
               <div><dt>Containerd socket</dt><dd>{selected.capabilities?.containerdSocket ? 'yes' : 'no'}</dd></div>
               <div><dt>KVM level</dt><dd>{selected.capabilities?.kvmLevel ?? 0} (0=none, 1=/dev/kvm, 2=nested)</dd></div>
               <div className="detail-span">
+                <dt>Live metrics</dt>
+                <dd>
+                  <div className="metric-bars">
+                    <div className="metric-bar">
+                      <label><span>CPU usage</span><span>{Number(selected.cpuUsagePercent || 0).toFixed(1)}%</span></label>
+                      <div className="track"><div className="fill" style={{ width: `${Math.min(100, Math.max(0, Number(selected.cpuUsagePercent || 0)))}%` }} /></div>
+                    </div>
+                    <div className="metric-bar">
+                      <label>
+                        <span>Memory free</span>
+                        <span>
+                          {String(selected.memoryFreeMb || 0)} / {String(selected.capabilities?.memoryTotalMb || 0)} MB
+                        </span>
+                      </label>
+                      <div className="track">
+                        <div
+                          className="fill"
+                          style={{
+                            width: `${selected.capabilities?.memoryTotalMb
+                              ? Math.min(100, Math.max(0, (1 - Number(selected.memoryFreeMb || 0) / Number(selected.capabilities.memoryTotalMb)) * 100))
+                              : 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="metric-bar">
+                      <label><span>Disk free</span><span>{String(selected.diskFreeMb || 0)} MB</span></label>
+                      <div className="track"><div className="fill" style={{ width: selected.diskFreeMb ? '35%' : '0%' }} /></div>
+                    </div>
+                  </div>
+                </dd>
+              </div>
+              <div className="detail-span">
                 <dt>Org</dt>
                 <dd className="mono">{shortId(selected.organizationId, 18)}</dd>
               </div>

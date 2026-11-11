@@ -62,8 +62,9 @@ async fn main() -> Result<()> {
             }
             _ = sleep(heartbeat) => {
                 let memory_free = memory_free_mb();
+                let cpu_usage = cpu_usage_percent();
                 match client
-                    .heartbeat(&state, &caps, memory_free, 0.0, Vec::new())
+                    .heartbeat(&state, &caps, memory_free, cpu_usage, Vec::new())
                     .await
                 {
                     Ok(desired) => {
@@ -166,4 +167,35 @@ fn memory_free_mb() -> i64 {
         }
     }
     0
+}
+
+fn cpu_usage_percent() -> f64 {
+    let sample = |path: &str| -> Option<(u64, u64)> {
+        let contents = std::fs::read_to_string(path).ok()?;
+        let line = contents.lines().next()?;
+        let mut parts = line.split_whitespace();
+        if parts.next()? != "cpu" {
+            return None;
+        }
+        let mut values = [0u64; 8];
+        for slot in values.iter_mut() {
+            *slot = parts.next()?.parse().ok()?;
+        }
+        let idle = values[3] + values[4];
+        let total: u64 = values.iter().sum();
+        Some((idle, total))
+    };
+    let Some((idle1, total1)) = sample("/proc/stat") else {
+        return 0.0;
+    };
+    std::thread::sleep(Duration::from_millis(120));
+    let Some((idle2, total2)) = sample("/proc/stat") else {
+        return 0.0;
+    };
+    let idle_delta = idle2.saturating_sub(idle1) as f64;
+    let total_delta = total2.saturating_sub(total1) as f64;
+    if total_delta <= 0.0 {
+        return 0.0;
+    }
+    ((1.0 - idle_delta / total_delta) * 100.0).clamp(0.0, 100.0)
 }

@@ -212,7 +212,11 @@ func buildCaddyConfig(plan db.DesiredEdgePlan) (string, map[string]string, []str
 	}
 	_ = hasACME
 
-	payload := map[string]any{"apps": apps}
+	// Keep admin on all interfaces so host-published :2019 keeps working after /load.
+	payload := map[string]any{
+		"admin": map[string]any{"listen": "0.0.0.0:2019"},
+		"apps":  apps,
+	}
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return "", routeStatuses, logs, err

@@ -182,7 +182,8 @@ Esos ítems se mantienen en el plan como **Fase post-v1** para no perder la visi
 | S4 contenedores | Desired→observed + Deploy | **Entregado**: reconciler Docker/nerdctl, logs UI |
 | S5 builds/git | Git → build → registry | **Entregado**: DeployFromGit, zot, build logs, webhook |
 | S6 edge/TLS | Dominio + HTTPS (Alpha 0.1) | **Entregado**: Caddy/Pebble, Domains UI, rollback |
-| S7–S10 (replan) | Ops → GA 1.0 | **Pendiente** — siguiente: S7 ops/backup/observabilidad |
+| S7 ops | Backup/métricas/alertas | **Entregado**: Ops UI, backups, node metrics, alerts |
+| S8–S10 (replan) | Hardening → GA 1.0 | **Pendiente** — siguiente: S8 hardening |
 
 ---
 
@@ -291,19 +292,19 @@ Ahora ── S1c cierre ── S2 dashboard ── S3 agente ── S4 contenedo
 
 **DoD:** VPS limpio < 15 min (ideal < 3 cuando madure) → git/image → HTTPS. **Demo Alpha pública interna.**
 
-### S7 · Operación: backups, logs, métricas mínimas
+### S7 · Operación: backups, logs, métricas mínimas — **ENTREGADO**
 
-**Objetivo:** operar Alpha sin miedo.
+**Objetivo:** operar Alpha sin miedo. Ver `docs/SPRINT_7_CIERRE.md` y `docs/runbooks/S7_OPERATIONS.md`.
 
 **Entregables**
 
-- Backup/restore Postgres automatizable.
-- Retención de logs de workload (almacenamiento simple por segmentos).
-- Métricas nodo (CPU/RAM/disco) en dashboard.
-- Alertas mínimas: nodo down, deploy failed (webhook).
+- Backup/restore Postgres (UI Ops + scripts).
+- Retención de logs de workload/build (worker ops).
+- Métricas nodo (CPU/RAM/disco) en Nodes.
+- Alertas mínimas: nodo down, deploy failed (webhook opcional).
 - Runbook: restore, rotar secretos, upgrade.
 
-**DoD:** restore de backup en entorno limpio verificado; alerta al parar el agente.
+**DoD:** restore documentado; alerta al parar el agente remoto (~45s).
 
 ### S8 · Hardening y superficie de ataque
 

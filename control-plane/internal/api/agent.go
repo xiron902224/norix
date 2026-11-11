@@ -102,7 +102,17 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 		value := capabilitiesFromProto(request.GetCapabilities())
 		caps = &value
 	}
-	if err := db.RecordHeartbeat(ctx, service.pool, node.OrganizationID, node.ID, request.GetStatus(), caps); err != nil {
+	if err := db.RecordHeartbeat(
+		ctx,
+		service.pool,
+		node.OrganizationID,
+		node.ID,
+		request.GetStatus(),
+		caps,
+		request.GetCpuUsagePercent(),
+		request.GetMemoryFreeMb(),
+		0,
+	); err != nil {
 		if strings.Contains(err.Error(), "node not found") {
 			return nil, connect.NewError(connect.CodeNotFound, "node not found")
 		}
@@ -296,11 +306,15 @@ func (service AgentService) ConnectStream(ctx context.Context, stream paasv1conn
 			status = "online"
 		}
 		var caps *db.NodeCapabilities
+		var cpuUsage float64
+		var memoryFree int64
 		if hb := request.GetHeartbeat(); hb != nil {
 			value := db.NodeCapabilities{KVMLevel: hb.GetKvmLevel()}
 			caps = &value
+			cpuUsage = hb.GetCpuUsagePercent()
+			memoryFree = hb.GetMemoryFreeMb()
 		}
-		if err := db.RecordHeartbeat(ctx, service.pool, node.OrganizationID, node.ID, status, caps); err != nil {
+		if err := db.RecordHeartbeat(ctx, service.pool, node.OrganizationID, node.ID, status, caps, cpuUsage, memoryFree, 0); err != nil {
 			agentLogger.Error("stream heartbeat failed", "error", err, "node_id", node.ID)
 			return internalError("connect stream", err)
 		}
@@ -358,6 +372,9 @@ func nodeToProto(node db.Node) *paasv1.Node {
 		Status:         node.Status,
 		LastSeenAt:     lastSeen,
 		IsLocal:        node.IsLocal,
+		CpuUsagePercent: node.CPUUsagePercent,
+		MemoryFreeMb:    node.MemoryFreeMB,
+		DiskFreeMb:      node.DiskFreeMB,
 		Capabilities: &paasv1.NodeCapabilities{
 			CpuCores:         node.Capabilities.CPUCores,
 			MemoryTotalMb:    node.Capabilities.MemoryTotalMB,

@@ -79,6 +79,7 @@ services:
       - norix_caddy_data:/data
       - norix_caddy_config:/config
     environment:
+      CADDY_ADMIN: "0.0.0.0:2019"
       NORIX_ACME_CA: ${NORIX_ACME_CA:-https://pebble:14000/dir}
     depends_on:
       - pebble

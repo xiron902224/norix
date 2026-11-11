@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Button } from '../../../shared/ui/Button'
 import { FormField } from '../../../shared/ui/FormField'
+import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
 import { shortId, workloadHint } from '../../../shared/lib/format'
 import type { Project, Workload } from '../../../gen/v1/workload_pb'
 import { listNodes } from '../../nodes/services/nodes-api'
@@ -257,7 +258,11 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
 
   const running = workloads.filter((item) => item.status === 'running').length
   const deploying = workloads.filter((item) => item.status === 'deploying').length
+  const building = workloads.filter((item) => item.status === 'building').length
   const hasOnlineNode = onlineNodes > 0
+  const selectedBusy = selected
+    ? selected.status === 'deploying' || selected.status === 'building' || busyId === selected.id || gitBusyId === selected.id
+    : false
 
   return (
     <section className="page">
@@ -275,6 +280,26 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
           <Button variant="secondary" type="button" onClick={onBack}>Back to projects</Button>
         </div>
       </header>
+
+      {building > 0 ? (
+        <ActivityBanner
+          title={`Building ${building} workload${building === 1 ? '' : 's'} from git`}
+          detail="Clone → Dockerfile build → image tag → automatic deploy. Open Build logs for live output."
+        />
+      ) : null}
+      {deploying > 0 ? (
+        <ActivityBanner
+          title={`Deploying ${deploying} workload${deploying === 1 ? '' : 's'}`}
+          detail="Desired state is queued; the agent reconciles on the next heartbeat (~5–10s)."
+        />
+      ) : null}
+      {busyId || gitBusyId || creating ? (
+        <ActivityBanner
+          title={creating ? 'Submitting form…' : gitBusyId ? 'Queuing git rebuild…' : 'Working on workload…'}
+          detail="UI actions are disabled for the busy row until the API responds."
+          tone="warn"
+        />
+      ) : null}
 
       {!hasOnlineNode ? (
         <div className="callout callout-warn" role="status">
@@ -386,8 +411,10 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
                   <strong>{workload.name}</strong>
                   <div className="resource-meta">
                     <span className="mono">{workload.imageOrSource}</span>
-                    <span className={`status-badge status-${workload.status || 'pending'}`}>
-                      {workload.status || 'pending'}
+                    <span className={`status-badge status-${workload.status || 'pending'} ${workload.status === 'deploying' || workload.status === 'building' || busyId === workload.id || gitBusyId === workload.id ? 'is-busy' : ''}`}>
+                      {busyId === workload.id || gitBusyId === workload.id
+                        ? (gitBusyId === workload.id ? 'queuing…' : 'working…')
+                        : (workload.status || 'pending')}
                     </span>
                     <span className="chip">gen {String(workload.observedGeneration)}/{String(workload.desiredGeneration)}</span>
                   </div>
@@ -396,8 +423,8 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
                   </p>
                 </button>
                 <div className="row-actions">
-                  <Button type="button" disabled={busyId === workload.id || !hasOnlineNode} onClick={() => void onDeploy(workload)}>
-                    <Rocket size={14} /> Deploy
+                  <Button type="button" disabled={busyId === workload.id || gitBusyId === workload.id || !hasOnlineNode} onClick={() => void onDeploy(workload)}>
+                    <Rocket size={14} /> {busyId === workload.id ? 'Deploying…' : 'Deploy'}
                   </Button>
                   {workload.sourceKind === 'git' || workload.gitUrl ? (
                     <Button
@@ -442,22 +469,56 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
               <p className="muted">Click a workload to inspect ports, node assignment, and generations.</p>
             </div>
           ) : (
-            <dl className="detail-grid">
-              <div><dt>ID</dt><dd className="mono">{selected.id}</dd></div>
-              <div><dt>Status</dt><dd><span className={`status-badge status-${selected.status}`}>{selected.status}</span></dd></div>
-              <div><dt>Source</dt><dd>{selected.sourceKind || 'image'}</dd></div>
-              <div><dt>Image</dt><dd className="mono">{selected.imageOrSource}</dd></div>
-              {selected.gitUrl ? <div><dt>Git</dt><dd className="mono">{selected.gitUrl}@{selected.gitRef || 'main'}</dd></div> : null}
-              {selected.latestBuildId ? <div><dt>Latest build</dt><dd className="mono">{selected.latestBuildId}</dd></div> : null}
-              <div><dt>Generations</dt><dd>observed {String(selected.observedGeneration)} / desired {String(selected.desiredGeneration)}</dd></div>
-              <div><dt>Ports</dt><dd>host {selected.hostPort || '—'} → container {selected.containerPort || 80}</dd></div>
-              <div><dt>Endpoint</dt><dd>{selected.endpoint ? <a className="endpoint-link" href={selected.endpoint} target="_blank" rel="noreferrer">{selected.endpoint} <ExternalLink size={12} /></a> : '—'}</dd></div>
-              <div><dt>Assigned node</dt><dd className="mono">{selected.assignedNodeId || '—'}</dd></div>
-              <div><dt>Container</dt><dd className="mono">{shortId(selected.containerId, 16)}</dd></div>
-              <div><dt>Memory / CPU</dt><dd>{String(selected.memoryLimitMb)} MB · shares {selected.cpuShares}</dd></div>
-              <div><dt>Last error</dt><dd>{selected.lastError || 'none'}</dd></div>
-              <div className="detail-span"><dt>Hint</dt><dd>{workloadHint(selected.status, selected.observedGeneration, selected.desiredGeneration, hasOnlineNode)}</dd></div>
-            </dl>
+            <>
+              {selectedBusy ? (
+                <ActivityBanner
+                  title={
+                    selected.status === 'building'
+                      ? 'Build in progress'
+                      : selected.status === 'deploying' || busyId === selected.id
+                        ? 'Deploy in progress'
+                        : 'Action in progress'
+                  }
+                  detail={workloadHint(selected.status, selected.observedGeneration, selected.desiredGeneration, hasOnlineNode)}
+                />
+              ) : null}
+              <dl className="detail-grid">
+                <div><dt>ID</dt><dd className="mono">{selected.id}</dd></div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>
+                    <span className={`status-badge status-${selected.status} ${selectedBusy ? 'is-busy' : ''}`}>
+                      {selected.status}
+                    </span>
+                  </dd>
+                </div>
+                <div><dt>Source</dt><dd>{selected.sourceKind || 'image'}</dd></div>
+                <div><dt>Image</dt><dd className="mono">{selected.imageOrSource}</dd></div>
+                {selected.gitUrl ? <div><dt>Git</dt><dd className="mono">{selected.gitUrl}@{selected.gitRef || 'main'}</dd></div> : null}
+                {selected.latestBuildId ? <div><dt>Latest build</dt><dd className="mono">{selected.latestBuildId}</dd></div> : null}
+                <div><dt>Generations</dt><dd>observed {String(selected.observedGeneration)} / desired {String(selected.desiredGeneration)}</dd></div>
+                <div><dt>Ports</dt><dd>host {selected.hostPort || '—'} → container {selected.containerPort || 80}</dd></div>
+                <div><dt>Endpoint</dt><dd>{selected.endpoint ? <a className="endpoint-link" href={selected.endpoint} target="_blank" rel="noreferrer">{selected.endpoint} <ExternalLink size={12} /></a> : '—'}</dd></div>
+                <div><dt>Assigned node</dt><dd className="mono">{selected.assignedNodeId || '—'}</dd></div>
+                <div><dt>Container</dt><dd className="mono">{shortId(selected.containerId, 16)}</dd></div>
+                <div><dt>Memory / CPU</dt><dd>{String(selected.memoryLimitMb)} MB · shares {selected.cpuShares}</dd></div>
+                <div><dt>Last error</dt><dd>{selected.lastError || 'none'}</dd></div>
+                <div className="detail-span"><dt>Now</dt><dd>{workloadHint(selected.status, selected.observedGeneration, selected.desiredGeneration, hasOnlineNode)}</dd></div>
+              </dl>
+              <div className="detail-actions">
+                <Button type="button" disabled={!hasOnlineNode || selectedBusy} onClick={() => void onDeploy(selected)}>
+                  <Rocket size={14} /> {selectedBusy && selected.status === 'deploying' ? 'Deploying…' : 'Deploy'}
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => void openLogs(selected)}>
+                  <ScrollText size={14} /> Runtime logs
+                </Button>
+                {selected.latestBuildId ? (
+                  <Button type="button" variant="secondary" onClick={() => void openBuildLogs(selected)}>
+                    Build logs
+                  </Button>
+                ) : null}
+              </div>
+            </>
           )}
         </aside>
       </div>

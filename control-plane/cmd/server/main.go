@@ -17,6 +17,7 @@ import (
 	norixdb "github.com/xiron902224/norix/control-plane/internal/db"
 	"github.com/xiron902224/norix/control-plane/internal/gen/v1/paasv1connect"
 	"github.com/xiron902224/norix/control-plane/internal/localruntime"
+	"github.com/xiron902224/norix/control-plane/internal/ops"
 	"github.com/xiron902224/norix/control-plane/internal/webui"
 )
 
@@ -46,8 +47,13 @@ func newHandler(authService api.AuthService) http.Handler {
 		_, _ = response.Write([]byte("ok\n"))
 	})
 	if authService.BootstrapPool() != nil {
-		mux.HandleFunc("POST /hooks/github/{token}", api.GitHubWebhook(authService.BootstrapPool()))
-		mux.HandleFunc("POST /api/webhooks/workloads/{workloadID}", api.CreateWebhookTokenHandler(authService.BootstrapPool()))
+		pool := authService.BootstrapPool()
+		mux.HandleFunc("POST /hooks/github/{token}", api.GitHubWebhook(pool))
+		mux.HandleFunc("POST /api/webhooks/workloads/{workloadID}", api.CreateWebhookTokenHandler(pool))
+		mux.HandleFunc("GET /api/ops/backups", api.OpsBackupsHandler(pool))
+		mux.HandleFunc("POST /api/ops/backups", api.OpsBackupsHandler(pool))
+		mux.HandleFunc("POST /api/ops/backups/{backupID}/restore", api.OpsRestoreHandler(pool))
+		mux.HandleFunc("GET /api/ops/alerts", api.OpsAlertsHandler(pool))
 	}
 	mux.Handle("/", webui.Handler())
 
@@ -121,6 +127,7 @@ func main() {
 		backgroundCtx, cancelBackground := context.WithCancel(context.Background())
 		defer cancelBackground()
 		go localruntime.Start(backgroundCtx, bootstrapPool, logger)
+		go ops.Start(backgroundCtx, bootstrapPool, logger)
 
 		go func() {
 			sessionTicker := time.NewTicker(time.Hour)

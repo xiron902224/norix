@@ -69,6 +69,21 @@ func EdgeUpstreamHost() string {
 	return "127.0.0.1"
 }
 
+func DomainPublicURL(hostname string) string {
+	hostname = NormalizeHostname(hostname)
+	if hostname == "" {
+		return ""
+	}
+	port := strings.TrimSpace(os.Getenv("NORIX_EDGE_HTTPS_PORT"))
+	if port == "" {
+		port = "8443"
+	}
+	if port == "443" {
+		return "https://" + hostname
+	}
+	return fmt.Sprintf("https://%s:%s", hostname, port)
+}
+
 func NormalizeHostname(hostname string) string {
 	hostname = strings.ToLower(strings.TrimSpace(hostname))
 	hostname = strings.TrimPrefix(hostname, "https://")
