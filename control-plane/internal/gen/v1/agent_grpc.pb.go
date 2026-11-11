@@ -24,6 +24,7 @@ const (
 	AgentService_Heartbeat_FullMethodName       = "/v1.AgentService/Heartbeat"
 	AgentService_ReportObserved_FullMethodName  = "/v1.AgentService/ReportObserved"
 	AgentService_ReportBuild_FullMethodName     = "/v1.AgentService/ReportBuild"
+	AgentService_ReportEdge_FullMethodName      = "/v1.AgentService/ReportEdge"
 	AgentService_ListNodes_FullMethodName       = "/v1.AgentService/ListNodes"
 	AgentService_ConnectStream_FullMethodName   = "/v1.AgentService/ConnectStream"
 )
@@ -37,6 +38,7 @@ type AgentServiceClient interface {
 	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
 	ReportObserved(ctx context.Context, in *ReportObservedRequest, opts ...grpc.CallOption) (*ReportObservedResponse, error)
 	ReportBuild(ctx context.Context, in *ReportBuildRequest, opts ...grpc.CallOption) (*ReportBuildResponse, error)
+	ReportEdge(ctx context.Context, in *ReportEdgeRequest, opts ...grpc.CallOption) (*ReportEdgeResponse, error)
 	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
 	ConnectStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ConnectStreamRequest, ConnectStreamResponse], error)
 }
@@ -99,6 +101,16 @@ func (c *agentServiceClient) ReportBuild(ctx context.Context, in *ReportBuildReq
 	return out, nil
 }
 
+func (c *agentServiceClient) ReportEdge(ctx context.Context, in *ReportEdgeRequest, opts ...grpc.CallOption) (*ReportEdgeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportEdgeResponse)
+	err := c.cc.Invoke(ctx, AgentService_ReportEdge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *agentServiceClient) ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListNodesResponse)
@@ -131,6 +143,7 @@ type AgentServiceServer interface {
 	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
 	ReportObserved(context.Context, *ReportObservedRequest) (*ReportObservedResponse, error)
 	ReportBuild(context.Context, *ReportBuildRequest) (*ReportBuildResponse, error)
+	ReportEdge(context.Context, *ReportEdgeRequest) (*ReportEdgeResponse, error)
 	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
 	ConnectStream(grpc.BidiStreamingServer[ConnectStreamRequest, ConnectStreamResponse]) error
 	mustEmbedUnimplementedAgentServiceServer()
@@ -157,6 +170,9 @@ func (UnimplementedAgentServiceServer) ReportObserved(context.Context, *ReportOb
 }
 func (UnimplementedAgentServiceServer) ReportBuild(context.Context, *ReportBuildRequest) (*ReportBuildResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReportBuild not implemented")
+}
+func (UnimplementedAgentServiceServer) ReportEdge(context.Context, *ReportEdgeRequest) (*ReportEdgeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportEdge not implemented")
 }
 func (UnimplementedAgentServiceServer) ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListNodes not implemented")
@@ -275,6 +291,24 @@ func _AgentService_ReportBuild_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AgentService_ReportEdge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportEdgeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ReportEdge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ReportEdge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ReportEdge(ctx, req.(*ReportEdgeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AgentService_ListNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListNodesRequest)
 	if err := dec(in); err != nil {
@@ -326,6 +360,10 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportBuild",
 			Handler:    _AgentService_ReportBuild_Handler,
+		},
+		{
+			MethodName: "ReportEdge",
+			Handler:    _AgentService_ReportEdge_Handler,
 		},
 		{
 			MethodName: "ListNodes",

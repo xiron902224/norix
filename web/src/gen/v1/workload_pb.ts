@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/workload.proto.
  */
 export const file_v1_workload: GenFile = /*@__PURE__*/
-  fileDesc("ChF2MS93b3JrbG9hZC5wcm90bxICdjEiwAQKCFdvcmtsb2FkEgoKAmlkGAEgASgJEhIKCnByb2plY3RfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRIgCgdydW50aW1lGAQgASgOMg8udjEuUnVudGltZVR5cGUSFwoPaW1hZ2Vfb3Jfc291cmNlGAUgASgJEisKCGVudl92YXJzGAYgAygLMhkudjEuV29ya2xvYWQuRW52VmFyc0VudHJ5EhIKCmNwdV9zaGFyZXMYByABKAUSFwoPbWVtb3J5X2xpbWl0X21iGAggASgDEg4KBmRvbWFpbhgJIAEoCRIOCgZzdGF0dXMYCiABKAkSGgoSZGVzaXJlZF9nZW5lcmF0aW9uGAsgASgDEhsKE29ic2VydmVkX2dlbmVyYXRpb24YDCABKAMSEQoJaG9zdF9wb3J0GA0gASgFEhYKDmNvbnRhaW5lcl9wb3J0GA4gASgFEhgKEGFzc2lnbmVkX25vZGVfaWQYDyABKAkSEAoIZW5kcG9pbnQYECABKAkSEgoKbGFzdF9lcnJvchgRIAEoCRIUCgxjb250YWluZXJfaWQYEiABKAkSEwoLc291cmNlX2tpbmQYEyABKAkSDwoHZ2l0X3VybBgUIAEoCRIPCgdnaXRfcmVmGBUgASgJEhcKD2RvY2tlcmZpbGVfcGF0aBgWIAEoCRIXCg9sYXRlc3RfYnVpbGRfaWQYFyABKAkaLgoMRW52VmFyc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiKgoUTGlzdFdvcmtsb2Fkc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSI4ChVMaXN0V29ya2xvYWRzUmVzcG9uc2USHwoJd29ya2xvYWRzGAEgAygLMgwudjEuV29ya2xvYWQiNwoVVXBkYXRlV29ya2xvYWRSZXF1ZXN0Eh4KCHdvcmtsb2FkGAEgASgLMgwudjEuV29ya2xvYWQiOAoWVXBkYXRlV29ya2xvYWRSZXNwb25zZRIeCgh3b3JrbG9hZBgBIAEoCzIMLnYxLldvcmtsb2FkIiMKFURlbGV0ZVdvcmtsb2FkUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVXb3JrbG9hZFJlc3BvbnNlIjcKFUNyZWF0ZVdvcmtsb2FkUmVxdWVzdBIeCgh3b3JrbG9hZBgBIAEoCzIMLnYxLldvcmtsb2FkIjgKFkNyZWF0ZVdvcmtsb2FkUmVzcG9uc2USHgoId29ya2xvYWQYASABKAsyDC52MS5Xb3JrbG9hZCJHCg1EZXBsb3lSZXF1ZXN0Eh4KCHdvcmtsb2FkGAEgASgLMgwudjEuV29ya2xvYWQSFgoOY29udGFpbmVyX3BvcnQYAiABKAUiZAoORGVwbG95UmVzcG9uc2USFQoNZGVwbG95bWVudF9pZBgBIAEoCRIOCgZzdGF0dXMYAiABKAkSEQoJaG9zdF9wb3J0GAMgASgFEhgKEGFzc2lnbmVkX25vZGVfaWQYBCABKAkiQQoWR2V0V29ya2xvYWRMb2dzUmVxdWVzdBITCgt3b3JrbG9hZF9pZBgBIAEoCRISCgp0YWlsX2xpbmVzGAIgASgFIigKF0dldFdvcmtsb2FkTG9nc1Jlc3BvbnNlEg0KBWxpbmVzGAEgAygJItgBCgVCdWlsZBIKCgJpZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIPCgdnaXRfdXJsGAMgASgJEg8KB2dpdF9yZWYYBCABKAkSFwoPZG9ja2VyZmlsZV9wYXRoGAUgASgJEg4KBnN0YXR1cxgGIAEoCRINCgVpbWFnZRgHIAEoCRIYChBhc3NpZ25lZF9ub2RlX2lkGAggASgJEhIKCmxhc3RfZXJyb3IYCSABKAkSEgoKY3JlYXRlZF9hdBgKIAEoCRISCgp1cGRhdGVkX2F0GAsgASgJIvYBChREZXBsb3lGcm9tR2l0UmVxdWVzdBITCgt3b3JrbG9hZF9pZBgBIAEoCRIPCgdnaXRfdXJsGAIgASgJEg8KB2dpdF9yZWYYAyABKAkSFwoPZG9ja2VyZmlsZV9wYXRoGAQgASgJEhYKDmNvbnRhaW5lcl9wb3J0GAUgASgFEkEKDWJ1aWxkX3NlY3JldHMYBiADKAsyKi52MS5EZXBsb3lGcm9tR2l0UmVxdWVzdC5CdWlsZFNlY3JldHNFbnRyeRozChFCdWlsZFNlY3JldHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIk4KFURlcGxveUZyb21HaXRSZXNwb25zZRIQCghidWlsZF9pZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIOCgZzdGF0dXMYAyABKAkiKAoRTGlzdEJ1aWxkc1JlcXVlc3QSEwoLd29ya2xvYWRfaWQYASABKAkiLwoSTGlzdEJ1aWxkc1Jlc3BvbnNlEhkKBmJ1aWxkcxgBIAMoCzIJLnYxLkJ1aWxkIjsKE0dldEJ1aWxkTG9nc1JlcXVlc3QSEAoIYnVpbGRfaWQYASABKAkSEgoKdGFpbF9saW5lcxgCIAEoBSI/ChRHZXRCdWlsZExvZ3NSZXNwb25zZRIYCgVidWlsZBgBIAEoCzIJLnYxLkJ1aWxkEg0KBWxpbmVzGAIgAygJIjwKB1Byb2plY3QSCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkiJAoUQ3JlYXRlUHJvamVjdFJlcXVlc3QSDAoEbmFtZRgBIAEoCSI1ChVDcmVhdGVQcm9qZWN0UmVzcG9uc2USHAoHcHJvamVjdBgBIAEoCzILLnYxLlByb2plY3QiFQoTTGlzdFByb2plY3RzUmVxdWVzdCI1ChRMaXN0UHJvamVjdHNSZXNwb25zZRIdCghwcm9qZWN0cxgBIAMoCzILLnYxLlByb2plY3QiIgoURGVsZXRlUHJvamVjdFJlcXVlc3QSCgoCaWQYASABKAkiFwoVRGVsZXRlUHJvamVjdFJlc3BvbnNlKrcBCgtSdW50aW1lVHlwZRIcChhSVU5USU1FX1RZUEVfVU5TUEVDSUZJRUQQABIaChZSVU5USU1FX1RZUEVfQ09OVEFJTkVSEAESHwobUlVOVElNRV9UWVBFX0RPQ0tFUl9DT01QT1NFEAISGAoUUlVOVElNRV9UWVBFX01JQ1JPVk0QAxIVChFSVU5USU1FX1RZUEVfV0FTTRAEEhwKGFJVTlRJTUVfVFlQRV9TVEFUSUNfU0lURRAFMvUECg9Xb3JrbG9hZFNlcnZpY2USRwoOQ3JlYXRlV29ya2xvYWQSGS52MS5DcmVhdGVXb3JrbG9hZFJlcXVlc3QaGi52MS5DcmVhdGVXb3JrbG9hZFJlc3BvbnNlEi8KBkRlcGxveRIRLnYxLkRlcGxveVJlcXVlc3QaEi52MS5EZXBsb3lSZXNwb25zZRJECg1EZXBsb3lGcm9tR2l0EhgudjEuRGVwbG95RnJvbUdpdFJlcXVlc3QaGS52MS5EZXBsb3lGcm9tR2l0UmVzcG9uc2USRAoNTGlzdFdvcmtsb2FkcxIYLnYxLkxpc3RXb3JrbG9hZHNSZXF1ZXN0GhkudjEuTGlzdFdvcmtsb2Fkc1Jlc3BvbnNlEkcKDlVwZGF0ZVdvcmtsb2FkEhkudjEuVXBkYXRlV29ya2xvYWRSZXF1ZXN0GhoudjEuVXBkYXRlV29ya2xvYWRSZXNwb25zZRJHCg5EZWxldGVXb3JrbG9hZBIZLnYxLkRlbGV0ZVdvcmtsb2FkUmVxdWVzdBoaLnYxLkRlbGV0ZVdvcmtsb2FkUmVzcG9uc2USSgoPR2V0V29ya2xvYWRMb2dzEhoudjEuR2V0V29ya2xvYWRMb2dzUmVxdWVzdBobLnYxLkdldFdvcmtsb2FkTG9nc1Jlc3BvbnNlEjsKCkxpc3RCdWlsZHMSFS52MS5MaXN0QnVpbGRzUmVxdWVzdBoWLnYxLkxpc3RCdWlsZHNSZXNwb25zZRJBCgxHZXRCdWlsZExvZ3MSFy52MS5HZXRCdWlsZExvZ3NSZXF1ZXN0GhgudjEuR2V0QnVpbGRMb2dzUmVzcG9uc2Uy3wEKDlByb2plY3RTZXJ2aWNlEkQKDUNyZWF0ZVByb2plY3QSGC52MS5DcmVhdGVQcm9qZWN0UmVxdWVzdBoZLnYxLkNyZWF0ZVByb2plY3RSZXNwb25zZRJBCgxMaXN0UHJvamVjdHMSFy52MS5MaXN0UHJvamVjdHNSZXF1ZXN0GhgudjEuTGlzdFByb2plY3RzUmVzcG9uc2USRAoNRGVsZXRlUHJvamVjdBIYLnYxLkRlbGV0ZVByb2plY3RSZXF1ZXN0GhkudjEuRGVsZXRlUHJvamVjdFJlc3BvbnNlQoIBCgZjb20udjFCDVdvcmtsb2FkUHJvdG9QAVpBZ2l0aHViLmNvbS94aXJvbjkwMjIyNC9ub3JpeC9jb250cm9sLXBsYW5lL2ludGVybmFsL2dlbi92MTtwYWFzdjGiAgNWWFiqAgJWMcoCAlYx4gIOVjFcR1BCTWV0YWRhdGHqAgJWMWIGcHJvdG8z");
+  fileDesc("ChF2MS93b3JrbG9hZC5wcm90bxICdjEiwAQKCFdvcmtsb2FkEgoKAmlkGAEgASgJEhIKCnByb2plY3RfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRIgCgdydW50aW1lGAQgASgOMg8udjEuUnVudGltZVR5cGUSFwoPaW1hZ2Vfb3Jfc291cmNlGAUgASgJEisKCGVudl92YXJzGAYgAygLMhkudjEuV29ya2xvYWQuRW52VmFyc0VudHJ5EhIKCmNwdV9zaGFyZXMYByABKAUSFwoPbWVtb3J5X2xpbWl0X21iGAggASgDEg4KBmRvbWFpbhgJIAEoCRIOCgZzdGF0dXMYCiABKAkSGgoSZGVzaXJlZF9nZW5lcmF0aW9uGAsgASgDEhsKE29ic2VydmVkX2dlbmVyYXRpb24YDCABKAMSEQoJaG9zdF9wb3J0GA0gASgFEhYKDmNvbnRhaW5lcl9wb3J0GA4gASgFEhgKEGFzc2lnbmVkX25vZGVfaWQYDyABKAkSEAoIZW5kcG9pbnQYECABKAkSEgoKbGFzdF9lcnJvchgRIAEoCRIUCgxjb250YWluZXJfaWQYEiABKAkSEwoLc291cmNlX2tpbmQYEyABKAkSDwoHZ2l0X3VybBgUIAEoCRIPCgdnaXRfcmVmGBUgASgJEhcKD2RvY2tlcmZpbGVfcGF0aBgWIAEoCRIXCg9sYXRlc3RfYnVpbGRfaWQYFyABKAkaLgoMRW52VmFyc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiKgoUTGlzdFdvcmtsb2Fkc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSI4ChVMaXN0V29ya2xvYWRzUmVzcG9uc2USHwoJd29ya2xvYWRzGAEgAygLMgwudjEuV29ya2xvYWQiNwoVVXBkYXRlV29ya2xvYWRSZXF1ZXN0Eh4KCHdvcmtsb2FkGAEgASgLMgwudjEuV29ya2xvYWQiOAoWVXBkYXRlV29ya2xvYWRSZXNwb25zZRIeCgh3b3JrbG9hZBgBIAEoCzIMLnYxLldvcmtsb2FkIiMKFURlbGV0ZVdvcmtsb2FkUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVXb3JrbG9hZFJlc3BvbnNlIjcKFUNyZWF0ZVdvcmtsb2FkUmVxdWVzdBIeCgh3b3JrbG9hZBgBIAEoCzIMLnYxLldvcmtsb2FkIjgKFkNyZWF0ZVdvcmtsb2FkUmVzcG9uc2USHgoId29ya2xvYWQYASABKAsyDC52MS5Xb3JrbG9hZCJHCg1EZXBsb3lSZXF1ZXN0Eh4KCHdvcmtsb2FkGAEgASgLMgwudjEuV29ya2xvYWQSFgoOY29udGFpbmVyX3BvcnQYAiABKAUiZAoORGVwbG95UmVzcG9uc2USFQoNZGVwbG95bWVudF9pZBgBIAEoCRIOCgZzdGF0dXMYAiABKAkSEQoJaG9zdF9wb3J0GAMgASgFEhgKEGFzc2lnbmVkX25vZGVfaWQYBCABKAkiQQoWR2V0V29ya2xvYWRMb2dzUmVxdWVzdBITCgt3b3JrbG9hZF9pZBgBIAEoCRISCgp0YWlsX2xpbmVzGAIgASgFIigKF0dldFdvcmtsb2FkTG9nc1Jlc3BvbnNlEg0KBWxpbmVzGAEgAygJItgBCgVCdWlsZBIKCgJpZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIPCgdnaXRfdXJsGAMgASgJEg8KB2dpdF9yZWYYBCABKAkSFwoPZG9ja2VyZmlsZV9wYXRoGAUgASgJEg4KBnN0YXR1cxgGIAEoCRINCgVpbWFnZRgHIAEoCRIYChBhc3NpZ25lZF9ub2RlX2lkGAggASgJEhIKCmxhc3RfZXJyb3IYCSABKAkSEgoKY3JlYXRlZF9hdBgKIAEoCRISCgp1cGRhdGVkX2F0GAsgASgJIvYBChREZXBsb3lGcm9tR2l0UmVxdWVzdBITCgt3b3JrbG9hZF9pZBgBIAEoCRIPCgdnaXRfdXJsGAIgASgJEg8KB2dpdF9yZWYYAyABKAkSFwoPZG9ja2VyZmlsZV9wYXRoGAQgASgJEhYKDmNvbnRhaW5lcl9wb3J0GAUgASgFEkEKDWJ1aWxkX3NlY3JldHMYBiADKAsyKi52MS5EZXBsb3lGcm9tR2l0UmVxdWVzdC5CdWlsZFNlY3JldHNFbnRyeRozChFCdWlsZFNlY3JldHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIk4KFURlcGxveUZyb21HaXRSZXNwb25zZRIQCghidWlsZF9pZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIOCgZzdGF0dXMYAyABKAkiKAoRTGlzdEJ1aWxkc1JlcXVlc3QSEwoLd29ya2xvYWRfaWQYASABKAkiLwoSTGlzdEJ1aWxkc1Jlc3BvbnNlEhkKBmJ1aWxkcxgBIAMoCzIJLnYxLkJ1aWxkIjsKE0dldEJ1aWxkTG9nc1JlcXVlc3QSEAoIYnVpbGRfaWQYASABKAkSEgoKdGFpbF9saW5lcxgCIAEoBSI/ChRHZXRCdWlsZExvZ3NSZXNwb25zZRIYCgVidWlsZBgBIAEoCzIJLnYxLkJ1aWxkEg0KBWxpbmVzGAIgAygJIqIBCgtEb21haW5Sb3V0ZRIKCgJpZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIQCghob3N0bmFtZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSEAoIdGxzX21vZGUYBSABKAkSEgoKbGFzdF9lcnJvchgGIAEoCRIRCglodHRwc191cmwYByABKAkSFwoPZWRnZV9nZW5lcmF0aW9uGAggASgDIk4KE0Fzc2lnbkRvbWFpblJlcXVlc3QSEwoLd29ya2xvYWRfaWQYASABKAkSEAoIaG9zdG5hbWUYAiABKAkSEAoIdGxzX21vZGUYAyABKAkiNgoUQXNzaWduRG9tYWluUmVzcG9uc2USHgoFcm91dGUYASABKAsyDy52MS5Eb21haW5Sb3V0ZSIoChJMaXN0RG9tYWluc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSI2ChNMaXN0RG9tYWluc1Jlc3BvbnNlEh8KBnJvdXRlcxgBIAMoCzIPLnYxLkRvbWFpblJvdXRlIiMKFVVuYXNzaWduRG9tYWluUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZVbmFzc2lnbkRvbWFpblJlc3BvbnNlIjwKB1Byb2plY3QSCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkiJAoUQ3JlYXRlUHJvamVjdFJlcXVlc3QSDAoEbmFtZRgBIAEoCSI1ChVDcmVhdGVQcm9qZWN0UmVzcG9uc2USHAoHcHJvamVjdBgBIAEoCzILLnYxLlByb2plY3QiFQoTTGlzdFByb2plY3RzUmVxdWVzdCI1ChRMaXN0UHJvamVjdHNSZXNwb25zZRIdCghwcm9qZWN0cxgBIAMoCzILLnYxLlByb2plY3QiIgoURGVsZXRlUHJvamVjdFJlcXVlc3QSCgoCaWQYASABKAkiFwoVRGVsZXRlUHJvamVjdFJlc3BvbnNlKrcBCgtSdW50aW1lVHlwZRIcChhSVU5USU1FX1RZUEVfVU5TUEVDSUZJRUQQABIaChZSVU5USU1FX1RZUEVfQ09OVEFJTkVSEAESHwobUlVOVElNRV9UWVBFX0RPQ0tFUl9DT01QT1NFEAISGAoUUlVOVElNRV9UWVBFX01JQ1JPVk0QAxIVChFSVU5USU1FX1RZUEVfV0FTTRAEEhwKGFJVTlRJTUVfVFlQRV9TVEFUSUNfU0lURRAFMsEGCg9Xb3JrbG9hZFNlcnZpY2USRwoOQ3JlYXRlV29ya2xvYWQSGS52MS5DcmVhdGVXb3JrbG9hZFJlcXVlc3QaGi52MS5DcmVhdGVXb3JrbG9hZFJlc3BvbnNlEi8KBkRlcGxveRIRLnYxLkRlcGxveVJlcXVlc3QaEi52MS5EZXBsb3lSZXNwb25zZRJECg1EZXBsb3lGcm9tR2l0EhgudjEuRGVwbG95RnJvbUdpdFJlcXVlc3QaGS52MS5EZXBsb3lGcm9tR2l0UmVzcG9uc2USRAoNTGlzdFdvcmtsb2FkcxIYLnYxLkxpc3RXb3JrbG9hZHNSZXF1ZXN0GhkudjEuTGlzdFdvcmtsb2Fkc1Jlc3BvbnNlEkcKDlVwZGF0ZVdvcmtsb2FkEhkudjEuVXBkYXRlV29ya2xvYWRSZXF1ZXN0GhoudjEuVXBkYXRlV29ya2xvYWRSZXNwb25zZRJHCg5EZWxldGVXb3JrbG9hZBIZLnYxLkRlbGV0ZVdvcmtsb2FkUmVxdWVzdBoaLnYxLkRlbGV0ZVdvcmtsb2FkUmVzcG9uc2USSgoPR2V0V29ya2xvYWRMb2dzEhoudjEuR2V0V29ya2xvYWRMb2dzUmVxdWVzdBobLnYxLkdldFdvcmtsb2FkTG9nc1Jlc3BvbnNlEjsKCkxpc3RCdWlsZHMSFS52MS5MaXN0QnVpbGRzUmVxdWVzdBoWLnYxLkxpc3RCdWlsZHNSZXNwb25zZRJBCgxHZXRCdWlsZExvZ3MSFy52MS5HZXRCdWlsZExvZ3NSZXF1ZXN0GhgudjEuR2V0QnVpbGRMb2dzUmVzcG9uc2USQQoMQXNzaWduRG9tYWluEhcudjEuQXNzaWduRG9tYWluUmVxdWVzdBoYLnYxLkFzc2lnbkRvbWFpblJlc3BvbnNlEj4KC0xpc3REb21haW5zEhYudjEuTGlzdERvbWFpbnNSZXF1ZXN0GhcudjEuTGlzdERvbWFpbnNSZXNwb25zZRJHCg5VbmFzc2lnbkRvbWFpbhIZLnYxLlVuYXNzaWduRG9tYWluUmVxdWVzdBoaLnYxLlVuYXNzaWduRG9tYWluUmVzcG9uc2Uy3wEKDlByb2plY3RTZXJ2aWNlEkQKDUNyZWF0ZVByb2plY3QSGC52MS5DcmVhdGVQcm9qZWN0UmVxdWVzdBoZLnYxLkNyZWF0ZVByb2plY3RSZXNwb25zZRJBCgxMaXN0UHJvamVjdHMSFy52MS5MaXN0UHJvamVjdHNSZXF1ZXN0GhgudjEuTGlzdFByb2plY3RzUmVzcG9uc2USRAoNRGVsZXRlUHJvamVjdBIYLnYxLkRlbGV0ZVByb2plY3RSZXF1ZXN0GhkudjEuRGVsZXRlUHJvamVjdFJlc3BvbnNlQoIBCgZjb20udjFCDVdvcmtsb2FkUHJvdG9QAVpBZ2l0aHViLmNvbS94aXJvbjkwMjIyNC9ub3JpeC9jb250cm9sLXBsYW5lL2ludGVybmFsL2dlbi92MTtwYWFzdjGiAgNWWFiqAgJWMcoCAlYx4gIOVjFcR1BCTWV0YWRhdGHqAgJWMWIGcHJvdG8z");
 
 /**
  * @generated from message v1.Workload
@@ -583,6 +583,168 @@ export const GetBuildLogsResponseSchema: GenMessage<GetBuildLogsResponse> = /*@_
   messageDesc(file_v1_workload, 19);
 
 /**
+ * @generated from message v1.DomainRoute
+ */
+export type DomainRoute = Message<"v1.DomainRoute"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string workload_id = 2;
+   */
+  workloadId: string;
+
+  /**
+   * @generated from field: string hostname = 3;
+   */
+  hostname: string;
+
+  /**
+   * @generated from field: string status = 4;
+   */
+  status: string;
+
+  /**
+   * @generated from field: string tls_mode = 5;
+   */
+  tlsMode: string;
+
+  /**
+   * @generated from field: string last_error = 6;
+   */
+  lastError: string;
+
+  /**
+   * @generated from field: string https_url = 7;
+   */
+  httpsUrl: string;
+
+  /**
+   * @generated from field: int64 edge_generation = 8;
+   */
+  edgeGeneration: bigint;
+};
+
+/**
+ * Describes the message v1.DomainRoute.
+ * Use `create(DomainRouteSchema)` to create a new message.
+ */
+export const DomainRouteSchema: GenMessage<DomainRoute> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 20);
+
+/**
+ * @generated from message v1.AssignDomainRequest
+ */
+export type AssignDomainRequest = Message<"v1.AssignDomainRequest"> & {
+  /**
+   * @generated from field: string workload_id = 1;
+   */
+  workloadId: string;
+
+  /**
+   * @generated from field: string hostname = 2;
+   */
+  hostname: string;
+
+  /**
+   * internal | acme (empty = auto: localhost→internal, else acme)
+   *
+   * @generated from field: string tls_mode = 3;
+   */
+  tlsMode: string;
+};
+
+/**
+ * Describes the message v1.AssignDomainRequest.
+ * Use `create(AssignDomainRequestSchema)` to create a new message.
+ */
+export const AssignDomainRequestSchema: GenMessage<AssignDomainRequest> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 21);
+
+/**
+ * @generated from message v1.AssignDomainResponse
+ */
+export type AssignDomainResponse = Message<"v1.AssignDomainResponse"> & {
+  /**
+   * @generated from field: v1.DomainRoute route = 1;
+   */
+  route?: DomainRoute | undefined;
+};
+
+/**
+ * Describes the message v1.AssignDomainResponse.
+ * Use `create(AssignDomainResponseSchema)` to create a new message.
+ */
+export const AssignDomainResponseSchema: GenMessage<AssignDomainResponse> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 22);
+
+/**
+ * @generated from message v1.ListDomainsRequest
+ */
+export type ListDomainsRequest = Message<"v1.ListDomainsRequest"> & {
+  /**
+   * @generated from field: string project_id = 1;
+   */
+  projectId: string;
+};
+
+/**
+ * Describes the message v1.ListDomainsRequest.
+ * Use `create(ListDomainsRequestSchema)` to create a new message.
+ */
+export const ListDomainsRequestSchema: GenMessage<ListDomainsRequest> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 23);
+
+/**
+ * @generated from message v1.ListDomainsResponse
+ */
+export type ListDomainsResponse = Message<"v1.ListDomainsResponse"> & {
+  /**
+   * @generated from field: repeated v1.DomainRoute routes = 1;
+   */
+  routes: DomainRoute[];
+};
+
+/**
+ * Describes the message v1.ListDomainsResponse.
+ * Use `create(ListDomainsResponseSchema)` to create a new message.
+ */
+export const ListDomainsResponseSchema: GenMessage<ListDomainsResponse> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 24);
+
+/**
+ * @generated from message v1.UnassignDomainRequest
+ */
+export type UnassignDomainRequest = Message<"v1.UnassignDomainRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message v1.UnassignDomainRequest.
+ * Use `create(UnassignDomainRequestSchema)` to create a new message.
+ */
+export const UnassignDomainRequestSchema: GenMessage<UnassignDomainRequest> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 25);
+
+/**
+ * @generated from message v1.UnassignDomainResponse
+ */
+export type UnassignDomainResponse = Message<"v1.UnassignDomainResponse"> & {
+};
+
+/**
+ * Describes the message v1.UnassignDomainResponse.
+ * Use `create(UnassignDomainResponseSchema)` to create a new message.
+ */
+export const UnassignDomainResponseSchema: GenMessage<UnassignDomainResponse> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 26);
+
+/**
  * @generated from message v1.Project
  */
 export type Project = Message<"v1.Project"> & {
@@ -607,7 +769,7 @@ export type Project = Message<"v1.Project"> & {
  * Use `create(ProjectSchema)` to create a new message.
  */
 export const ProjectSchema: GenMessage<Project> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 20);
+  messageDesc(file_v1_workload, 27);
 
 /**
  * @generated from message v1.CreateProjectRequest
@@ -624,7 +786,7 @@ export type CreateProjectRequest = Message<"v1.CreateProjectRequest"> & {
  * Use `create(CreateProjectRequestSchema)` to create a new message.
  */
 export const CreateProjectRequestSchema: GenMessage<CreateProjectRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 21);
+  messageDesc(file_v1_workload, 28);
 
 /**
  * @generated from message v1.CreateProjectResponse
@@ -641,7 +803,7 @@ export type CreateProjectResponse = Message<"v1.CreateProjectResponse"> & {
  * Use `create(CreateProjectResponseSchema)` to create a new message.
  */
 export const CreateProjectResponseSchema: GenMessage<CreateProjectResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 22);
+  messageDesc(file_v1_workload, 29);
 
 /**
  * @generated from message v1.ListProjectsRequest
@@ -654,7 +816,7 @@ export type ListProjectsRequest = Message<"v1.ListProjectsRequest"> & {
  * Use `create(ListProjectsRequestSchema)` to create a new message.
  */
 export const ListProjectsRequestSchema: GenMessage<ListProjectsRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 23);
+  messageDesc(file_v1_workload, 30);
 
 /**
  * @generated from message v1.ListProjectsResponse
@@ -671,7 +833,7 @@ export type ListProjectsResponse = Message<"v1.ListProjectsResponse"> & {
  * Use `create(ListProjectsResponseSchema)` to create a new message.
  */
 export const ListProjectsResponseSchema: GenMessage<ListProjectsResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 24);
+  messageDesc(file_v1_workload, 31);
 
 /**
  * @generated from message v1.DeleteProjectRequest
@@ -688,7 +850,7 @@ export type DeleteProjectRequest = Message<"v1.DeleteProjectRequest"> & {
  * Use `create(DeleteProjectRequestSchema)` to create a new message.
  */
 export const DeleteProjectRequestSchema: GenMessage<DeleteProjectRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 25);
+  messageDesc(file_v1_workload, 32);
 
 /**
  * @generated from message v1.DeleteProjectResponse
@@ -701,7 +863,7 @@ export type DeleteProjectResponse = Message<"v1.DeleteProjectResponse"> & {
  * Use `create(DeleteProjectResponseSchema)` to create a new message.
  */
 export const DeleteProjectResponseSchema: GenMessage<DeleteProjectResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 26);
+  messageDesc(file_v1_workload, 33);
 
 /**
  * @generated from enum v1.RuntimeType
@@ -819,6 +981,30 @@ export const WorkloadService: GenService<{
     methodKind: "unary";
     input: typeof GetBuildLogsRequestSchema;
     output: typeof GetBuildLogsResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.WorkloadService.AssignDomain
+   */
+  assignDomain: {
+    methodKind: "unary";
+    input: typeof AssignDomainRequestSchema;
+    output: typeof AssignDomainResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.WorkloadService.ListDomains
+   */
+  listDomains: {
+    methodKind: "unary";
+    input: typeof ListDomainsRequestSchema;
+    output: typeof ListDomainsResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.WorkloadService.UnassignDomain
+   */
+  unassignDomain: {
+    methodKind: "unary";
+    input: typeof UnassignDomainRequestSchema;
+    output: typeof UnassignDomainResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_v1_workload, 0);

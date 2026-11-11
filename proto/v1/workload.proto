@@ -136,6 +136,42 @@ message GetBuildLogsResponse {
   repeated string lines = 2;
 }
 
+message DomainRoute {
+  string id = 1;
+  string workload_id = 2;
+  string hostname = 3;
+  string status = 4;
+  string tls_mode = 5;
+  string last_error = 6;
+  string https_url = 7;
+  int64 edge_generation = 8;
+}
+
+message AssignDomainRequest {
+  string workload_id = 1;
+  string hostname = 2;
+  // internal | acme (empty = auto: localhost→internal, else acme)
+  string tls_mode = 3;
+}
+
+message AssignDomainResponse {
+  DomainRoute route = 1;
+}
+
+message ListDomainsRequest {
+  string project_id = 1;
+}
+
+message ListDomainsResponse {
+  repeated DomainRoute routes = 1;
+}
+
+message UnassignDomainRequest {
+  string id = 1;
+}
+
+message UnassignDomainResponse {}
+
 service WorkloadService {
   rpc CreateWorkload(CreateWorkloadRequest) returns (CreateWorkloadResponse);
   rpc Deploy(DeployRequest) returns (DeployResponse);
@@ -146,6 +182,9 @@ service WorkloadService {
   rpc GetWorkloadLogs(GetWorkloadLogsRequest) returns (GetWorkloadLogsResponse);
   rpc ListBuilds(ListBuildsRequest) returns (ListBuildsResponse);
   rpc GetBuildLogs(GetBuildLogsRequest) returns (GetBuildLogsResponse);
+  rpc AssignDomain(AssignDomainRequest) returns (AssignDomainResponse);
+  rpc ListDomains(ListDomainsRequest) returns (ListDomainsResponse);
+  rpc UnassignDomain(UnassignDomainRequest) returns (UnassignDomainResponse);
 }
 
 message Project {

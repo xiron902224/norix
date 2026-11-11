@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   FolderKanban,
+  Globe,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -20,6 +21,7 @@ import type { Project } from '../../gen/v1/workload_pb'
 import { ProjectsPage } from '../projects/components/ProjectsPage'
 import { ProjectDetailPage } from '../projects/components/ProjectDetailPage'
 import { NodesPage } from '../nodes/components/NodesPage'
+import { DomainsPage } from '../domains/components/DomainsPage'
 import { OverviewPage } from './OverviewPage'
 
 interface DashboardShellProps {
@@ -27,7 +29,7 @@ interface DashboardShellProps {
   onSignOut: () => void
 }
 
-type NavKey = 'overview' | 'projects' | 'nodes'
+type NavKey = 'overview' | 'projects' | 'nodes' | 'domains'
 
 function roleLabel(role: number) {
   if (role === 1) return 'owner'
@@ -108,7 +110,9 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
       ? 'Overview'
       : nav === 'nodes'
         ? 'Nodes'
-        : 'Projects'
+        : nav === 'domains'
+          ? 'Domains'
+          : 'Projects'
 
   const shellClass = [
     'app-shell',
@@ -166,6 +170,15 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
           >
             <Server />
             <span className="nav-label">Nodes</span>
+          </button>
+          <button
+            type="button"
+            className={`nav-item ${nav === 'domains' ? 'active' : ''}`}
+            onClick={() => go('domains')}
+            title="Domains"
+          >
+            <Globe />
+            <span className="nav-label">Domains</span>
           </button>
         </nav>
 
@@ -256,6 +269,7 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
             ) : null}
 
             {nav === 'nodes' ? <NodesPage /> : null}
+            {nav === 'domains' ? <DomainsPage /> : null}
 
             {nav === 'projects' && selected ? (
               <ProjectDetailPage project={selected} onBack={() => setSelected(null)} />

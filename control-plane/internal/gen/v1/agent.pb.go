@@ -973,18 +973,247 @@ func (x *ObservedBuild) GetLogLines() []string {
 	return nil
 }
 
+type DesiredEdgeRoute struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	DomainId       string                 `protobuf:"bytes,1,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"`
+	Hostname       string                 `protobuf:"bytes,2,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	Upstream       string                 `protobuf:"bytes,3,opt,name=upstream,proto3" json:"upstream,omitempty"`
+	TlsMode        string                 `protobuf:"bytes,4,opt,name=tls_mode,json=tlsMode,proto3" json:"tls_mode,omitempty"`
+	EdgeGeneration int64                  `protobuf:"varint,5,opt,name=edge_generation,json=edgeGeneration,proto3" json:"edge_generation,omitempty"`
+	Action         string                 `protobuf:"bytes,6,opt,name=action,proto3" json:"action,omitempty"` // upsert | delete
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DesiredEdgeRoute) Reset() {
+	*x = DesiredEdgeRoute{}
+	mi := &file_v1_agent_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DesiredEdgeRoute) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DesiredEdgeRoute) ProtoMessage() {}
+
+func (x *DesiredEdgeRoute) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_agent_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DesiredEdgeRoute.ProtoReflect.Descriptor instead.
+func (*DesiredEdgeRoute) Descriptor() ([]byte, []int) {
+	return file_v1_agent_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *DesiredEdgeRoute) GetDomainId() string {
+	if x != nil {
+		return x.DomainId
+	}
+	return ""
+}
+
+func (x *DesiredEdgeRoute) GetHostname() string {
+	if x != nil {
+		return x.Hostname
+	}
+	return ""
+}
+
+func (x *DesiredEdgeRoute) GetUpstream() string {
+	if x != nil {
+		return x.Upstream
+	}
+	return ""
+}
+
+func (x *DesiredEdgeRoute) GetTlsMode() string {
+	if x != nil {
+		return x.TlsMode
+	}
+	return ""
+}
+
+func (x *DesiredEdgeRoute) GetEdgeGeneration() int64 {
+	if x != nil {
+		return x.EdgeGeneration
+	}
+	return 0
+}
+
+func (x *DesiredEdgeRoute) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+type DesiredEdgePlan struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Generation    int64                  `protobuf:"varint,1,opt,name=generation,proto3" json:"generation,omitempty"`
+	Routes        []*DesiredEdgeRoute    `protobuf:"bytes,2,rep,name=routes,proto3" json:"routes,omitempty"`
+	AcmeCa        string                 `protobuf:"bytes,3,opt,name=acme_ca,json=acmeCa,proto3" json:"acme_ca,omitempty"`
+	CaddyAdminUrl string                 `protobuf:"bytes,4,opt,name=caddy_admin_url,json=caddyAdminUrl,proto3" json:"caddy_admin_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DesiredEdgePlan) Reset() {
+	*x = DesiredEdgePlan{}
+	mi := &file_v1_agent_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DesiredEdgePlan) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DesiredEdgePlan) ProtoMessage() {}
+
+func (x *DesiredEdgePlan) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_agent_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DesiredEdgePlan.ProtoReflect.Descriptor instead.
+func (*DesiredEdgePlan) Descriptor() ([]byte, []int) {
+	return file_v1_agent_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *DesiredEdgePlan) GetGeneration() int64 {
+	if x != nil {
+		return x.Generation
+	}
+	return 0
+}
+
+func (x *DesiredEdgePlan) GetRoutes() []*DesiredEdgeRoute {
+	if x != nil {
+		return x.Routes
+	}
+	return nil
+}
+
+func (x *DesiredEdgePlan) GetAcmeCa() string {
+	if x != nil {
+		return x.AcmeCa
+	}
+	return ""
+}
+
+func (x *DesiredEdgePlan) GetCaddyAdminUrl() string {
+	if x != nil {
+		return x.CaddyAdminUrl
+	}
+	return ""
+}
+
+type ObservedEdge struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Generation    int64                  `protobuf:"varint,1,opt,name=generation,proto3" json:"generation,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	LogLines      []string               `protobuf:"bytes,4,rep,name=log_lines,json=logLines,proto3" json:"log_lines,omitempty"`
+	RouteStatuses map[string]string      `protobuf:"bytes,5,rep,name=route_statuses,json=routeStatuses,proto3" json:"route_statuses,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ObservedEdge) Reset() {
+	*x = ObservedEdge{}
+	mi := &file_v1_agent_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ObservedEdge) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ObservedEdge) ProtoMessage() {}
+
+func (x *ObservedEdge) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_agent_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ObservedEdge.ProtoReflect.Descriptor instead.
+func (*ObservedEdge) Descriptor() ([]byte, []int) {
+	return file_v1_agent_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ObservedEdge) GetGeneration() int64 {
+	if x != nil {
+		return x.Generation
+	}
+	return 0
+}
+
+func (x *ObservedEdge) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ObservedEdge) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *ObservedEdge) GetLogLines() []string {
+	if x != nil {
+		return x.LogLines
+	}
+	return nil
+}
+
+func (x *ObservedEdge) GetRouteStatuses() map[string]string {
+	if x != nil {
+		return x.RouteStatuses
+	}
+	return nil
+}
+
 type HeartbeatResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	NodeId           string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	DesiredWorkloads []*DesiredWorkload     `protobuf:"bytes,2,rep,name=desired_workloads,json=desiredWorkloads,proto3" json:"desired_workloads,omitempty"`
 	DesiredBuilds    []*DesiredBuild        `protobuf:"bytes,3,rep,name=desired_builds,json=desiredBuilds,proto3" json:"desired_builds,omitempty"`
+	DesiredEdge      *DesiredEdgePlan       `protobuf:"bytes,4,opt,name=desired_edge,json=desiredEdge,proto3" json:"desired_edge,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
 
 func (x *HeartbeatResponse) Reset() {
 	*x = HeartbeatResponse{}
-	mi := &file_v1_agent_proto_msgTypes[12]
+	mi := &file_v1_agent_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -996,7 +1225,7 @@ func (x *HeartbeatResponse) String() string {
 func (*HeartbeatResponse) ProtoMessage() {}
 
 func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[12]
+	mi := &file_v1_agent_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1009,7 +1238,7 @@ func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartbeatResponse.ProtoReflect.Descriptor instead.
 func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{12}
+	return file_v1_agent_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *HeartbeatResponse) GetNodeId() string {
@@ -1033,6 +1262,13 @@ func (x *HeartbeatResponse) GetDesiredBuilds() []*DesiredBuild {
 	return nil
 }
 
+func (x *HeartbeatResponse) GetDesiredEdge() *DesiredEdgePlan {
+	if x != nil {
+		return x.DesiredEdge
+	}
+	return nil
+}
+
 type ReportObservedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
@@ -1043,7 +1279,7 @@ type ReportObservedRequest struct {
 
 func (x *ReportObservedRequest) Reset() {
 	*x = ReportObservedRequest{}
-	mi := &file_v1_agent_proto_msgTypes[13]
+	mi := &file_v1_agent_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1055,7 +1291,7 @@ func (x *ReportObservedRequest) String() string {
 func (*ReportObservedRequest) ProtoMessage() {}
 
 func (x *ReportObservedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[13]
+	mi := &file_v1_agent_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1068,7 +1304,7 @@ func (x *ReportObservedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportObservedRequest.ProtoReflect.Descriptor instead.
 func (*ReportObservedRequest) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{13}
+	return file_v1_agent_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ReportObservedRequest) GetNodeId() string {
@@ -1093,7 +1329,7 @@ type ReportObservedResponse struct {
 
 func (x *ReportObservedResponse) Reset() {
 	*x = ReportObservedResponse{}
-	mi := &file_v1_agent_proto_msgTypes[14]
+	mi := &file_v1_agent_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1105,7 +1341,7 @@ func (x *ReportObservedResponse) String() string {
 func (*ReportObservedResponse) ProtoMessage() {}
 
 func (x *ReportObservedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[14]
+	mi := &file_v1_agent_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1118,7 +1354,7 @@ func (x *ReportObservedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportObservedResponse.ProtoReflect.Descriptor instead.
 func (*ReportObservedResponse) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{14}
+	return file_v1_agent_proto_rawDescGZIP(), []int{17}
 }
 
 type ReportBuildRequest struct {
@@ -1131,7 +1367,7 @@ type ReportBuildRequest struct {
 
 func (x *ReportBuildRequest) Reset() {
 	*x = ReportBuildRequest{}
-	mi := &file_v1_agent_proto_msgTypes[15]
+	mi := &file_v1_agent_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1143,7 +1379,7 @@ func (x *ReportBuildRequest) String() string {
 func (*ReportBuildRequest) ProtoMessage() {}
 
 func (x *ReportBuildRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[15]
+	mi := &file_v1_agent_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1156,7 +1392,7 @@ func (x *ReportBuildRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportBuildRequest.ProtoReflect.Descriptor instead.
 func (*ReportBuildRequest) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{15}
+	return file_v1_agent_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ReportBuildRequest) GetNodeId() string {
@@ -1181,7 +1417,7 @@ type ReportBuildResponse struct {
 
 func (x *ReportBuildResponse) Reset() {
 	*x = ReportBuildResponse{}
-	mi := &file_v1_agent_proto_msgTypes[16]
+	mi := &file_v1_agent_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1193,7 +1429,7 @@ func (x *ReportBuildResponse) String() string {
 func (*ReportBuildResponse) ProtoMessage() {}
 
 func (x *ReportBuildResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[16]
+	mi := &file_v1_agent_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1206,7 +1442,95 @@ func (x *ReportBuildResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportBuildResponse.ProtoReflect.Descriptor instead.
 func (*ReportBuildResponse) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{16}
+	return file_v1_agent_proto_rawDescGZIP(), []int{19}
+}
+
+type ReportEdgeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Edge          *ObservedEdge          `protobuf:"bytes,2,opt,name=edge,proto3" json:"edge,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportEdgeRequest) Reset() {
+	*x = ReportEdgeRequest{}
+	mi := &file_v1_agent_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportEdgeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportEdgeRequest) ProtoMessage() {}
+
+func (x *ReportEdgeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_agent_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportEdgeRequest.ProtoReflect.Descriptor instead.
+func (*ReportEdgeRequest) Descriptor() ([]byte, []int) {
+	return file_v1_agent_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ReportEdgeRequest) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *ReportEdgeRequest) GetEdge() *ObservedEdge {
+	if x != nil {
+		return x.Edge
+	}
+	return nil
+}
+
+type ReportEdgeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportEdgeResponse) Reset() {
+	*x = ReportEdgeResponse{}
+	mi := &file_v1_agent_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportEdgeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportEdgeResponse) ProtoMessage() {}
+
+func (x *ReportEdgeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_agent_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportEdgeResponse.ProtoReflect.Descriptor instead.
+func (*ReportEdgeResponse) Descriptor() ([]byte, []int) {
+	return file_v1_agent_proto_rawDescGZIP(), []int{21}
 }
 
 type ListNodesRequest struct {
@@ -1217,7 +1541,7 @@ type ListNodesRequest struct {
 
 func (x *ListNodesRequest) Reset() {
 	*x = ListNodesRequest{}
-	mi := &file_v1_agent_proto_msgTypes[17]
+	mi := &file_v1_agent_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1229,7 +1553,7 @@ func (x *ListNodesRequest) String() string {
 func (*ListNodesRequest) ProtoMessage() {}
 
 func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[17]
+	mi := &file_v1_agent_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1242,7 +1566,7 @@ func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodesRequest.ProtoReflect.Descriptor instead.
 func (*ListNodesRequest) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{17}
+	return file_v1_agent_proto_rawDescGZIP(), []int{22}
 }
 
 type ListNodesResponse struct {
@@ -1254,7 +1578,7 @@ type ListNodesResponse struct {
 
 func (x *ListNodesResponse) Reset() {
 	*x = ListNodesResponse{}
-	mi := &file_v1_agent_proto_msgTypes[18]
+	mi := &file_v1_agent_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1266,7 +1590,7 @@ func (x *ListNodesResponse) String() string {
 func (*ListNodesResponse) ProtoMessage() {}
 
 func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[18]
+	mi := &file_v1_agent_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1279,7 +1603,7 @@ func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodesResponse.ProtoReflect.Descriptor instead.
 func (*ListNodesResponse) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{18}
+	return file_v1_agent_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ListNodesResponse) GetNodes() []*Node {
@@ -1301,7 +1625,7 @@ type ConnectStreamRequest struct {
 
 func (x *ConnectStreamRequest) Reset() {
 	*x = ConnectStreamRequest{}
-	mi := &file_v1_agent_proto_msgTypes[19]
+	mi := &file_v1_agent_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1313,7 +1637,7 @@ func (x *ConnectStreamRequest) String() string {
 func (*ConnectStreamRequest) ProtoMessage() {}
 
 func (x *ConnectStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[19]
+	mi := &file_v1_agent_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1326,7 +1650,7 @@ func (x *ConnectStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectStreamRequest.ProtoReflect.Descriptor instead.
 func (*ConnectStreamRequest) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{19}
+	return file_v1_agent_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ConnectStreamRequest) GetNodeId() string {
@@ -1368,7 +1692,7 @@ type ConnectStreamResponse struct {
 
 func (x *ConnectStreamResponse) Reset() {
 	*x = ConnectStreamResponse{}
-	mi := &file_v1_agent_proto_msgTypes[20]
+	mi := &file_v1_agent_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1380,7 +1704,7 @@ func (x *ConnectStreamResponse) String() string {
 func (*ConnectStreamResponse) ProtoMessage() {}
 
 func (x *ConnectStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_agent_proto_msgTypes[20]
+	mi := &file_v1_agent_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1393,7 +1717,7 @@ func (x *ConnectStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectStreamResponse.ProtoReflect.Descriptor instead.
 func (*ConnectStreamResponse) Descriptor() ([]byte, []int) {
-	return file_v1_agent_proto_rawDescGZIP(), []int{20}
+	return file_v1_agent_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ConnectStreamResponse) GetNodeId() string {
@@ -1514,11 +1838,37 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x14\n" +
 	"\x05image\x18\x03 \x01(\tR\x05image\x12\x18\n" +
 	"\amessage\x18\x04 \x01(\tR\amessage\x12\x1b\n" +
-	"\tlog_lines\x18\x05 \x03(\tR\blogLines\"\xa7\x01\n" +
+	"\tlog_lines\x18\x05 \x03(\tR\blogLines\"\xc3\x01\n" +
+	"\x10DesiredEdgeRoute\x12\x1b\n" +
+	"\tdomain_id\x18\x01 \x01(\tR\bdomainId\x12\x1a\n" +
+	"\bhostname\x18\x02 \x01(\tR\bhostname\x12\x1a\n" +
+	"\bupstream\x18\x03 \x01(\tR\bupstream\x12\x19\n" +
+	"\btls_mode\x18\x04 \x01(\tR\atlsMode\x12'\n" +
+	"\x0fedge_generation\x18\x05 \x01(\x03R\x0eedgeGeneration\x12\x16\n" +
+	"\x06action\x18\x06 \x01(\tR\x06action\"\xa0\x01\n" +
+	"\x0fDesiredEdgePlan\x12\x1e\n" +
+	"\n" +
+	"generation\x18\x01 \x01(\x03R\n" +
+	"generation\x12,\n" +
+	"\x06routes\x18\x02 \x03(\v2\x14.v1.DesiredEdgeRouteR\x06routes\x12\x17\n" +
+	"\aacme_ca\x18\x03 \x01(\tR\x06acmeCa\x12&\n" +
+	"\x0fcaddy_admin_url\x18\x04 \x01(\tR\rcaddyAdminUrl\"\x8b\x02\n" +
+	"\fObservedEdge\x12\x1e\n" +
+	"\n" +
+	"generation\x18\x01 \x01(\x03R\n" +
+	"generation\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12\x1b\n" +
+	"\tlog_lines\x18\x04 \x03(\tR\blogLines\x12J\n" +
+	"\x0eroute_statuses\x18\x05 \x03(\v2#.v1.ObservedEdge.RouteStatusesEntryR\rrouteStatuses\x1a@\n" +
+	"\x12RouteStatusesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xdf\x01\n" +
 	"\x11HeartbeatResponse\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12@\n" +
 	"\x11desired_workloads\x18\x02 \x03(\v2\x13.v1.DesiredWorkloadR\x10desiredWorkloads\x127\n" +
-	"\x0edesired_builds\x18\x03 \x03(\v2\x10.v1.DesiredBuildR\rdesiredBuilds\"d\n" +
+	"\x0edesired_builds\x18\x03 \x03(\v2\x10.v1.DesiredBuildR\rdesiredBuilds\x126\n" +
+	"\fdesired_edge\x18\x04 \x01(\v2\x13.v1.DesiredEdgePlanR\vdesiredEdge\"d\n" +
 	"\x15ReportObservedRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x122\n" +
 	"\tworkloads\x18\x02 \x03(\v2\x14.v1.ObservedWorkloadR\tworkloads\"\x18\n" +
@@ -1526,7 +1876,11 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x12ReportBuildRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12'\n" +
 	"\x05build\x18\x02 \x01(\v2\x11.v1.ObservedBuildR\x05build\"\x15\n" +
-	"\x13ReportBuildResponse\"\x12\n" +
+	"\x13ReportBuildResponse\"R\n" +
+	"\x11ReportEdgeRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12$\n" +
+	"\x04edge\x18\x02 \x01(\v2\x10.v1.ObservedEdgeR\x04edge\"\x14\n" +
+	"\x12ReportEdgeResponse\"\x12\n" +
 	"\x10ListNodesRequest\"3\n" +
 	"\x11ListNodesResponse\x12\x1e\n" +
 	"\x05nodes\x18\x01 \x03(\v2\b.v1.NodeR\x05nodes\"\xaa\x01\n" +
@@ -1538,14 +1892,16 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x15ConnectStreamResponse\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12@\n" +
 	"\x11desired_workloads\x18\x02 \x03(\v2\x13.v1.DesiredWorkloadR\x10desiredWorkloads\x12\x18\n" +
-	"\acommand\x18\x03 \x01(\tR\acommand2\xde\x03\n" +
+	"\acommand\x18\x03 \x01(\tR\acommand2\x9b\x04\n" +
 	"\fAgentService\x12J\n" +
 	"\x0fCreateJoinToken\x12\x1a.v1.CreateJoinTokenRequest\x1a\x1b.v1.CreateJoinTokenResponse\x12;\n" +
 	"\n" +
 	"EnrollNode\x12\x15.v1.EnrollNodeRequest\x1a\x16.v1.EnrollNodeResponse\x128\n" +
 	"\tHeartbeat\x12\x14.v1.HeartbeatRequest\x1a\x15.v1.HeartbeatResponse\x12G\n" +
 	"\x0eReportObserved\x12\x19.v1.ReportObservedRequest\x1a\x1a.v1.ReportObservedResponse\x12>\n" +
-	"\vReportBuild\x12\x16.v1.ReportBuildRequest\x1a\x17.v1.ReportBuildResponse\x128\n" +
+	"\vReportBuild\x12\x16.v1.ReportBuildRequest\x1a\x17.v1.ReportBuildResponse\x12;\n" +
+	"\n" +
+	"ReportEdge\x12\x15.v1.ReportEdgeRequest\x1a\x16.v1.ReportEdgeResponse\x128\n" +
 	"\tListNodes\x12\x14.v1.ListNodesRequest\x1a\x15.v1.ListNodesResponse\x12H\n" +
 	"\rConnectStream\x12\x18.v1.ConnectStreamRequest\x1a\x19.v1.ConnectStreamResponse(\x010\x01B\x7f\n" +
 	"\x06com.v1B\n" +
@@ -1563,7 +1919,7 @@ func file_v1_agent_proto_rawDescGZIP() []byte {
 	return file_v1_agent_proto_rawDescData
 }
 
-var file_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_v1_agent_proto_goTypes = []any{
 	(*NodeCapabilities)(nil),        // 0: v1.NodeCapabilities
 	(*NodeHeartbeat)(nil),           // 1: v1.NodeHeartbeat
@@ -1577,50 +1933,62 @@ var file_v1_agent_proto_goTypes = []any{
 	(*HeartbeatRequest)(nil),        // 9: v1.HeartbeatRequest
 	(*DesiredBuild)(nil),            // 10: v1.DesiredBuild
 	(*ObservedBuild)(nil),           // 11: v1.ObservedBuild
-	(*HeartbeatResponse)(nil),       // 12: v1.HeartbeatResponse
-	(*ReportObservedRequest)(nil),   // 13: v1.ReportObservedRequest
-	(*ReportObservedResponse)(nil),  // 14: v1.ReportObservedResponse
-	(*ReportBuildRequest)(nil),      // 15: v1.ReportBuildRequest
-	(*ReportBuildResponse)(nil),     // 16: v1.ReportBuildResponse
-	(*ListNodesRequest)(nil),        // 17: v1.ListNodesRequest
-	(*ListNodesResponse)(nil),       // 18: v1.ListNodesResponse
-	(*ConnectStreamRequest)(nil),    // 19: v1.ConnectStreamRequest
-	(*ConnectStreamResponse)(nil),   // 20: v1.ConnectStreamResponse
-	nil,                             // 21: v1.DesiredWorkload.EnvVarsEntry
-	nil,                             // 22: v1.DesiredBuild.BuildArgsEntry
+	(*DesiredEdgeRoute)(nil),        // 12: v1.DesiredEdgeRoute
+	(*DesiredEdgePlan)(nil),         // 13: v1.DesiredEdgePlan
+	(*ObservedEdge)(nil),            // 14: v1.ObservedEdge
+	(*HeartbeatResponse)(nil),       // 15: v1.HeartbeatResponse
+	(*ReportObservedRequest)(nil),   // 16: v1.ReportObservedRequest
+	(*ReportObservedResponse)(nil),  // 17: v1.ReportObservedResponse
+	(*ReportBuildRequest)(nil),      // 18: v1.ReportBuildRequest
+	(*ReportBuildResponse)(nil),     // 19: v1.ReportBuildResponse
+	(*ReportEdgeRequest)(nil),       // 20: v1.ReportEdgeRequest
+	(*ReportEdgeResponse)(nil),      // 21: v1.ReportEdgeResponse
+	(*ListNodesRequest)(nil),        // 22: v1.ListNodesRequest
+	(*ListNodesResponse)(nil),       // 23: v1.ListNodesResponse
+	(*ConnectStreamRequest)(nil),    // 24: v1.ConnectStreamRequest
+	(*ConnectStreamResponse)(nil),   // 25: v1.ConnectStreamResponse
+	nil,                             // 26: v1.DesiredWorkload.EnvVarsEntry
+	nil,                             // 27: v1.DesiredBuild.BuildArgsEntry
+	nil,                             // 28: v1.ObservedEdge.RouteStatusesEntry
 }
 var file_v1_agent_proto_depIdxs = []int32{
 	0,  // 0: v1.Node.capabilities:type_name -> v1.NodeCapabilities
 	0,  // 1: v1.EnrollNodeRequest.capabilities:type_name -> v1.NodeCapabilities
-	21, // 2: v1.DesiredWorkload.env_vars:type_name -> v1.DesiredWorkload.EnvVarsEntry
+	26, // 2: v1.DesiredWorkload.env_vars:type_name -> v1.DesiredWorkload.EnvVarsEntry
 	0,  // 3: v1.HeartbeatRequest.capabilities:type_name -> v1.NodeCapabilities
-	22, // 4: v1.DesiredBuild.build_args:type_name -> v1.DesiredBuild.BuildArgsEntry
-	7,  // 5: v1.HeartbeatResponse.desired_workloads:type_name -> v1.DesiredWorkload
-	10, // 6: v1.HeartbeatResponse.desired_builds:type_name -> v1.DesiredBuild
-	8,  // 7: v1.ReportObservedRequest.workloads:type_name -> v1.ObservedWorkload
-	11, // 8: v1.ReportBuildRequest.build:type_name -> v1.ObservedBuild
-	2,  // 9: v1.ListNodesResponse.nodes:type_name -> v1.Node
-	1,  // 10: v1.ConnectStreamRequest.heartbeat:type_name -> v1.NodeHeartbeat
-	7,  // 11: v1.ConnectStreamResponse.desired_workloads:type_name -> v1.DesiredWorkload
-	3,  // 12: v1.AgentService.CreateJoinToken:input_type -> v1.CreateJoinTokenRequest
-	5,  // 13: v1.AgentService.EnrollNode:input_type -> v1.EnrollNodeRequest
-	9,  // 14: v1.AgentService.Heartbeat:input_type -> v1.HeartbeatRequest
-	13, // 15: v1.AgentService.ReportObserved:input_type -> v1.ReportObservedRequest
-	15, // 16: v1.AgentService.ReportBuild:input_type -> v1.ReportBuildRequest
-	17, // 17: v1.AgentService.ListNodes:input_type -> v1.ListNodesRequest
-	19, // 18: v1.AgentService.ConnectStream:input_type -> v1.ConnectStreamRequest
-	4,  // 19: v1.AgentService.CreateJoinToken:output_type -> v1.CreateJoinTokenResponse
-	6,  // 20: v1.AgentService.EnrollNode:output_type -> v1.EnrollNodeResponse
-	12, // 21: v1.AgentService.Heartbeat:output_type -> v1.HeartbeatResponse
-	14, // 22: v1.AgentService.ReportObserved:output_type -> v1.ReportObservedResponse
-	16, // 23: v1.AgentService.ReportBuild:output_type -> v1.ReportBuildResponse
-	18, // 24: v1.AgentService.ListNodes:output_type -> v1.ListNodesResponse
-	20, // 25: v1.AgentService.ConnectStream:output_type -> v1.ConnectStreamResponse
-	19, // [19:26] is the sub-list for method output_type
-	12, // [12:19] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	27, // 4: v1.DesiredBuild.build_args:type_name -> v1.DesiredBuild.BuildArgsEntry
+	12, // 5: v1.DesiredEdgePlan.routes:type_name -> v1.DesiredEdgeRoute
+	28, // 6: v1.ObservedEdge.route_statuses:type_name -> v1.ObservedEdge.RouteStatusesEntry
+	7,  // 7: v1.HeartbeatResponse.desired_workloads:type_name -> v1.DesiredWorkload
+	10, // 8: v1.HeartbeatResponse.desired_builds:type_name -> v1.DesiredBuild
+	13, // 9: v1.HeartbeatResponse.desired_edge:type_name -> v1.DesiredEdgePlan
+	8,  // 10: v1.ReportObservedRequest.workloads:type_name -> v1.ObservedWorkload
+	11, // 11: v1.ReportBuildRequest.build:type_name -> v1.ObservedBuild
+	14, // 12: v1.ReportEdgeRequest.edge:type_name -> v1.ObservedEdge
+	2,  // 13: v1.ListNodesResponse.nodes:type_name -> v1.Node
+	1,  // 14: v1.ConnectStreamRequest.heartbeat:type_name -> v1.NodeHeartbeat
+	7,  // 15: v1.ConnectStreamResponse.desired_workloads:type_name -> v1.DesiredWorkload
+	3,  // 16: v1.AgentService.CreateJoinToken:input_type -> v1.CreateJoinTokenRequest
+	5,  // 17: v1.AgentService.EnrollNode:input_type -> v1.EnrollNodeRequest
+	9,  // 18: v1.AgentService.Heartbeat:input_type -> v1.HeartbeatRequest
+	16, // 19: v1.AgentService.ReportObserved:input_type -> v1.ReportObservedRequest
+	18, // 20: v1.AgentService.ReportBuild:input_type -> v1.ReportBuildRequest
+	20, // 21: v1.AgentService.ReportEdge:input_type -> v1.ReportEdgeRequest
+	22, // 22: v1.AgentService.ListNodes:input_type -> v1.ListNodesRequest
+	24, // 23: v1.AgentService.ConnectStream:input_type -> v1.ConnectStreamRequest
+	4,  // 24: v1.AgentService.CreateJoinToken:output_type -> v1.CreateJoinTokenResponse
+	6,  // 25: v1.AgentService.EnrollNode:output_type -> v1.EnrollNodeResponse
+	15, // 26: v1.AgentService.Heartbeat:output_type -> v1.HeartbeatResponse
+	17, // 27: v1.AgentService.ReportObserved:output_type -> v1.ReportObservedResponse
+	19, // 28: v1.AgentService.ReportBuild:output_type -> v1.ReportBuildResponse
+	21, // 29: v1.AgentService.ReportEdge:output_type -> v1.ReportEdgeResponse
+	23, // 30: v1.AgentService.ListNodes:output_type -> v1.ListNodesResponse
+	25, // 31: v1.AgentService.ConnectStream:output_type -> v1.ConnectStreamResponse
+	24, // [24:32] is the sub-list for method output_type
+	16, // [16:24] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_v1_agent_proto_init() }
@@ -1634,7 +2002,7 @@ func file_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_agent_proto_rawDesc), len(file_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   23,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

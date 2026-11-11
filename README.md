@@ -75,7 +75,8 @@ HTTP_ADDR=:8080
 - **S3 delivered** — Rust agent enrollment, heartbeat, nodes UI (`docs/SPRINT_3_CIERRE.md`)
 - **S4 delivered** — container reconcile + Deploy from dashboard (`docs/SPRINT_4_CIERRE.md`)
 - **S5 delivered** — git → docker build → registry/deploy (`docs/SPRINT_5_CIERRE.md`)
-- **Next: S6** — edge, domain, TLS (Alpha 0.1)
+- **S6 delivered** — Caddy edge, domains, TLS/Pebble (`docs/SPRINT_6_CIERRE.md`)
+- **Next: S7** — ops, backup, observability
 
 Operational plan through **v1.0**: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md)
 

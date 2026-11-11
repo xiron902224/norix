@@ -181,7 +181,8 @@ Esos ítems se mantienen en el plan como **Fase post-v1** para no perder la visi
 | S3 agente | Enrolamiento + heartbeat | **Entregado**: join token, Rust agent, nodes UI |
 | S4 contenedores | Desired→observed + Deploy | **Entregado**: reconciler Docker/nerdctl, logs UI |
 | S5 builds/git | Git → build → registry | **Entregado**: DeployFromGit, zot, build logs, webhook |
-| S6–S10 (replan) | Edge → GA 1.0 | **Pendiente** — siguiente: S6 edge/SSL (Alpha 0.1) |
+| S6 edge/TLS | Dominio + HTTPS (Alpha 0.1) | **Entregado**: Caddy/Pebble, Domains UI, rollback |
+| S7–S10 (replan) | Ops → GA 1.0 | **Pendiente** — siguiente: S7 ops/backup/observabilidad |
 
 ---
 

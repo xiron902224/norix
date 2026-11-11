@@ -139,7 +139,55 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 			Registry: item.Registry,
 		})
 	}
-	return &paasv1.HeartbeatResponse{NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds}, nil
+	var desiredEdge *paasv1.DesiredEdgePlan
+	edgePlan, err := db.GetDesiredEdgePlan(ctx, service.pool, node.OrganizationID, node.ID)
+	if err != nil {
+		return nil, internalError("desired edge plan", err)
+	}
+	if edgePlan.Generation > 0 && len(edgePlan.Routes) > 0 {
+		routes := make([]*paasv1.DesiredEdgeRoute, 0, len(edgePlan.Routes))
+		for _, route := range edgePlan.Routes {
+			routes = append(routes, &paasv1.DesiredEdgeRoute{
+				DomainId: route.DomainID, Hostname: route.Hostname, Upstream: route.Upstream,
+				TlsMode: route.TLSMode, EdgeGeneration: route.EdgeGeneration, Action: route.Action,
+			})
+		}
+		desiredEdge = &paasv1.DesiredEdgePlan{
+			Generation: edgePlan.Generation, Routes: routes,
+			AcmeCa: edgePlan.ACMECA, CaddyAdminUrl: edgePlan.CaddyAdminURL,
+		}
+	}
+	return &paasv1.HeartbeatResponse{
+		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds, DesiredEdge: desiredEdge,
+	}, nil
+}
+
+func (service AgentService) ReportEdge(ctx context.Context, request *paasv1.ReportEdgeRequest) (*paasv1.ReportEdgeResponse, error) {
+	node, ok := NodeFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "node credential required")
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		nodeID = node.ID
+	}
+	if nodeID != node.ID {
+		return nil, connect.NewError(connect.CodePermissionDenied, "node_id does not match credential")
+	}
+	edge := request.GetEdge()
+	if edge == nil {
+		return nil, invalidArgument("edge is required")
+	}
+	if err := db.ApplyObservedEdge(ctx, service.pool, node.OrganizationID, db.ObservedEdge{
+		Generation:    edge.GetGeneration(),
+		Status:        edge.GetStatus(),
+		Message:       edge.GetMessage(),
+		LogLines:      edge.GetLogLines(),
+		RouteStatuses: edge.GetRouteStatuses(),
+	}, db.AuditActor{Email: "node:" + node.ID}); err != nil {
+		return nil, internalError("report edge", err)
+	}
+	return &paasv1.ReportEdgeResponse{}, nil
 }
 
 func (service AgentService) ReportBuild(ctx context.Context, request *paasv1.ReportBuildRequest) (*paasv1.ReportBuildResponse, error) {

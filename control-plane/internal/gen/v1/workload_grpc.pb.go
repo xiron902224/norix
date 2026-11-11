@@ -28,6 +28,9 @@ const (
 	WorkloadService_GetWorkloadLogs_FullMethodName = "/v1.WorkloadService/GetWorkloadLogs"
 	WorkloadService_ListBuilds_FullMethodName      = "/v1.WorkloadService/ListBuilds"
 	WorkloadService_GetBuildLogs_FullMethodName    = "/v1.WorkloadService/GetBuildLogs"
+	WorkloadService_AssignDomain_FullMethodName    = "/v1.WorkloadService/AssignDomain"
+	WorkloadService_ListDomains_FullMethodName     = "/v1.WorkloadService/ListDomains"
+	WorkloadService_UnassignDomain_FullMethodName  = "/v1.WorkloadService/UnassignDomain"
 )
 
 // WorkloadServiceClient is the client API for WorkloadService service.
@@ -43,6 +46,9 @@ type WorkloadServiceClient interface {
 	GetWorkloadLogs(ctx context.Context, in *GetWorkloadLogsRequest, opts ...grpc.CallOption) (*GetWorkloadLogsResponse, error)
 	ListBuilds(ctx context.Context, in *ListBuildsRequest, opts ...grpc.CallOption) (*ListBuildsResponse, error)
 	GetBuildLogs(ctx context.Context, in *GetBuildLogsRequest, opts ...grpc.CallOption) (*GetBuildLogsResponse, error)
+	AssignDomain(ctx context.Context, in *AssignDomainRequest, opts ...grpc.CallOption) (*AssignDomainResponse, error)
+	ListDomains(ctx context.Context, in *ListDomainsRequest, opts ...grpc.CallOption) (*ListDomainsResponse, error)
+	UnassignDomain(ctx context.Context, in *UnassignDomainRequest, opts ...grpc.CallOption) (*UnassignDomainResponse, error)
 }
 
 type workloadServiceClient struct {
@@ -143,6 +149,36 @@ func (c *workloadServiceClient) GetBuildLogs(ctx context.Context, in *GetBuildLo
 	return out, nil
 }
 
+func (c *workloadServiceClient) AssignDomain(ctx context.Context, in *AssignDomainRequest, opts ...grpc.CallOption) (*AssignDomainResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AssignDomainResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_AssignDomain_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) ListDomains(ctx context.Context, in *ListDomainsRequest, opts ...grpc.CallOption) (*ListDomainsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDomainsResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_ListDomains_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) UnassignDomain(ctx context.Context, in *UnassignDomainRequest, opts ...grpc.CallOption) (*UnassignDomainResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnassignDomainResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_UnassignDomain_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkloadServiceServer is the server API for WorkloadService service.
 // All implementations must embed UnimplementedWorkloadServiceServer
 // for forward compatibility.
@@ -156,6 +192,9 @@ type WorkloadServiceServer interface {
 	GetWorkloadLogs(context.Context, *GetWorkloadLogsRequest) (*GetWorkloadLogsResponse, error)
 	ListBuilds(context.Context, *ListBuildsRequest) (*ListBuildsResponse, error)
 	GetBuildLogs(context.Context, *GetBuildLogsRequest) (*GetBuildLogsResponse, error)
+	AssignDomain(context.Context, *AssignDomainRequest) (*AssignDomainResponse, error)
+	ListDomains(context.Context, *ListDomainsRequest) (*ListDomainsResponse, error)
+	UnassignDomain(context.Context, *UnassignDomainRequest) (*UnassignDomainResponse, error)
 	mustEmbedUnimplementedWorkloadServiceServer()
 }
 
@@ -192,6 +231,15 @@ func (UnimplementedWorkloadServiceServer) ListBuilds(context.Context, *ListBuild
 }
 func (UnimplementedWorkloadServiceServer) GetBuildLogs(context.Context, *GetBuildLogsRequest) (*GetBuildLogsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetBuildLogs not implemented")
+}
+func (UnimplementedWorkloadServiceServer) AssignDomain(context.Context, *AssignDomainRequest) (*AssignDomainResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AssignDomain not implemented")
+}
+func (UnimplementedWorkloadServiceServer) ListDomains(context.Context, *ListDomainsRequest) (*ListDomainsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDomains not implemented")
+}
+func (UnimplementedWorkloadServiceServer) UnassignDomain(context.Context, *UnassignDomainRequest) (*UnassignDomainResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnassignDomain not implemented")
 }
 func (UnimplementedWorkloadServiceServer) mustEmbedUnimplementedWorkloadServiceServer() {}
 func (UnimplementedWorkloadServiceServer) testEmbeddedByValue()                         {}
@@ -376,6 +424,60 @@ func _WorkloadService_GetBuildLogs_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkloadService_AssignDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssignDomainRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).AssignDomain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_AssignDomain_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).AssignDomain(ctx, req.(*AssignDomainRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_ListDomains_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDomainsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).ListDomains(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_ListDomains_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).ListDomains(ctx, req.(*ListDomainsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_UnassignDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnassignDomainRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).UnassignDomain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_UnassignDomain_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).UnassignDomain(ctx, req.(*UnassignDomainRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WorkloadService_ServiceDesc is the grpc.ServiceDesc for WorkloadService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -418,6 +520,18 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBuildLogs",
 			Handler:    _WorkloadService_GetBuildLogs_Handler,
+		},
+		{
+			MethodName: "AssignDomain",
+			Handler:    _WorkloadService_AssignDomain_Handler,
+		},
+		{
+			MethodName: "ListDomains",
+			Handler:    _WorkloadService_ListDomains_Handler,
+		},
+		{
+			MethodName: "UnassignDomain",
+			Handler:    _WorkloadService_UnassignDomain_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

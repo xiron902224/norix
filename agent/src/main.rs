@@ -2,6 +2,7 @@ mod build;
 mod capabilities;
 mod client;
 mod config;
+mod edge;
 mod proto_num;
 mod runtime;
 
@@ -88,6 +89,13 @@ async fn main() -> Result<()> {
                             }
                         } else if !desired.desired_workloads.is_empty() || !desired.desired_builds.is_empty() {
                             warn!("desired builds/workloads pending but no container runtime");
+                        }
+                        if let Some(plan) = desired.desired_edge.as_ref() {
+                            info!(generation = plan.generation, "applying edge plan");
+                            let observed = edge::apply_edge(plan).await;
+                            if let Err(error) = client.report_edge(&state, &observed).await {
+                                warn!(%error, "report edge failed");
+                            }
                         }
                     }
                     Err(error) => {

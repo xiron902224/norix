@@ -51,6 +51,15 @@ const (
 	// WorkloadServiceGetBuildLogsProcedure is the procedure name of the WorkloadService's GetBuildLogs
 	// RPC.
 	WorkloadServiceGetBuildLogsProcedure = "/v1.WorkloadService/GetBuildLogs"
+	// WorkloadServiceAssignDomainProcedure is the procedure name of the WorkloadService's AssignDomain
+	// RPC.
+	WorkloadServiceAssignDomainProcedure = "/v1.WorkloadService/AssignDomain"
+	// WorkloadServiceListDomainsProcedure is the procedure name of the WorkloadService's ListDomains
+	// RPC.
+	WorkloadServiceListDomainsProcedure = "/v1.WorkloadService/ListDomains"
+	// WorkloadServiceUnassignDomainProcedure is the procedure name of the WorkloadService's
+	// UnassignDomain RPC.
+	WorkloadServiceUnassignDomainProcedure = "/v1.WorkloadService/UnassignDomain"
 	// ProjectServiceCreateProjectProcedure is the procedure name of the ProjectService's CreateProject
 	// RPC.
 	ProjectServiceCreateProjectProcedure = "/v1.ProjectService/CreateProject"
@@ -126,6 +135,27 @@ var (
 			Procedure:  WorkloadServiceGetBuildLogsProcedure,
 		}
 	})
+	workloadServiceAssignDomainSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("AssignDomain"),
+			Procedure:  WorkloadServiceAssignDomainProcedure,
+		}
+	})
+	workloadServiceListDomainsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("ListDomains"),
+			Procedure:  WorkloadServiceListDomainsProcedure,
+		}
+	})
+	workloadServiceUnassignDomainSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("UnassignDomain"),
+			Procedure:  WorkloadServiceUnassignDomainProcedure,
+		}
+	})
 )
 
 // WorkloadServiceClient is a client for the v1.WorkloadService service.
@@ -139,6 +169,9 @@ type WorkloadServiceClient interface {
 	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
 	ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error)
 	GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error)
+	AssignDomain(context.Context, *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error)
+	ListDomains(context.Context, *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error)
+	UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error)
 }
 
 // NewWorkloadServiceClient constructs a client for the v1.WorkloadService service. Multiple service
@@ -158,6 +191,9 @@ type WorkloadServiceHandler interface {
 	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
 	ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error)
 	GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error)
+	AssignDomain(context.Context, *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error)
+	ListDomains(context.Context, *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error)
+	UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error)
 }
 
 // RegisterWorkloadServiceHandler registers svc as the v1.WorkloadService implementation on server.
@@ -173,6 +209,9 @@ func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceH
 		connect.Method{Spec: workloadServiceGetWorkloadLogsSpec(), Handler: adapter.getWorkloadLogs},
 		connect.Method{Spec: workloadServiceListBuildsSpec(), Handler: adapter.listBuilds},
 		connect.Method{Spec: workloadServiceGetBuildLogsSpec(), Handler: adapter.getBuildLogs},
+		connect.Method{Spec: workloadServiceAssignDomainSpec(), Handler: adapter.assignDomain},
+		connect.Method{Spec: workloadServiceListDomainsSpec(), Handler: adapter.listDomains},
+		connect.Method{Spec: workloadServiceUnassignDomainSpec(), Handler: adapter.unassignDomain},
 	)
 }
 
@@ -213,6 +252,18 @@ func (UnimplementedWorkloadServiceHandler) ListBuilds(context.Context, *v1.ListB
 
 func (UnimplementedWorkloadServiceHandler) GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.GetBuildLogs is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) AssignDomain(context.Context, *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.AssignDomain is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) ListDomains(context.Context, *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.ListDomains is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.UnassignDomain is not implemented")
 }
 
 type workloadServiceClient struct {
@@ -286,6 +337,30 @@ func (c *workloadServiceClient) ListBuilds(ctx context.Context, req *v1.ListBuil
 func (c *workloadServiceClient) GetBuildLogs(ctx context.Context, req *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error) {
 	var res v1.GetBuildLogsResponse
 	if err := c.client.CallUnary(ctx, workloadServiceGetBuildLogsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) AssignDomain(ctx context.Context, req *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error) {
+	var res v1.AssignDomainResponse
+	if err := c.client.CallUnary(ctx, workloadServiceAssignDomainSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) ListDomains(ctx context.Context, req *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error) {
+	var res v1.ListDomainsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceListDomainsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) UnassignDomain(ctx context.Context, req *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error) {
+	var res v1.UnassignDomainResponse
+	if err := c.client.CallUnary(ctx, workloadServiceUnassignDomainSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -395,6 +470,42 @@ func (h workloadServiceHandler) getBuildLogs(ctx context.Context, _ connect.Spec
 		return err
 	}
 	res, err := h.svc.GetBuildLogs(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) assignDomain(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.AssignDomainRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.AssignDomain(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) listDomains(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListDomainsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListDomains(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) unassignDomain(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UnassignDomainRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UnassignDomain(ctx, &req)
 	if err != nil {
 		return err
 	}

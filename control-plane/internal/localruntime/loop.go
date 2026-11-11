@@ -95,12 +95,24 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, runtime *Runtime, logger *
 			logger.Warn("list desired for local node", "org", orgID, "error", err)
 			continue
 		}
-		if len(desired) == 0 {
+		if len(desired) > 0 {
+			observed := runtime.Reconcile(ctx, desired)
+			if err := db.ApplyObservedWorkloads(ctx, pool, orgID, observed); err != nil {
+				logger.Warn("apply observed local workloads", "org", orgID, "error", err)
+			}
+		}
+
+		edgePlan, err := db.GetDesiredEdgePlan(ctx, pool, orgID, node.ID)
+		if err != nil {
+			logger.Warn("desired edge plan", "org", orgID, "error", err)
 			continue
 		}
-		observed := runtime.Reconcile(ctx, desired)
-		if err := db.ApplyObservedWorkloads(ctx, pool, orgID, observed); err != nil {
-			logger.Warn("apply observed local workloads", "org", orgID, "error", err)
+		if edgePlan.Generation > 0 && len(edgePlan.Routes) > 0 {
+			observedEdge := runtime.ApplyEdge(ctx, edgePlan)
+			_ = db.SaveEdgeConfigSnapshot(ctx, pool, orgID, edgePlan.Generation, "") // config stored on node state; CP tracks status
+			if err := db.ApplyObservedEdge(ctx, pool, orgID, observedEdge, db.AuditActor{Email: "local-runtime"}); err != nil {
+				logger.Warn("apply observed edge", "org", orgID, "error", err)
+			}
 		}
 	}
 }

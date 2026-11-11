@@ -113,10 +113,51 @@ pub struct ObservedBuild {
     pub log_lines: Vec<String>,
 }
 
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredEdgeRoute {
+    #[serde(default)]
+    pub domain_id: String,
+    #[serde(default)]
+    pub hostname: String,
+    #[serde(default)]
+    pub upstream: String,
+    #[serde(default)]
+    pub tls_mode: String,
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub edge_generation: i64,
+    #[serde(default)]
+    pub action: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredEdgePlan {
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub generation: i64,
+    #[serde(default)]
+    pub routes: Vec<DesiredEdgeRoute>,
+    #[serde(default)]
+    pub acme_ca: String,
+    #[serde(default)]
+    pub caddy_admin_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedEdge {
+    pub generation: i64,
+    pub status: String,
+    pub message: String,
+    pub log_lines: Vec<String>,
+    pub route_statuses: HashMap<String, String>,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct HeartbeatResult {
     pub desired_workloads: Vec<DesiredWorkload>,
     pub desired_builds: Vec<DesiredBuild>,
+    pub desired_edge: Option<DesiredEdgePlan>,
 }
 
 #[derive(Deserialize)]
@@ -129,6 +170,8 @@ struct HeartbeatResponse {
     desired_workloads: Vec<DesiredWorkload>,
     #[serde(default)]
     desired_builds: Vec<DesiredBuild>,
+    #[serde(default)]
+    desired_edge: Option<DesiredEdgePlan>,
 }
 
 #[derive(Serialize)]
@@ -204,6 +247,7 @@ impl AgentClient {
             Ok(parsed) => Ok(HeartbeatResult {
                 desired_workloads: parsed.desired_workloads,
                 desired_builds: parsed.desired_builds,
+                desired_edge: parsed.desired_edge,
             }),
             Err(error) => {
                 let mut result = HeartbeatResult::default();
@@ -235,12 +279,45 @@ impl AgentClient {
                         }
                     }
                 }
-                if result.desired_workloads.is_empty() && result.desired_builds.is_empty() {
+                if let Some(edge) = response
+                    .get("desiredEdge")
+                    .or_else(|| response.get("desired_edge"))
+                {
+                    if let Ok(parsed) = serde_json::from_value::<DesiredEdgePlan>(edge.clone()) {
+                        if parsed.generation > 0 {
+                            result.desired_edge = Some(parsed);
+                        }
+                    }
+                }
+                if result.desired_workloads.is_empty()
+                    && result.desired_builds.is_empty()
+                    && result.desired_edge.is_none()
+                {
                     tracing::warn!(%error, body = %response, "heartbeat decode partial; treating desired as empty");
                 }
                 Ok(result)
             }
         }
+    }
+
+    pub async fn report_edge(&self, state: &NodeState, edge: &ObservedEdge) -> Result<()> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body<'a> {
+            node_id: &'a str,
+            edge: &'a ObservedEdge,
+        }
+        let body = Body {
+            node_id: &state.node_id,
+            edge,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportEdge",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
     }
 
     pub async fn report_observed(

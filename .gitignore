@@ -12,8 +12,10 @@
 *.crt
 *.p12
 *.pfx
-secrets/
-**/secrets/
+# Local secret material (not the Go package control-plane/internal/secrets/)
+/secrets/
+deploy/**/secrets/
+**/.secrets/
 
 # Go
 bin/

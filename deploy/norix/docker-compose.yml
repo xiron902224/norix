@@ -45,6 +45,7 @@ services:
 
   # Local OCI registry (zot) for S5 git→build→push.
   registry:
+    profiles: ["registry"]
     image: ghcr.io/project-zot/zot-linux-amd64:v2.1.1
     restart: unless-stopped
     ports:
@@ -54,9 +55,42 @@ services:
       - ./zot-config.json:/etc/zot/config.json:ro
     networks: [norix]
 
+  # ACME test CA (Pebble) for local TLS issuance.
+  pebble:
+    image: ghcr.io/letsencrypt/pebble:latest
+    command: ["-config", "/test/config/pebble-config.json", "-strict"]
+    environment:
+      PEBBLE_VA_ALWAYS_VALID: "1"
+    ports:
+      - "127.0.0.1:14000:14000"
+      - "127.0.0.1:15000:15000"
+    networks: [norix]
+
+  # Edge proxy — agent/localruntime loads routes via admin API :2019.
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:80"
+      - "127.0.0.1:8443:443"
+      - "127.0.0.1:2019:2019"
+    volumes:
+      - ./Caddyfile.bootstrap:/etc/caddy/Caddyfile:ro
+      - norix_caddy_data:/data
+      - norix_caddy_config:/config
+    environment:
+      NORIX_ACME_CA: ${NORIX_ACME_CA:-https://pebble:14000/dir}
+    depends_on:
+      - pebble
+    networks: [norix]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
 volumes:
   norix_postgres_data:
   norix_registry_data:
+  norix_caddy_data:
+  norix_caddy_config:
 
 networks:
   norix:

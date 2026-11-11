@@ -105,10 +105,35 @@ message ObservedBuild {
   repeated string log_lines = 5;
 }
 
+message DesiredEdgeRoute {
+  string domain_id = 1;
+  string hostname = 2;
+  string upstream = 3;
+  string tls_mode = 4;
+  int64 edge_generation = 5;
+  string action = 6; // upsert | delete
+}
+
+message DesiredEdgePlan {
+  int64 generation = 1;
+  repeated DesiredEdgeRoute routes = 2;
+  string acme_ca = 3;
+  string caddy_admin_url = 4;
+}
+
+message ObservedEdge {
+  int64 generation = 1;
+  string status = 2;
+  string message = 3;
+  repeated string log_lines = 4;
+  map<string, string> route_statuses = 5;
+}
+
 message HeartbeatResponse {
   string node_id = 1;
   repeated DesiredWorkload desired_workloads = 2;
   repeated DesiredBuild desired_builds = 3;
+  DesiredEdgePlan desired_edge = 4;
 }
 
 message ReportObservedRequest {
@@ -124,6 +149,13 @@ message ReportBuildRequest {
 }
 
 message ReportBuildResponse {}
+
+message ReportEdgeRequest {
+  string node_id = 1;
+  ObservedEdge edge = 2;
+}
+
+message ReportEdgeResponse {}
 
 message ListNodesRequest {}
 
@@ -150,6 +182,7 @@ service AgentService {
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
   rpc ReportObserved(ReportObservedRequest) returns (ReportObservedResponse);
   rpc ReportBuild(ReportBuildRequest) returns (ReportBuildResponse);
+  rpc ReportEdge(ReportEdgeRequest) returns (ReportEdgeResponse);
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
   rpc ConnectStream(stream ConnectStreamRequest) returns (stream ConnectStreamResponse);
 }

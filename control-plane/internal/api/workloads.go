@@ -368,3 +368,80 @@ func buildToProto(build db.Build) *paasv1.Build {
 		UpdatedAt: build.UpdatedAt.UTC().Format(time.RFC3339),
 	}
 }
+
+func (service WorkloadService) AssignDomain(ctx context.Context, request *paasv1.AssignDomainRequest) (*paasv1.AssignDomainResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	route, err := db.AssignDomain(
+		ctx,
+		service.pool,
+		identity.OrganizationID,
+		request.GetWorkloadId(),
+		request.GetHostname(),
+		request.GetTlsMode(),
+		db.AuditActor{UserID: identity.UserID, Email: identity.Email},
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "required") {
+			return nil, invalidArgument(err.Error())
+		}
+		if strings.Contains(err.Error(), "workload not found") {
+			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
+		}
+		return nil, internalError("assign domain", err)
+	}
+	return &paasv1.AssignDomainResponse{Route: domainToProto(route)}, nil
+}
+
+func (service WorkloadService) ListDomains(ctx context.Context, request *paasv1.ListDomainsRequest) (*paasv1.ListDomainsResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	routes, err := db.ListDomains(ctx, service.pool, identity.OrganizationID, request.GetProjectId())
+	if err != nil {
+		return nil, internalError("list domains", err)
+	}
+	result := make([]*paasv1.DomainRoute, 0, len(routes))
+	for _, route := range routes {
+		result = append(result, domainToProto(route))
+	}
+	return &paasv1.ListDomainsResponse{Routes: result}, nil
+}
+
+func (service WorkloadService) UnassignDomain(ctx context.Context, request *paasv1.UnassignDomainRequest) (*paasv1.UnassignDomainResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	if request.GetId() == "" {
+		return nil, invalidArgument("domain id is required")
+	}
+	if err := db.UnassignDomain(ctx, service.pool, identity.OrganizationID, request.GetId(), db.AuditActor{
+		UserID: identity.UserID,
+		Email:  identity.Email,
+	}); err != nil {
+		if strings.Contains(err.Error(), "domain not found") {
+			return nil, connect.NewError(connect.CodeNotFound, "domain not found")
+		}
+		return nil, internalError("unassign domain", err)
+	}
+	return &paasv1.UnassignDomainResponse{}, nil
+}
+
+func domainToProto(route db.DomainRoute) *paasv1.DomainRoute {
+	scheme := "https"
+	return &paasv1.DomainRoute{
+		Id: route.ID, WorkloadId: route.WorkloadID, Hostname: route.Hostname,
+		Status: route.Status, TlsMode: route.TLSMode, LastError: route.LastError,
+		HttpsUrl: fmt.Sprintf("%s://%s", scheme, route.Hostname), EdgeGeneration: route.EdgeGeneration,
+	}
+}
