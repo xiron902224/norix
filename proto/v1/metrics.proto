@@ -48,6 +48,8 @@ message QueryLogsRequest {
   string workload_id = 2;
   string level = 3;
   int32 limit = 4;
+  // Substring match against log body (case-insensitive). Empty = no filter.
+  string query = 5;
 }
 
 message QueryLogsResponse {

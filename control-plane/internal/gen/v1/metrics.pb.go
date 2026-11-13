@@ -406,11 +406,13 @@ func (x *LogSegment) GetTimestamp() int64 {
 }
 
 type QueryLogsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	WorkloadId    string                 `protobuf:"bytes,2,opt,name=workload_id,json=workloadId,proto3" json:"workload_id,omitempty"`
-	Level         string                 `protobuf:"bytes,3,opt,name=level,proto3" json:"level,omitempty"`
-	Limit         int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId  string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	WorkloadId string                 `protobuf:"bytes,2,opt,name=workload_id,json=workloadId,proto3" json:"workload_id,omitempty"`
+	Level      string                 `protobuf:"bytes,3,opt,name=level,proto3" json:"level,omitempty"`
+	Limit      int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Substring match against log body (case-insensitive). Empty = no filter.
+	Query         string `protobuf:"bytes,5,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -471,6 +473,13 @@ func (x *QueryLogsRequest) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *QueryLogsRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
 }
 
 type QueryLogsResponse struct {
@@ -901,14 +910,15 @@ const file_v1_metrics_proto_rawDesc = "" +
 	"workloadId\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\tR\x04body\x12\x14\n" +
 	"\x05level\x18\x05 \x01(\tR\x05level\x12\x1c\n" +
-	"\ttimestamp\x18\x06 \x01(\x03R\ttimestamp\"~\n" +
+	"\ttimestamp\x18\x06 \x01(\x03R\ttimestamp\"\x94\x01\n" +
 	"\x10QueryLogsRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1f\n" +
 	"\vworkload_id\x18\x02 \x01(\tR\n" +
 	"workloadId\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\tR\x05level\x12\x14\n" +
-	"\x05limit\x18\x04 \x01(\x05R\x05limit\"?\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x14\n" +
+	"\x05query\x18\x05 \x01(\tR\x05query\"?\n" +
 	"\x11QueryLogsResponse\x12*\n" +
 	"\bsegments\x18\x01 \x03(\v2\x0e.v1.LogSegmentR\bsegments\"\x95\x01\n" +
 	"\tAlertRule\x12\x0e\n" +

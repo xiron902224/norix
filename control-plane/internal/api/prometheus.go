@@ -43,10 +43,27 @@ func PrometheusMetricsHandler(pool *pgxpool.Pool) http.HandlerFunc {
 }
 
 func sanitizePromName(name string) string {
-	name = strings.ReplaceAll(name, "-", "_")
-	name = strings.ReplaceAll(name, ".", "_")
+	name = strings.TrimSpace(name)
 	if name == "" {
 		return "norix_metric"
 	}
-	return name
+	startsWithDigit := name[0] >= '0' && name[0] <= '9'
+	name = strings.ReplaceAll(name, "-", "_")
+	name = strings.ReplaceAll(name, ".", "_")
+	name = strings.ReplaceAll(name, " ", "_")
+	var b strings.Builder
+	for i, ch := range name {
+		ok := (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' ||
+			(i > 0 && ch >= '0' && ch <= '9')
+		if ok {
+			b.WriteRune(ch)
+		} else if i > 0 {
+			b.WriteByte('_')
+		}
+	}
+	out := b.String()
+	if out == "" || startsWithDigit {
+		return "norix_metric"
+	}
+	return out
 }

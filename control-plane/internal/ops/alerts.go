@@ -35,6 +35,8 @@ func Start(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
 func runOnce(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
 	_ = db.RetainWorkloadLogs(ctx, pool, 500)
 	_ = db.RetainBuildLogs(ctx, pool, 800)
+	_ = db.RetainLogSegments(ctx, pool, 5000)
+	_ = db.RetainMetricSamples(ctx, pool, 5000)
 
 	orgs, err := db.ListOrganizationIDs(ctx, pool)
 	if err != nil {

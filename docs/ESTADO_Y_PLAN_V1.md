@@ -11,9 +11,9 @@
 | | |
 |---|---|
 | **Fase actual** | **Fase 2** (multi-nodo / operación) |
-| **Sprint activo (siguiente a completar)** | **S9 · Observabilidad y dashboard en vivo** |
-| **Último sprint cerrado** | **S8 · Red entre nodos** (config/artifacts; apply vivo opt-in) |
-| **Último hito alcanzado** | **Alpha v0.1 (S6)**; S7 scheduler + S8 mesh config |
+| **Sprint activo (siguiente a completar)** | **S10 · Bases de datos 1-click y backups — Beta v0.5** |
+| **Último sprint cerrado** | **S9 · Observabilidad** (2026-11-13) |
+| **Último hito alcanzado** | **Alpha v0.1 (S6)**; Fase 2 avanzada hasta S9 |
 | **Hito siguiente** | **Beta privada v0.5 (S10)** |
 
 El recorte “S8 hardening → S10 GA” fue un atajo documental. **Queda anulado como plan de numeración.** Hardening de producción vive en **S19–S22**; no sustituye S7–S18.
@@ -51,7 +51,7 @@ Leyenda: **Cerrado** · **Parcial** · **Scaffold** · **Pendiente**
 |---|---|---|---|
 | **S7** | Scheduler multi-nodo | **Cerrado** | `SPRINT_7_CIERRE.md`; orphan reschedule fix; stale 30s; tests scheduler |
 | **S8** | Red entre nodos | **Cerrado** (apply vivo opt-in) | `SPRINT_8_CIERRE.md`; WG/DNS/nft/wildcard + tests |
-| **S9** | Observabilidad en vivo | **Parcial / scaffold** | Ops S7 (métricas/alertas/backup logs) + `000013` + `/metrics`. Falta: gráficas ricas, ingest/búsqueda de logs a escala, OTel completo, retención/segmentos |
+| **S9** | Observabilidad en vivo | **Cerrado** | `SPRINT_9_CIERRE.md`; log search, retención, Prometheus, UI |
 | **S10** | DB 1-click + backups — Beta 0.5 | **Parcial / scaffold** | Backups Postgres plataforma hechos; `000014` managed DBs UI. Falta: provision real multi-motor, backup a S3 cifrado, restore 1-click, **5–10 beta users** |
 
 ### Fase 3 — Sandboxes (S11–S14)
@@ -89,11 +89,7 @@ Trabajar **en orden de fase**. Se puede picar scaffold del futuro, pero el DoD q
 
 ### Ahora → cerrar Fase 2
 
-1. **S9 — Observabilidad** ← **activo**  
-   - Consolidar métricas/logs/alertas al DoD S9 (ops Alpha ya en runbook).  
-   - Prometheus/OTel export estable; UI en vivo.  
-   - `SPRINT_9_CIERRE.md`.  
-2. **S10 — Managed DBs + backups usuario + beta**  
+1. **S10 — Managed DBs + backups usuario + beta** ← **activo**  
    - Provision Postgres/Redis (mínimo) con secretos.  
    - Backup/restore de esas DBs; invites beta.  
    - **Hito Beta v0.5** + `SPRINT_10_CIERRE.md`.

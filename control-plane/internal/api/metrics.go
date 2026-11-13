@@ -70,7 +70,7 @@ func (service MetricsService) QueryLogs(ctx context.Context, request *paasv1.Que
 	if err := requireSession(identity, ok); err != nil {
 		return nil, err
 	}
-	segments, err := db.QueryLogSegments(ctx, service.pool, identity.OrganizationID, request.GetProjectId(), request.GetWorkloadId(), request.GetLevel(), request.GetLimit())
+	segments, err := db.QueryLogSegmentsFiltered(ctx, service.pool, identity.OrganizationID, request.GetProjectId(), request.GetWorkloadId(), request.GetLevel(), request.GetQuery(), request.GetLimit())
 	if err != nil {
 		return nil, internalError("query logs", err)
 	}

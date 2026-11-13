@@ -203,6 +203,12 @@ func insertWorkloadLogLines(ctx context.Context, pool *pgxpool.Pool, tenantID, w
 }
 
 func QueryLogSegments(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID, workloadID, level string, limit int32) ([]LogSegment, error) {
+	return QueryLogSegmentsFiltered(ctx, pool, tenantID, projectID, workloadID, level, "", limit)
+}
+
+// QueryLogSegmentsFiltered merges log_segments + workload/build logs and optionally
+// filters by case-insensitive substring (S9 log search).
+func QueryLogSegmentsFiltered(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID, workloadID, level, contains string, limit int32) ([]LogSegment, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 200
 	}
@@ -223,6 +229,7 @@ func QueryLogSegments(ctx context.Context, pool *pgxpool.Pool, tenantID, project
 		return nil, err
 	}
 	merged := append(append(segments, workloadLines...), buildLines...)
+	merged = FilterLogSegmentsContains(merged, contains)
 	sort.Slice(merged, func(i, j int) bool {
 		if merged[i].TS.Equal(merged[j].TS) {
 			return merged[i].ID > merged[j].ID
@@ -233,6 +240,48 @@ func QueryLogSegments(ctx context.Context, pool *pgxpool.Pool, tenantID, project
 		merged = merged[:limit]
 	}
 	return merged, nil
+}
+
+// FilterLogSegmentsContains keeps segments whose body matches query (case-insensitive).
+func FilterLogSegmentsContains(segments []LogSegment, contains string) []LogSegment {
+	contains = strings.TrimSpace(contains)
+	if contains == "" {
+		return segments
+	}
+	needle := strings.ToLower(contains)
+	out := make([]LogSegment, 0, len(segments))
+	for _, segment := range segments {
+		if strings.Contains(strings.ToLower(segment.Body), needle) {
+			out = append(out, segment)
+		}
+	}
+	return out
+}
+
+// RetainLogSegments keeps the newest N rows globally (ops retention).
+func RetainLogSegments(ctx context.Context, pool *pgxpool.Pool, keep int) error {
+	if keep < 100 {
+		keep = 100
+	}
+	_, err := pool.Exec(ctx, `
+		DELETE FROM log_segments
+		WHERE id NOT IN (
+			SELECT id FROM log_segments ORDER BY ts DESC, id DESC LIMIT $1
+		)`, keep)
+	return err
+}
+
+// RetainMetricSamples keeps the newest N metric samples.
+func RetainMetricSamples(ctx context.Context, pool *pgxpool.Pool, keep int) error {
+	if keep < 100 {
+		keep = 100
+	}
+	_, err := pool.Exec(ctx, `
+		DELETE FROM metric_samples
+		WHERE id NOT IN (
+			SELECT id FROM metric_samples ORDER BY ts DESC, id DESC LIMIT $1
+		)`, keep)
+	return err
 }
 
 func queryLogSegmentTable(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID, workloadID, level string, limit int32) ([]LogSegment, error) {

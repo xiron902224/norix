@@ -156,7 +156,7 @@ Deleting a workload marks it **deleting**, sends `stop` to the node that owns th
 **Alpha v0.1 (S6 reached).** One-node path works: auth, projects/workloads, local runtime and/or Rust agent, git→build, Caddy domains/TLS (Pebble), basic ops.
 
 **Canonical roadmap:** **S0–S22** through GA 1.0 — see [`docs/PLAN_SPRINTS_S0_S22.md`](docs/PLAN_SPRINTS_S0_S22.md).  
-**Where we are:** [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) — **S7–S8 closed**; next is **S9 (observability)**, then S10 (beta), S11–S14 (sandboxes), S15–S18 (Wasm/enterprise/HA), **S19–S22 (harden → GA 1.0)**.
+**Where we are:** [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) — **S7–S9 closed**; next is **S10 (managed DBs + beta)**, then S11–S14 (sandboxes), S15–S18 (Wasm/enterprise/HA), **S19–S22 (harden → GA 1.0)**.
 
 In-tree scaffolds for later sprints (sandboxes, Wasm, previews, teams, …) do **not** close those sprints until their DoD is green.
 

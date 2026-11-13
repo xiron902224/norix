@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
-import { Activity, HardDrive, LineChart, Radio } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Activity, HardDrive, LineChart, Radio, Search } from 'lucide-react'
 import { listNodes } from '../../nodes/services/nodes-api'
 import type { Node } from '../../../gen/v1/agent_pb'
-import type { MetricSample, ObservabilityAlertEvent } from '../../../gen/v1/metrics_pb'
-import { getClusterMetrics, listAlerts } from '../services/observability-api'
+import type { LogSegment, MetricSample, ObservabilityAlertEvent } from '../../../gen/v1/metrics_pb'
+import { getClusterMetrics, listAlerts, queryLogs } from '../services/observability-api'
 
 export function ObservabilityPage() {
   const [nodes, setNodes] = useState<Node[]>([])
   const [samples, setSamples] = useState<MetricSample[]>([])
   const [events, setEvents] = useState<ObservabilityAlertEvent[]>([])
+  const [logs, setLogs] = useState<LogSegment[]>([])
+  const [logQuery, setLogQuery] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -31,14 +33,26 @@ export function ObservabilityPage() {
     return () => window.clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    void queryLogs({ query: logQuery, limit: 80 })
+      .then((response) => setLogs(response.segments))
+      .catch(() => setLogs([]))
+  }, [logQuery])
+
   const online = nodes.filter((node) => node.status === 'online')
+
+  function onSearch(event: FormEvent) {
+    event.preventDefault()
+    const form = new FormData(event.target as HTMLFormElement)
+    setLogQuery(String(form.get('q') ?? '').trim())
+  }
 
   return (
     <section className="page">
       <header className="page-header">
         <div>
           <h2>Observability</h2>
-          <p>Live node telemetry, metric samples, and alert events (S9).</p>
+          <p>Live node telemetry, log search, metric samples, and alert events (S9).</p>
         </div>
       </header>
       {error ? <div className="error" role="alert">{error}</div> : null}
@@ -116,8 +130,44 @@ export function ObservabilityPage() {
       <section className="panel flux-shadow lift-card panel-table">
         <header className="panel-header">
           <div>
+            <h3>Log search</h3>
+            <p className="muted">Query across log_segments, workload logs, and build logs.</p>
+          </div>
+          <form className="inline-form" onSubmit={onSearch}>
+            <label className="sr-only" htmlFor="obs-log-q">Search logs</label>
+            <input id="obs-log-q" name="q" placeholder="Search logs…" defaultValue={logQuery} />
+            <button type="submit"><Search size={16} /> Search</button>
+          </form>
+        </header>
+        {logs.length === 0 ? (
+          <p className="muted">No log lines matched.</p>
+        ) : (
+          <div className="table-scroll">
+            <table className="dense-table">
+              <thead>
+                <tr>
+                  <th>Level</th>
+                  <th>Body</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((line) => (
+                  <tr key={line.id}>
+                    <td><span className="status-chip">{line.level || 'info'}</span></td>
+                    <td className="mono">{line.body}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="panel flux-shadow lift-card panel-table">
+        <header className="panel-header">
+          <div>
             <h3>Alert events</h3>
-            <p className="muted">From alert_rules / alert_events.</p>
+            <p className="muted">Ops alerts + observability alert_events.</p>
           </div>
         </header>
         {events.length === 0 ? (
