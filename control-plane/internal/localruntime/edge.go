@@ -228,10 +228,10 @@ func failAll(plan db.DesiredEdgePlan, message string) map[string]string {
 	out := map[string]string{}
 	for _, route := range plan.Routes {
 		if route.Action == "delete" {
-			out[route.DomainID] = "failed"
-		} else {
-			out[route.DomainID] = "failed"
+			// Keep deleting so the next reconcile can finish removal after rollback.
+			continue
 		}
+		out[route.DomainID] = "failed"
 	}
 	_ = message
 	return out
@@ -290,6 +290,31 @@ func loadCaddyConfig(ctx context.Context, admin, configJSON string) error {
 
 func healthUpstreamURL(upstream string) string {
 	return strings.Replace(upstream, "host.docker.internal", "127.0.0.1", 1)
+}
+
+// CaddyMissingHosts reports whether the live Caddy config lacks any of the
+// expected hostnames (e.g. after a compose recreate left the bootstrap Caddyfile).
+func CaddyMissingHosts(ctx context.Context, admin string, hosts []string) bool {
+	if admin == "" {
+		admin = db.CaddyAdminURL()
+	}
+	if len(hosts) == 0 {
+		return false
+	}
+	cfg, err := fetchCaddyConfig(ctx, admin)
+	if err != nil || cfg == "" {
+		return true
+	}
+	for _, host := range hosts {
+		host = strings.TrimSpace(host)
+		if host == "" {
+			continue
+		}
+		if !strings.Contains(cfg, host) {
+			return true
+		}
+	}
+	return false
 }
 
 func healthCheck(ctx context.Context, upstream string) error {

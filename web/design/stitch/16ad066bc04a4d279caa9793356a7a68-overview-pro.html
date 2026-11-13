@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Norix — Cluster Overview &amp; Telemetry</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: "#eef2ff",
+              100: "#e0e7ff",
+              500: "#465fff",
+              600: "#3b4fe6",
+              900: "#1e1b4b",
+            },
+            surface: {
+              base: "#0c1017",
+              card: "#131b26",
+              hover: "#182230",
+              elevated: "#1c2636",
+              border: "rgba(255, 255, 255, 0.08)",
+              borderLight: "rgba(255, 255, 255, 0.12)",
+              subtle: "#161f2c",
+            },
+            status: {
+              success: "#10b981",
+              successBg: "rgba(16, 185, 129, 0.12)",
+              warning: "#f59e0b",
+              warningBg: "rgba(245, 158, 11, 0.12)",
+              info: "#38bdf8",
+              infoBg: "rgba(56, 189, 248, 0.12)",
+              purple: "#a855f7",
+              purpleBg: "rgba(168, 85, 247, 0.12)",
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    body {
+      background-color: #0c1017;
+      color: #e2e8f0;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0c1017;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #232f42;
+      border-radius: 4px;
+    }
+    .glass-border {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .card-glow {
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body class="antialiased text-[13px] bg-[#0c1017] min-h-screen flex selection:bg-brand-500/30 selection:text-white">
+<!-- LEFT SIDEBAR -->
+<aside class="fixed left-0 top-0 h-screen w-64 bg-[#0d121a] border-r border-white/[0.08] flex flex-col z-50 select-none">
+<!-- Brand & Org Selector -->
+<div class="p-4 border-b border-white/[0.08]">
+<div class="flex items-center justify-between mb-3.5">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-brand-500/25">
+<span class="material-symbols-outlined text-[19px]">token</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-[17px] tracking-tight text-white font-sans">Norix</span>
+<span class="px-1.5 py-0.5 rounded bg-brand-500/15 text-indigo-300 text-[10px] font-mono font-medium tracking-wide">v0.5-beta</span>
+</div>
+</div>
+</div>
+<!-- Workspace Switcher -->
+<button class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-[#141b26] hover:bg-[#1a2332] border border-white/[0.08] transition-colors text-left group">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-5 h-5 rounded bg-emerald-500/15 flex items-center justify-center text-emerald-400 shrink-0">
+<span class="material-symbols-outlined text-[14px]">cloud_queue</span>
+</div>
+<div class="truncate">
+<div class="text-[12px] font-semibold text-slate-200 truncate group-hover:text-white leading-tight">Acme Cloud</div>
+<div class="text-[10px] font-mono text-slate-400">prod-us-east · Primary</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-slate-200">unfold_more</span>
+</button>
+</div>
+<!-- Navigation Groups -->
+<div class="flex-1 overflow-y-auto custom-scrollbar px-3 py-3 space-y-4">
+<!-- OVERVIEW -->
+<div>
+<div class="px-2.5 py-1 text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-widest">Overview</div>
+<nav class="mt-1 space-y-0.5">
+<a class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-brand-500 text-white font-medium shadow-sm shadow-brand-500/30" href="#">
+<span class="material-symbols-outlined text-[18px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px]">layers</span>
+<span>Projects &amp; Apps</span>
+</div>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/[0.06] text-slate-400">14</span>
+</a>
+</nav>
+</div>
+<!-- INFRASTRUCTURE -->
+<div>
+<div class="px-2.5 py-1 text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-widest">Infrastructure</div>
+<nav class="mt-1 space-y-0.5">
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px]">dns</span>
+<span>Compute Nodes</span>
+</div>
+<span class="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-400/20"></span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">memory</span>
+<span>Sandboxes &amp; Micro-VMs</span>
+</a>
+</nav>
+</div>
+<!-- TRAFFIC & NETWORKING -->
+<div>
+<div class="px-2.5 py-1 text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-widest">Traffic &amp; Networking</div>
+<nav class="mt-1 space-y-0.5">
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">alt_route</span>
+<span>Domains &amp; Edge</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">hub</span>
+<span>WireGuard Mesh</span>
+</a>
+</nav>
+</div>
+<!-- OPERATIONS -->
+<div>
+<div class="px-2.5 py-1 text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-widest">Operations</div>
+<nav class="mt-1 space-y-0.5">
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px]">build_circle</span>
+<span>Builds &amp; CI</span>
+</div>
+<span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-500/15 text-emerald-400">Idle</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">database</span>
+<span>Backups &amp; Storage</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span>Audit &amp; Activity</span>
+</a>
+</nav>
+</div>
+<!-- SETTINGS -->
+<div>
+<div class="px-2.5 py-1 text-[10px] font-mono font-semibold text-slate-400 uppercase tracking-widest">Settings</div>
+<nav class="mt-1 space-y-0.5">
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">key</span>
+<span>API Keys &amp; Secrets</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span>Team &amp; RBAC</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#151d29] transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>Cluster Config</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Live Telemetry Mini-footer -->
+<div class="p-3 border-t border-white/[0.08] bg-[#090d14] space-y-1.5">
+<div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+<span class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>HTTP/Connect
+        </span>
+<span class="text-emerald-400 font-semibold">200 OK</span>
+</div>
+<div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+<span class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Postgres 16
+        </span>
+<span class="text-slate-300">Healthy</span>
+</div>
+<div class="pt-1.5 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-slate-400">
+<span>AGENT HEARTBEAT</span>
+<span class="text-sky-400 font-medium">1,248 pings/m</span>
+</div>
+</div>
+</aside>
+<!-- MAIN WRAPPER -->
+<div class="pl-64 flex-1 flex flex-col min-w-0">
+<!-- TOPBAR -->
+<header class="sticky top-0 h-14 bg-[#0d121a]/95 backdrop-blur-md border-b border-white/[0.08] z-40 px-6 flex items-center justify-between gap-4">
+<!-- Search Bar -->
+<div class="flex items-center gap-3 flex-1 max-w-lg">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[17px]">search</span>
+<input class="w-full bg-[#131b26] border border-white/[0.08] rounded-lg px-3 pl-9 py-1.5 text-xs text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-mono" placeholder="Search workloads, nodes, commits, routes..." type="text"/>
+<kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-slate-400">Ctrl K</kbd>
+</div>
+</div>
+<!-- Quick Fleet Status Pills & User Profile -->
+<div class="flex items-center gap-3">
+<!-- Status Badges -->
+<div class="hidden xl:flex items-center gap-2 font-mono text-[11px]">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#131b26] border border-white/[0.08] text-slate-300">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="text-slate-400">Nodes:</span>
+<span class="text-white font-semibold">12/12</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#131b26] border border-white/[0.08] text-slate-300">
+<span class="w-2 h-2 rounded-full bg-sky-400"></span>
+<span class="text-slate-400">Workloads:</span>
+<span class="text-white font-semibold">34</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#131b26] border border-white/[0.08] text-slate-300">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="text-slate-400">KVM:</span>
+<span class="text-emerald-400 font-semibold">L2 OK</span>
+</div>
+</div>
+<div class="h-4 w-px bg-white/[0.08] hidden xl:block"></div>
+<!-- Deploy Image CTA -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs shadow-md shadow-brand-500/25 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>New Workload</span>
+</button>
+<!-- Notification Bell -->
+<button aria-label="Notifications" class="relative p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#16202e] border border-transparent hover:border-white/[0.06] transition-colors">
+<span class="material-symbols-outlined text-[19px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[#0d121a]"></span>
+</button>
+<!-- Theme Mode -->
+<button aria-label="Toggle Theme" class="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#16202e] border border-transparent hover:border-white/[0.06] transition-colors">
+<span class="material-symbols-outlined text-[19px]">dark_mode</span>
+</button>
+<div class="h-4 w-px bg-white/[0.08]"></div>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2.5 pl-1">
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-sky-400 p-[1px] shadow-sm">
+<div class="w-full h-full rounded-full bg-[#131b26] flex items-center justify-center text-slate-200 font-semibold text-xs">
+              DL
+            </div>
+</div>
+<div class="hidden md:block text-left leading-tight">
+<div class="text-[12px] font-semibold text-slate-200">DevOps Lead</div>
+<div class="text-[10px] text-emerald-400 font-mono font-medium">Owner · prod-us-east</div>
+</div>
+</div>
+</div>
+</header>
+<!-- CONTENT BODY -->
+<main class="p-6 space-y-6 max-w-[1600px] w-full mx-auto">
+<!-- Cluster Header & Context Banner -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 mb-1.5">
+<span class="px-2 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-sky-400 font-mono text-[11px] font-medium tracking-wide uppercase">us-east-cluster-01</span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Reconciliation: Synced
+            </span>
+</div>
+<h1 class="text-2xl font-bold tracking-tight text-white">Cluster Overview</h1>
+<p class="text-xs text-slate-400 mt-0.5">Global system state, active hypervisors, and distributed Raft telemetry.</p>
+</div>
+<!-- Actions / Time Filter Bar -->
+<div class="flex flex-wrap items-center gap-2.5">
+<!-- Time range -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#131b26] hover:bg-[#182230] border border-white/[0.08] text-slate-200 text-xs font-medium transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-slate-400">schedule</span>
+<span>Last 1 hour</span>
+<span class="material-symbols-outlined text-[15px] text-slate-400">expand_more</span>
+</button>
+<!-- Auto-refresh pill -->
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#131b26] border border-white/[0.08] text-sky-400 font-mono text-xs shadow-sm">
+<span class="material-symbols-outlined text-[14px] animate-spin">sync</span>
+<span>Auto: 5s</span>
+</div>
+<!-- Launch shell -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#131b26] hover:bg-[#182230] border border-white/[0.08] text-slate-200 text-xs font-medium transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-slate-400">terminal</span>
+<span>Launch Shell</span>
+</button>
+<!-- Primary Deploy CTA -->
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-600 hover:to-indigo-700 text-white font-medium text-xs shadow-md shadow-brand-500/25 transition-all">
+<span class="material-symbols-outlined text-[17px]">rocket_launch</span>
+<span>Deploy Image / Git</span>
+</button>
+</div>
+</div>
+<!-- 4 HIGH-DENSITY KPI CARDS -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- KPI 1: Workloads -->
+<div class="p-4 rounded-xl bg-[#131b26] border border-white/[0.08] hover:border-white/[0.14] transition-all card-glow flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">Total Workloads</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold tracking-tight text-white">34</span>
+<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[11px] font-medium">
+<span class="material-symbols-outlined text-[13px]">arrow_upward</span>+4 wk
+                </span>
+</div>
+</div>
+<div class="w-9 h-9 rounded-lg bg-brand-500/15 border border-brand-500/20 text-brand-500 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">deployed_code</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono">
+<div class="flex items-center gap-1.5 text-slate-400">
+<span class="px-1.5 py-0.5 rounded bg-[#1c2636] text-sky-400">28 Cont</span>
+<span class="text-slate-400">·</span>
+<span class="px-1.5 py-0.5 rounded bg-[#1c2636] text-indigo-300">4 µVM</span>
+<span class="text-slate-400">·</span>
+<span class="px-1.5 py-0.5 rounded bg-[#1c2636] text-emerald-400">2 Wasm</span>
+</div>
+<span class="text-emerald-400 font-medium">100% OK</span>
+</div>
+</div>
+<!-- KPI 2: Aggregate CPU with Sparkline -->
+<div class="p-4 rounded-xl bg-[#131b26] border border-white/[0.08] hover:border-white/[0.14] transition-all card-glow flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">Aggregate CPU</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold tracking-tight text-white">26.4%</span>
+<span class="text-xs font-mono text-slate-400">of 64 vCPUs</span>
+</div>
+</div>
+<div class="w-9 h-9 rounded-lg bg-sky-500/15 border border-sky-500/20 text-sky-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+</div>
+</div>
+<!-- Sparkline & Status -->
+<div class="mt-3 flex items-end justify-between gap-3">
+<div class="flex-1 h-9">
+<svg class="w-full h-full text-sky-400" fill="none" preserveaspectratio="none" viewbox="0 0 160 36">
+<defs>
+<lineargradient id="cpuGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#38bdf8" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,28 L20,24 L40,30 L60,18 L80,22 L100,10 L120,16 L140,8 L160,12 L160,36 L0,36 Z" fill="url(#cpuGradient)"></path>
+<path d="M0,28 L20,24 L40,30 L60,18 L80,22 L100,10 L120,16 L140,8 L160,12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[11px] font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Healthy
+            </div>
+</div>
+</div>
+<!-- KPI 3: Cluster Memory -->
+<div class="p-4 rounded-xl bg-[#131b26] border border-white/[0.08] hover:border-white/[0.14] transition-all card-glow flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">Cluster Memory</span>
+<div class="flex items-baseline gap-1.5">
+<span class="text-3xl font-bold tracking-tight text-white">41.2</span>
+<span class="text-xs font-mono text-slate-400">/ 128 GB (32%)</span>
+</div>
+</div>
+<div class="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">developer_board</span>
+</div>
+</div>
+<!-- Segmented Progress Bar -->
+<div class="mt-4 pt-1 space-y-1.5">
+<div class="w-full h-2 rounded-full bg-[#1c2636] overflow-hidden flex p-0.5 gap-0.5">
+<div class="h-full bg-sky-400 rounded-full" style="width: 58%;" title="Containers: 24GB"></div>
+<div class="h-full bg-brand-500 rounded-full" style="width: 34%;" title="Micro-VMs: 14GB"></div>
+<div class="h-full bg-emerald-400 rounded-full" style="width: 8%;" title="Agent daemons: 0.6GB"></div>
+</div>
+<div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>Cont 24G</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>VM 14G</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Dmn 0.6G</span>
+</div>
+</div>
+</div>
+<!-- KPI 4: Active Fleet SLA -->
+<div class="p-4 rounded-xl bg-[#131b26] border border-white/[0.08] hover:border-white/[0.14] transition-all card-glow flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">Active Fleet SLA</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold tracking-tight text-white">12/12</span>
+<span class="text-xs font-mono text-emerald-400 font-semibold">100% SLA</span>
+</div>
+</div>
+<div class="w-9 h-9 rounded-lg bg-indigo-500/15 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">dns</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono">
+<span class="text-slate-300 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>0 stale heartbeats
+            </span>
+<span class="px-2 py-0.5 rounded bg-[#1c2636] text-slate-400 text-[10px]">&lt; 45s cutoff</span>
+</div>
+</div>
+</div>
+<!-- MAIN SECTION 1: WORKLOAD INSTANCES TABLE -->
+<div class="rounded-xl bg-[#131b26] border border-white/[0.08] shadow-lg overflow-hidden">
+<!-- Table Toolbar -->
+<div class="p-4 border-b border-white/[0.08] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<h2 class="text-base font-semibold text-white tracking-tight">Workload Instances</h2>
+<span class="px-2 py-0.5 rounded-full bg-brand-500/15 border border-brand-500/30 text-indigo-300 font-mono text-[11px]">34 active</span>
+<span class="text-slate-400 text-xs hidden sm:inline">· Track hypervisor convergence and host ports</span>
+</div>
+<!-- Filters & Segmented Controls -->
+<div class="flex flex-wrap items-center gap-2">
+<!-- Search Filter -->
+<div class="relative w-60">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
+<input class="w-full bg-[#0c1017] border border-white/[0.08] rounded-lg px-2.5 pl-8 py-1 text-xs text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 transition-colors font-mono" id="workloadSearch" placeholder="Filter workload, hash, port..." type="text"/>
+</div>
+<!-- Segmented Engine Tabs -->
+<div class="flex items-center bg-[#0c1017] p-0.5 rounded-lg border border-white/[0.08]">
+<button class="px-2.5 py-1 rounded-md bg-[#1c2636] text-white font-medium text-[11px] shadow-sm">All</button>
+<button class="px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 text-[11px] transition-colors">containerd</button>
+<button class="px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 text-[11px] transition-colors">Micro-VM</button>
+<button class="px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 text-[11px] transition-colors">Wasmtime</button>
+</div>
+<!-- Status Dropdown -->
+<select class="bg-[#0c1017] border border-white/[0.08] text-slate-300 text-[11px] rounded-lg px-2.5 py-1 focus:outline-none focus:border-brand-500">
+<option>Status: All</option>
+<option>Running</option>
+<option>Deploying</option>
+<option>Degraded</option>
+</select>
+<!-- Export / Quick actions -->
+<button class="p-1.5 rounded-lg bg-[#0c1017] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-[#1a2332] transition-colors" title="Export JSON">
+<span class="material-symbols-outlined text-[16px]">download</span>
+</button>
+</div>
+</div>
+<!-- Table View -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-[#0e141d] border-b border-white/[0.08] text-[11px] font-mono uppercase tracking-wider text-slate-400">
+<th class="py-3 px-5 font-semibold">Workload &amp; Artifact</th>
+<th class="py-3 px-4 font-semibold">Runtime / Engine</th>
+<th class="py-3 px-4 font-semibold">Generation State</th>
+<th class="py-3 px-4 font-semibold">Node &amp; Assigned Route</th>
+<th class="py-3 px-4 font-semibold">Resource Telemetry</th>
+<th class="py-3 px-4 font-semibold">Health Check</th>
+<th class="py-3 px-5 text-right font-semibold">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/[0.06] text-xs">
+<!-- Row 1: api-gateway -->
+<tr class="hover:bg-[#16202e] transition-colors group">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-sky-500/15 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">api</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-white group-hover:text-brand-500 cursor-pointer transition-colors text-[13px]">api-gateway</span>
+<span class="px-1.5 py-0.2 rounded bg-white/[0.06] text-slate-300 font-mono text-[10px]">prod</span>
+</div>
+<div class="flex items-center gap-1 font-mono text-[11px] text-slate-400 truncate mt-0.5">
+<span class="material-symbols-outlined text-[13px] text-slate-400">inventory_2</span>
+<span>ghcr.io/norix/gateway:v1.4.2</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400">
+<span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>containerd (OCI)
+                  </span>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span>v12 / v12 (Converged)</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px] text-slate-200">
+<div class="flex items-center gap-1">
+<span class="text-slate-400">node-us-east-01:</span>
+<span class="text-sky-400 font-semibold">18082</span>
+</div>
+<div class="text-[10px] text-slate-400">Cluster VIP: 10.42.0.18</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<div class="text-slate-200">CPU 12% <span class="text-slate-400">/ 2 vCPU</span></div>
+<div class="text-slate-400">RAM 310 MB <span class="text-slate-400">/ 512 MB</span></div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Healthy (200 OK)
+                  </span>
+</td>
+<td class="py-3.5 px-5 text-right">
+<div class="inline-flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded bg-[#1c2636] hover:bg-[#253247] text-slate-200 font-medium text-[11px] transition-colors border border-white/[0.06]">Logs</button>
+<button class="px-2.5 py-1 rounded bg-[#1c2636] hover:bg-[#253247] text-slate-200 font-medium text-[11px] transition-colors border border-white/[0.06]">Restart</button>
+<button class="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-[#1c2636] transition-colors">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: ai-sandbox-eval -->
+<tr class="hover:bg-[#16202e] transition-colors group">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-brand-500/15 border border-brand-500/20 text-brand-500 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-white group-hover:text-brand-500 cursor-pointer transition-colors text-[13px]">ai-sandbox-eval</span>
+<span class="px-1.5 py-0.2 rounded bg-brand-500/15 text-indigo-300 font-mono text-[10px]">isolated</span>
+</div>
+<div class="flex items-center gap-1 font-mono text-[11px] text-slate-400 truncate mt-0.5">
+<span class="material-symbols-outlined text-[13px] text-slate-400">memory</span>
+<span>tpl: code-interpreter-v2 (KVM)</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-indigo-300">
+<span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>Cloud-Hypervisor
+                  </span>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400">
+<span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping"></span>
+<span>v4 / v3 (Deploying...)</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px] text-slate-200">
+<div class="flex items-center gap-1">
+<span class="text-slate-400">node-us-east-03:</span>
+<span class="text-indigo-400 font-semibold">19443</span>
+</div>
+<div class="text-[10px] text-slate-400">Tap dev: vhost0.92</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<div class="text-slate-200">CPU 48% <span class="text-slate-400">/ 4 vCPU</span></div>
+<div class="text-slate-400">RAM 2.1 GB <span class="text-slate-400">/ 4.0 GB</span></div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 font-mono text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>Provisioning Guest
+                  </span>
+</td>
+<td class="py-3.5 px-5 text-right">
+<div class="inline-flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded bg-[#1c2636] hover:bg-[#253247] text-slate-200 font-medium text-[11px] transition-colors border border-white/[0.06]">Logs</button>
+<button class="px-2.5 py-1 rounded bg-[#1c2636] hover:bg-[#253247] text-slate-200 font-medium text-[11px] transition-colors border border-white/[0.06]">Restart</button>
+<button class="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-[#1c2636] transition-colors">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: rust-order-worker -->
+<tr class="hover:bg-[#16202e] transition-colors group">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">code</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-white group-hover:text-brand-500 cursor-pointer transition-colors text-[13px]">rust-order-worker</span>
+<span class="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 font-mono text-[10px]">queue</span>
+</div>
+<div class="flex items-center gap-1 font-mono text-[11px] text-slate-400 truncate mt-0.5">
+<span class="material-symbols-outlined text-[13px] text-slate-400">commit</span>
+<span>Git: main@8f29ac14</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400">
+<span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>containerd (Nix)
+                  </span>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span>v8 / v8 (Converged)</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px] text-slate-200">
+<div class="flex items-center gap-1">
+<span class="text-slate-400">node-eu-west-02:</span>
+<span class="text-sky-400 font-semibold">18085</span>
+</div>
+<div class="text-[10px] text-slate-400">Internal Queue Worker</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<div class="text-slate-200">CPU 4% <span class="text-slate-400">/ 1 vCPU</span></div>
+<div class="text-slate-400">RAM 78 MB <span class="text-slate-400">/ 256 MB</span></div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Healthy (Queue Ack)
+                  </span>
+</td>
+<td class="py-3.5 px-5 text-right">
+<div class="inline-flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded bg-[#1c2636] hover:bg-[#253247] text-slate-200 font-medium text-[11px] transition-colors border border-white/[0.06]">Logs</button>
+<button class="px-2.5 py-1 rounded bg-[#1c2636] hover:bg-[#253247] text-slate-200 font-medium text-[11px] transition-colors border border-white/[0.06]">Restart</button>
+<button class="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-[#1c2636] transition-colors">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: auth-token-hasher -->
+<tr class="hover:bg-[#16202e] transition-colors group">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-semibold text-white group-hover:text-brand-500 cursor-pointer transition-colors text-[13px]">auth-token-hasher</span>
+<span class="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 font-mono text-[10px]">edge</span>
+</div>
+<div class="flex items-center gap-1 font-mono text-[11px] text-slate-400 truncate mt-0.5">
+<span class="material-symbols-outlined text-[13px] text-slate-400">integration_instructions</span>
+<span>WASI HTTP · Blake3 runtime</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Wasmtime 19.0
+                  </span>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span>v1 / v1 (Converged)</span>
+</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px] text-slate-200">
+<div class="flex items-center gap-1">
+<span class="text-slate-400">edge-anycast-01:</span>
+<span class="text-amber-400 font-semibold">8443</span>
+</div>
+<div class="text-[10px] text-slate-400">Sub-ms Cold Start</div>
+</td>
+<td class="py-3.5 px-4 font-mono text-[11px]">
+<div class="text-slate-200">CPU 1.2% <span class="text-slate-400">/ 0.5 vCPU</span></div>
+<div class="text-slate-400">RAM 14 MB <span class="text-slate-400">/ 64 MB</span></div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Warm Standby
+                  </span>
+</td>
+<td class="py-3.5 px-5 text-right">
+<div class="inline-flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded bg-[#1c2636] hover:bg-[#253247] text-slate-200 font-medium text-[11px] transition-colors border border-white/[0.06]">Logs</button>
+<button class="px-2.5 py-1 rounded bg-[#1c2636] hover:bg-[#253247] text-slate-200 font-medium text-[11px] transition-colors border border-white/[0.06]">Restart</button>
+<button class="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-[#1c2636] transition-colors">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Pagination -->
+<div class="px-5 py-3 bg-[#0e141d] border-t border-white/[0.08] flex items-center justify-between text-xs text-slate-400">
+<div class="font-mono text-[11px]">
+            Showing <span class="text-white font-semibold">1 - 4</span> of 34 instances across 12 hypervisors
+          </div>
+<div class="flex items-center gap-2 font-mono text-xs">
+<button class="px-3 py-1 rounded bg-[#16202e] border border-white/[0.08] text-slate-400 disabled:opacity-40 cursor-not-allowed" disabled="">Previous</button>
+<span class="px-2 text-slate-300">Page 1 of 9</span>
+<button class="px-3 py-1 rounded bg-[#16202e] border border-white/[0.08] text-slate-200 hover:bg-[#202b3c] transition-colors">Next</button>
+</div>
+</div>
+</div>
+<!-- MAIN SECTION 2: RECONCILER STREAM & HOST CAPACITY -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left: Live Reconciler Activity & RPC Stream (7 Cols) -->
+<div class="lg:col-span-7 rounded-xl bg-[#131b26] border border-white/[0.08] shadow-lg flex flex-col overflow-hidden">
+<div class="p-4 border-b border-white/[0.08] flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<div>
+<h3 class="text-sm font-semibold text-white">Reconciler Activity &amp; ConnectRPC Stream</h3>
+<p class="text-[11px] text-slate-400">Real-time state convergence diffs from distributed Raft consensus</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[10px] font-semibold border border-emerald-500/20">LIVE STREAM</span>
+</div>
+</div>
+<!-- Monospace Console Feed -->
+<div class="p-4 bg-[#0a0e14] font-mono text-[11px] flex-1 overflow-y-auto max-h-[340px] space-y-2.5 custom-scrollbar">
+<!-- Log item 1 -->
+<div class="p-2 rounded bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.03] transition-colors flex items-start gap-3">
+<span class="text-slate-400 shrink-0 select-none">14:02:18.914</span>
+<span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-semibold text-[10px] shrink-0">RPC::OK</span>
+<div class="flex-1 min-w-0">
+<div class="text-slate-200">Workload <span class="text-sky-400 font-semibold">rust-order-worker</span> desired state synced.</div>
+<div class="text-slate-400 text-[10px] mt-0.5">Generation tag bumped to v8 on node-eu-west-02 (drift: 0ms)</div>
+</div>
+<span class="text-[10px] text-slate-400 shrink-0 font-mono">actor: raft-lead-01</span>
+</div>
+<!-- Log item 2 -->
+<div class="p-2 rounded bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.03] transition-colors flex items-start gap-3">
+<span class="text-slate-400 shrink-0 select-none">14:02:14.302</span>
+<span class="px-1.5 py-0.2 rounded bg-brand-500/20 text-indigo-300 font-semibold text-[10px] shrink-0">KVM::BOOT</span>
+<div class="flex-1 min-w-0">
+<div class="text-slate-200">Micro-VM tap link bound for <span class="text-brand-500 font-semibold">ai-sandbox-eval</span></div>
+<div class="text-slate-400 text-[10px] mt-0.5">cloud-hypervisor allocated vhost-net on node-us-east-03 (CID: 4891)</div>
+</div>
+<span class="text-[10px] text-slate-400 shrink-0 font-mono">actor: norix-agent</span>
+</div>
+<!-- Log item 3 -->
+<div class="p-2 rounded bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.03] transition-colors flex items-start gap-3">
+<span class="text-slate-400 shrink-0 select-none">14:01:59.044</span>
+<span class="px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-400 font-semibold text-[10px] shrink-0">DOCKER::PULL</span>
+<div class="flex-1 min-w-0">
+<div class="text-slate-200">Layer <span class="text-slate-400">sha256:7b94ad...</span> verified and unpacked (containerd)</div>
+<div class="text-slate-400 text-[10px] mt-0.5">Image ghcr.io/norix/gateway:v1.4.2 cached in 412ms</div>
+</div>
+<span class="text-[10px] text-slate-400 shrink-0 font-mono">actor: puller-daemon</span>
+</div>
+<!-- Log item 4 -->
+<div class="p-2 rounded bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.03] transition-colors flex items-start gap-3">
+<span class="text-slate-400 shrink-0 select-none">14:01:42.110</span>
+<span class="px-1.5 py-0.2 rounded bg-slate-700/50 text-slate-300 font-semibold text-[10px] shrink-0">PING::HB</span>
+<div class="flex-1 min-w-0">
+<div class="text-slate-200">Node <span class="text-white font-semibold">node-us-east-01</span> heartbeat verified.</div>
+<div class="text-slate-400 text-[10px] mt-0.5">Telemetry bundle payload 14.8KB: memory pressure 0.00, load avg 0.28</div>
+</div>
+<span class="text-[10px] text-slate-400 shrink-0 font-mono">actor: sentinel</span>
+</div>
+<!-- Log item 5 -->
+<div class="p-2 rounded bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.03] transition-colors flex items-start gap-3">
+<span class="text-slate-400 shrink-0 select-none">14:00:12.781</span>
+<span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 font-semibold text-[10px] shrink-0">ROUTE::UPDATE</span>
+<div class="flex-1 min-w-0">
+<div class="text-slate-200">Ingress edge rule reconfigured: <span class="text-amber-400">/api/v1 -&gt; port 18082</span></div>
+<div class="text-slate-400 text-[10px] mt-0.5">Envoy cluster endpoint refreshed with 0 downtime</div>
+</div>
+<span class="text-[10px] text-slate-400 shrink-0 font-mono">actor: edge-router</span>
+</div>
+</div>
+<!-- Console Footer Controls -->
+<div class="p-2.5 bg-[#0e141d] border-t border-white/[0.08] flex items-center justify-between text-[11px] font-mono text-slate-400">
+<div class="flex items-center gap-3">
+<label class="flex items-center gap-1.5 cursor-pointer hover:text-slate-200">
+<input checked="" class="rounded bg-[#1a2332] border-white/[0.1] text-brand-500 focus:ring-0 w-3.5 h-3.5" type="checkbox"/>
+<span>Follow tail</span>
+</label>
+<span>·</span>
+<span>Buffer: 250 / 1000 lines</span>
+</div>
+<button class="px-2 py-0.5 rounded bg-[#1c2636] hover:bg-[#253247] text-slate-300 transition-colors border border-white/[0.06]">
+              Clear Buffer
+            </button>
+</div>
+</div>
+<!-- Right: Runtime Distribution & Host Pressure (5 Cols) -->
+<div class="lg:col-span-5 flex flex-col gap-4">
+<!-- Card: Virtualization Runtime Breakdown -->
+<div class="p-4 rounded-xl bg-[#131b26] border border-white/[0.08] shadow-lg">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h3 class="text-sm font-semibold text-white">Engine Workload Breakdown</h3>
+<p class="text-[11px] text-slate-400">Distribution across hypervisors &amp; runtimes</p>
+</div>
+<span class="px-2 py-0.5 rounded bg-white/[0.06] text-sky-400 font-mono text-[10px]">3 Engines</span>
+</div>
+<!-- Donut Visualizer & Legend -->
+<div class="flex items-center gap-5 pt-1">
+<!-- Inline Donut SVG -->
+<div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 36 36">
+<!-- Base Track -->
+<circle class="text-[#1c2636]" cx="18" cy="18" fill="none" r="15.915" stroke="currentColor" stroke-width="4.5"></circle>
+<!-- containerd: 82% = dash 82, space 18, offset 0 -->
+<circle class="text-sky-400 transition-all duration-500" cx="18" cy="18" fill="none" r="15.915" stroke="currentColor" stroke-dasharray="82 18" stroke-dashoffset="0" stroke-width="4.5"></circle>
+<!-- Cloud-Hypervisor: 12% = dash 12, space 88, offset -82 -->
+<circle class="text-brand-500 transition-all duration-500" cx="18" cy="18" fill="none" r="15.915" stroke="currentColor" stroke-dasharray="12 88" stroke-dashoffset="-82" stroke-width="4.5"></circle>
+<!-- Wasm: 6% = dash 6, space 94, offset -94 -->
+<circle class="text-emerald-400 transition-all duration-500" cx="18" cy="18" fill="none" r="15.915" stroke="currentColor" stroke-dasharray="6 94" stroke-dashoffset="-94" stroke-width="4.5"></circle>
+</svg>
+<div class="absolute flex flex-col items-center justify-center text-center">
+<span class="text-base font-bold text-white font-mono leading-none">34</span>
+<span class="text-[9px] font-mono text-slate-400 uppercase">Units</span>
+</div>
+</div>
+<!-- Legend Details -->
+<div class="flex-1 space-y-2 font-mono text-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-sm bg-sky-400"></span>
+<span class="text-slate-300">containerd (OCI)</span>
+</div>
+<div class="text-right">
+<span class="text-white font-semibold">28</span>
+<span class="text-slate-400 text-[10px] ml-1">(82%)</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-sm bg-brand-500"></span>
+<span class="text-slate-300">Cloud-Hypervisor</span>
+</div>
+<div class="text-right">
+<span class="text-white font-semibold">4</span>
+<span class="text-indigo-300 text-[10px] ml-1">(12%)</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-sm bg-emerald-400"></span>
+<span class="text-slate-300">Wasmtime (WASI)</span>
+</div>
+<div class="text-right">
+<span class="text-white font-semibold">2</span>
+<span class="text-emerald-400 text-[10px] ml-1">(6%)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card: Host Memory Pressure -->
+<div class="p-4 rounded-xl bg-[#131b26] border border-white/[0.08] shadow-lg">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h3 class="text-sm font-semibold text-white">Node Memory Pressure</h3>
+<p class="text-[11px] text-slate-400">Top host memory utilization across fleet</p>
+</div>
+<button class="text-sky-400 font-mono text-[11px] hover:underline">View All 12</button>
+</div>
+<!-- Host bars -->
+<div class="space-y-3 font-mono text-[11px]">
+<!-- Node 1 -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span class="text-white font-medium">node-us-east-03</span>
+<span class="text-slate-400 text-[10px]">(Micro-VM pool)</span>
+</div>
+<span class="text-slate-300">18.4 / 32 GB <span class="text-amber-400 font-semibold">(57%)</span></span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-[#1c2636] overflow-hidden">
+<div class="h-full bg-amber-400 rounded-full" style="width: 57%;"></div>
+</div>
+</div>
+<!-- Node 2 -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span class="text-white font-medium">node-us-east-01</span>
+<span class="text-slate-400 text-[10px]">(Ingress Gateway)</span>
+</div>
+<span class="text-slate-300">12.1 / 32 GB (38%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-[#1c2636] overflow-hidden">
+<div class="h-full bg-sky-400 rounded-full" style="width: 38%;"></div>
+</div>
+</div>
+<!-- Node 3 -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span class="text-white font-medium">node-eu-west-02</span>
+<span class="text-slate-400 text-[10px]">(General Compute)</span>
+</div>
+<span class="text-slate-300">8.2 / 32 GB (25%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-[#1c2636] overflow-hidden">
+<div class="h-full bg-brand-500 rounded-full" style="width: 25%;"></div>
+</div>
+</div>
+<!-- Node 4 -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span class="text-white font-medium">edge-anycast-01</span>
+<span class="text-slate-400 text-[10px]">(Edge / Wasm)</span>
+</div>
+<span class="text-slate-300">2.5 / 16 GB (15%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-[#1c2636] overflow-hidden">
+<div class="h-full bg-emerald-400 rounded-full" style="width: 15%;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+    // Live table filtering
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('workloadSearch');
+      if (!searchInput) return;
+
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(query) ? '' : 'none';
+        });
+      });
+    });
+  </script>
+</body></html>

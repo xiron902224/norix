@@ -51,16 +51,21 @@ func CreateInitialOwner(ctx context.Context, pool *pgxpool.Pool, organizationNam
 		return AuthUser{}, fmt.Errorf("create organization: %w", err)
 	}
 
-	if _, err := tx.Exec(ctx, `
+	var userID string
+	if err := tx.QueryRow(ctx, `
 		INSERT INTO users (organization_id, email, email_normalized, name, role, password_hash)
-		VALUES ($1::uuid, $2, $2, $3, 'owner', $4)`, organizationID, adminEmail, adminName, passwordHash); err != nil {
+		VALUES ($1::uuid, $2, $2, $3, 'owner', $4)
+		RETURNING id::text`, organizationID, adminEmail, adminName, passwordHash).Scan(&userID); err != nil {
 		return AuthUser{}, fmt.Errorf("create initial owner: %w", err)
+	}
+	if _, err := EnsureDefaultTeam(ctx, tx, organizationID, userID); err != nil {
+		return AuthUser{}, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return AuthUser{}, fmt.Errorf("commit initial owner: %w", err)
 	}
-	return AuthUser{OrganizationID: organizationID, Email: adminEmail, Name: adminName, Role: "owner", PasswordHash: passwordHash}, nil
+	return AuthUser{ID: userID, OrganizationID: organizationID, Email: adminEmail, Name: adminName, Role: "owner", PasswordHash: passwordHash}, nil
 }
 
 type AuthUser struct {

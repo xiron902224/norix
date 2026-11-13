@@ -270,8 +270,50 @@ fn container_name(workload_id: &str) -> String {
     format!("norix-{}", &compact[..compact.len().min(12)])
 }
 
+fn normalize_image(value: &str) -> &str {
+    value
+        .trim()
+        .trim_matches('"')
+        .trim_start_matches("docker.io/")
+        .trim_start_matches("index.docker.io/")
+        .trim_start_matches("library/")
+}
+
 fn image_matches(running: &str, desired: &str) -> bool {
-    running == desired || running.ends_with(&format!("/{desired}")) || running.contains(desired)
+    let running = normalize_image(running);
+    let desired = normalize_image(desired);
+
+    if running == desired {
+        return true;
+    }
+
+    let running_last = running.rsplit('/').next().unwrap_or(running);
+    let desired_last = desired.rsplit('/').next().unwrap_or(desired);
+    if running_last == desired_last {
+        return true;
+    }
+
+    running.ends_with(&format!("/{desired}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::image_matches;
+
+    #[test]
+    fn matches_same_image_and_registry_prefix() {
+        assert!(image_matches("docker.io/library/nginx:latest", "nginx:latest"));
+        assert!(image_matches("ghcr.io/acme/api:1.2.3", "api:1.2.3"));
+        assert!(image_matches("ghcr.io/acme/nginx", "nginx"));
+    }
+
+    #[test]
+    fn does_not_match_other_images_by_substring() {
+        assert!(!image_matches("ghcr.io/acme/nginx-prod:latest", "nginx:latest"));
+        assert!(!image_matches("ghcr.io/acme/not-nginx:latest", "nginx:latest"));
+        assert!(!image_matches("ghcr.io/acme/myapi:1.2.3", "api:1.2.3"));
+        assert!(!image_matches("ghcr.io/acme/my-nginx:latest", "nginx:latest"));
+    }
 }
 
 async fn command_ok(bin: &str, args: &[&str]) -> bool {

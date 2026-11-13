@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
+
+message Sandbox {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string template = 4;
+  string status = 5;
+  int32 ttl_seconds = 6;
+  int32 cpu = 7;
+  int32 memory_mb = 8;
+  string egress_mode = 9;
+  int64 expires_at = 10;
+  bool pool_ready = 11;
+}
+
+message ListSandboxesRequest {
+  string project_id = 1;
+}
+
+message ListSandboxesResponse {
+  repeated Sandbox sandboxes = 1;
+}
+
+message CreateSandboxRequest {
+  string project_id = 1;
+  string name = 2;
+  string template = 3;
+  int32 ttl_seconds = 4;
+  int32 cpu = 5;
+  int32 memory_mb = 6;
+  string egress_mode = 7;
+}
+
+message CreateSandboxResponse {
+  Sandbox sandbox = 1;
+}
+
+message DestroySandboxRequest {
+  string id = 1;
+}
+
+message DestroySandboxResponse {}
+
+message ExecSandboxRequest {
+  string id = 1;
+  repeated string command = 2;
+}
+
+message ExecSandboxResponse {
+  string output = 1;
+  int32 exit_code = 2;
+}
+
+service SandboxService {
+  rpc ListSandboxes(ListSandboxesRequest) returns (ListSandboxesResponse);
+  rpc CreateSandbox(CreateSandboxRequest) returns (CreateSandboxResponse);
+  rpc DestroySandbox(DestroySandboxRequest) returns (DestroySandboxResponse);
+  rpc ExecSandbox(ExecSandboxRequest) returns (ExecSandboxResponse);
+}

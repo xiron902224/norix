@@ -153,17 +153,17 @@ Deleting a workload marks it **deleting**, sends `stop` to the node that owns th
 
 ## Status
 
-**Alpha / learning-oriented PaaS** on the path to v1.0 (full sprint map in `docs/Plan de sprints de cero a producción.md`).
+**Alpha (2026-11-13).** Core path works on one node: auth, projects/workloads, local runtime and/or Rust agent, git→build, Caddy domains/TLS (Pebble), ops backups/metrics/alerts.
 
-**Delivered in tree:** auth/RLS, dashboard, agent enroll, container reconcile, git builds, edge/domains, ops basics, multi-node scheduler (replicas, cordon/drain, orphan reschedule).
+**Next:** **S8 hardening → S9 private beta → S10 GA v1.0.** Full plan: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md).
 
-**Coming next (full plan S0–S22 → v1.0):** S9+ per `docs/Plan de sprints de cero a producción.md` (not the cut-to-10 hardening track). Private networking (S8 WireGuard mesh / DNS / nftables) is in tree.
+Scaffolds for sandboxes, Wasm, PR previews, teams/quotas and managed DBs exist in-tree as **experimental / post-v1** — they do not define the GA cut.
 
 ---
 
 ## Contributing
 
-Use the sprint docs under `docs/` as the source of truth for scope. Keep secrets out of git (`.env` is ignored). Prefer small, reviewable PRs against `develop`.
+Operational source of truth: `docs/ESTADO_Y_PLAN_V1.md`. Keep secrets out of git (`.env` is ignored). Prefer small, reviewable PRs against `develop`.
 
 ```bash
 cd control-plane && go test ./...

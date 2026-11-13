@@ -133,25 +133,37 @@ export function NetworkPage() {
         </article>
       </div>
 
-      <section className="panel flux-shadow lift-card">
+      <section className="panel flux-shadow lift-card panel-table">
         <header className="panel-header">
           <div>
-            <h3>Mesh nodes</h3>
+            <h3>WireGuard mesh nodes</h3>
             <p className="muted">Each node gets a WireGuard identity on 10.88.0.0/16.</p>
           </div>
         </header>
         {nodes.length === 0 ? (
-          <p className="muted">No nodes yet. Local control-plane node appears after first reconcile.</p>
+          <p className="muted" style={{ margin: '0 20px 16px' }}>No nodes yet. Local control-plane node appears after first reconcile.</p>
         ) : (
-          <ul className="resource-list">
-            {nodes.map((node) => (
-              <NodeRow key={node.nodeId} node={node} />
-            ))}
-          </ul>
+          <div className="table-scroll">
+            <table className="dense-table">
+              <thead>
+                <tr>
+                  <th>Node</th>
+                  <th>Network status</th>
+                  <th>WG address</th>
+                  <th>Error</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nodes.map((node) => (
+                  <NodeTableRow key={node.nodeId} node={node} />
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
-      <section className="panel flux-shadow lift-card">
+      <section className="panel flux-shadow lift-card panel-table">
         <header className="panel-header">
           <div>
             <h3>Internal DNS</h3>
@@ -159,16 +171,28 @@ export function NetworkPage() {
           </div>
         </header>
         {records.length === 0 ? (
-          <p className="muted">Deploy a workload to publish DNS records.</p>
+          <p className="muted" style={{ margin: '0 20px 16px' }}>Deploy a workload to publish DNS records.</p>
         ) : (
-          <ul className="resource-list">
-            {records.map((record) => (
-              <li key={`${record.name}-${record.type}`}>
-                <code>{record.name}</code>
-                <span className="muted"> {record.type} → {record.value}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="table-scroll">
+            <table className="dense-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((record) => (
+                  <tr key={`${record.name}-${record.type}`}>
+                    <td className="mono">{record.name}</td>
+                    <td className="mono">{record.type}</td>
+                    <td className="mono">{record.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
@@ -220,30 +244,42 @@ export function NetworkPage() {
         </form>
 
         {policies.length > 0 ? (
-          <ul className="resource-list" style={{ marginTop: '1rem' }}>
-            {policies.map((policy) => (
-              <li key={policy.id || policy.workloadId}>
-                <code>{policy.workloadId.slice(0, 8)}</code>
-                <span> {policy.mode}</span>
-                {policy.allowlist.length > 0 ? (
-                  <span className="muted"> ({policy.allowlist.join(', ')})</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <div className="table-scroll" style={{ marginTop: '1rem' }}>
+            <table className="dense-table">
+              <thead>
+                <tr>
+                  <th>Workload</th>
+                  <th>Mode</th>
+                  <th>Allowlist</th>
+                </tr>
+              </thead>
+              <tbody>
+                {policies.map((policy) => (
+                  <tr key={policy.id || policy.workloadId}>
+                    <td className="mono">{policy.workloadId}</td>
+                    <td><span className="status-chip status-running">{policy.mode}</span></td>
+                    <td className="mono">{policy.allowlist.length > 0 ? policy.allowlist.join(', ') : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : null}
       </section>
     </section>
   )
 }
 
-function NodeRow({ node }: { node: NodeNetworkStatus }) {
+function NodeTableRow({ node }: { node: NodeNetworkStatus }) {
+  const netStatus = node.networkStatus || 'pending'
+  const statusClass =
+    netStatus === 'ready' || netStatus === 'online' ? 'status-running' : netStatus === 'degraded' ? 'status-pending' : 'status-stopped'
   return (
-    <li>
-      <strong>{node.name}</strong>
-      <span className="muted"> · {node.networkStatus || 'pending'}</span>
-      {node.wgAddress ? <div><code>{node.wgAddress}</code></div> : null}
-      {node.lastError ? <div className="error-inline">{node.lastError}</div> : null}
-    </li>
+    <tr>
+      <td><strong>{node.name}</strong></td>
+      <td><span className={`status-chip ${statusClass}`}>{netStatus}</span></td>
+      <td className="mono">{node.wgAddress || '—'}</td>
+      <td className="error-inline">{node.lastError || '—'}</td>
+    </tr>
   )
 }

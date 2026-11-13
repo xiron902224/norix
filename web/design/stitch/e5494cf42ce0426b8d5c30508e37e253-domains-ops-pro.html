@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"primary-fixed-dim":"#bbc3ff","status-enrolling":"#06B6D4","tertiary-fixed-dim":"#51df8e","secondary-fixed-dim":"#4cd7f6","primary-container":"#465fff","error-container":"#93000a","secondary-fixed":"#acedff","on-secondary-container":"#00424e","secondary-container":"#03b5d3","on-primary-container":"#f9f7ff","surface-bright":"#353940","on-surface-variant":"#c5c5d8","surface-dark-canvas":"#0D1117","on-surface":"#dfe2eb","border-light":"#E2E8F0","on-background":"#dfe2eb","surface":"#10141a","on-secondary-fixed":"#001f26","surface-container-highest":"#31353c","inverse-primary":"#2e48eb","on-secondary-fixed-variant":"#004e5c","status-running":"#12B76A","on-primary-fixed-variant":"#0029d2","error":"#ffb4ab","inverse-surface":"#dfe2eb","surface-container-low":"#181c22","outline-variant":"#444656","on-error-container":"#ffdad6","border-dark":"#30363D","tertiary-container":"#008349","surface-dark-overlay":"#21262D","surface-dark-card":"#161B22","primary":"#bbc3ff","status-degraded":"#F59E0B","secondary":"#4cd7f6","on-tertiary-fixed":"#00210e","on-tertiary-container":"#e3ffe7","surface-container":"#1c2026","on-error":"#690005","on-tertiary":"#00391d","status-failed":"#EF4444","surface-dim":"#10141a","surface-tint":"#bbc3ff","surface-container-high":"#262a31","inverse-on-surface":"#2d3137","surface-container-lowest":"#0a0e14","primary-fixed":"#dfe0ff","surface-light-subtle":"#F1F5F9","outline":"#8f8fa2","tertiary-fixed":"#70fda7","on-secondary":"#003640","background":"#10141a","surface-variant":"#31353c","surface-light-card":"#FFFFFF","status-stopped":"#64748B","on-primary":"#001b96","surface-light-canvas":"#F8FAFC","on-primary-fixed":"#000d5f","on-tertiary-fixed-variant":"#00522c","tertiary":"#51df8e"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-md":"0.75rem","gutter":"1rem","margin-lg":"2rem","margin-md":"1.5rem","space-xs":"0.25rem","margin":"1rem","space-xl":"1.5rem","space-2xl":"2rem","space-lg":"1rem","gutter-lg":"1.5rem","space-sm":"0.5rem"},"fontFamily":{"headline-sm":["Inter"],"headline-md":["Inter"],"headline-xl":["Inter"],"mono-md":["JetBrains Mono"],"body-md":["Inter"],"body-lg":["Inter"],"headline-lg":["Inter"],"body-sm":["Inter"],"label-sm":["JetBrains Mono"],"label-md":["Inter"],"headline-xl-mobile":["Inter"],"mono-sm":["JetBrains Mono"],"mono-lg":["JetBrains Mono"]},"fontSize":{"headline-sm":["1rem",{"lineHeight":"1.5rem","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-md":["1.25rem",{"lineHeight":"1.75rem","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-xl":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.025em","fontWeight":"700"}],"mono-md":["0.75rem",{"lineHeight":"1.125rem","letterSpacing":"0em","fontWeight":"400"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","fontWeight":"400"}],"body-lg":["1rem",{"lineHeight":"1.5rem","fontWeight":"400"}],"headline-lg":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["0.75rem",{"lineHeight":"1rem","fontWeight":"400"}],"label-sm":["0.625rem",{"lineHeight":"0.75rem","letterSpacing":"0.06em","fontWeight":"600"}],"label-md":["0.75rem",{"lineHeight":"1rem","letterSpacing":"0.04em","fontWeight":"600"}],"headline-xl-mobile":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"700"}],"mono-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.02em","fontWeight":"400"}],"mono-lg":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"-0.01em","fontWeight":"500"}]}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-64 bg-surface-container-lowest border-r border-border-dark flex flex-col z-50 overflow-hidden"><div class="p-space-lg border-b border-border-dark"><div class="flex items-center justify-between mb-space-md"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center text-on-primary-container"><span class="material-symbols-outlined text-[20px]">token</span></div><div class="flex items-center gap-space-xs"><span class="font-headline-md text-headline-md tracking-tight text-on-surface font-bold">Norix</span><span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary text-[10px] font-mono-sm tracking-wider">v0.5-beta</span></div></div></div><button class="w-full flex items-center justify-between px-space-sm py-1.5 rounded bg-surface-container-low border border-border-dark text-on-surface hover:bg-surface-container transition-colors text-left"><div class="flex items-center gap-space-xs overflow-hidden"><span class="material-symbols-outlined text-[16px] text-tertiary">cloud</span><div class="truncate"><span class="block text-[11px] font-mono-sm text-on-surface truncate">Acme Cloud / Prod</span></div></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">unfold_more</span></button></div><div class="flex-1 overflow-y-auto px-space-sm py-space-md space-y-space-md"><div class="space-y-space-xs"><div class="px-space-sm py-0.5 text-label-sm font-label-sm text-outline uppercase tracking-wider">Overview</div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[18px]">dashboard</span><span class="text-[13px]">Dashboard</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="projects-and-apps" href="#"><span class="material-symbols-outlined text-[18px]">layers</span><span class="text-[13px]">Projects &amp; Apps</span></a></nav></div><div class="space-y-space-xs"><div class="px-space-sm py-0.5 text-label-sm font-label-sm text-outline uppercase tracking-wider">Infrastructure</div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="compute-nodes" href="#"><span class="material-symbols-outlined text-[18px]">dns</span><span class="text-[13px]">Compute Nodes</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="sandboxes-and-micro-vms" href="#"><span class="material-symbols-outlined text-[18px]">memory</span><span class="text-[13px]">Sandboxes &amp; Micro-VMs</span></a></nav></div><div class="space-y-space-xs"><div class="px-space-sm py-0.5 text-label-sm font-label-sm text-outline uppercase tracking-wider">Traffic &amp; Networking</div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="domains-and-edge" href="#"><span class="material-symbols-outlined text-[18px]">alt_route</span><span class="text-[13px]">Domains &amp; Edge</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="wireguard-mesh" href="#"><span class="material-symbols-outlined text-[18px]">hub</span><span class="text-[13px]">WireGuard Mesh</span></a></nav></div><div class="space-y-space-xs"><div class="px-space-sm py-0.5 text-label-sm font-label-sm text-outline uppercase tracking-wider">Operations</div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="builds-and-ci" href="#"><span class="material-symbols-outlined text-[18px]">build_circle</span><span class="text-[13px]">Builds &amp; CI</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="backups-and-storage" href="#"><span class="material-symbols-outlined text-[18px]">database</span><span class="text-[13px]">Backups &amp; Storage</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="audit-and-activity" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="text-[13px]">Audit &amp; Activity</span></a></nav></div><div class="space-y-space-xs"><div class="px-space-sm py-0.5 text-label-sm font-label-sm text-outline uppercase tracking-wider">Settings</div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="api-keys-and-secrets" href="#"><span class="material-symbols-outlined text-[18px]">key</span><span class="text-[13px]">API Keys &amp; Secrets</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="team-and-rbac" href="#"><span class="material-symbols-outlined text-[18px]">group</span><span class="text-[13px]">Team &amp; RBAC</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="cluster-config" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span class="text-[13px]">Cluster Config</span></a></nav></div></div><div class="p-space-sm border-t border-border-dark bg-surface-container-lowest space-y-1.5"><div class="flex items-center justify-between text-[11px] font-mono-sm text-on-surface-variant"><span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>HTTP/Connect</span><span class="text-status-running">200 OK</span></div><div class="flex items-center justify-between text-[11px] font-mono-sm text-on-surface-variant"><span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>Postgres 16</span><span class="text-tertiary">Healthy</span></div><div class="pt-1 border-t border-border-dark flex items-center justify-between text-[10px] font-mono-sm text-outline"><span>AGENT HEARTBEAT</span><span class="text-secondary">1,248 pings/m</span></div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-low/90 backdrop-blur-md border-b border-border-dark z-40 px-space-lg flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md flex-1 max-w-xl"><div class="relative w-full"><span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span><input class="w-full bg-surface-container-lowest border border-border-dark rounded px-2.5 pl-8 py-1.5 text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors" placeholder="Search workloads, nodes, commits, routes... [Ctrl+K]" type="text"/></div></div><div class="flex items-center gap-space-sm"><div class="hidden xl:flex items-center gap-space-xs font-mono-sm text-[11px]"><div class="flex items-center gap-1 px-2 py-1 rounded bg-surface-container border border-border-dark"><span class="w-2 h-2 rounded-full bg-status-running"></span><span class="text-on-surface-variant">Nodes:</span><span class="text-on-surface font-semibold">12/12</span></div><div class="flex items-center gap-1 px-2 py-1 rounded bg-surface-container border border-border-dark"><span class="w-2 h-2 rounded-full bg-status-enrolling"></span><span class="text-on-surface-variant">Workloads:</span><span class="text-on-surface font-semibold">34</span></div><div class="flex items-center gap-1 px-2 py-1 rounded bg-surface-container border border-border-dark"><span class="w-2 h-2 rounded-full bg-tertiary"></span><span class="text-on-surface-variant">KVM:</span><span class="text-tertiary font-semibold">L2 OK</span></div></div><button class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-headline-sm text-body-sm transition-colors shadow-sm"><span class="material-symbols-outlined text-[16px]">add</span><span>New Workload</span></button><button aria-label="Notifications" class="relative p-1.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-status-failed"></span></button><button aria-label="Toggle Theme" class="p-1.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[20px]">dark_mode</span></button><div class="h-5 w-[1px] bg-border-dark mx-0.5"></div><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="hidden md:block text-left"><div class="text-[12px] font-semibold text-on-surface leading-tight">DevOps Lead</div><div class="text-[10px] text-tertiary font-mono-sm">Owner</div></div></div></div></header><main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Active Sidebar Nav Sync Trigger via DOM -->
+<script>
+    (function syncSidebarActiveState() {
+      try {
+        const navItems = document.querySelectorAll('aside nav a[data-path]');
+        navItems.forEach(el => {
+          if (el.getAttribute('data-path') === 'domains-and-edge') {
+            el.className = 'flex items-center gap-space-sm px-space-sm py-1.5 rounded bg-primary-container/20 text-secondary font-semibold border-l-2 border-primary';
+          } else {
+            el.classList.remove('bg-primary-container', 'text-on-primary-container', 'font-semibold');
+          }
+        });
+      } catch (e) {}
+    })();
+  </script>
+<!-- Page Layout Wrapper -->
+<div class="p-space-lg md:p-margin-lg space-y-margin-lg max-w-[1720px] mx-auto w-full">
+<!-- Top Header & Breadcrumbs & Actions -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<div class="space-y-1">
+<div class="flex items-center gap-space-xs font-mono-sm text-mono-sm text-outline">
+<span class="hover:text-on-surface-variant transition-colors cursor-pointer">TRAFFIC &amp; NETWORKING</span>
+<span class="text-outline-variant">/</span>
+<span class="text-secondary font-medium tracking-wide">EDGE INGRESS &amp; ROUTING</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-tertiary font-mono-sm text-[10px]">CADDY-v2.8.4</span>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap">
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Domains, Edge &amp; Operations</h1>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-tertiary/10 text-tertiary font-mono-sm text-mono-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span>
+            Ingress Mesh Live
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-3xl">
+          Dynamic Caddy reverse proxy, automated ACME TLS certificate lifecycle (Let's Encrypt / Pebble), and PostgreSQL S7 backup/restore operations.
+        </p>
+</div>
+<div class="flex items-center gap-space-sm flex-wrap self-start lg:self-center">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-body-sm text-body-sm transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[17px] text-secondary">terminal</span>
+<span>Caddy JSON Config</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-body-sm text-body-sm transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[17px] text-tertiary">cloud_sync</span>
+<span>Trigger Backup</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-headline-sm text-body-sm transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>+ Add Domain Route</span>
+</button>
+</div>
+</div>
+<!-- 4 High-Density KPI Summary Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-gutter">
+<!-- Card 1 -->
+<div class="p-space-lg rounded bg-surface-container-low shadow-sm flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between">
+<div class="space-y-1">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider block">Active Ingress Routes</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">18</span>
+<span class="px-1.5 py-0.5 rounded bg-primary-container/20 text-primary font-mono-sm text-mono-sm">+2 today</span>
+</div>
+</div>
+<div class="w-9 h-9 rounded bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">alt_route</span>
+</div>
+</div>
+<div class="pt-space-md space-y-1">
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>18 Hostnames mapped to 12 workloads</span>
+</div>
+<div class="flex items-center gap-1.5 text-mono-sm font-mono-sm text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span>Zero downtime reload active</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="p-space-lg rounded bg-surface-container-low shadow-sm flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between">
+<div class="space-y-1">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider block">TLS / ACME Health</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">100%</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-mono-sm">18 Valid</span>
+</div>
+</div>
+<div class="w-9 h-9 rounded bg-surface-container-high flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+</div>
+<div class="pt-space-md space-y-1">
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>0 expiring &lt;14d · Auto-renew at 30d</span>
+</div>
+<div class="flex items-center gap-1 text-mono-sm font-mono-sm text-outline">
+<span class="text-on-surface-variant">14 Let's Encrypt</span>
+<span>·</span>
+<span class="text-on-surface-variant">3 CF</span>
+<span>·</span>
+<span class="text-secondary">1 Pebble</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="p-space-lg rounded bg-surface-container-low shadow-sm flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between">
+<div class="space-y-1">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider block">Edge Reverse Proxy (Caddy)</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">0.8ms</span>
+<span class="px-1.5 py-0.5 rounded bg-secondary/15 text-secondary font-mono-sm text-mono-sm">Port 2019 OK</span>
+</div>
+</div>
+<div class="w-9 h-9 rounded bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">speed</span>
+</div>
+</div>
+<div class="pt-space-md space-y-1">
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>Admin API Active · Synced 12s ago</span>
+</div>
+<div class="flex items-center gap-1 text-mono-sm font-mono-sm text-outline-variant">
+<span class="text-primary-fixed-dim">Auto-Rollback on invalid config</span>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="p-space-lg rounded bg-surface-container-low shadow-sm flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container transition-colors">
+<div class="flex items-start justify-between">
+<div class="space-y-1">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider block">PostgreSQL Backups (S7)</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-tertiary font-bold tracking-tight">Healthy</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-mono-sm">WAL-G Active</span>
+</div>
+</div>
+<div class="w-9 h-9 rounded bg-surface-container-high flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">database</span>
+</div>
+</div>
+<div class="pt-space-md space-y-1">
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>Last snapshot: 42m ago · 1.42 GB</span>
+</div>
+<div class="flex items-center gap-1.5 text-mono-sm font-mono-sm text-tertiary">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>R2 / S3 Target: Verified</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Content Section 1: Ingress Route Matrix & Edge Gateway Table -->
+<div class="rounded bg-surface-container-low shadow-sm overflow-hidden flex flex-col">
+<!-- Tabs and Filter Toolbar -->
+<div class="px-space-lg py-space-sm bg-surface-container-high flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+<button class="px-space-md py-1.5 rounded bg-surface text-secondary font-headline-sm text-body-sm shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+<span class="material-symbols-outlined text-[16px]">alt_route</span>
+<span>Active Ingress Routes</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-secondary text-mono-sm font-mono-sm">18</span>
+</button>
+<button class="px-space-md py-1.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-body-sm text-body-sm whitespace-nowrap">
+            Dynamic Caddyfile / JSON Spec
+          </button>
+<button class="px-space-md py-1.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-body-sm text-body-sm whitespace-nowrap">
+            SSL/TLS Certificate Vault
+          </button>
+<button class="px-space-md py-1.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-body-sm text-body-sm whitespace-nowrap">
+            DNS Wildcard Sync
+          </button>
+</div>
+<div class="flex items-center gap-space-xs self-stretch md:self-auto">
+<div class="relative flex-1 md:w-72">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">search</span>
+<input class="w-full bg-surface-container-lowest rounded px-2.5 pl-8 py-1.5 text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface transition-colors" placeholder="Filter domain, upstream... [Ctrl+K]" type="text"/>
+</div>
+<button class="px-2.5 py-1.5 rounded bg-surface hover:bg-surface-bright text-on-surface font-body-sm text-body-sm flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[16px] text-outline">tune</span>
+<span class="hidden sm:inline">All Providers</span>
+</button>
+<button class="p-1.5 rounded bg-surface hover:bg-surface-bright text-on-surface-variant hover:text-on-surface transition-colors" title="Refresh Ingress Routes">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Table Wrapper -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container text-label-sm font-label-sm text-outline uppercase tracking-wider">
+<th class="py-2.5 px-space-lg">Domain Hostname &amp; Protocol</th>
+<th class="py-2.5 px-space-lg">Target Workload &amp; Upstream</th>
+<th class="py-2.5 px-space-lg">TLS Provider &amp; Lifecycle</th>
+<th class="py-2.5 px-space-lg">Health &amp; Latency</th>
+<th class="py-2.5 px-space-lg text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-body-sm font-body-sm text-on-surface">
+<!-- Row 1: api.norix.dev -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-primary-container/15 flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">public</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="font-mono-lg text-mono-lg font-bold text-on-surface">api.norix.dev</span>
+<span class="px-1.5 py-0.5 rounded bg-primary-container/20 text-primary font-mono-sm text-[10px]">HTTP/3 QUIC</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary font-mono-sm text-[10px]">HSTS 1yr</span>
+</div>
+<span class="text-body-sm text-outline block">SNI Strict · Edge Caching Enabled · Brotli/Gzip</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="min-w-0 space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="text-on-surface font-semibold">api-gateway</span>
+<span class="text-outline">→</span>
+<span class="font-mono-sm text-mono-sm text-secondary">node-us-east-01:18082</span>
+</div>
+<div class="flex items-center gap-1 text-mono-sm font-mono-sm text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span>Round-Robin (3 healthy replicas)</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                    Let's Encrypt (ECDSA P-384)
+                  </span>
+<div class="text-mono-sm font-mono-sm text-outline block">Auto-renew in 68 days (ACME HTTP-01)</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-running animate-pulse"></span>
+<span class="font-mono-sm text-mono-sm text-status-running font-semibold">200 OK</span>
+<span class="font-mono-sm text-mono-sm text-outline">(0.42ms)</span>
+</div>
+<span class="text-mono-sm font-mono-sm text-outline block">SLA: 99.998% (Last 30d)</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Test</button>
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Edit</button>
+<button class="p-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: console.norix.cloud -->
+<tr class="bg-surface-container-lowest/40 hover:bg-surface-container transition-colors group">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-secondary-container/20 flex items-center justify-center text-secondary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">dns</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="font-mono-lg text-mono-lg font-bold text-on-surface">console.norix.cloud</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary font-mono-sm text-[10px]">HTTP/2</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-[10px]">Root Console</span>
+</div>
+<span class="text-body-sm text-outline block">Direct TLS Passthrough · WebSocket Tunnel</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="min-w-0 space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="text-on-surface font-semibold">web-dashboard</span>
+<span class="text-outline">→</span>
+<span class="font-mono-sm text-mono-sm text-secondary">node-eu-west-01:18080</span>
+</div>
+<div class="flex items-center gap-1 text-mono-sm font-mono-sm text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span>Direct WireGuard Mesh target</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                    Let's Encrypt (RSA-4096)
+                  </span>
+<div class="text-mono-sm font-mono-sm text-outline block">Auto-renew in 54 days · OCSP Stapled</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-running animate-pulse"></span>
+<span class="font-mono-sm text-mono-sm text-status-running font-semibold">200 OK</span>
+<span class="font-mono-sm text-mono-sm text-outline">(0.38ms)</span>
+</div>
+<span class="text-mono-sm font-mono-sm text-outline block">SLA: 100.0% (Last 30d)</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Test</button>
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Edit</button>
+<button class="p-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: staging-pr42.norix.dev -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-status-degraded/15 flex items-center justify-center text-status-degraded flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">dynamic_feed</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="font-mono-lg text-mono-lg font-bold text-on-surface">staging-pr42.norix.dev</span>
+<span class="px-1.5 py-0.5 rounded bg-status-degraded/20 text-status-degraded font-mono-sm text-[10px]">Ephemeral PR</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-outline font-mono-sm text-[10px]">TTL 3h 42m</span>
+</div>
+<span class="text-body-sm text-outline block">Auto-destroy enabled on branch merge</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="min-w-0 space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="text-on-surface font-semibold">pr-preview-app</span>
+<span class="text-outline">→</span>
+<span class="font-mono-sm text-mono-sm text-secondary">node-us-east-02:22140</span>
+</div>
+<div class="flex items-center gap-1 text-mono-sm font-mono-sm text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span>Micro-VM Sandbox #8809</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary-container/20 text-primary font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                    Cloudflare DNS-01 Wildcard
+                  </span>
+<div class="text-mono-sm font-mono-sm text-outline block">*.norix.dev cert shared</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-running"></span>
+<span class="font-mono-sm text-mono-sm text-status-running font-semibold">200 OK</span>
+<span class="font-mono-sm text-mono-sm text-outline">(1.14ms)</span>
+</div>
+<span class="text-mono-sm font-mono-sm text-outline block">Deploy sha: 7d10e9f</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Test</button>
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Edit</button>
+<button class="p-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: gateway.norix.internal:8443 -->
+<tr class="bg-surface-container-lowest/40 hover:bg-surface-container transition-colors group">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-tertiary-container/30 flex items-center justify-center text-tertiary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="font-mono-lg text-mono-lg font-bold text-on-surface">gateway.norix.internal:8443</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary/20 text-tertiary font-mono-sm text-[10px]">mTLS Mesh</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary font-mono-sm text-[10px]">Zero-Trust</span>
+</div>
+<span class="text-body-sm text-outline block">Client cert mandatory · Internal loop only</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="min-w-0 space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="text-on-surface font-semibold">grafana-internal</span>
+<span class="text-outline">→</span>
+<span class="font-mono-sm text-mono-sm text-secondary">127.0.0.1:3000</span>
+</div>
+<div class="flex items-center gap-1 text-mono-sm font-mono-sm text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span>Localhost loopback proxy</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-secondary/15 text-secondary font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+                    Pebble Local CA (Internal)
+                  </span>
+<div class="text-mono-sm font-mono-sm text-outline block">mTLS SAN: spiffe://norix/cluster/edge</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-running animate-pulse"></span>
+<span class="font-mono-sm text-mono-sm text-status-running font-semibold">200 OK</span>
+<span class="font-mono-sm text-mono-sm text-outline">(0.12ms)</span>
+</div>
+<span class="text-mono-sm font-mono-sm text-outline block">Peer cert verified (Leaf #104)</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Test</button>
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Edit</button>
+<button class="p-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: analytics.norix.io -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-primary-container/15 flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">language</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="font-mono-lg text-mono-lg font-bold text-on-surface">analytics.norix.io</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-mono-sm text-[10px]">Custom Domain</span>
+<span class="px-1.5 py-0.5 rounded bg-primary-container/20 text-primary font-mono-sm text-[10px]">CNAME Valid</span>
+</div>
+<span class="text-body-sm text-outline block">High throughput ingestion buffer (100k req/s)</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="min-w-0 space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="text-on-surface font-semibold">clickhouse-ingest</span>
+<span class="text-outline">→</span>
+<span class="font-mono-sm text-mono-sm text-secondary">node-edge-lon-01:8123</span>
+</div>
+<div class="flex items-center gap-1 text-mono-sm font-mono-sm text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span>Edge Worker (London PoP)</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                    Let's Encrypt (ECDSA P-384)
+                  </span>
+<div class="text-mono-sm font-mono-sm text-outline block">Auto-renew in 74 days (HTTP-01)</div>
+</div>
+</td>
+<td class="py-space-md px-space-lg">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-status-running"></span>
+<span class="font-mono-sm text-mono-sm text-status-running font-semibold">200 OK</span>
+<span class="font-mono-sm text-mono-sm text-outline">(0.76ms)</span>
+</div>
+<span class="text-mono-sm font-mono-sm text-outline block">Rate Limit: 10k/min per IP</span>
+</div>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<div class="flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Test</button>
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">Edit</button>
+<button class="p-1 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination / Footer Bar -->
+<div class="px-space-lg py-space-sm bg-surface-container flex flex-col sm:flex-row items-center justify-between gap-space-sm font-mono-sm text-mono-sm text-outline">
+<div class="flex items-center gap-2">
+<span>Showing 1 - 5 of 18 routes</span>
+<span>·</span>
+<span class="flex items-center gap-1 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+            Zero-downtime TLS cert stapling active
+          </span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-40" disabled="">Previous</button>
+<span class="px-2 py-1 rounded bg-surface text-secondary font-bold">1</span>
+<button class="px-2 py-1 rounded bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">2</button>
+<button class="px-2 py-1 rounded bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">3</button>
+<button class="px-2 py-1 rounded bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">Next</button>
+</div>
+</div>
+</div>
+<!-- Main Content Section 2: Split Grid (Operations & Resilience) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+<!-- Left Column (60%): Caddy Dynamic Config State & Auto-Rollback Engine -->
+<div class="lg:col-span-7 rounded bg-surface-container-low shadow-sm p-space-lg space-y-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-sm">
+<div class="space-y-0.5">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">Caddy Dynamic Config State</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-mono-sm">ETag #49c-a11</span>
+</div>
+<p class="font-mono-sm text-mono-sm text-outline">
+              Admin API: <code class="text-secondary">http://127.0.0.1:2019/load</code> · Synchronized 12s ago
+            </p>
+</div>
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-1 rounded bg-surface-container-high text-on-surface-variant font-mono-sm text-mono-sm">
+              Rollback Target: <span class="text-secondary font-bold">rev_88e</span>
+</span>
+<button class="px-2 py-1 rounded bg-surface-container-highest hover:bg-surface-bright text-on-surface text-mono-sm font-mono-sm transition-colors">
+              History (6)
+            </button>
+</div>
+</div>
+<!-- Diff & Snapshot Info Header -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<div class="p-space-sm rounded bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-running"></span>
+<div>
+<span class="font-label-sm text-label-sm text-outline uppercase block">Active Runtime Spec</span>
+<span class="font-mono-sm text-mono-sm text-on-surface font-semibold">rev_caddy_v2.8.4_91a</span>
+</div>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-[10px]">Verified Safe</span>
+</div>
+<div class="p-space-sm rounded bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-degraded"></span>
+<div>
+<span class="font-label-sm text-label-sm text-outline uppercase block">Fallback Fail-Safe</span>
+<span class="font-mono-sm text-mono-sm text-on-surface font-semibold">rev_caddy_v2.8.4_88e</span>
+</div>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-outline font-mono-sm text-[10px]">Snapshot 2h ago</span>
+</div>
+</div>
+<!-- Code Block Snippet (High-Density Monospace Editor) -->
+<div class="rounded bg-surface-container-lowest overflow-hidden">
+<div class="px-space-md py-1.5 bg-surface-container-highest/60 flex items-center justify-between text-mono-sm font-mono-sm text-outline">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-secondary">data_object</span>
+<span class="text-on-surface-variant font-medium">/etc/caddy/dynamic-routes.json</span>
+<span class="text-outline-variant">· 2.14 KB</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-tertiary">Schema: Caddy v2 JSON API</span>
+<span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-on-surface">content_copy</span>
+</div>
+</div>
+<pre class="p-space-md overflow-x-auto text-mono-sm font-mono-sm leading-relaxed text-on-surface selection:bg-primary selection:text-on-primary"><code>{
+  <span class="text-outline">"apps"</span>: {
+    <span class="text-outline">"http"</span>: {
+      <span class="text-outline">"servers"</span>: {
+        <span class="text-secondary">"norix_edge_ingress"</span>: {
+          <span class="text-outline">"listen"</span>: [<span class="text-tertiary">":443"</span>, <span class="text-tertiary">":80"</span>],
+          <span class="text-outline">"protocols"</span>: [<span class="text-tertiary">"h1"</span>, <span class="text-tertiary">"h2"</span>, <span class="text-tertiary">"h3"</span>],
+          <span class="text-outline">"routes"</span>: [
+            {
+              <span class="text-outline">"match"</span>: [{ <span class="text-outline">"host"</span>: [<span class="text-primary-fixed-dim">"api.norix.dev"</span>] }],
+              <span class="text-outline">"handle"</span>: [{
+                <span class="text-outline">"handler"</span>: <span class="text-secondary">"reverse_proxy"</span>,
+                <span class="text-outline">"upstreams"</span>: [
+                  { <span class="text-outline">"dial"</span>: <span class="text-tertiary">"10.244.1.82:18082"</span>, <span class="text-outline">"max_fails"</span>: 2 },
+                  { <span class="text-outline">"dial"</span>: <span class="text-tertiary">"10.244.1.83:18082"</span>, <span class="text-outline">"max_fails"</span>: 2 }
+                ],
+                <span class="text-outline">"load_balancing"</span>: { <span class="text-outline">"selection_policy"</span>: { <span class="text-outline">"policy"</span>: <span class="text-primary">"round_robin"</span> } },
+                <span class="text-outline">"health_checks"</span>: {
+                  <span class="text-outline">"active"</span>: { <span class="text-outline">"path"</span>: <span class="text-tertiary">"/healthz"</span>, <span class="text-outline">"interval"</span>: <span class="text-primary">"2s"</span>, <span class="text-outline">"timeout"</span>: <span class="text-primary">"500ms"</span> }
+                }
+              }]
+            }
+          ],
+          <span class="text-outline">"tls_connection_policies"</span>: [{
+            <span class="text-outline">"alpn"</span>: [<span class="text-tertiary">"h3"</span>, <span class="text-tertiary">"h2"</span>, <span class="text-tertiary">"http/1.1"</span>],
+            <span class="text-outline">"certificate_selection"</span>: { <span class="text-outline">"any_name"</span>: [<span class="text-primary-fixed-dim">"api.norix.dev"</span>] }
+          }]
+        }
+      }
+    }
+  }
+}</code></pre>
+</div>
+<!-- Controls Footer -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-2 text-mono-sm font-mono-sm text-outline">
+<span class="material-symbols-outlined text-[16px] text-tertiary">verified</span>
+<span>Dry-run verified: Ingress syntax 0 errors</span>
+</div>
+<div class="flex items-center gap-space-xs self-stretch sm:self-auto">
+<button class="flex-1 sm:flex-initial px-3 py-1.5 rounded bg-surface hover:bg-surface-bright text-on-surface font-body-sm text-body-sm transition-colors">
+              Validate &amp; Dry-Run
+            </button>
+<button class="flex-1 sm:flex-initial px-3 py-1.5 rounded bg-primary hover:bg-primary/90 text-on-primary font-headline-sm text-body-sm transition-colors">
+              Force Dynamic Reload
+            </button>
+</div>
+</div>
+</div>
+<!-- Right Column (40%): Sprint 7 Operations: Database Backups & Emergency Alerts -->
+<div class="lg:col-span-5 space-y-gutter">
+<!-- Card 1: PostgreSQL Automated Snapshots -->
+<div class="rounded bg-surface-container-low shadow-sm p-space-lg space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded bg-tertiary-container/30 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">storage</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">PostgreSQL Automated Snapshots</h2>
+<span class="text-mono-sm font-mono-sm text-outline">Postgres 16 · WAL-G Engine S7</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-mono-sm">R2 / S3 Sync</span>
+</div>
+<!-- Snapshot List -->
+<div class="space-y-space-xs">
+<!-- Item 1 -->
+<div class="p-space-sm rounded bg-surface-container hover:bg-surface-bright transition-colors space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm font-bold text-on-surface">norix-prod-20261110-140000.sql.zst</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/15 text-tertiary font-mono-sm text-[10px]">Verified Valid</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-outline">
+<div class="flex items-center gap-2 font-mono-sm text-mono-sm">
+<span class="text-on-surface-variant font-medium">1.42 GB</span>
+<span>·</span>
+<span>42m ago</span>
+<span>·</span>
+<span class="text-secondary">S3 / Cloudflare R2</span>
+</div>
+<div class="flex items-center gap-2 font-mono-sm text-mono-sm">
+<button class="text-primary hover:underline">Restore</button>
+<button class="text-on-surface-variant hover:text-on-surface">Download</button>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-space-sm rounded bg-surface-container hover:bg-surface-bright transition-colors space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm font-bold text-on-surface">norix-prod-20261110-020000.sql.zst</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/15 text-tertiary font-mono-sm text-[10px]">Verified Valid</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-outline">
+<div class="flex items-center gap-2 font-mono-sm text-mono-sm">
+<span class="text-on-surface-variant font-medium">1.39 GB</span>
+<span>·</span>
+<span>12h ago</span>
+<span>·</span>
+<span class="text-secondary">S3 / Cloudflare R2</span>
+</div>
+<div class="flex items-center gap-2 font-mono-sm text-mono-sm">
+<button class="text-primary hover:underline">Restore</button>
+<button class="text-on-surface-variant hover:text-on-surface">Download</button>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between text-mono-sm font-mono-sm text-outline">
+<span class="flex items-center gap-1 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+              Point-in-Time Recovery (PITR) Ready
+            </span>
+<button class="text-secondary hover:underline">View All 48 Archives →</button>
+</div>
+</div>
+<!-- Card 2: Emergency Alert Webhooks (S7 Runbook) -->
+<div class="rounded bg-surface-container-low shadow-sm p-space-lg space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">notifications_active</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Emergency Alert Webhooks</h2>
+<span class="text-mono-sm font-mono-sm text-outline">Runbook S7 Automation</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-mono-sm">All 3 Armed</span>
+</div>
+<!-- Webhook Endpoint Block -->
+<div class="p-space-sm rounded bg-surface-container space-y-1">
+<div class="flex items-center justify-between text-mono-sm font-mono-sm">
+<span class="text-outline font-semibold">NORIX_ALERT_WEBHOOK_URL</span>
+<span class="text-tertiary font-semibold">200 OK (3m ago)</span>
+</div>
+<div class="flex items-center justify-between gap-2">
+<span class="font-mono-sm text-mono-sm text-secondary truncate">https://hooks.slack.com/services/T0.../ops-channel</span>
+<span class="material-symbols-outlined text-[16px] text-outline cursor-pointer hover:text-on-surface">lock</span>
+</div>
+</div>
+<!-- Active Triggers List -->
+<div class="space-y-1.5">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider block">Configured Runbook Triggers</span>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container text-mono-sm font-mono-sm">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span class="text-on-surface">node.down</span>
+</div>
+<span class="text-outline">Heartbeat &gt; 45s timeout</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container text-mono-sm font-mono-sm">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span class="text-on-surface">deploy.failed</span>
+</div>
+<span class="text-outline">Reconciler loop &gt; 3 backoffs</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container text-mono-sm font-mono-sm">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span class="text-on-surface">tls.cert_expire</span>
+</div>
+<span class="text-outline">Expiration threshold &lt; 14 days</span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between">
+<button class="w-full py-1.5 rounded bg-surface hover:bg-surface-bright text-on-surface font-body-sm text-body-sm transition-colors text-center">
+              Send Test Dispatch Ping
+            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

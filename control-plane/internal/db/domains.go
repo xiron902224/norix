@@ -246,6 +246,16 @@ func ListDomains(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID st
 }
 
 func GetDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID, nodeID string) (DesiredEdgePlan, error) {
+	return getDesiredEdgePlan(ctx, pool, organizationID, nodeID, false)
+}
+
+// ForceDesiredEdgePlan rebuilds the full Caddy route set (active + pending +
+// retryable failed). Used when the edge proxy lost its config (compose recreate).
+func ForceDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID, nodeID string) (DesiredEdgePlan, error) {
+	return getDesiredEdgePlan(ctx, pool, organizationID, nodeID, true)
+}
+
+func getDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID, nodeID string, force bool) (DesiredEdgePlan, error) {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return DesiredEdgePlan{}, err
@@ -262,7 +272,7 @@ func GetDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 
 	rows, err := tx.Query(ctx, `
 		SELECT d.id::text, d.hostname, d.tls_mode, d.edge_generation, d.status,
-		       COALESCE(w.host_port, 0), COALESCE(w.assigned_node_id::text, '')
+		       COALESCE(w.host_port, 0), COALESCE(w.assigned_node_id::text, ''), d.updated_at
 		FROM domain_routes d
 		JOIN workloads w ON w.id = d.workload_id
 		WHERE d.status IN ('pending', 'provisioning', 'active', 'deleting', 'failed')
@@ -278,20 +288,26 @@ func GetDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 		ACMECA:        ACMECA(),
 		CaddyAdminURL: CaddyAdminURL(),
 	}
-	needsApply := false
+	needsApply := force
 	type pendingRow struct {
 		route        DesiredEdgeRoute
 		status       string
 		hostPort     int32
 		assignedNode string
+		updatedAt    time.Time
 	}
 	pending := make([]pendingRow, 0)
 	for rows.Next() {
 		var item pendingRow
-		if err := rows.Scan(&item.route.DomainID, &item.route.Hostname, &item.route.TLSMode, &item.route.EdgeGeneration, &item.status, &item.hostPort, &item.assignedNode); err != nil {
+		if err := rows.Scan(&item.route.DomainID, &item.route.Hostname, &item.route.TLSMode, &item.route.EdgeGeneration, &item.status, &item.hostPort, &item.assignedNode, &item.updatedAt); err != nil {
 			return DesiredEdgePlan{}, err
 		}
-		if item.status == "pending" || item.status == "provisioning" || item.status == "deleting" || item.status == "failed" {
+		if item.status == "pending" || item.status == "provisioning" || item.status == "deleting" {
+			needsApply = true
+		}
+		// Retry failed routes after a short cooldown so a temporary dead
+		// upstream (container restart) does not stick forever in the UI.
+		if item.status == "failed" && item.hostPort > 0 && time.Since(item.updatedAt) >= 30*time.Second {
 			needsApply = true
 		}
 		pending = append(pending, item)
@@ -310,6 +326,16 @@ func GetDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 			plan.Routes = append(plan.Routes, route)
 			continue
 		}
+		switch item.status {
+		case "failed":
+			if item.hostPort <= 0 || time.Since(item.updatedAt) < 30*time.Second {
+				continue
+			}
+		case "pending", "provisioning", "active":
+			// include
+		default:
+			continue
+		}
 		if item.hostPort <= 0 {
 			continue
 		}
@@ -326,7 +352,7 @@ func GetDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 
 	_, _ = tx.Exec(ctx, `
 		UPDATE domain_routes SET status = 'provisioning', updated_at = NOW()
-		WHERE status IN ('pending', 'failed')`)
+		WHERE status = 'pending'`)
 	if err := tx.Commit(ctx); err != nil {
 		return DesiredEdgePlan{}, err
 	}

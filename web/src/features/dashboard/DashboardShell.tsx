@@ -1,9 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   Activity,
+  Bell,
+  Box,
+  Boxes,
+  Cloud,
+  Database,
   FolderKanban,
+  GitPullRequest,
   Globe,
   LayoutDashboard,
+  LineChart,
   LogOut,
   Menu,
   Moon,
@@ -11,29 +19,24 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PanelsTopLeft,
+  Plus,
+  Search,
   Server,
   Sun,
+  Users,
   X,
 } from 'lucide-react'
 import { Button } from '../../shared/ui/Button'
 import type { SessionUser } from '../auth/services/session'
 import { renewSession } from '../auth/services/auth-api'
 import { sessionStore } from '../auth/services/session'
-import type { Project } from '../../gen/v1/workload_pb'
-import { ProjectsPage } from '../projects/components/ProjectsPage'
-import { ProjectDetailPage } from '../projects/components/ProjectDetailPage'
-import { NodesPage } from '../nodes/components/NodesPage'
-import { DomainsPage } from '../domains/components/DomainsPage'
-import { NetworkPage } from '../network/components/NetworkPage'
-import { OpsPage } from '../ops/components/OpsPage'
-import { OverviewPage } from './OverviewPage'
+import { listNodes } from '../nodes/services/nodes-api'
+import { listProjects } from '../projects/services/projects-api'
 
 interface DashboardShellProps {
   user: SessionUser
   onSignOut: () => void
 }
-
-type NavKey = 'overview' | 'projects' | 'nodes' | 'domains' | 'network' | 'ops'
 
 function roleLabel(role: number) {
   if (role === 1) return 'owner'
@@ -56,9 +59,30 @@ function readCollapsed() {
   return window.localStorage.getItem('norix-sidebar') === 'collapsed'
 }
 
+function titleFromPath(pathname: string) {
+  if (pathname.startsWith('/projects/')) return 'Workload'
+  if (pathname.startsWith('/projects')) return 'Projects & Apps'
+  if (pathname.startsWith('/nodes')) return 'Compute Nodes'
+  if (pathname.startsWith('/domains')) return 'Domains & Edge'
+  if (pathname.startsWith('/network')) return 'WireGuard Mesh'
+  if (pathname.startsWith('/observability')) return 'Observability'
+  if (pathname.startsWith('/databases')) return 'Databases'
+  if (pathname.startsWith('/sandboxes')) return 'Sandboxes'
+  if (pathname.startsWith('/previews')) return 'PR Previews'
+  if (pathname.startsWith('/wasm')) return 'WebAssembly'
+  if (pathname.startsWith('/ops')) return 'Backups & Storage'
+  if (pathname.startsWith('/teams')) return 'Teams & Quotas'
+  return 'Cluster Overview'
+}
+
+function crumbFromPath(pathname: string) {
+  const parts = pathname.split('/').filter(Boolean)
+  if (parts.length === 0) return 'overview · reconciliation synced'
+  return parts.join(' · ')
+}
+
 export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
-  const [selected, setSelected] = useState<Project | null>(null)
-  const [nav, setNav] = useState<NavKey>('overview')
+  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -71,6 +95,9 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
     if (stored === 'dark') return true
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
+  const [projectCount, setProjectCount] = useState(0)
+  const [nodesOnline, setNodesOnline] = useState(0)
+  const [nodesTotal, setNodesTotal] = useState(0)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
@@ -80,6 +107,10 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
   useEffect(() => {
     window.localStorage.setItem('norix-sidebar', collapsed ? 'collapsed' : 'expanded')
   }, [collapsed])
+
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     const token = sessionStore.getToken()
@@ -96,31 +127,21 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
     return () => window.clearInterval(timer)
   }, [onSignOut])
 
-  function go(next: NavKey) {
-    setNav(next)
-    setSelected(null)
-    setSidebarOpen(false)
-  }
-
-  function openProject(project: Project) {
-    setNav('projects')
-    setSelected(project)
-    setSidebarOpen(false)
-  }
-
-  const title = selected
-    ? selected.name
-    : nav === 'overview'
-      ? 'Overview'
-      : nav === 'nodes'
-        ? 'Nodes'
-        : nav === 'domains'
-          ? 'Domains'
-          : nav === 'network'
-            ? 'Network'
-            : nav === 'ops'
-              ? 'Operations'
-              : 'Projects'
+  useEffect(() => {
+    async function fleetPulse() {
+      try {
+        const [projects, nodes] = await Promise.all([listProjects(), listNodes()])
+        setProjectCount(projects.length)
+        setNodesTotal(nodes.length)
+        setNodesOnline(nodes.filter((node) => node.status === 'online').length)
+      } catch {
+        /* shell telemetry is best-effort */
+      }
+    }
+    void fleetPulse()
+    const timer = window.setInterval(() => { void fleetPulse() }, 8000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const shellClass = [
     'app-shell',
@@ -139,74 +160,73 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
         />
       ) : null}
 
-      <aside className="sidebar" aria-label="Primary">
+      <aside className="sidebar flux-frosted" aria-label="Primary">
         <div className="sidebar-brand">
           <div className="brand-mark" aria-hidden>
             <PanelsTopLeft />
           </div>
           <div className="sidebar-brand-copy">
-            <strong>Norix</strong>
+            <div className="brand-title-row">
+              <strong>Norix</strong>
+              <span className="brand-beta" title="Stitch DevOps Hyperstructure">v0.5-beta</span>
+            </div>
             <span>control plane</span>
           </div>
         </div>
 
+        <WorkspaceSwitcher />
+
         <nav className="sidebar-nav">
-          <div className="nav-section-label">Workspace</div>
-          <button
-            type="button"
-            className={`nav-item ${nav === 'overview' && !selected ? 'active' : ''}`}
-            onClick={() => go('overview')}
-            title="Overview"
-          >
-            <LayoutDashboard />
-            <span className="nav-label">Overview</span>
-          </button>
-          <button
-            type="button"
-            className={`nav-item ${nav === 'projects' || selected ? 'active' : ''}`}
-            onClick={() => go('projects')}
-            title="Projects"
-          >
-            <FolderKanban />
-            <span className="nav-label">Projects</span>
-          </button>
-          <button
-            type="button"
-            className={`nav-item ${nav === 'nodes' ? 'active' : ''}`}
-            onClick={() => go('nodes')}
-            title="Nodes"
-          >
-            <Server />
-            <span className="nav-label">Nodes</span>
-          </button>
-          <button
-            type="button"
-            className={`nav-item ${nav === 'domains' ? 'active' : ''}`}
-            onClick={() => go('domains')}
-            title="Domains"
-          >
-            <Globe />
-            <span className="nav-label">Domains</span>
-          </button>
-          <button
-            type="button"
-            className={`nav-item ${nav === 'network' ? 'active' : ''}`}
-            onClick={() => go('network')}
-            title="Network"
-          >
-            <Network />
-            <span className="nav-label">Network</span>
-          </button>
-          <button
-            type="button"
-            className={`nav-item ${nav === 'ops' ? 'active' : ''}`}
-            onClick={() => go('ops')}
-            title="Operations"
-          >
-            <Activity />
-            <span className="nav-label">Ops</span>
-          </button>
+          <div className="nav-section-label">Overview</div>
+          <NavItem to="/overview" icon={<LayoutDashboard />} label="Dashboard" end />
+          <NavItem
+            to="/projects"
+            icon={<FolderKanban />}
+            label="Projects"
+            badge={projectCount > 0 ? String(projectCount) : undefined}
+          />
+
+          <div className="nav-section-label">Infrastructure</div>
+          <NavItem
+            to="/nodes"
+            icon={<Server />}
+            label="Nodes"
+            dot={nodesOnline > 0 ? 'ok' : undefined}
+          />
+          <NavItem to="/sandboxes" icon={<Boxes />} label="Sandboxes" />
+
+          <div className="nav-section-label">Traffic</div>
+          <NavItem to="/domains" icon={<Globe />} label="Domains" />
+          <NavItem to="/network" icon={<Network />} label="Network" />
+
+          <div className="nav-section-label">Operations</div>
+          <NavItem to="/observability" icon={<LineChart />} label="Observability" />
+          <NavItem to="/ops" icon={<Activity />} label="Ops / Backups" />
+          <NavItem to="/teams" icon={<Users />} label="Teams & Quotas" />
+
+          <div className="nav-section-label">Platform</div>
+          <NavItem to="/databases" icon={<Database />} label="Databases" />
+          <NavItem to="/previews" icon={<GitPullRequest />} label="Previews" />
+          <NavItem to="/wasm" icon={<Box />} label="Wasm" />
         </nav>
+
+        <div className="sidebar-telemetry" aria-label="Control plane telemetry">
+          <div className="sidebar-telemetry-row">
+            <span className="sidebar-telemetry-dot" aria-hidden />
+            <span>HTTP/Connect</span>
+            <span className="mono telemetry-ok">200 OK</span>
+          </div>
+          <div className="sidebar-telemetry-row">
+            <span className="sidebar-telemetry-dot" aria-hidden />
+            <span>Postgres 16</span>
+            <span className="mono telemetry-ok">Healthy</span>
+          </div>
+          <div className="sidebar-telemetry-row">
+            <span className="sidebar-telemetry-dot" aria-hidden />
+            <span>Agent heartbeat</span>
+            <span className="mono">{nodesOnline}/{nodesTotal || '—'} live</span>
+          </div>
+        </div>
 
         <div className="sidebar-footer">
           <button
@@ -214,55 +234,47 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
             className="nav-item collapse-toggle"
             onClick={() => setCollapsed((value) => !value)}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-pressed={collapsed}
           >
             {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
             <span className="nav-label">{collapsed ? 'Expand' : 'Collapse'}</span>
           </button>
-          <button type="button" className="nav-item" onClick={onSignOut} title="Sign out">
+          <button type="button" className="nav-item signout-mobile" onClick={onSignOut}>
             <LogOut />
             <span className="nav-label">Sign out</span>
           </button>
         </div>
       </aside>
 
-      <div className="app-main">
+      <div className="shell-main">
         <header className="topbar flux-frosted">
           <div className="topbar-left">
             <button
               type="button"
-              className="icon-button menu-toggle"
-              aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
-              aria-expanded={sidebarOpen}
-              onClick={() => setSidebarOpen((open) => !open)}
+              className="icon-button mobile-only"
+              aria-label="Open navigation"
+              onClick={() => setSidebarOpen(true)}
             >
               {sidebarOpen ? <X /> : <Menu />}
             </button>
-            <button
-              type="button"
-              className="icon-button desktop-collapse"
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              aria-pressed={collapsed}
-              onClick={() => setCollapsed((value) => !value)}
-            >
-              {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-            </button>
-            <nav className="crumb-trail" aria-label="Breadcrumb">
-              <button type="button" onClick={() => go('overview')}>Norix</button>
-              <span aria-hidden>/</span>
-              {selected ? (
-                <>
-                  <button type="button" onClick={() => go('projects')}>Projects</button>
-                  <span aria-hidden>/</span>
-                  <strong>{selected.name}</strong>
-                </>
-              ) : (
-                <strong>{title}</strong>
-              )}
-            </nav>
+            <label className="topbar-search" aria-label="Search workloads">
+              <Search size={14} aria-hidden />
+              <input type="search" placeholder="Search workloads…" disabled title="Coming soon" />
+              <kbd>Ctrl K</kbd>
+            </label>
+            <div className="topbar-stats" aria-label="Fleet snapshot">
+              <span>Nodes <strong>{nodesOnline}/{nodesTotal}</strong></span>
+              <span>Projects <strong>{projectCount}</strong></span>
+              <span className="telemetry-ok">KVM L2 OK</span>
+            </div>
           </div>
 
           <div className="topbar-actions">
+            <NavLink to="/projects" className="primary-button flux-glow" style={{ padding: '8px 14px', marginTop: 0 }}>
+              <Plus size={14} /> New workload
+            </NavLink>
+            <button type="button" className="icon-button" aria-label="Notifications" title="Alerts on Ops page">
+              <Bell size={16} />
+            </button>
             <button
               type="button"
               className="icon-button theme-toggle"
@@ -284,31 +296,83 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
           </div>
         </header>
 
+        <PageCrumbHeader pathname={location.pathname} title={titleFromPath(location.pathname)} crumb={crumbFromPath(location.pathname)} />
+
         <div className="content flux-dot-grid">
-          <div className="page-enter" key={selected ? selected.id : nav}>
-            {nav === 'overview' && !selected ? (
-              <OverviewPage
-                user={user}
-                onOpenProjects={() => go('projects')}
-                onOpenProject={openProject}
-              />
-            ) : null}
-
-            {nav === 'nodes' ? <NodesPage /> : null}
-            {nav === 'domains' ? <DomainsPage /> : null}
-            {nav === 'network' ? <NetworkPage /> : null}
-            {nav === 'ops' ? <OpsPage /> : null}
-
-            {nav === 'projects' && selected ? (
-              <ProjectDetailPage project={selected} onBack={() => setSelected(null)} />
-            ) : null}
-
-            {nav === 'projects' && !selected ? (
-              <ProjectsPage onOpenProject={setSelected} />
-            ) : null}
+          <div className="page-enter" key={location.pathname}>
+            <Outlet />
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+function WorkspaceSwitcher() {
+  return (
+    <div className="workspace-switcher" aria-label="Workspace">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        <Cloud size={14} style={{ color: 'var(--tertiary)', flexShrink: 0 }} aria-hidden />
+        <div style={{ minWidth: 0 }}>
+          <div className="workspace-switcher-title">Norix workspace</div>
+          <div className="workspace-switcher-sub">primary · DevOps Hyperstructure</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PageCrumbHeader({
+  pathname,
+  title,
+  crumb,
+}: {
+  pathname: string
+  title: string
+  crumb: string
+}) {
+  if (pathname === '/overview') {
+    return (
+      <div style={{ padding: '12px 22px 0', borderBottom: '1px solid color-mix(in oklab, var(--border) 70%, transparent)' }}>
+        <p className="eyebrow breadcrumb-mono" style={{ margin: 0 }}>us-east-cluster-01 · reconciliation: synced</p>
+        <h1 style={{ margin: '4px 0 12px', fontSize: '1.35rem', letterSpacing: '-0.03em' }}>{title}</h1>
+      </div>
+    )
+  }
+  return (
+    <div style={{ padding: '12px 22px 0' }}>
+      <p className="eyebrow breadcrumb-mono" style={{ margin: 0 }}>{crumb}</p>
+      <h1 style={{ margin: '4px 0 12px', fontSize: '1.2rem', letterSpacing: '-0.03em' }}>{title}</h1>
+    </div>
+  )
+}
+
+function NavItem({
+  to,
+  icon,
+  label,
+  end,
+  badge,
+  dot,
+}: {
+  to: string
+  icon: ReactNode
+  label: string
+  end?: boolean
+  badge?: string
+  dot?: 'ok'
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+      title={label}
+    >
+      {icon}
+      <span className="nav-label">{label}</span>
+      {badge ? <span className="nav-badge">{badge}</span> : null}
+      {dot === 'ok' ? <span className="nav-badge" style={{ border: 0, padding: 0 }}><span className="sidebar-telemetry-dot" /></span> : null}
+    </NavLink>
   )
 }

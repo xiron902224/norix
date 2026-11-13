@@ -18,6 +18,7 @@ func Start(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
 	if logger == nil {
 		logger = slog.Default()
 	}
+	go startSandboxGC(ctx, pool, logger)
 	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
 	runOnce(ctx, pool, logger)

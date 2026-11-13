@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_dashboard" name="shell-type"/>
+<title>Norix PaaS — Observability &amp; WireGuard Mesh</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "status-enrolling": "#06B6D4",
+            "surface-tint": "#bbc3ff",
+            "tertiary-fixed": "#70fda7",
+            "surface-dim": "#10141a",
+            "surface-container-highest": "#31353c",
+            "tertiary-fixed-dim": "#51df8e",
+            "on-secondary-container": "#00424e",
+            "surface-container-high": "#262a31",
+            "status-running": "#12B76A",
+            "on-tertiary-fixed": "#00210e",
+            "on-surface-variant": "#c5c5d8",
+            "on-error": "#690005",
+            "background": "#10141a",
+            "on-error-container": "#ffdad6",
+            "surface-light-canvas": "#F8FAFC",
+            "error-container": "#93000a",
+            "on-tertiary-container": "#e3ffe7",
+            "on-secondary-fixed-variant": "#004e5c",
+            "primary-fixed": "#dfe0ff",
+            "surface-dark-overlay": "#21262D",
+            "on-tertiary": "#00391d",
+            "surface-container-low": "#181c22",
+            "inverse-on-surface": "#2d3137",
+            "inverse-surface": "#dfe2eb",
+            "error": "#ffb4ab",
+            "on-primary": "#001b96",
+            "on-secondary": "#003640",
+            "outline-variant": "#444656",
+            "status-degraded": "#F59E0B",
+            "surface-variant": "#31353c",
+            "secondary": "#4cd7f6",
+            "on-surface": "#dfe2eb",
+            "primary-container": "#465fff",
+            "surface-container": "#1c2026",
+            "tertiary": "#51df8e",
+            "inverse-primary": "#2e48eb",
+            "primary": "#bbc3ff",
+            "on-primary-fixed-variant": "#0029d2",
+            "on-background": "#dfe2eb",
+            "surface-light-card": "#FFFFFF",
+            "outline": "#8f8fa2",
+            "primary-fixed-dim": "#bbc3ff",
+            "border-dark": "#30363D",
+            "on-secondary-fixed": "#001f26",
+            "surface-dark-card": "#161B22",
+            "surface-dark-canvas": "#0D1117",
+            "surface-bright": "#353940",
+            "on-tertiary-fixed-variant": "#00522c",
+            "status-stopped": "#64748B",
+            "surface-light-subtle": "#F1F5F9",
+            "tertiary-container": "#008349",
+            "secondary-fixed-dim": "#4cd7f6",
+            "surface": "#10141a",
+            "on-primary-container": "#f9f7ff",
+            "on-primary-fixed": "#000d5f",
+            "border-light": "#E2E8F0",
+            "secondary-fixed": "#acedff",
+            "secondary-container": "#03b5d3",
+            "surface-container-lowest": "#0a0e14",
+            "status-failed": "#EF4444"
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          spacing: {
+            "margin": "1rem",
+            "space-2xl": "2rem",
+            "gutter-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1rem",
+            "margin-lg": "2rem",
+            "margin-md": "1.5rem",
+            "space-md": "0.75rem",
+            "gutter": "1rem",
+            "space-xs": "0.25rem",
+            "space-xl": "1.5rem"
+          },
+          fontFamily: {
+            "label-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-sm": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "mono-sm": ["JetBrains Mono"],
+            "body-md": ["Inter"],
+            "label-sm": ["JetBrains Mono"],
+            "mono-lg": ["JetBrains Mono"],
+            "headline-md": ["Inter"],
+            "headline-xl": ["Inter"],
+            "mono-md": ["JetBrains Mono"],
+            sans: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          },
+          fontSize: {
+            "label-md": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-lg": ["1rem", { "lineHeight": "1.5rem", "fontWeight": "400" }],
+            "headline-lg": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "body-sm": ["0.75rem", { "lineHeight": "1rem", "fontWeight": "400" }],
+            "headline-sm": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "mono-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.02em", "fontWeight": "400" }],
+            "body-md": ["0.875rem", { "lineHeight": "1.25rem", "fontWeight": "400" }],
+            "label-sm": ["0.625rem", { "lineHeight": "0.75rem", "letterSpacing": "0.06em", "fontWeight": "600" }],
+            "mono-lg": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-md": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-xl": ["2rem", { "lineHeight": "2.5rem", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "mono-md": ["0.75rem", { "lineHeight": "1.125rem", "letterSpacing": "0em", "fontWeight": "400" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0a0e14; }
+    ::-webkit-scrollbar-thumb { background: #30363D; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #444656; }
+  </style>
+</head>
+<body class="bg-surface font-sans text-on-surface antialiased text-[13px] selection:bg-primary-container selection:text-white">
+<!-- Left Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-screen w-64 bg-surface-container-lowest border-r border-border-dark flex flex-col z-50 overflow-hidden">
+<!-- Brand / Cluster Switcher -->
+<div class="p-4 border-b border-border-dark">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-white shadow-sm ring-1 ring-white/20">
+<span class="material-symbols-outlined text-[20px]">token</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="text-base tracking-tight text-on-surface font-bold">Norix</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary text-[10px] font-mono tracking-wider font-semibold">v0.5-beta</span>
+</div>
+</div>
+</div>
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-border-dark hover:border-outline/40 hover:bg-surface-container transition-all text-left group">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-[15px] text-tertiary group-hover:scale-110 transition-transform">cloud</span>
+<div class="truncate">
+<span class="block text-[11px] font-mono text-on-surface truncate">Acme Cloud / Prod</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">unfold_more</span>
+</button>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Overview</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#">
+<span>Dashboard</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="projects-apps" href="#">
+<span>Projects &amp; Apps</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Infrastructure</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="compute-nodes" href="#">
+<span>Compute Nodes</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="sandboxes-ephemeral-micro-vms-kvm" href="#">
+<span>Sandboxes &amp; Micro-VMs</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Traffic &amp; Networking</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="domains-edge" href="#">
+<span>Domains &amp; Edge</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="wireguard-mesh" href="#">
+<span>WireGuard Mesh</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Operations</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="observability-metrics" href="#">
+<span>Observability &amp; Metrics</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="builds-ci" href="#">
+<span>Builds &amp; CI</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="backups-storage" href="#">
+<span>Backups &amp; Storage</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="audit-activity" href="#">
+<span>Audit &amp; Activity</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Settings</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="api-keys-secrets" href="#">
+<span>API Keys &amp; Secrets</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="team-rbac" href="#">
+<span>Team &amp; RBAC</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="cluster-config" href="#">
+<span>Cluster Config</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Daemon status pill & Heartbeat footer -->
+<div class="p-3 border-t border-border-dark bg-surface-container-lowest/80 space-y-1.5">
+<div class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span>HTTP/Connect</span>
+<span class="text-status-running">200 OK</span>
+</div>
+<div class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>Postgres 16</span>
+<span class="text-tertiary">Healthy</span>
+</div>
+<div class="pt-1.5 border-t border-border-dark/60 flex items-center justify-between text-[10px] font-mono text-outline">
+<span>AGENT HEARTBEAT</span>
+<span class="text-secondary">1,248 pings/m</span>
+</div>
+</div>
+</aside>
+<!-- Top App Header -->
+<div class="pl-64">
+<header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-dark z-40 px-6 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[17px]">search</span>
+<input class="w-full bg-surface-container-low border border-border-dark rounded-lg px-2.5 pl-8 py-1.5 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all font-mono" placeholder="Search workloads, nodes, commits, routes... [Ctrl+K]" type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="hidden xl:flex items-center gap-1.5 font-mono text-[11px]">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span class="text-on-surface-variant">Nodes:</span>
+<span class="text-on-surface font-semibold">12/12</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-status-enrolling"></span>
+<span class="text-on-surface-variant">Workloads:</span>
+<span class="text-on-surface font-semibold">34</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="text-on-surface-variant">KVM:</span>
+<span class="text-tertiary font-semibold">L2 OK</span>
+</div>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high border border-border-dark text-on-surface text-xs font-medium transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">add</span>
+<span>New Workload</span>
+</button>
+<button aria-label="Notifications" class="relative p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[19px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-status-failed"></span>
+</button>
+<div class="h-4 w-px bg-border-dark"></div>
+<div class="flex items-center gap-2 pl-1">
+<div class="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-mono text-xs font-semibold">
+            DL
+          </div>
+<div class="hidden md:block text-left leading-none">
+<div class="text-[12px] font-semibold text-on-surface">DevOps Lead</div>
+<div class="text-[10px] text-tertiary font-mono mt-0.5">Owner</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Command Ribbon / Breadcrumb Header -->
+<div class="bg-surface-container-low px-6 py-4">
+<div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 mb-1.5 flex-wrap">
+<span class="font-mono-sm text-mono-sm text-outline uppercase tracking-wider">OPERATIONS</span>
+<span class="font-mono-sm text-mono-sm text-outline">/</span>
+<span class="font-mono-sm text-mono-sm text-primary uppercase tracking-wider font-semibold">OBSERVABILITY &amp; METRICS</span>
+<span class="font-mono-sm text-mono-sm px-2 py-0.5 rounded bg-primary-container/20 text-primary uppercase font-medium">PROMETHEUS ENGINE • OPENTELEMETRY V1.28 • RETENTION 30D</span>
+</div>
+<div class="flex items-baseline gap-3 flex-wrap">
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Cluster Observability &amp; Telemetry Engine</h1>
+<span class="font-mono-sm text-mono-sm text-status-running flex items-center gap-1.5 bg-status-running/10 px-2 py-0.5 rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span>
+            INGEST ACTIVE • 0 DROPS
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-4xl mt-1 leading-relaxed">
+          High-throughput real-time metrics collection (<span class="font-mono-sm text-mono-sm text-secondary">/proc</span> &amp; <span class="font-mono-sm text-mono-sm text-secondary">cgroups v2</span>), batched log ingestion with zstd-19 compression, inverted index segment search (&lt;1s latency), and OpenTelemetry OTLP/Prometheus scrapers.
+        </p>
+</div>
+<!-- Action Cluster -->
+<div class="flex items-center gap-2 flex-wrap">
+<div class="flex items-center bg-surface-container-highest rounded px-2.5 py-1 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-secondary mr-1.5">schedule</span>
+<span class="font-mono-sm text-mono-sm text-on-surface">Last 15m</span>
+<span class="font-mono-sm text-mono-sm text-outline mx-2">•</span>
+<span class="font-mono-sm text-mono-sm text-tertiary">5s Sync</span>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-mono-sm text-mono-sm transition-colors">
+<span class="material-symbols-outlined text-[15px] text-secondary">download</span>
+          Export Metrics
+        </button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-mono-sm text-mono-sm transition-colors">
+<span class="material-symbols-outlined text-[15px] text-status-degraded">mop</span>
+          Flush Buffers
+        </button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary-container hover:bg-inverse-primary text-white font-mono-sm text-mono-sm font-semibold transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[15px]">add_alert</span>
+          + Create Alert Rule
+        </button>
+</div>
+</div>
+</div>
+<!-- Primary Dashboard Canvas -->
+<div class="p-6 space-y-6">
+<!-- KPI Metric Quad Bento -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Card 1: Log Ingestion Throughput -->
+<div class="bg-surface-container-low rounded-lg p-4 flex flex-col justify-between hover:bg-surface-container transition-all">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-outline uppercase tracking-wider font-semibold">LOG INGESTION THROUGHPUT</span>
+<span class="font-mono-sm text-mono-sm px-1.5 py-0.5 rounded bg-status-running/15 text-status-running font-medium">+8.4% peak</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-mono-lg text-headline-lg font-bold text-on-surface">42.8k</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">logs/sec</span>
+</div>
+</div>
+<div class="my-3 h-10 w-full">
+<!-- Sparkline Log Rate -->
+<svg class="w-full h-full text-secondary overflow-visible" preserveaspectratio="none" viewbox="0 0 160 36">
+<defs>
+<lineargradient id="grad-logs" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#4cd7f6" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#4cd7f6" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,28 Q15,30 30,22 T60,24 T90,14 T120,18 T140,8 L160,11 L160,36 L0,36 Z" fill="url(#grad-logs)"></path>
+<path d="M0,28 Q15,30 30,22 T60,24 T90,14 T120,18 T140,8 L160,11" fill="none" stroke="currentColor" stroke-width="1.75"></path>
+</svg>
+</div>
+<div class="pt-2 bg-surface-container-lowest/40 rounded px-2.5 py-1.5 flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<span>zstd-19 ratio <strong class="text-tertiary">4.8x</strong> (-79% NVMe)</span>
+<span class="text-on-surface">p99 <strong class="text-primary">0.38ms</strong></span>
+</div>
+</div>
+<!-- Card 2: Metrics Collector -->
+<div class="bg-surface-container-low rounded-lg p-4 flex flex-col justify-between hover:bg-surface-container transition-all">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-outline uppercase tracking-wider font-semibold">METRICS (/proc &amp; cgroups)</span>
+<span class="font-mono-sm text-mono-sm px-1.5 py-0.5 rounded bg-tertiary/15 text-tertiary font-medium">12/12 Scraped</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-mono-lg text-headline-lg font-bold text-on-surface">18,450</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">series @ 1s</span>
+</div>
+</div>
+<div class="my-3 h-10 w-full">
+<!-- Sparkline Series Scrapes -->
+<svg class="w-full h-full text-tertiary overflow-visible" preserveaspectratio="none" viewbox="0 0 160 36">
+<defs>
+<lineargradient id="grad-metrics" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#51df8e" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#51df8e" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,18 L20,17 L40,19 L60,14 L80,15 L100,10 L120,12 L140,8 L160,9 L160,36 L0,36 Z" fill="url(#grad-metrics)"></path>
+<path d="M0,18 L20,17 L40,19 L60,14 L80,15 L100,10 L120,12 L140,8 L160,9" fill="none" stroke="currentColor" stroke-width="1.75"></path>
+</svg>
+</div>
+<div class="pt-2 bg-surface-container-lowest/40 rounded px-2.5 py-1.5 flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<span>Daemon RSS <strong class="text-tertiary">34.2 MB</strong></span>
+<span class="text-on-surface">1,248 pings/m</span>
+</div>
+</div>
+<!-- Card 3: Segment Index Query Latency -->
+<div class="bg-surface-container-low rounded-lg p-4 flex flex-col justify-between hover:bg-surface-container transition-all">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-outline uppercase tracking-wider font-semibold">SEGMENT LOG SEARCH INDEX</span>
+<span class="font-mono-sm text-mono-sm px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium">840M Recs</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-mono-lg text-headline-lg font-bold text-on-surface">0.24s</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">avg segment query</span>
+</div>
+</div>
+<div class="my-3 h-10 w-full">
+<!-- Sparkline Search Latency -->
+<svg class="w-full h-full text-primary overflow-visible" preserveaspectratio="none" viewbox="0 0 160 36">
+<defs>
+<lineargradient id="grad-search" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#bbc3ff" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#bbc3ff" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,15 Q30,12 50,18 T90,22 T120,14 T145,10 L160,11 L160,36 L0,36 Z" fill="url(#grad-search)"></path>
+<path d="M0,15 Q30,12 50,18 T90,22 T120,14 T145,10 L160,11" fill="none" stroke="currentColor" stroke-width="1.75"></path>
+</svg>
+</div>
+<div class="pt-2 bg-surface-container-lowest/40 rounded px-2.5 py-1.5 flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<span>ClickHouse <strong class="text-on-surface">142 GB</strong></span>
+<span class="text-tertiary">30d Expire Policy</span>
+</div>
+</div>
+<!-- Card 4: Active Alert Triggers & SLOs -->
+<div class="bg-surface-container-low rounded-lg p-4 flex flex-col justify-between hover:bg-surface-container transition-all">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-outline uppercase tracking-wider font-semibold">ACTIVE TRIGGERS &amp; SLO</span>
+<span class="font-mono-sm text-mono-sm px-1.5 py-0.5 rounded bg-status-degraded/15 text-status-degraded font-medium">2 Active Warn</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="font-mono-lg text-headline-lg font-bold text-on-surface">99.98%</span>
+<span class="font-mono-sm text-mono-sm text-status-running">SLO Healthy</span>
+</div>
+</div>
+<div class="my-3 space-y-1.5">
+<div class="flex items-center justify-between font-mono-sm text-mono-sm">
+<span class="text-on-surface-variant truncate">disk-io-wait (node-ap-south-01)</span>
+<span class="text-status-degraded font-semibold">18.4%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-status-degraded" style="width: 73.6%"></div>
+</div>
+</div>
+<div class="pt-2 bg-surface-container-lowest/40 rounded px-2.5 py-1.5 flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<span>0 Critical / 2 Warn</span>
+<span class="text-status-running">Budget Rem: 8.2h</span>
+</div>
+</div>
+</div>
+<!-- Middle Segment Tabs & Telemetry Observability Suite -->
+<div class="bg-surface-container-low rounded-lg p-4 space-y-4">
+<!-- Sub-Navigation Navigation Tabs -->
+<div class="flex items-center justify-between flex-wrap gap-3 pb-3 bg-surface-container-low">
+<div class="flex items-center gap-1 bg-surface-container-lowest p-1 rounded-md">
+<button class="px-3 py-1.5 rounded font-mono-sm text-mono-sm font-semibold bg-primary-container text-white transition-all shadow-sm">
+            Cluster Time-Series (Prometheus)
+          </button>
+<button class="px-3 py-1.5 rounded font-mono-sm text-mono-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all">
+            Batched Log Ingestion Stream
+          </button>
+<button class="px-3 py-1.5 rounded font-mono-sm text-mono-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all">
+            Alert Rules &amp; Webhooks (S7/S9)
+          </button>
+<button class="px-3 py-1.5 rounded font-mono-sm text-mono-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all">
+            OpenTelemetry OTLP Exporters
+          </button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-mono-sm text-mono-sm text-outline">Group By:</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary font-mono-sm text-mono-sm">node_role="compute"</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-primary font-mono-sm text-mono-sm">env="production"</span>
+</div>
+</div>
+<!-- Split Layout: 60% Left Multi-Node Telemetry Curve, 40% Right Buffer & Pressure Gauges -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-1">
+<!-- Left: CPU Utilization & Latency Bands (7 cols / ~60%) -->
+<div class="lg:col-span-7 bg-surface-container-lowest/60 rounded p-4 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+<div>
+<div class="font-mono-sm text-mono-sm text-outline uppercase font-semibold">DISTRIBUTED CPU CONSUMPTION &amp; CGROUP RUNTIME</div>
+<div class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Aggregate Micro-VM &amp; Container Scheduling Latency</div>
+</div>
+<div class="flex items-center gap-3 font-mono-sm text-mono-sm">
+<span class="flex items-center gap-1.5 text-secondary"><span class="w-2.5 h-1 bg-secondary rounded"></span> P99: 4.8ms</span>
+<span class="flex items-center gap-1.5 text-tertiary"><span class="w-2.5 h-1 bg-tertiary rounded"></span> P90: 1.2ms</span>
+<span class="flex items-center gap-1.5 text-primary"><span class="w-2.5 h-1 bg-primary rounded"></span> P50: 0.3ms</span>
+</div>
+</div>
+<!-- Smoothed SVG Chart with Multiple Nodes -->
+<div class="relative w-full h-56 mt-2">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 540 180">
+<!-- Grid Horizontal Lines -->
+<line stroke="#31353c" stroke-dasharray="3 3" stroke-width="0.75" x1="0" x2="540" y1="20" y2="20"></line>
+<line stroke="#31353c" stroke-dasharray="3 3" stroke-width="0.75" x1="0" x2="540" y1="65" y2="65"></line>
+<line stroke="#31353c" stroke-dasharray="3 3" stroke-width="0.75" x1="0" x2="540" y1="110" y2="110"></line>
+<line stroke="#31353c" stroke-dasharray="3 3" stroke-width="0.75" x1="0" x2="540" y1="155" y2="155"></line>
+<!-- Gradient Fill Under Node Cluster Curves -->
+<defs>
+<lineargradient id="area-node1" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#465fff" stop-opacity="0.35"></stop>
+<stop offset="100%" stop-color="#465fff" stop-opacity="0"></stop>
+</lineargradient>
+<lineargradient id="area-node2" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#4cd7f6" stop-opacity="0.25"></stop>
+<stop offset="100%" stop-color="#4cd7f6" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<!-- P99 Upper Latency Envelope (Area) -->
+<path d="M0,115 Q45,100 90,125 T180,95 T270,110 T360,80 T450,105 L540,75 L540,175 L0,175 Z" fill="url(#area-node1)"></path>
+<!-- Primary Curve: High Priority Cluster Load -->
+<path d="M0,115 Q45,100 90,125 T180,95 T270,110 T360,80 T450,105 L540,75" fill="none" stroke="#465fff" stroke-width="2"></path>
+<!-- Secondary Curve: Edge & WireGuard Ingress Nodes -->
+<path d="M0,140 Q45,135 90,142 T180,120 T270,135 T360,110 T450,125 L540,100 L540,175 L0,175 Z" fill="url(#area-node2)"></path>
+<path d="M0,140 Q45,135 90,142 T180,120 T270,135 T360,110 T450,125 L540,100" fill="none" stroke="#4cd7f6" stroke-width="1.75"></path>
+<!-- Tertiary Curve: Reconciler Daemon Spikes -->
+<path d="M0,158 Q50,155 100,162 T200,148 T300,155 T400,135 T500,145 L540,140" fill="none" stroke="#51df8e" stroke-dasharray="2 1" stroke-width="1.5"></path>
+<!-- Highlight Target Ping -->
+<circle cx="360" cy="80" fill="#465fff" r="3.5"></circle>
+<circle class="animate-ping" cx="360" cy="80" fill="none" r="7" stroke="#465fff" stroke-width="1"></circle>
+</svg>
+<!-- Chart X Axis Labels -->
+<div class="flex items-center justify-between text-[10px] font-mono text-outline mt-1 px-1">
+<span>15:45:00</span>
+<span>15:48:00</span>
+<span>15:51:00</span>
+<span>15:54:00</span>
+<span>15:57:00</span>
+<span>16:00:00 (NOW)</span>
+</div>
+</div>
+</div>
+<!-- Bottom Micro-Toggles for Nodes + Linux PSI Pressure Gauges -->
+<div class="mt-4 pt-3 border-t border-surface-container-high space-y-3">
+<div class="flex items-center justify-between flex-wrap gap-2">
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="font-mono-sm text-mono-sm text-outline">Nodes:</span>
+<button class="px-2 py-0.5 rounded bg-primary-container/20 text-primary font-mono-sm text-mono-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>node-us-east-01
+                </button>
+<button class="px-2 py-0.5 rounded bg-secondary/15 text-secondary font-mono-sm text-mono-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>node-eu-west-01
+                </button>
+<button class="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary font-mono-sm text-mono-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>node-edge-lon-01
+                </button>
+<button class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono-sm text-mono-sm">
+                  +9 more
+                </button>
+</div>
+<!-- PSI Badges -->
+<div class="flex items-center gap-3 font-mono-sm text-mono-sm">
+<span class="text-outline">cgroups PSI:</span>
+<span class="text-status-running">some.cpu 1.02%</span>
+<span class="text-status-running">some.mem 0.04%</span>
+<span class="text-status-degraded">some.io 3.81%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Ingestion Ring Buffers & OpenTelemetry Streams (5 cols / ~40%) -->
+<div class="lg:col-span-5 space-y-4">
+<!-- Buffer Saturation & Compression Chunk Engine -->
+<div class="bg-surface-container-lowest/60 rounded p-4 space-y-3">
+<div class="flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-outline uppercase font-semibold">ZSTD RING BUFFER QUEUES</span>
+<span class="font-mono-sm text-mono-sm text-secondary font-semibold">64MB / 256MB</span>
+</div>
+<!-- Segment Bar -->
+<div>
+<div class="flex items-center justify-between font-mono-sm text-mono-sm mb-1">
+<span class="text-on-surface-variant">Allocated Memory (Ring Queue)</span>
+<span class="text-on-surface font-semibold">25.0% Saturation</span>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden flex">
+<div class="h-full bg-status-running" style="width: 25%"></div>
+<div class="h-full bg-status-degraded/40" style="width: 10%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1 font-mono-sm text-mono-sm">
+<div class="bg-surface-container rounded p-2">
+<span class="text-outline block">NVMe Direct I/O</span>
+<span class="text-on-surface text-mono-lg font-bold">184.2 MB/s</span>
+<span class="text-[10px] text-tertiary block">zstd-19 frame flush</span>
+</div>
+<div class="bg-surface-container rounded p-2">
+<span class="text-outline block">Buffer Dropouts</span>
+<span class="text-status-running text-mono-lg font-bold">0 frames</span>
+<span class="text-[10px] text-on-surface-variant block">Zero packet drops</span>
+</div>
+</div>
+</div>
+<!-- OpenTelemetry OTLP Collectors Status -->
+<div class="bg-surface-container-lowest/60 rounded p-4 space-y-2.5">
+<div class="flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-outline uppercase font-semibold">OTLP/gRPC EXPORTER STATUS</span>
+<span class="font-mono-sm text-mono-sm text-status-running flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span> ALL HEALTHY
+              </span>
+</div>
+<div class="space-y-2">
+<div class="flex items-center justify-between p-2 rounded bg-surface-container font-mono-sm text-mono-sm">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-secondary text-[16px]">sync_alt</span>
+<span class="text-on-surface truncate">tempo.norix.internal:4317</span>
+</div>
+<span class="text-tertiary">Connected (0.4ms)</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container font-mono-sm text-mono-sm">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-primary text-[16px]">query_stats</span>
+<span class="text-on-surface truncate">prometheus.norix.internal:9090</span>
+</div>
+<span class="text-tertiary">Scraping (18.4k series)</span>
+</div>
+</div>
+<div class="pt-1 flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<span>Agent Jemalloc arena: <strong>2 active</strong></span>
+<span class="text-secondary font-semibold">otlp-grpc/v1.28</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Split Section: Logs Ingestion Explorer (60%) vs Alert Rules & Outbox Dispatcher (40%) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+<!-- Left Column: Live Structured Log Explorer (7 Cols / ~60%) -->
+<div class="lg:col-span-7 bg-surface-container-low rounded-lg p-4 space-y-3 flex flex-col justify-between">
+<div>
+<!-- Explorer Header & Query Bar -->
+<div class="flex items-center justify-between gap-2 flex-wrap mb-2">
+<div class="flex items-center gap-2">
+<span class="font-mono-sm text-mono-sm text-outline uppercase font-semibold">LIVE LOG EXPLORER</span>
+<span class="w-2 h-2 rounded-full bg-status-running animate-ping"></span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Streaming 42.8k/s</span>
+</div>
+<div class="flex items-center gap-1.5 font-mono-sm text-mono-sm">
+<button class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface">ALL</button>
+<button class="px-2 py-0.5 rounded bg-surface-container text-secondary">INFO</button>
+<button class="px-2 py-0.5 rounded bg-status-degraded/20 text-status-degraded font-medium">WARN</button>
+<button class="px-2 py-0.5 rounded bg-status-failed/20 text-status-failed font-medium">ERROR</button>
+<button class="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-container-high text-primary flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[13px]">download</span>
+                .zst Dump
+              </button>
+</div>
+</div>
+<!-- Lucene / SQL Filter Query Input -->
+<div class="bg-surface-container-lowest rounded p-2 flex items-center gap-2 font-mono-sm text-mono-sm">
+<span class="text-secondary select-none">&gt;</span>
+<span class="text-primary">project</span><span class="text-on-surface">=</span><span class="text-tertiary">"production-core"</span>
+<span class="text-outline">AND</span>
+<span class="text-primary">level</span> <span class="text-outline">IN</span> (<span class="text-status-degraded">"WARN"</span>, <span class="text-status-failed">"ERROR"</span>)
+            <span class="text-outline">AND</span>
+<span class="text-primary">latency_ms</span> <span class="text-outline">&gt;</span> <span class="text-secondary">100</span>
+<span class="ml-auto text-outline text-[11px]">[0.18s query]</span>
+</div>
+<!-- Structured Log Table Stream -->
+<div class="mt-3 overflow-x-auto">
+<table class="w-full text-left font-mono-sm text-mono-sm">
+<thead>
+<tr class="text-outline uppercase text-[10px] bg-surface-container-lowest/80 border-b border-surface-container-high">
+<th class="py-2 px-2.5">TIMESTAMP (UTC)</th>
+<th class="py-2 px-2">NODE / POD</th>
+<th class="py-2 px-2">LVL</th>
+<th class="py-2 px-2">SERVICE</th>
+<th class="py-2 px-2">MESSAGE / STRUCTURED JSON</th>
+<th class="py-2 px-2 text-right">LATENCY</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-high/40">
+<!-- Log Entry 1: Caddy Ingress Degraded -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-1.5 px-2.5 text-outline whitespace-nowrap">15:59:58.201</td>
+<td class="py-1.5 px-2 text-secondary whitespace-nowrap">node-us-east-01</td>
+<td class="py-1.5 px-2 whitespace-nowrap"><span class="px-1.5 py-0.2 rounded bg-status-degraded/20 text-status-degraded font-semibold">WARN</span></td>
+<td class="py-1.5 px-2 text-primary font-medium whitespace-nowrap">caddy-ingress</td>
+<td class="py-1.5 px-2 text-on-surface truncate max-w-xs">
+<span class="text-outline">upstream_timeout</span> target="auth-service:8080" trace_id="9b7a-c11d"
+                  </td>
+<td class="py-1.5 px-2 text-right text-status-degraded whitespace-nowrap font-medium">142.4ms</td>
+</tr>
+<!-- Log Entry 2: Micro-VM vsock Error -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-1.5 px-2.5 text-outline whitespace-nowrap">15:59:57.882</td>
+<td class="py-1.5 px-2 text-secondary whitespace-nowrap">node-ap-south-01</td>
+<td class="py-1.5 px-2 whitespace-nowrap"><span class="px-1.5 py-0.2 rounded bg-status-failed/20 text-status-failed font-semibold">ERROR</span></td>
+<td class="py-1.5 px-2 text-primary font-medium whitespace-nowrap">cloud-hypervisor</td>
+<td class="py-1.5 px-2 text-on-surface truncate max-w-xs">
+<span class="text-error">vsock: connection reset</span> guest_cid=48 error="guest kernel oom panic"
+                  </td>
+<td class="py-1.5 px-2 text-right text-status-failed whitespace-nowrap font-medium">318.0ms</td>
+</tr>
+<!-- Log Entry 3: Reconciler Daemon Notice -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-1.5 px-2.5 text-outline whitespace-nowrap">15:59:56.410</td>
+<td class="py-1.5 px-2 text-secondary whitespace-nowrap">node-eu-west-01</td>
+<td class="py-1.5 px-2 whitespace-nowrap"><span class="px-1.5 py-0.2 rounded bg-status-degraded/20 text-status-degraded font-semibold">WARN</span></td>
+<td class="py-1.5 px-2 text-primary font-medium whitespace-nowrap">reconciler</td>
+<td class="py-1.5 px-2 text-on-surface truncate max-w-xs">
+<span class="text-outline">cgroup_throttle</span> container_id="norix-edge-proxy" period=100ms
+                  </td>
+<td class="py-1.5 px-2 text-right text-status-degraded whitespace-nowrap font-medium">104.9ms</td>
+</tr>
+<!-- Log Entry 4: Zot Container Registry Ingest -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-1.5 px-2.5 text-outline whitespace-nowrap">15:59:55.109</td>
+<td class="py-1.5 px-2 text-secondary whitespace-nowrap">node-us-east-01</td>
+<td class="py-1.5 px-2 whitespace-nowrap"><span class="px-1.5 py-0.2 rounded bg-status-degraded/20 text-status-degraded font-semibold">WARN</span></td>
+<td class="py-1.5 px-2 text-primary font-medium whitespace-nowrap">zot-registry</td>
+<td class="py-1.5 px-2 text-on-surface truncate max-w-xs">
+<span class="text-outline">manifest_pull_slow</span> digest="sha256:d84f2..." store="s3-mirror"
+                  </td>
+<td class="py-1.5 px-2 text-right text-status-degraded whitespace-nowrap font-medium">210.2ms</td>
+</tr>
+<!-- Log Entry 5: API Gateway Retries -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-1.5 px-2.5 text-outline whitespace-nowrap">15:59:54.004</td>
+<td class="py-1.5 px-2 text-secondary whitespace-nowrap">node-edge-lon-01</td>
+<td class="py-1.5 px-2 whitespace-nowrap"><span class="px-1.5 py-0.2 rounded bg-status-failed/20 text-status-failed font-semibold">ERROR</span></td>
+<td class="py-1.5 px-2 text-primary font-medium whitespace-nowrap">api-gateway</td>
+<td class="py-1.5 px-2 text-on-surface truncate max-w-xs">
+<span class="text-error">http_502_bad_gateway</span> route="/v1/telemetry/push" retry_count=3
+                  </td>
+<td class="py-1.5 px-2 text-right text-status-failed whitespace-nowrap font-medium">450.7ms</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="pt-3 border-t border-surface-container-high flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<span>Showing 5 of 840,291 filtered matches</span>
+<span class="text-tertiary">Live tail: ON (follow scroll)</span>
+</div>
+</div>
+<!-- Right Column: Real-time Alert Rules Engine & Dispatcher (5 Cols / ~40%) -->
+<div class="lg:col-span-5 bg-surface-container-low rounded-lg p-4 space-y-4 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="font-mono-sm text-mono-sm text-outline uppercase font-semibold">PROMETHEUS ALERT RULES (S9 SPEC)</span>
+<span class="font-mono-sm text-mono-sm text-tertiary">4 Registered</span>
+</div>
+<!-- Alert Rules Checklist -->
+<div class="space-y-2">
+<!-- Rule 1: node.down -->
+<div class="p-2.5 rounded bg-surface-container-lowest/70 flex items-center justify-between font-mono-sm text-mono-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-running"></span>
+<div>
+<div class="text-on-surface font-semibold">node.down</div>
+<div class="text-outline text-[10px]">up == 0 (heartbeat &gt; 45s)</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-running/15 text-status-running font-medium">HEALTHY</span>
+</div>
+<!-- Rule 2: log_ingest_dropouts -->
+<div class="p-2.5 rounded bg-surface-container-lowest/70 flex items-center justify-between font-mono-sm text-mono-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-running"></span>
+<div>
+<div class="text-on-surface font-semibold">log_ingest_dropouts</div>
+<div class="text-outline text-[10px]">rate(norix_log_drops_total[1m]) &gt; 0</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-running/15 text-status-running font-medium">0 FIRING</span>
+</div>
+<!-- Rule 3: cgroup_oom_kills -->
+<div class="p-2.5 rounded bg-surface-container-lowest/70 flex items-center justify-between font-mono-sm text-mono-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-running"></span>
+<div>
+<div class="text-on-surface font-semibold">cgroup_oom_kills</div>
+<div class="text-outline text-[10px]">increase(memory.oom_control.oom_kill[5m]) &gt; 0</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-running/15 text-status-running font-medium">HEALTHY</span>
+</div>
+<!-- Rule 4: storage_watermark (WARNING) -->
+<div class="p-2.5 rounded bg-surface-container-lowest/70 flex items-center justify-between font-mono-sm text-mono-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-degraded animate-pulse"></span>
+<div>
+<div class="text-on-surface font-semibold">storage_watermark</div>
+<div class="text-status-degraded text-[10px]">node-ap-south-01 &gt; 85% NVMe watermark</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-status-degraded/20 text-status-degraded font-medium">WARNING</span>
+</div>
+</div>
+<!-- Alert Outbox Dispatch Channels -->
+<div class="mt-4 pt-3 border-t border-surface-container-high">
+<div class="flex items-center justify-between mb-2">
+<span class="font-mono-sm text-mono-sm text-outline uppercase font-semibold">OUTBOX DISPATCHERS</span>
+<span class="font-mono-sm text-mono-sm text-secondary">3 Active Pipes</span>
+</div>
+<div class="space-y-1.5 font-mono-sm text-mono-sm">
+<div class="flex items-center justify-between p-1.5 rounded bg-surface-container text-on-surface-variant">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[15px] text-tertiary">check_circle</span>
+                  Slack #ops-critical
+                </span>
+<span class="text-tertiary">Armed</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-surface-container text-on-surface-variant">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[15px] text-tertiary">check_circle</span>
+                  Webhook: NORIX_ALERT_WEBHOOK_URL
+                </span>
+<span class="text-secondary">200 OK (4m ago)</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-surface-container text-on-surface-variant">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[15px] text-tertiary">check_circle</span>
+                  PagerDuty (Escalation Level 1)
+                </span>
+<span class="text-tertiary">Standby</span>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-3 border-t border-surface-container-high flex items-center justify-between text-on-surface-variant font-mono-sm text-mono-sm">
+<span>Alertmanager v0.26 / Cluster Ring</span>
+<span class="text-primary cursor-pointer hover:underline">Edit Dispatch Matrix →</span>
+</div>
+</div>
+</div>
+</div>
+</div></main>
+</div>
+</body></html>

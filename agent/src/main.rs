@@ -6,11 +6,13 @@ mod edge;
 mod network;
 mod proto_num;
 mod runtime;
+mod wasm;
 
 use std::path::Path;
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
+use std::future::Future;
 use tokio::signal;
 use tokio::time::{sleep, Instant};
 use tracing::{info, warn};
@@ -22,6 +24,9 @@ use crate::runtime::Runtime;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let check_only = args.iter().any(|arg| arg == "--check" || arg == "check");
+
     let filter = std::env::var("NORIX_AGENT_LOG_LEVEL")
         .ok()
         .and_then(|value| tracing_subscriber::EnvFilter::try_new(value).ok())
@@ -30,6 +35,24 @@ async fn main() -> Result<()> {
 
     let config = Config::from_env()?;
     config.ensure_workdir()?;
+    config.validate_for_startup()?;
+
+    if check_only {
+        match Runtime::detect().await {
+            Ok(_) => {
+                info!(
+                    control_plane = %config.control_plane_url,
+                    workdir = %config.workdir.display(),
+                    "agent configuration and runtime validation passed"
+                );
+                return Ok(());
+            }
+            Err(error) => {
+                bail!("agent validation failed: {error}");
+            }
+        }
+    }
+
     let client = AgentClient::new(config.api_base())?;
     let caps = detect(&config.agent_version);
     info!(
@@ -77,34 +100,66 @@ async fn main() -> Result<()> {
                             if !desired.desired_builds.is_empty() {
                                 info!(count = desired.desired_builds.len(), "running desired builds");
                                 for observed in runtime.run_builds(&desired.desired_builds).await {
-                                    if let Err(error) = client.report_build(&state, &observed).await {
-                                        warn!(%error, "report build failed");
+                                    if let Err(error) = retry_operation(
+                                        "report_build",
+                                        || client.report_build(&state, &observed),
+                                        3,
+                                        Duration::from_millis(250),
+                                    )
+                                    .await
+                                    {
+                                        warn!(%error, build_id = %observed.id, "report build failed after retries");
                                     }
                                 }
                             }
                             if !desired.desired_workloads.is_empty() {
                                 info!(count = desired.desired_workloads.len(), "reconciling desired workloads");
                                 let observed = runtime.reconcile(&desired.desired_workloads).await;
-                                if let Err(error) = client.report_observed(&state, &observed).await {
-                                    warn!(%error, "report observed failed");
+                                if let Err(error) = retry_operation(
+                                    "report_observed",
+                                    || client.report_observed(&state, &observed),
+                                    3,
+                                    Duration::from_millis(250),
+                                )
+                                .await
+                                {
+                                    warn!(%error, "report observed failed after retries");
                                 }
                             }
                         } else if !desired.desired_workloads.is_empty() || !desired.desired_builds.is_empty() {
-                            warn!("desired builds/workloads pending but no container runtime");
+                            warn!("desired builds/workloads pending but no container runtime; degraded mode active");
                         }
                         if let Some(plan) = desired.desired_edge.as_ref() {
                             info!(generation = plan.generation, "applying edge plan");
                             let observed = edge::apply_edge(plan).await;
-                            if let Err(error) = client.report_edge(&state, &observed).await {
-                                warn!(%error, "report edge failed");
+                            if let Err(error) = retry_operation(
+                                "report_edge",
+                                || client.report_edge(&state, &observed),
+                                3,
+                                Duration::from_millis(300),
+                            )
+                            .await
+                            {
+                                warn!(%error, "report edge failed after retries");
                             }
                         }
                         if let Some(plan) = desired.desired_network.as_ref() {
                             info!(generation = plan.generation, "applying network plan");
                             let observed = network::apply_network(plan, &config.workdir).await;
-                            if let Err(error) = client.report_network(&state, &observed).await {
-                                warn!(%error, "report network failed");
+                            if let Err(error) = retry_operation(
+                                "report_network",
+                                || client.report_network(&state, &observed),
+                                3,
+                                Duration::from_millis(300),
+                            )
+                            .await
+                            {
+                                warn!(%error, "report network failed after retries");
                             }
+                        }
+                        // S15: dry-run wasm config until DesiredWorkload runtime=wasm lands.
+                        if let Err(error) = wasm::apply_wasm_plan(&config.workdir, &[]) {
+                            warn!(%error, "wasm plan write failed");
                         }
                     }
                     Err(error) => {
@@ -118,6 +173,31 @@ async fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+async fn retry_operation<F, Fut, T>(
+    label: &str,
+    mut op: F,
+    max_attempts: usize,
+    initial_backoff: Duration,
+) -> Result<T>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<T>>,
+{
+    let mut backoff = initial_backoff;
+    for attempt in 1..=max_attempts {
+        match op().await {
+            Ok(value) => return Ok(value),
+            Err(error) if attempt < max_attempts => {
+                warn!(%error, operation = label, attempt, backoff = ?backoff, "operation failed; retrying");
+                sleep(backoff).await;
+                backoff = (backoff * 2).min(Duration::from_secs(10));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    bail!("operation {label} exhausted retries")
 }
 
 async fn load_or_enroll(
@@ -206,4 +286,51 @@ fn cpu_usage_percent() -> f64 {
         return 0.0;
     }
     ((1.0 - idle_delta / total_delta) * 100.0).clamp(0.0, 100.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::retry_operation;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::time::Duration;
+
+    #[tokio::test]
+    async fn retry_operation_retries_until_success() {
+        let attempts = std::sync::Arc::new(AtomicUsize::new(0));
+        let attempts_clone = attempts.clone();
+
+        let value = retry_operation(
+            "test_op",
+            move || {
+                let count = attempts_clone.fetch_add(1, Ordering::SeqCst);
+                let future = async move {
+                    if count < 2 {
+                        Err(anyhow::anyhow!("transient fail"))
+                    } else {
+                        Ok("ok")
+                    }
+                };
+                future
+            },
+            3,
+            Duration::from_millis(1),
+        )
+        .await;
+
+        assert!(value.is_ok());
+        assert_eq!(attempts.load(Ordering::SeqCst), 3);
+    }
+
+    #[tokio::test]
+    async fn retry_operation_exhausts_and_reports_error() {
+        let value: Result<&str, anyhow::Error> = retry_operation(
+            "test_op",
+            || async { Err(anyhow::anyhow!("persistent fail")) },
+            2,
+            Duration::from_millis(1),
+        )
+        .await;
+
+        assert!(value.is_err());
+    }
 }

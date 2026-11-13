@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
+
+message WasmFunction {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string image_ref = 4;
+  string status = 5;
+  int64 fuel_limit = 6;
+  int32 memory_limit_mb = 7;
+}
+
+message ListWasmFunctionsRequest {
+  string project_id = 1;
+}
+
+message ListWasmFunctionsResponse {
+  repeated WasmFunction functions = 1;
+}
+
+message CreateWasmFunctionRequest {
+  string project_id = 1;
+  string name = 2;
+  string image_ref = 3;
+  int64 fuel_limit = 4;
+  int32 memory_limit_mb = 5;
+}
+
+message CreateWasmFunctionResponse {
+  WasmFunction function = 1;
+}
+
+service WasmService {
+  rpc ListWasmFunctions(ListWasmFunctionsRequest) returns (ListWasmFunctionsResponse);
+  rpc CreateWasmFunction(CreateWasmFunctionRequest) returns (CreateWasmFunctionResponse);
+}

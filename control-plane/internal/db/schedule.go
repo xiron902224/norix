@@ -59,6 +59,10 @@ func RequireKVMForRuntime(runtime string) bool {
 	}
 }
 
+func RequireKVMForIsolation(mode string) bool {
+	return strings.ToLower(strings.TrimSpace(mode)) == "microvm_required"
+}
+
 // ListSchedulableNodes returns online inventory with assignment pressure for scoring.
 func ListSchedulableNodes(ctx context.Context, pool *pgxpool.Pool, tenantID string) ([]scheduler.Node, error) {
 	tx, err := pool.Begin(ctx)
@@ -110,7 +114,7 @@ func ListSchedulableNodes(ctx context.Context, pool *pgxpool.Pool, tenantID stri
 }
 
 func ScheduleRequestFromWorkload(workload Workload) scheduler.Request {
-	requireKVM := workload.RequireKVM || RequireKVMForRuntime(workload.Runtime)
+	requireKVM := workload.RequireKVM || RequireKVMForRuntime(workload.Runtime) || RequireKVMForIsolation(workload.IsolationMode)
 	strategy := workload.ScheduleStrategy
 	if strategy == "" {
 		strategy = "spread"
@@ -132,6 +136,18 @@ func PickScheduledNode(ctx context.Context, pool *pgxpool.Pool, tenantID string,
 	candidates, err := ListSchedulableNodes(ctx, pool, tenantID)
 	if err != nil {
 		return Node{}, err
+	}
+	if req.RequireKVM {
+		hasKVM := false
+		for _, node := range candidates {
+			if node.KVMLevel >= 1 {
+				hasKVM = true
+				break
+			}
+		}
+		if !hasKVM && len(candidates) > 0 {
+			return Node{}, fmt.Errorf("unschedulable: microvm_required but no node with KVM")
+		}
 	}
 	if len(candidates) == 0 {
 		local, ensureErr := EnsureLocalNode(ctx, pool, tenantID, DetectHostCapabilities())
@@ -403,7 +419,7 @@ func DeployWorkloadReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID, w
 	if image == "" || image == "pending-build" || workload.Status == "building" {
 		return Deployment{}, Workload{}, fmt.Errorf("image is not ready yet (git build still pending); wait for the build to finish or open Build logs")
 	}
-	if RequireKVMForRuntime(workload.Runtime) {
+	if RequireKVMForRuntime(workload.Runtime) || RequireKVMForIsolation(workload.IsolationMode) {
 		workload.RequireKVM = true
 	}
 	if workload.ReplicaCount <= 0 {
@@ -477,7 +493,8 @@ func DeployWorkloadReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID, w
 		       desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
 		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
-		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text
+		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
+		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker')
 		FROM workloads WHERE id = $1::uuid`, workloadID)
 	if err != nil {
 		return Deployment{}, Workload{}, err

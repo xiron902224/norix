@@ -4,7 +4,7 @@ import { Button } from '../../../shared/ui/Button'
 import { FormField } from '../../../shared/ui/FormField'
 import { SelectField } from '../../../shared/ui/SelectField'
 import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
-import { domainHttpUrl, domainPublicUrl } from '../../../shared/lib/edge'
+import { domainPublicUrl } from '../../../shared/lib/edge'
 import type { DomainRoute, Project, Workload } from '../../../gen/v1/workload_pb'
 import { listProjects, listWorkloads } from '../../projects/services/projects-api'
 import { assignDomain, listDomains, unassignDomain } from '../services/domains-api'
@@ -202,16 +202,16 @@ export function DomainsPage() {
         </form>
       </section>
 
-      <section className="panel flux-shadow lift-card">
+      <section className="panel flux-shadow lift-card panel-table">
         <header className="panel-header">
           <div>
-            <h3>Routes</h3>
+            <h3>Domains &amp; routes</h3>
             <p className="muted">Links open the edge listener on port 8443 (HTTPS) or 8088 (HTTP).</p>
           </div>
         </header>
 
         {loading ? (
-          <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading domains…</span></div>
+          <div className="loading-row" style={{ margin: '0 20px 16px' }}><span className="spinner" aria-hidden /><span>Loading domains…</span></div>
         ) : null}
 
         {!loading && routes.length === 0 ? (
@@ -222,63 +222,73 @@ export function DomainsPage() {
           </div>
         ) : null}
 
-        <ul className="resource-list">
-          {routes.map((route) => {
-            const https = domainPublicUrl(route.hostname, route.httpsUrl)
-            const http = domainHttpUrl(route.hostname)
-            const isBusy = busyStatus(route.status)
-            return (
-              <li key={route.id} className="workload-row">
-                <div className="resource-link">
-                  <strong>{route.hostname}</strong>
-                  <div className="resource-meta">
-                    <span className={`status-badge status-${route.status || 'pending'} ${isBusy ? 'is-busy' : ''}`}>
-                      {route.status || 'pending'}
-                    </span>
-                    <span className="chip">tls {route.tlsMode}</span>
-                    <span className="mono">gen {String(route.edgeGeneration)}</span>
-                  </div>
-                  <p className="hint-line">
-                    {route.status === 'active' ? (
-                      <>
-                        <a className="endpoint-link" href={https} target="_blank" rel="noreferrer">
-                          {https} <ExternalLink size={12} />
-                        </a>
-                        {' · '}
-                        <a className="endpoint-link" href={http} target="_blank" rel="noreferrer">
-                          {http}
-                        </a>
-                      </>
-                    ) : isBusy ? (
-                      'Waiting for edge reconcile…'
-                    ) : (
-                      route.lastError || 'Not active yet'
-                    )}
-                  </p>
-                </div>
-                <div className="row-actions">
-                  {route.status === 'active' ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => window.open(https, '_blank', 'noopener,noreferrer')}
-                    >
-                      <Link2 size={14} /> Open HTTPS
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="danger"
-                    type="button"
-                    disabled={removingId === route.id}
-                    onClick={() => void onRemove(route)}
-                  >
-                    <Trash2 size={14} /> {removingId === route.id ? 'Removing…' : 'Remove'}
-                  </Button>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
+        {routes.length > 0 ? (
+          <div className="table-scroll">
+            <table className="dense-table">
+              <thead>
+                <tr>
+                  <th>Hostname</th>
+                  <th>TLS</th>
+                  <th>Status</th>
+                  <th>Generation</th>
+                  <th>Endpoint</th>
+                  <th className="align-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {routes.map((route) => {
+                  const https = domainPublicUrl(route.hostname, route.httpsUrl)
+                  const isBusy = busyStatus(route.status)
+                  return (
+                    <tr key={route.id}>
+                      <td>
+                        <strong>{route.hostname}</strong>
+                        <div className="mono table-sub">{route.workloadId || route.id}</div>
+                      </td>
+                      <td className="mono">{route.tlsMode || 'auto'}</td>
+                      <td>
+                        <span className={`status-chip status-${route.status === 'active' ? 'running' : isBusy ? 'pending' : 'stopped'}`}>
+                          {route.status || 'pending'}
+                        </span>
+                      </td>
+                      <td className="mono">{String(route.edgeGeneration)}</td>
+                      <td>
+                        {route.status === 'active' ? (
+                          <a className="endpoint-link" href={https} target="_blank" rel="noreferrer">
+                            {https.split('://')[1]} <ExternalLink size={12} />
+                          </a>
+                        ) : (
+                          <span className="muted">{isBusy ? 'Reconciling…' : (route.lastError || '—')}</span>
+                        )}
+                      </td>
+                      <td className="align-right">
+                        <div className="row-actions">
+                          {route.status === 'active' ? (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => window.open(https, '_blank', 'noopener,noreferrer')}
+                            >
+                              <Link2 size={14} /> HTTPS
+                            </Button>
+                          ) : null}
+                          <Button
+                            variant="danger"
+                            type="button"
+                            disabled={removingId === route.id}
+                            onClick={() => void onRemove(route)}
+                          >
+                            <Trash2 size={14} /> {removingId === route.id ? '…' : 'Remove'}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </section>
     </section>
   )

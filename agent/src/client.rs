@@ -87,6 +87,7 @@ struct HeartbeatRequest<'a> {
 #[serde(rename_all = "camelCase")]
 pub struct DesiredBuild {
     pub id: String,
+    #[allow(dead_code)]
     #[serde(default)]
     pub workload_id: String,
     #[serde(default)]
@@ -124,6 +125,7 @@ pub struct DesiredEdgeRoute {
     pub upstream: String,
     #[serde(default)]
     pub tls_mode: String,
+    #[allow(dead_code)]
     #[serde(default, deserialize_with = "deserialize_i64")]
     pub edge_generation: i64,
     #[serde(default)]
@@ -156,16 +158,22 @@ pub struct ObservedEdge {
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct DesiredNetworkPeer {
+    #[allow(dead_code)]
     #[serde(default)]
     pub node_id: String,
+    #[allow(dead_code)]
     #[serde(default)]
     pub node_name: String,
+    #[allow(dead_code)]
     #[serde(default)]
     pub public_key: String,
+    #[allow(dead_code)]
     #[serde(default)]
     pub address: String,
+    #[allow(dead_code)]
     #[serde(default)]
     pub endpoint: String,
+    #[allow(dead_code)]
     #[serde(default)]
     pub allowed_ips: String,
 }
@@ -179,6 +187,7 @@ pub struct DesiredNetworkDNSRecord {
     pub r#type: String,
     #[serde(default)]
     pub value: String,
+    #[allow(dead_code)]
     #[serde(default, deserialize_with = "deserialize_i32")]
     pub ttl_seconds: i32,
 }
@@ -192,8 +201,10 @@ pub struct DesiredNetworkCertificate {
     pub cert_pem: String,
     #[serde(default)]
     pub key_pem: String,
+    #[allow(dead_code)]
     #[serde(default)]
     pub not_after: String,
+    #[allow(dead_code)]
     #[serde(default)]
     pub issuer: String,
 }
@@ -203,14 +214,18 @@ pub struct DesiredNetworkCertificate {
 pub struct DesiredNetworkPlan {
     #[serde(default, deserialize_with = "deserialize_i64")]
     pub generation: i64,
+    #[allow(dead_code)]
     #[serde(default)]
     pub interface: String,
     #[serde(default)]
     pub address: String,
+    #[allow(dead_code)]
     #[serde(default, deserialize_with = "deserialize_i32")]
     pub listen_port: i32,
+    #[allow(dead_code)]
     #[serde(default)]
     pub private_key: String,
+    #[allow(dead_code)]
     #[serde(default)]
     pub public_key: String,
     #[serde(default)]

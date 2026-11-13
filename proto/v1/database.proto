@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
+
+enum ManagedDatabaseEngine {
+  MANAGED_DATABASE_ENGINE_UNSPECIFIED = 0;
+  MANAGED_DATABASE_ENGINE_POSTGRES = 1;
+  MANAGED_DATABASE_ENGINE_MYSQL = 2;
+  MANAGED_DATABASE_ENGINE_REDIS = 3;
+  MANAGED_DATABASE_ENGINE_MONGODB = 4;
+}
+
+message ManagedDatabase {
+  string id = 1;
+  string project_id = 2;
+  ManagedDatabaseEngine engine = 3;
+  string name = 4;
+  string status = 5;
+  string node_id = 6;
+  string volume_path = 7;
+  string backup_schedule = 8;
+  int64 last_backup_at = 9;
+}
+
+message ListManagedDatabasesRequest {
+  string project_id = 1;
+}
+
+message ListManagedDatabasesResponse {
+  repeated ManagedDatabase databases = 1;
+}
+
+message CreateManagedDatabaseRequest {
+  string project_id = 1;
+  ManagedDatabaseEngine engine = 2;
+  string name = 3;
+  string backup_schedule = 4;
+}
+
+message CreateManagedDatabaseResponse {
+  ManagedDatabase database = 1;
+}
+
+message BackupManagedDatabaseRequest {
+  string id = 1;
+}
+
+message BackupManagedDatabaseResponse {
+  ManagedDatabase database = 1;
+}
+
+message RestoreManagedDatabaseRequest {
+  string id = 1;
+}
+
+message RestoreManagedDatabaseResponse {
+  ManagedDatabase database = 1;
+}
+
+service DatabaseService {
+  rpc ListManagedDatabases(ListManagedDatabasesRequest) returns (ListManagedDatabasesResponse);
+  rpc CreateManagedDatabase(CreateManagedDatabaseRequest) returns (CreateManagedDatabaseResponse);
+  rpc BackupManagedDatabase(BackupManagedDatabaseRequest) returns (BackupManagedDatabaseResponse);
+  rpc RestoreManagedDatabase(RestoreManagedDatabaseRequest) returns (RestoreManagedDatabaseResponse);
+}

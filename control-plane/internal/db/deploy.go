@@ -57,7 +57,8 @@ func GetWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID s
 		       desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
 		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
-		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text
+		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
+		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker')
 		FROM workloads WHERE id = $1::uuid`, workloadID)
 	if err != nil {
 		return Workload{}, err
@@ -78,7 +79,7 @@ func scanWorkload(ctx context.Context, tx pgx.Tx, query string, args ...any) (Wo
 		&workload.LastError, &workload.DesiredAction,
 		&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 		&workload.ReplicaCount, &workload.ScheduleStrategy, &workload.RequireKVM, &workload.PreferredZone,
-		&affinityText, &antiAffinityText,
+		&affinityText, &antiAffinityText, &workload.IsolationMode, &workload.ExecutionRuntime,
 	)
 	if err != nil {
 		return Workload{}, fmt.Errorf("get workload: %w", err)
@@ -92,6 +93,9 @@ func scanWorkload(ctx context.Context, tx pgx.Tx, query string, args ...any) (Wo
 	}
 	if workload.ScheduleStrategy == "" {
 		workload.ScheduleStrategy = "spread"
+	}
+	if RequireKVMForIsolation(workload.IsolationMode) {
+		workload.RequireKVM = true
 	}
 	return workload, nil
 }
@@ -150,7 +154,13 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 		FROM workload_replicas wr
 		JOIN workloads w ON w.id = wr.workload_id
 		WHERE wr.assigned_node_id = $1::uuid
-		  AND wr.desired_action IN ('run', 'stop')
+		  AND (
+			-- Explicit mutate intents.
+			wr.desired_action IN ('run', 'stop')
+			-- Self-heal: keep ensuring containers that should already be up
+			-- (covers host restarts / accidental docker rm while action=none).
+			OR (wr.desired_action = 'none' AND wr.status IN ('running', 'deploying'))
+		  )
 		  AND (
 			wr.desired_action = 'stop'
 			OR (

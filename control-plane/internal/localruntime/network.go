@@ -12,6 +12,7 @@ import (
 	"github.com/xiron902224/norix/control-plane/internal/db"
 )
 
+// ApplyNetwork writes mesh artifacts locally; live wg-quick/nft only when plan.Apply is true (NORIX_APPLY_WIREGUARD).
 func (runtime *Runtime) ApplyNetwork(ctx context.Context, plan db.DesiredNetworkPlan) db.ObservedNetwork {
 	logs := []string{
 		fmt.Sprintf("network generation %d address=%s peers=%d dns=%d apply=%v",
@@ -55,7 +56,8 @@ func (runtime *Runtime) ApplyNetwork(ctx context.Context, plan db.DesiredNetwork
 	}
 
 	if !plan.Apply {
-		logs = append(logs, "dry-run: set NORIX_APPLY_WIREGUARD=1 to bring up wg-norix / nft")
+		// Apply path: control plane sets plan.Apply via db.NetworkApplyEnabled() when NORIX_APPLY_WIREGUARD is set.
+		logs = append(logs, "dry-run: set NORIX_APPLY_WIREGUARD=1 on control plane to bring up wg-norix / nft")
 		return db.ObservedNetwork{
 			Generation: plan.Generation,
 			Status:     "ready",

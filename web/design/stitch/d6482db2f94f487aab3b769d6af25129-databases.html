@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_dashboard" name="shell-type"/>
+<title>Norix PaaS — Backups, Volumes &amp; Disaster Recovery</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "outline": "#8f8fa2",
+          "secondary-fixed": "#acedff",
+          "status-enrolling": "#06B6D4",
+          "on-secondary-fixed": "#001f26",
+          "on-tertiary-container": "#e3ffe7",
+          "on-background": "#dfe2eb",
+          "tertiary-container": "#008349",
+          "on-tertiary": "#00391d",
+          "inverse-primary": "#2e48eb",
+          "surface-bright": "#353940",
+          "tertiary-fixed-dim": "#51df8e",
+          "tertiary-fixed": "#70fda7",
+          "surface": "#10141a",
+          "on-primary-container": "#f9f7ff",
+          "on-error": "#690005",
+          "on-primary": "#001b96",
+          "on-tertiary-fixed-variant": "#00522c",
+          "error": "#ffb4ab",
+          "primary-container": "#465fff",
+          "on-surface-variant": "#c5c5d8",
+          "border-light": "#E2E8F0",
+          "surface-container-high": "#262a31",
+          "border-dark": "#30363D",
+          "surface-container-highest": "#31353c",
+          "surface-container-lowest": "#0a0e14",
+          "inverse-on-surface": "#2d3137",
+          "status-stopped": "#64748B",
+          "error-container": "#93000a",
+          "on-secondary-fixed-variant": "#004e5c",
+          "surface-tint": "#bbc3ff",
+          "on-tertiary-fixed": "#00210e",
+          "on-error-container": "#ffdad6",
+          "surface-light-card": "#FFFFFF",
+          "outline-variant": "#444656",
+          "secondary": "#4cd7f6",
+          "on-secondary-container": "#00424e",
+          "surface-dark-overlay": "#21262D",
+          "tertiary": "#51df8e",
+          "primary-fixed": "#dfe0ff",
+          "on-primary-fixed": "#000d5f",
+          "status-failed": "#EF4444",
+          "surface-variant": "#31353c",
+          "status-degraded": "#F59E0B",
+          "inverse-surface": "#dfe2eb",
+          "on-surface": "#dfe2eb",
+          "secondary-container": "#03b5d3",
+          "secondary-fixed-dim": "#4cd7f6",
+          "on-secondary": "#003640",
+          "status-running": "#12B76A",
+          "surface-dark-canvas": "#0D1117",
+          "primary-fixed-dim": "#bbc3ff",
+          "surface-container-low": "#181c22",
+          "surface-container": "#1c2026",
+          "background": "#10141a",
+          "on-primary-fixed-variant": "#0029d2",
+          "surface-light-subtle": "#F1F5F9",
+          "surface-light-canvas": "#F8FAFC",
+          "surface-dim": "#10141a",
+          "primary": "#bbc3ff",
+          "surface-dark-card": "#161B22"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "lg": "0.25rem",
+          "xl": "0.5rem",
+          "full": "0.75rem"
+        },
+        "spacing": {
+          "margin-lg": "2rem",
+          "space-xl": "1.5rem",
+          "space-2xl": "2rem",
+          "space-md": "0.75rem",
+          "space-sm": "0.5rem",
+          "gutter": "1rem",
+          "space-lg": "1rem",
+          "gutter-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "margin": "1rem",
+          "margin-md": "1.5rem"
+        },
+        "fontFamily": {
+          "headline-md": ["Inter"],
+          "headline-xl-mobile": ["Inter"],
+          "mono-sm": ["JetBrains Mono"],
+          "headline-sm": ["Inter"],
+          "mono-md": ["JetBrains Mono"],
+          "label-sm": ["JetBrains Mono"],
+          "body-sm": ["Inter"],
+          "body-lg": ["Inter"],
+          "headline-lg": ["Inter"],
+          "label-md": ["Inter"],
+          "headline-xl": ["Inter"],
+          "mono-lg": ["JetBrains Mono"],
+          "body-md": ["Inter"],
+          sans: ["Inter", "sans-serif"],
+          mono: ["JetBrains Mono", "monospace"]
+        },
+        "fontSize": {
+          "headline-md": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+          "headline-xl-mobile": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+          "mono-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.02em", "fontWeight": "400" }],
+          "headline-sm": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+          "mono-md": ["0.75rem", { "lineHeight": "1.125rem", "letterSpacing": "0em", "fontWeight": "400" }],
+          "label-sm": ["0.625rem", { "lineHeight": "0.75rem", "letterSpacing": "0.06em", "fontWeight": "600" }],
+          "body-sm": ["0.75rem", { "lineHeight": "1rem", "fontWeight": "400" }],
+          "body-lg": ["1rem", { "lineHeight": "1.5rem", "fontWeight": "400" }],
+          "headline-lg": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+          "label-md": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.04em", "fontWeight": "600" }],
+          "headline-xl": ["2rem", { "lineHeight": "2.5rem", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+          "mono-lg": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+          "body-md": ["0.875rem", { "lineHeight": "1.25rem", "fontWeight": "400" }]
+        }
+      }
+    }
+  };
+</script>
+<style>
+  @layer base {
+    html, body { margin: 0; padding: 0; }
+    body { overscroll-behavior: none; }
+  }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #0a0e14; }
+  ::-webkit-scrollbar-thumb { background: #30363D; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #444656; }
+</style>
+</head>
+<body class="bg-surface font-sans text-on-surface antialiased text-[13px] selection:bg-primary-container selection:text-white">
+<!-- Left Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-screen w-64 bg-surface-container-lowest border-r border-border-dark flex flex-col z-50 overflow-hidden">
+<!-- Brand / Cluster Switcher -->
+<div class="p-4 border-b border-border-dark">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-white shadow-sm ring-1 ring-white/20">
+<span class="material-symbols-outlined text-[20px]">token</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="text-base tracking-tight text-on-surface font-bold">Norix</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary text-[10px] font-mono tracking-wider font-semibold">v0.5-beta</span>
+</div>
+</div>
+</div>
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-border-dark hover:border-outline/40 hover:bg-surface-container transition-all text-left group">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-[15px] text-tertiary group-hover:scale-110 transition-transform">cloud</span>
+<div class="truncate">
+<span class="block text-[11px] font-mono text-on-surface truncate">Acme Cloud / Prod</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">unfold_more</span>
+</button>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Overview</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#">
+<span>Dashboard</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="projects-apps" href="#">
+<span>Projects &amp; Apps</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Infrastructure</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="compute-nodes" href="#">
+<span>Compute Nodes</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="sandboxes-ephemeral-micro-vms-kvm" href="#">
+<span>Sandboxes &amp; Micro-VMs</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Traffic &amp; Networking</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="domains-edge" href="#">
+<span>Domains &amp; Edge</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="wireguard-mesh" href="#">
+<span>WireGuard Mesh</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Operations</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="observability-metrics" href="#">
+<span>Observability &amp; Metrics</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="builds-ci" href="#">
+<span>Builds &amp; CI</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md bg-primary-container/15 text-primary border border-primary/30 font-medium hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="backups-storage" href="#">
+<span>Backups &amp; Storage</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="audit-activity" href="#">
+<span>Audit &amp; Activity</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Settings</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="api-keys-secrets" href="#">
+<span>API Keys &amp; Secrets</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="team-rbac" href="#">
+<span>Team &amp; RBAC</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="cluster-config" href="#">
+<span>Cluster Config</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Daemon status pill & Heartbeat footer -->
+<div class="p-3 border-t border-border-dark bg-surface-container-lowest/80 space-y-1.5">
+<div class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span>HTTP/Connect</span>
+<span class="text-status-running">200 OK</span>
+</div>
+<div class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>Postgres 16</span>
+<span class="text-tertiary">Healthy</span>
+</div>
+<div class="pt-1.5 border-t border-border-dark/60 flex items-center justify-between text-[10px] font-mono text-outline">
+<span>AGENT HEARTBEAT</span>
+<span class="text-secondary">1,248 pings/m</span>
+</div>
+</div>
+</aside>
+<!-- Top App Header -->
+<div class="pl-64">
+<header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-dark z-40 px-6 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[17px]">search</span>
+<input class="w-full bg-surface-container-low border border-border-dark rounded-lg px-2.5 pl-8 py-1.5 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all font-mono" placeholder="Search workloads, nodes, commits, routes... [Ctrl+K]" type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="hidden xl:flex items-center gap-1.5 font-mono text-[11px]">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span class="text-on-surface-variant">Nodes:</span>
+<span class="text-on-surface font-semibold">12/12</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-status-enrolling"></span>
+<span class="text-on-surface-variant">Workloads:</span>
+<span class="text-on-surface font-semibold">34</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="text-on-surface-variant">KVM:</span>
+<span class="text-tertiary font-semibold">L2 OK</span>
+</div>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high border border-border-dark text-on-surface text-xs font-medium transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">add</span>
+<span>New Workload</span>
+</button>
+<button aria-label="Notifications" class="relative p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[19px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-status-failed"></span>
+</button>
+<div class="h-4 w-px bg-border-dark"></div>
+<div class="flex items-center gap-2 pl-1">
+<div class="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-mono text-xs font-semibold">
+  DL
+</div>
+<div class="hidden md:block text-left leading-none">
+<div class="text-[12px] font-semibold text-on-surface">DevOps Lead</div>
+<div class="text-[10px] text-tertiary font-mono mt-0.5">Owner</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Command Context Bar -->
+<div class="px-6 py-5 bg-surface-container-lowest border-b border-border-dark/60">
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+<div>
+<!-- Breadcrumbs & Status Tag -->
+<div class="flex items-center gap-2 text-mono-sm text-outline mb-1.5 uppercase font-mono">
+<span>Operations</span>
+<span class="text-outline-variant">/</span>
+<span class="text-primary font-medium tracking-wider">Databases &amp; Storage</span>
+<span class="text-outline-variant">/</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-secondary text-mono-sm font-semibold border border-border-dark">Sprint 10 DoD</span>
+</div>
+<!-- Specification Sub-pill -->
+<div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-surface-container-high/80 text-[10px] font-mono text-tertiary-fixed-dim border border-border-dark mb-2">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span>POSTGRESQL 16 • REDIS 7 • MYSQL 8.4 • MONGODB 7 • S3 CONTINUOUS WAL &amp; AGE ENCRYPTION</span>
+</div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Managed Databases, Volume Placement &amp; S3 Backup Vault</h1>
+<p class="text-body-sm text-on-surface-variant max-w-4xl mt-1">
+          Provisioning de bases de datos 1-click con afinidad de nodo estricta, volúmenes locales NVMe de alta velocidad, streaming continuo WAL, snapshots periódicos cifrados con age (X25519) y verificación automatizada de restauración.
+        </p>
+</div>
+<!-- Action Button Group -->
+<div class="flex flex-wrap items-center gap-2.5 shrink-0">
+<button class="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-mono-md border border-border-dark transition-colors">
+<span class="material-symbols-outlined text-[16px] text-secondary">database</span>
+<span>Storage Pools &amp; NVMe</span>
+</button>
+<button class="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-mono-md border border-border-dark transition-colors">
+<span class="material-symbols-outlined text-[16px] text-tertiary">cloud_sync</span>
+<span>S3 Vault Config</span>
+</button>
+<button class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded bg-primary-container hover:bg-inverse-primary text-white text-mono-md font-medium shadow-[0_0_15px_rgba(70,95,255,0.35)] transition-all">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>+ Provision New Database</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Main Body Content -->
+<div class="p-6 space-y-6">
+<!-- KPI Metric Cards Grid (Dense 4-Column Layout) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Card 1: Managed Instances & Engines -->
+<div class="p-4 rounded-lg bg-surface-container-low border border-border-dark flex flex-col justify-between hover:border-outline/40 transition-colors">
+<div>
+<div class="flex items-center justify-between text-mono-sm text-outline mb-1 font-mono uppercase tracking-wider">
+<span>Managed Instances</span>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-status-running bg-status-running/10 border border-status-running/20">
+<span class="w-1 h-1 rounded-full bg-status-running animate-pulse"></span>
+              100% HEALTHY
+            </span>
+</div>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-headline-md font-headline-md text-on-surface font-semibold">14 Active</span>
+<span class="text-mono-sm text-on-surface-variant font-mono">(PG: 8 • RD: 4 • MG: 2)</span>
+</div>
+</div>
+<!-- Inline Sparkline conn pool -->
+<div class="my-3">
+<div class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant mb-1">
+<span>Client Connection Pool</span>
+<span class="text-secondary font-semibold">1,420 / 3,000 active</span>
+</div>
+<div class="h-8 w-full flex items-end gap-1 pt-1">
+<svg class="w-full h-8 overflow-visible" preserveaspectratio="none" viewbox="0 0 160 30">
+<path d="M0,24 Q20,10 40,18 T80,12 T120,6 T160,14" fill="none" stroke="#4cd7f6" stroke-linecap="round" stroke-width="2"></path>
+<path d="M0,24 Q20,10 40,18 T80,12 T120,6 T160,14 L160,30 L0,30 Z" fill="rgba(76, 215, 246, 0.08)"></path>
+</svg>
+</div>
+</div>
+<div class="pt-2 border-t border-border-dark/60 text-[11px] font-mono text-outline flex items-center justify-between">
+<span>Read Replicas: 3</span>
+<span class="text-tertiary">Auto-failover: Ready</span>
+</div>
+</div>
+<!-- Card 2: Persistent Storage Pools (NVMe) -->
+<div class="p-4 rounded-lg bg-surface-container-low border border-border-dark flex flex-col justify-between hover:border-outline/40 transition-colors">
+<div>
+<div class="flex items-center justify-between text-mono-sm text-outline mb-1 font-mono uppercase tracking-wider">
+<span>Persistent NVMe Storage</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-secondary bg-secondary/10 border border-secondary/20">
+              Allocated 32%
+            </span>
+</div>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-headline-md font-headline-md text-on-surface font-semibold">3.84 TB</span>
+<span class="text-mono-sm text-on-surface-variant font-mono">/ 12.0 TB Total</span>
+</div>
+</div>
+<!-- Segmented Disk Bar -->
+<div class="my-3 space-y-1.5">
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden flex">
+<div class="bg-primary-container h-full" style="width: 55%;" title="Postgres Data: 2.1 TB"></div>
+<div class="bg-secondary h-full" style="width: 24%;" title="WAL Archive: 920 GB"></div>
+<div class="bg-tertiary h-full" style="width: 21%;" title="Mongo/Redis: 820 GB"></div>
+</div>
+<div class="flex items-center justify-between text-[10px] font-mono text-outline">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-sm bg-primary-container"></span>PG: 2.1TB</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-sm bg-secondary"></span>WAL: 920GB</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-sm bg-tertiary"></span>Cache: 820GB</span>
+</div>
+</div>
+<div class="pt-2 border-t border-border-dark/60 text-[11px] font-mono text-outline flex items-center justify-between">
+<span>Local I/O: 42,000 IOPS</span>
+<span class="text-secondary">avg write 0.12ms</span>
+</div>
+</div>
+<!-- Card 3: Continuous S3 Backup Vault -->
+<div class="p-4 rounded-lg bg-surface-container-low border border-border-dark flex flex-col justify-between hover:border-outline/40 transition-colors">
+<div>
+<div class="flex items-center justify-between text-mono-sm text-outline mb-1 font-mono uppercase tracking-wider">
+<span>S3 Continuous Vault</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-status-running bg-status-running/10 border border-status-running/20">
+              RPO &lt; 15s (WAL)
+            </span>
+</div>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-headline-md font-headline-md text-tertiary font-semibold">100% Synced</span>
+<span class="text-mono-sm text-on-surface-variant font-mono">0 Wal Delay</span>
+</div>
+</div>
+<div class="my-3 p-2 rounded bg-surface-container-lowest/80 border border-border-dark/60 space-y-1 text-mono-sm font-mono">
+<div class="text-[10px] text-outline uppercase truncate">Endpoint Destination</div>
+<div class="text-on-surface truncate flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-secondary">cloud_done</span>
+<span class="truncate">s3.eu-central-1.wasabisys.com</span>
+</div>
+<div class="text-[10px] text-outline-variant truncate">Bucket: norix-prod-backups/wal</div>
+</div>
+<div class="pt-2 border-t border-border-dark/60 text-[10px] font-mono text-outline flex items-center justify-between">
+<span class="truncate">Crypto: age-x25519</span>
+<span class="text-secondary shrink-0">zstd-19 (-74%)</span>
+</div>
+</div>
+<!-- Card 4: Automated Restore Tester (Sprint 10) -->
+<div class="p-4 rounded-lg bg-surface-container-low border border-border-dark flex flex-col justify-between hover:border-outline/40 transition-colors">
+<div>
+<div class="flex items-center justify-between text-mono-sm text-outline mb-1 font-mono uppercase tracking-wider">
+<span>Restore Verifier (S10)</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-status-degraded bg-status-degraded/10 border border-status-degraded/20">
+              Isolated Micro-VM
+            </span>
+</div>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-headline-md font-headline-md text-on-surface font-semibold">Passed 4h ago</span>
+</div>
+</div>
+<div class="my-3 p-2 rounded bg-surface-container-lowest/80 border border-border-dark/60 text-mono-sm font-mono space-y-1">
+<div class="text-status-running flex items-center gap-1.5 font-medium">
+<span class="material-symbols-outlined text-[15px]">verified</span>
+<span>Zero checksum discrepancies</span>
+</div>
+<div class="text-[10px] text-outline truncate">
+            Clone `norix-prod-db` restored in 38.4s
+          </div>
+</div>
+<div class="pt-2 border-t border-border-dark/60 text-[10px] font-mono text-outline flex items-center justify-between">
+<span>Cadence: Daily 04:00 UTC</span>
+<span class="text-on-surface-variant">Next: in 19h 42m</span>
+</div>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<div class="border-b border-border-dark flex items-center justify-between gap-4">
+<div class="flex items-center gap-6 text-mono-md font-mono">
+<button class="pb-2.5 border-b-2 border-primary-container text-primary font-medium flex items-center gap-2">
+<span>Provisioned Databases</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary-container/20 text-primary text-[10px]">14</span>
+</button>
+<button class="pb-2.5 text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2">
+<span>S3 Snapshots &amp; Continuous WAL Vault</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container text-outline text-[10px]">82</span>
+</button>
+<button class="pb-2.5 text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2">
+<span>Automated Sandbox Restore Verification (S10)</span>
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+</button>
+<button class="pb-2.5 text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2">
+<span>Storage Volumes &amp; Node Affinity</span>
+</button>
+</div>
+<div class="flex items-center gap-2 pb-2">
+<span class="text-[11px] font-mono text-outline">AUTO REFRESH:</span>
+<span class="text-[11px] font-mono text-secondary font-medium">10s</span>
+</div>
+</div>
+<!-- Main Table Card: Active Databases Catalog with Strict Placement -->
+<div class="rounded-lg bg-surface-container-low border border-border-dark overflow-hidden shadow-sm">
+<!-- Filter and Table Utility Controls -->
+<div class="p-3 bg-surface-container border-b border-border-dark flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2.5 flex-1 min-w-[280px] max-w-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[15px]">search</span>
+<input class="w-full bg-surface-container-lowest border border-border-dark rounded px-2.5 pl-8 py-1.5 text-xs text-on-surface font-mono placeholder:text-outline focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container" placeholder="Filter by database name, host, engine..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-2 text-mono-md font-mono">
+<div class="flex items-center rounded bg-surface-container-lowest border border-border-dark p-0.5">
+<button class="px-2.5 py-1 rounded bg-surface-container-high text-on-surface font-medium text-[11px]">All (14)</button>
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface text-[11px]">PostgreSQL (8)</button>
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface text-[11px]">Redis (4)</button>
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface text-[11px]">MongoDB (2)</button>
+</div>
+<button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-surface-container-lowest border border-border-dark text-on-surface hover:bg-surface-container-high transition-colors text-[11px]">
+<span class="material-symbols-outlined text-[15px] text-outline">filter_list</span>
+<span>State: Healthy</span>
+</button>
+</div>
+</div>
+<!-- Tabular Records -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest/60 text-[10px] font-mono uppercase text-outline tracking-wider border-b border-border-dark">
+<th class="py-2.5 px-4 font-semibold">Database Name &amp; Engine</th>
+<th class="py-2.5 px-4 font-semibold">Node Placement &amp; Volume Affinity</th>
+<th class="py-2.5 px-4 font-semibold">Connection / DSN String</th>
+<th class="py-2.5 px-4 font-semibold">Continuous Backup &amp; S3 Lag</th>
+<th class="py-2.5 px-4 font-semibold text-right">Quick Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark/60 text-xs font-mono">
+<!-- Row 1: PostgreSQL Core -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2.5">
+<div class="w-8 h-8 rounded bg-primary-container/20 border border-primary-container/30 flex items-center justify-center text-primary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">storage</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-on-surface font-semibold text-sm hover:underline cursor-pointer">postgres-production-core</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/10 text-tertiary text-[10px] font-medium border border-tertiary/30">Primary Writer</span>
+</div>
+<div class="text-[11px] text-outline flex items-center gap-2 mt-0.5">
+<span>PostgreSQL 16.2</span>
+<span>•</span>
+<span class="text-outline-variant">Alpine OCI Container</span>
+<span>•</span>
+<span class="text-secondary">4 vCPU / 16 GB RAM</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="space-y-1">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-tertiary">dns</span>
+<span class="font-semibold text-[11px]">node-us-east-01</span>
+<span class="text-[10px] text-outline">(NVMe Direct)</span>
+</div>
+<div class="text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="text-outline">Mount:</span>
+<span class="bg-surface-container-highest px-1.5 py-0.5 rounded text-[10px] text-secondary">/var/lib/norix/vol_pg_core</span>
+<span class="text-outline">450 GB (58% full)</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 bg-surface-container-lowest border border-border-dark px-2 py-1 rounded max-w-[260px]">
+<span class="text-[11px] text-outline-variant truncate">postgres://norix_app:••••••••@10.42.0.10:5432/core</span>
+<button class="text-outline hover:text-on-surface shrink-0" onclick="navigator.clipboard.writeText('postgres://norix_app:p4ssw0rd@10.42.0.10:5432/core')" title="Copy Connection String">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-[11px] text-status-running">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+                      WAL Streaming
+                    </span>
+<span class="text-[10px] text-outline">0s lag</span>
+</div>
+<div class="text-[11px] text-on-surface-variant flex items-center gap-1.5">
+<span>Snapshot: 22m ago</span>
+<span class="text-outline-variant">•</span>
+<span class="text-outline">1.42 GB (zstd-19)</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100">
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-[11px] text-on-surface transition-colors">
+                    Backup Now
+                  </button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-[11px] text-secondary transition-colors">
+                    Restore Point...
+                  </button>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Redis Session Cache -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2.5">
+<div class="w-8 h-8 rounded bg-status-failed/20 border border-status-failed/30 flex items-center justify-center text-status-failed shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">memory</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-on-surface font-semibold text-sm hover:underline cursor-pointer">redis-session-cache</span>
+<span class="px-1.5 py-0.2 rounded bg-secondary/10 text-secondary text-[10px] font-medium border border-secondary/30">Cluster Sharded</span>
+</div>
+<div class="text-[11px] text-outline flex items-center gap-2 mt-0.5">
+<span>Redis 7.2.4</span>
+<span>•</span>
+<span class="text-outline-variant">In-Memory + AOF Enabled</span>
+<span>•</span>
+<span class="text-secondary">2 vCPU / 8 GB RAM</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="space-y-1">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-secondary">dns</span>
+<span class="font-semibold text-[11px]">node-eu-west-01</span>
+<span class="text-[10px] text-outline">(RAM backed + NVMe)</span>
+</div>
+<div class="text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="text-outline">Mount:</span>
+<span class="bg-surface-container-highest px-1.5 py-0.5 rounded text-[10px] text-secondary">/var/lib/norix/vol_redis_01</span>
+<span class="text-outline">64 GB (12% full)</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 bg-surface-container-lowest border border-border-dark px-2 py-1 rounded max-w-[260px]">
+<span class="text-[11px] text-outline-variant truncate">redis://:••••••••@10.42.0.22:6379/0</span>
+<button class="text-outline hover:text-on-surface shrink-0" onclick="navigator.clipboard.writeText('redis://:s3cr3t@10.42.0.22:6379/0')" title="Copy Connection String">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-[11px] text-status-running">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+                      AOF Synced
+                    </span>
+<span class="text-[10px] text-outline">Every sec</span>
+</div>
+<div class="text-[11px] text-on-surface-variant flex items-center gap-1.5">
+<span>S3 dump: 4h ago</span>
+<span class="text-outline-variant">•</span>
+<span class="text-outline">340 MB</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100">
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-[11px] text-on-surface transition-colors">
+                    Backup Now
+                  </button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-[11px] text-secondary transition-colors">
+                    Restore Point...
+                  </button>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Timescale Analytics DB -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2.5">
+<div class="w-8 h-8 rounded bg-secondary/20 border border-secondary/30 flex items-center justify-center text-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-on-surface font-semibold text-sm hover:underline cursor-pointer">analytics-timescale-db</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant text-[10px] font-medium border border-border-dark">Read Replica</span>
+</div>
+<div class="text-[11px] text-outline flex items-center gap-2 mt-0.5">
+<span>PostgreSQL 16 + Timescale</span>
+<span>•</span>
+<span class="text-outline-variant">Telemetry Sink</span>
+<span>•</span>
+<span class="text-secondary">8 vCPU / 32 GB RAM</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="space-y-1">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-tertiary">dns</span>
+<span class="font-semibold text-[11px]">node-us-east-01</span>
+<span class="text-[10px] text-outline">(NVMe RAID-0)</span>
+</div>
+<div class="text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="text-outline">Mount:</span>
+<span class="bg-surface-container-highest px-1.5 py-0.5 rounded text-[10px] text-secondary">/var/lib/norix/vol_analytics</span>
+<span class="text-outline">1.2 TB (82% full)</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 bg-surface-container-lowest border border-border-dark px-2 py-1 rounded max-w-[260px]">
+<span class="text-[11px] text-outline-variant truncate">postgres://norix_app:••••••••@10.42.0.10:5433/timescale</span>
+<button class="text-outline hover:text-on-surface shrink-0" title="Copy Connection String">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-[11px] text-status-running">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+                      WAL Archive
+                    </span>
+<span class="text-[10px] text-outline">4s lag</span>
+</div>
+<div class="text-[11px] text-on-surface-variant flex items-center gap-1.5">
+<span>Snapshot: 1h ago</span>
+<span class="text-outline-variant">•</span>
+<span class="text-outline">6.8 GB (age-enc)</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100">
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-[11px] text-on-surface transition-colors">
+                    Backup Now
+                  </button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-[11px] text-secondary transition-colors">
+                    Restore Point...
+                  </button>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: MongoDB Billing Replica -->
+<tr class="hover:bg-surface-container-high/40 transition-colors group">
+<td class="py-3 px-4">
+<div class="flex items-start gap-2.5">
+<div class="w-8 h-8 rounded bg-tertiary-container/30 border border-tertiary-container/40 flex items-center justify-center text-tertiary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">account_tree</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-on-surface font-semibold text-sm hover:underline cursor-pointer">billing-mongo-replica</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/10 text-tertiary text-[10px] font-medium border border-tertiary/30">Replica Set (3)</span>
+</div>
+<div class="text-[11px] text-outline flex items-center gap-2 mt-0.5">
+<span>MongoDB 7.0 Enterprise</span>
+<span>•</span>
+<span class="text-outline-variant">WiredTiger Engine</span>
+<span>•</span>
+<span class="text-secondary">4 vCPU / 16 GB RAM</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="space-y-1">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-tertiary">dns</span>
+<span class="font-semibold text-[11px]">node-ap-south-01</span>
+<span class="text-[10px] text-outline">(NVMe SAN)</span>
+</div>
+<div class="text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="text-outline">Mount:</span>
+<span class="bg-surface-container-highest px-1.5 py-0.5 rounded text-[10px] text-secondary">/var/lib/norix/vol_mongo_bill</span>
+<span class="text-outline">320 GB (39% full)</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 bg-surface-container-lowest border border-border-dark px-2 py-1 rounded max-w-[260px]">
+<span class="text-[11px] text-outline-variant truncate">mongodb://norix_app:••••••••@10.42.0.89:27017/billing</span>
+<button class="text-outline hover:text-on-surface shrink-0" title="Copy Connection String">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-[11px] text-status-running">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+                      OpLog Stream
+                    </span>
+<span class="text-[10px] text-outline">2s lag</span>
+</div>
+<div class="text-[11px] text-on-surface-variant flex items-center gap-1.5">
+<span>Snapshot: 6h ago</span>
+<span class="text-outline-variant">•</span>
+<span class="text-outline">1.1 GB</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100">
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-[11px] text-on-surface transition-colors">
+                    Backup Now
+                  </button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-[11px] text-secondary transition-colors">
+                    Restore Point...
+                  </button>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Telemetry Footnote -->
+<div class="px-4 py-2.5 bg-surface-container-lowest border-t border-border-dark flex items-center justify-between text-[11px] font-mono text-outline">
+<div class="flex items-center gap-4">
+<span>Showing 4 of 14 provisioned cluster instances</span>
+<span>•</span>
+<span class="text-tertiary">All volumes pinned to strict physical NVMe blocks</span>
+</div>
+<div class="flex items-center gap-2">
+<span>Storage Pool Overcommit Ratio:</span>
+<span class="text-secondary font-semibold">1.14x (Safe)</span>
+</div>
+</div>
+</div>
+<!-- Bottom Split Panel (60% S3 Vault & PITR / 40% Automated Sandbox Runner DoD) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+<!-- Left Column: S3 Snapshot Vault & Point-in-Time Recovery (60% -> 7 Cols) -->
+<div class="xl:col-span-7 rounded-lg bg-surface-container-low border border-border-dark p-4 flex flex-col justify-between space-y-4">
+<div>
+<!-- Header and PITR Scrubbing Header -->
+<div class="flex items-center justify-between border-b border-border-dark pb-3">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">history_toggle_off</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">S3 Snapshot Vault &amp; Point-in-Time Recovery (PITR)</h2>
+</div>
+<p class="text-mono-sm font-mono text-outline mt-0.5">Continuous replay with WAL delta logs down to second-precision timestamps</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container text-tertiary border border-border-dark">WAL Replay: ENABLED</span>
+</div>
+</div>
+<!-- Interactive PITR Recovery Slider Timeline Component -->
+<div class="my-4 p-3 rounded-lg bg-surface-container-lowest border border-border-dark space-y-2.5">
+<div class="flex items-center justify-between text-mono-sm font-mono">
+<span class="text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-secondary">tune</span>
+                Select Recovery Target Timestamp:
+              </span>
+<span class="text-primary font-bold bg-primary-container/10 px-2 py-0.5 rounded border border-primary-container/30">
+                2026-11-10 17:42:15 UTC (Exact WAL Cutoff)
+              </span>
+</div>
+<!-- Custom Visual Slider -->
+<div class="relative pt-2 pb-1">
+<input class="w-full h-1.5 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary" max="100" min="0" type="range" value="84"/>
+<div class="flex items-center justify-between text-[10px] font-mono text-outline mt-1.5">
+<span>Snapshot (12:00:00)</span>
+<span>Base WAL (14:30)</span>
+<span>Checkpoint (16:00)</span>
+<span class="text-tertiary">Live WAL HEAD (Now)</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 text-[11px] font-mono text-outline border-t border-border-dark/60">
+<span>Target DB: <span class="text-on-surface">postgres-production-core</span></span>
+<button class="text-secondary hover:underline font-semibold flex items-center gap-1">
+<span>Launch PITR Restore Stream</span>
+<span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Recent Encrypted Snapshots List -->
+<div class="space-y-2">
+<div class="text-[10px] font-mono uppercase text-outline tracking-wider font-semibold">
+              Recent Cryptographic S3 Artifacts (age-x25519 &amp; zstd-19)
+            </div>
+<div class="space-y-1.5 text-xs font-mono">
+<!-- Item 1 -->
+<div class="p-2.5 rounded bg-surface-container border border-border-dark flex items-center justify-between gap-3 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3 overflow-hidden">
+<span class="material-symbols-outlined text-[18px] text-tertiary shrink-0">lock</span>
+<div class="truncate">
+<div class="text-on-surface font-medium truncate flex items-center gap-2">
+<span>norix-prod-20261110-180000.sql.zst.age</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/10 text-tertiary text-[10px]">Verified</span>
+</div>
+<div class="text-[10px] text-outline flex items-center gap-2 mt-0.5 truncate">
+<span>1.42 GB</span>
+<span>•</span>
+<span>Key: age1ql3...v9m</span>
+<span>•</span>
+<span class="text-outline-variant">SHA256: e3b0c44298fc1c14</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1.5 shrink-0">
+<button class="px-2 py-1 rounded bg-surface-container-low hover:bg-surface-container-highest border border-border-dark text-[11px] text-secondary hover:text-on-surface transition-colors">
+                    Test in Sandbox
+                  </button>
+<button class="p-1 rounded bg-surface-container-low hover:bg-surface-container-highest border border-border-dark text-outline hover:text-on-surface" title="Download Vault File">
+<span class="material-symbols-outlined text-[15px]">download</span>
+</button>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-2.5 rounded bg-surface-container border border-border-dark flex items-center justify-between gap-3 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3 overflow-hidden">
+<span class="material-symbols-outlined text-[18px] text-tertiary shrink-0">lock</span>
+<div class="truncate">
+<div class="text-on-surface font-medium truncate flex items-center gap-2">
+<span>norix-prod-20261110-120000.sql.zst.age</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/10 text-tertiary text-[10px]">Verified</span>
+</div>
+<div class="text-[10px] text-outline flex items-center gap-2 mt-0.5 truncate">
+<span>1.39 GB</span>
+<span>•</span>
+<span>Key: age1ql3...v9m</span>
+<span>•</span>
+<span class="text-outline-variant">SHA256: 7f83b1657ff1fc53</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1.5 shrink-0">
+<button class="px-2 py-1 rounded bg-surface-container-low hover:bg-surface-container-highest border border-border-dark text-[11px] text-secondary hover:text-on-surface transition-colors">
+                    Test in Sandbox
+                  </button>
+<button class="p-1 rounded bg-surface-container-low hover:bg-surface-container-highest border border-border-dark text-outline hover:text-on-surface" title="Download Vault File">
+<span class="material-symbols-outlined text-[15px]">download</span>
+</button>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-2.5 rounded bg-surface-container border border-border-dark flex items-center justify-between gap-3 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3 overflow-hidden">
+<span class="material-symbols-outlined text-[18px] text-tertiary shrink-0">lock</span>
+<div class="truncate">
+<div class="text-on-surface font-medium truncate flex items-center gap-2">
+<span>redis-dump-20261110-140000.rdb.zst.age</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/10 text-tertiary text-[10px]">Verified</span>
+</div>
+<div class="text-[10px] text-outline flex items-center gap-2 mt-0.5 truncate">
+<span>312 MB</span>
+<span>•</span>
+<span>Key: age1ql3...v9m</span>
+<span>•</span>
+<span class="text-outline-variant">SHA256: d5a4e699b82142e8</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1.5 shrink-0">
+<button class="px-2 py-1 rounded bg-surface-container-low hover:bg-surface-container-highest border border-border-dark text-[11px] text-secondary hover:text-on-surface transition-colors">
+                    Test in Sandbox
+                  </button>
+<button class="p-1 rounded bg-surface-container-low hover:bg-surface-container-highest border border-border-dark text-outline hover:text-on-surface" title="Download Vault File">
+<span class="material-symbols-outlined text-[15px]">download</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-3 border-t border-border-dark text-[11px] font-mono text-outline flex items-center justify-between">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-tertiary">shield</span>
+            Client-side age encryption before S3 transmission
+          </span>
+<a class="text-primary hover:underline font-medium" href="#">View Full S3 Object Ledger →</a>
+</div>
+</div>
+<!-- Right Column: Automated Restore Tester & Sandbox Runner DoD (40% -> 5 Cols) -->
+<div class="xl:col-span-5 rounded-lg bg-surface-container-low border border-border-dark p-4 flex flex-col justify-between space-y-4">
+<div>
+<!-- Card Header with DoD Badge -->
+<div class="flex items-center justify-between border-b border-border-dark pb-3">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-status-degraded">terminal</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Automated Restore Tester</h2>
+</div>
+<p class="text-mono-sm font-mono text-outline mt-0.5">Isolated Ephemeral KVM Sandbox Verification</p>
+</div>
+<span class="px-2 py-0.5 rounded bg-tertiary/10 text-tertiary text-[10px] font-mono border border-tertiary/30 font-semibold">
+              PASS AUDIT
+            </span>
+</div>
+<!-- Execution Pipeline Progress Indicator -->
+<div class="my-4 space-y-2.5">
+<div class="flex items-center justify-between text-mono-sm font-mono">
+<span class="text-on-surface font-medium">Last Job: #RUN-S10-9428</span>
+<span class="text-status-running flex items-center gap-1 text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+                Passed (38.4s total)
+              </span>
+</div>
+<!-- Pipeline Visual Steps Checklist -->
+<div class="space-y-1.5 font-mono text-[11px]">
+<!-- Step 1 -->
+<div class="p-2 rounded bg-surface-container-lowest border border-border-dark/60 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-4 h-4 rounded-full bg-status-running/20 text-status-running flex items-center justify-center text-[10px] font-bold">✓</span>
+<span class="text-on-surface">1. Pull Encrypted S3 Blob</span>
+</div>
+<span class="text-outline text-[10px]">1.42 GB in 4.2s (Wasabi)</span>
+</div>
+<!-- Step 2 -->
+<div class="p-2 rounded bg-surface-container-lowest border border-border-dark/60 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-4 h-4 rounded-full bg-status-running/20 text-status-running flex items-center justify-center text-[10px] font-bold">✓</span>
+<span class="text-on-surface">2. Decrypt (age) &amp; Decompress (zstd)</span>
+</div>
+<span class="text-outline text-[10px]">0.88 GB/s speed</span>
+</div>
+<!-- Step 3 -->
+<div class="p-2 rounded bg-surface-container-lowest border border-border-dark/60 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-4 h-4 rounded-full bg-status-running/20 text-status-running flex items-center justify-center text-[10px] font-bold">✓</span>
+<span class="text-on-surface">3. Spin Ephemeral Micro-VM (KVM)</span>
+</div>
+<span class="text-outline text-[10px]">Ready in 420ms</span>
+</div>
+<!-- Step 4 -->
+<div class="p-2 rounded bg-surface-container-lowest border border-border-dark/60 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-4 h-4 rounded-full bg-status-running/20 text-status-running flex items-center justify-center text-[10px] font-bold">✓</span>
+<span class="text-on-surface">4. pg_restore &amp; Row Checksum</span>
+</div>
+<span class="text-tertiary text-[10px] font-semibold">28,490 rows valid</span>
+</div>
+<!-- Step 5 -->
+<div class="p-2 rounded bg-surface-container-lowest border border-border-dark/60 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-4 h-4 rounded-full bg-status-running/20 text-status-running flex items-center justify-center text-[10px] font-bold">✓</span>
+<span class="text-on-surface">5. VM Teardown &amp; Cryptographic Sign</span>
+</div>
+<span class="text-outline text-[10px]">Zero residue left</span>
+</div>
+</div>
+</div>
+<!-- Compliance Callout -->
+<div class="p-2.5 rounded bg-tertiary-container/10 border border-tertiary-container/30 text-mono-sm font-mono flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-tertiary mt-0.5 shrink-0">task_alt</span>
+<div>
+<div class="text-on-tertiary-container font-medium text-xs">Sprint 10 DoD Disaster Recovery Certified</div>
+<div class="text-[10px] text-outline mt-0.5">
+                Every snapshot is tested for logical consistency and byte recovery before promotion to long-term immutable archives.
+              </div>
+</div>
+</div>
+</div>
+<!-- Trigger Button -->
+<div class="pt-3 border-t border-border-dark flex items-center justify-between gap-3">
+<div class="text-[10px] font-mono text-outline">
+            Runner: <span class="text-on-surface">norix-sandbox-daemon:0.5</span>
+</div>
+<button class="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container-highest border border-border-dark text-on-surface font-mono text-mono-md transition-all shadow-sm">
+<span class="material-symbols-outlined text-[15px] text-status-degraded">play_arrow</span>
+<span>Run On-Demand Restore Test Now</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div></main>
+</div>
+</body></html>

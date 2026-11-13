@@ -72,6 +72,12 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, runtime *Runtime, logger *
 			logger.Warn("ensure local node", "org", orgID, "error", err)
 			continue
 		}
+		if err := db.SampleNodeHostMetrics(ctx, pool, orgID, node.ID); err != nil {
+			logger.Warn("sample host metrics", "org", orgID, "error", err)
+		}
+		if _, err := db.EnsureProvisioningDatabases(ctx, pool, orgID, node.ID); err != nil {
+			logger.Warn("provision managed databases", "org", orgID, "error", err)
+		}
 		if _, err := db.ReclaimDesiredWorkloads(ctx, pool, orgID, node.ID); err != nil {
 			logger.Warn("reclaim desired for local node", "org", orgID, "error", err)
 		}
@@ -93,11 +99,33 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, runtime *Runtime, logger *
 		edgePlan, err := db.GetDesiredEdgePlan(ctx, pool, orgID, node.ID)
 		if err != nil {
 			logger.Warn("desired edge plan", "org", orgID, "error", err)
-		} else if edgePlan.Generation > 0 && len(edgePlan.Routes) > 0 {
-			observedEdge := runtime.ApplyEdge(ctx, edgePlan)
-			_ = db.SaveEdgeConfigSnapshot(ctx, pool, orgID, edgePlan.Generation, "")
-			if err := db.ApplyObservedEdge(ctx, pool, orgID, observedEdge, db.AuditActor{Email: "local-runtime"}); err != nil {
-				logger.Warn("apply observed edge", "org", orgID, "error", err)
+		} else {
+			// After compose recreate, Caddy falls back to bootstrap while DB still
+			// says domains are active — force a full re-apply when hosts are missing.
+			if len(edgePlan.Routes) == 0 {
+				if forced, forceErr := db.ForceDesiredEdgePlan(ctx, pool, orgID, node.ID); forceErr == nil && len(forced.Routes) > 0 {
+					hosts := make([]string, 0, len(forced.Routes))
+					for _, route := range forced.Routes {
+						if route.Action == "upsert" && route.Hostname != "" {
+							hosts = append(hosts, route.Hostname)
+						}
+					}
+					admin := forced.CaddyAdminURL
+					if admin == "" {
+						admin = db.CaddyAdminURL()
+					}
+					if CaddyMissingHosts(ctx, admin, hosts) {
+						edgePlan = forced
+						logger.Info("edge resync: caddy missing domain hosts", "org", orgID, "hosts", len(hosts))
+					}
+				}
+			}
+			if edgePlan.Generation > 0 && len(edgePlan.Routes) > 0 {
+				observedEdge := runtime.ApplyEdge(ctx, edgePlan)
+				_ = db.SaveEdgeConfigSnapshot(ctx, pool, orgID, edgePlan.Generation, "")
+				if err := db.ApplyObservedEdge(ctx, pool, orgID, observedEdge, db.AuditActor{Email: "local-runtime"}); err != nil {
+					logger.Warn("apply observed edge", "org", orgID, "error", err)
+				}
 			}
 		}
 
@@ -111,15 +139,25 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, runtime *Runtime, logger *
 			}
 		}
 
+		if wasmFns, wasmErr := db.ListWasmFunctions(ctx, pool, orgID, ""); wasmErr == nil {
+			_ = ApplyWasmPlan(ctx, orgID, wasmFns)
+		}
+
 		builds, err := db.ListDesiredBuildsForNode(ctx, pool, orgID, node.ID)
 		if err != nil {
 			logger.Warn("list desired builds for local node", "org", orgID, "error", err)
 		} else if len(builds) > 0 {
 			logger.Info("running local builds", "org", orgID, "count", len(builds))
-			buildCtx, cancel := context.WithTimeout(ctx, 8*time.Minute)
-			observedBuilds := runtime.RunBuilds(buildCtx, builds)
+			buildCtx, cancel := context.WithTimeout(ctx, 20*time.Minute)
+			observedBuilds := runtime.RunBuilds(buildCtx, builds, func(buildID, line string) {
+				if err := db.AppendBuildLogLines(ctx, pool, orgID, buildID, []string{line}); err != nil {
+					logger.Debug("append build log", "build", buildID, "error", err)
+				}
+			})
 			cancel()
 			for _, observedBuild := range observedBuilds {
+				// Lines were already streamed live; avoid duplicating in ApplyObservedBuild.
+				observedBuild.LogLines = nil
 				if err := db.ApplyObservedBuild(ctx, pool, orgID, observedBuild, db.AuditActor{Email: "local-runtime"}); err != nil {
 					logger.Warn("apply observed build", "org", orgID, "build", observedBuild.ID, "error", err)
 				}

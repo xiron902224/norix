@@ -61,4 +61,37 @@ impl Config {
         std::fs::create_dir_all(&self.workdir)
             .with_context(|| format!("create workdir {}", self.workdir.display()))
     }
+
+    pub fn validate_for_startup(&self) -> Result<()> {
+        if self.control_plane_url.trim().is_empty() {
+            bail!("NORIX_CONTROL_PLANE_URL cannot be empty");
+        }
+        if self.join_token.is_none() && !self.state_path().exists() {
+            bail!(
+                "missing NORIX_JOIN_TOKEN and no saved node state at {}. Generate a token in the dashboard or restore the agent state.",
+                self.state_path().display()
+            );
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Config;
+
+    #[test]
+    fn startup_validation_requires_join_token_or_saved_state() {
+        let cfg = Config {
+            control_plane_url: "http://127.0.0.1:8080".to_string(),
+            join_token: None,
+            node_name: "node-1".to_string(),
+            workdir: std::env::temp_dir().join("norix-agent-config-test"),
+            heartbeat_secs: 10,
+            agent_version: "test".to_string(),
+        };
+
+        let result = cfg.validate_for_startup();
+        assert!(result.is_err());
+    }
 }

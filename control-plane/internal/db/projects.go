@@ -28,11 +28,18 @@ func CreateProject(ctx context.Context, pool *pgxpool.Pool, organizationID, name
 		return Project{}, err
 	}
 
+	var defaultTeam string
+	if err := tx.QueryRow(ctx, `
+		SELECT id::text FROM teams
+		WHERE organization_id = $1::uuid AND is_default
+		ORDER BY created_at LIMIT 1`, organizationID).Scan(&defaultTeam); err != nil {
+		return Project{}, fmt.Errorf("default team for project: %w", err)
+	}
 	var project Project
 	if err := tx.QueryRow(ctx, `
-		INSERT INTO projects (organization_id, name)
-		VALUES ($1::uuid, $2)
-		RETURNING id::text, organization_id::text, name`, organizationID, name).Scan(&project.ID, &project.OrganizationID, &project.Name); err != nil {
+		INSERT INTO projects (organization_id, name, team_id)
+		VALUES ($1::uuid, $2, $3::uuid)
+		RETURNING id::text, organization_id::text, name`, organizationID, name, defaultTeam).Scan(&project.ID, &project.OrganizationID, &project.Name); err != nil {
 		return Project{}, fmt.Errorf("create project: %w", err)
 	}
 	if err := writeAudit(ctx, tx, organizationID, "project.created", "project", project.ID, actor, map[string]string{"name": project.Name}); err != nil {

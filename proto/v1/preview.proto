@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
+
+message PRPreview {
+  string id = 1;
+  string project_id = 2;
+  string repo = 3;
+  int32 pr_number = 4;
+  string status = 5;
+  string preview_url = 6;
+  int64 github_comment_id = 7;
+  int64 created_at = 8;
+}
+
+message ListPreviewsRequest {
+  string project_id = 1;
+}
+
+message ListPreviewsResponse {
+  repeated PRPreview previews = 1;
+}
+
+message UpsertPreviewRequest {
+  PRPreview preview = 1;
+}
+
+message UpsertPreviewResponse {
+  PRPreview preview = 1;
+}
+
+service PreviewService {
+  rpc ListPreviews(ListPreviewsRequest) returns (ListPreviewsResponse);
+  rpc UpsertPreview(UpsertPreviewRequest) returns (UpsertPreviewResponse);
+}

@@ -125,6 +125,19 @@ func (service WorkloadService) CreateWorkload(ctx context.Context, request *paas
 	if err != nil {
 		return nil, err
 	}
+	cpu := int32(1)
+	if workload.CPUShares > 0 {
+		cpu = int32(workload.CPUShares / 1024)
+		if cpu < 1 {
+			cpu = 1
+		}
+	}
+	if err := enforceProjectQuota(ctx, service.pool, identity.OrganizationID, workload.ProjectID, db.QuotaDelta{
+		AdditionalCPU:      cpu,
+		AdditionalMemoryMB: workload.MemoryLimitMB,
+	}); err != nil {
+		return nil, err
+	}
 	created, err := db.CreateWorkload(ctx, service.pool, identity.OrganizationID, workload, db.AuditActor{
 		UserID: identity.UserID,
 		Email:  identity.Email,

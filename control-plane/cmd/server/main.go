@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
+  _ "github.com/joho/godotenv/autoload"
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/xiron902224/norix/control-plane/internal/api"
@@ -37,6 +37,13 @@ func newHandler(authService api.AuthService) http.Handler {
 		paasv1connect.RegisterProjectServiceHandler(server, api.NewProjectService(authService.BootstrapPool()))
 		paasv1connect.RegisterWorkloadServiceHandler(server, api.NewWorkloadService(authService.BootstrapPool()))
 		paasv1connect.RegisterAgentServiceHandler(server, api.NewAgentService(authService.BootstrapPool()))
+		pool := authService.BootstrapPool()
+		paasv1connect.RegisterMetricsServiceHandler(server, api.NewMetricsService(pool))
+		paasv1connect.RegisterDatabaseServiceHandler(server, api.NewDatabaseService(pool))
+		paasv1connect.RegisterSandboxServiceHandler(server, api.NewSandboxService(pool))
+		paasv1connect.RegisterPreviewServiceHandler(server, api.NewPreviewService(pool))
+		paasv1connect.RegisterWasmServiceHandler(server, api.NewWasmService(pool))
+		paasv1connect.RegisterTeamServiceHandler(server, api.NewTeamService(pool))
 	}
 	connecthttp.Mount(apiMux, server)
 	mux.Handle("/api/", http.StripPrefix("/api", apiMux))
@@ -52,8 +59,14 @@ func newHandler(authService api.AuthService) http.Handler {
 		mux.HandleFunc("POST /api/webhooks/workloads/{workloadID}", api.CreateWebhookTokenHandler(pool))
 		mux.HandleFunc("GET /api/ops/backups", api.OpsBackupsHandler(pool))
 		mux.HandleFunc("POST /api/ops/backups", api.OpsBackupsHandler(pool))
+		mux.HandleFunc("GET /api/ops/backups/{backupID}/download", api.OpsBackupDownloadHandler(pool))
 		mux.HandleFunc("POST /api/ops/backups/{backupID}/restore", api.OpsRestoreHandler(pool))
 		mux.HandleFunc("GET /api/ops/alerts", api.OpsAlertsHandler(pool))
+		mux.HandleFunc("POST /api/ops/logs/ingest", api.OpsLogsIngestHandler(pool))
+		mux.HandleFunc("POST /api/webhooks/github", api.GitHubPreviewWebhook(pool))
+		mux.HandleFunc("GET /metrics", api.PrometheusMetricsHandler(pool))
+		mux.HandleFunc("GET /api/ops/audit/export", api.OpsAuditExportHandler(pool))
+		mux.HandleFunc("GET /api/ops/usage/export", api.OpsUsageExportHandler(pool))
 	}
 	mux.Handle("/", webui.Handler())
 

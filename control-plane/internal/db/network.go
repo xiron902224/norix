@@ -92,6 +92,11 @@ type NodeNetworkView struct {
 	ObservedGen   int64
 }
 
+// NetworkApplyEnabled gates WireGuard/nft apply on the local runtime and sets DesiredNetworkPlan.apply
+// in agent heartbeats. Default is dry-run (false): configs are written under NORIX_NETWORK_STATE_DIR
+// (control plane) or <agent-workdir>/network (agent) without calling wg-quick/nft.
+// Enable live apply on a single node with NORIX_APPLY_WIREGUARD=1|true|yes on the control plane process.
+// GetNetworkStatusResponse.apply_enabled mirrors this flag for the dashboard.
 func NetworkApplyEnabled() bool {
 	value := strings.ToLower(strings.TrimSpace(os.Getenv("NORIX_APPLY_WIREGUARD")))
 	return value == "1" || value == "true" || value == "yes"

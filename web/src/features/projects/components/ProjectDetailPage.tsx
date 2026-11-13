@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Boxes,
   ChevronRight,
@@ -23,6 +24,7 @@ import {
   deployWorkload,
   getBuildLogs,
   getWorkloadLogs,
+  listProjects,
   listWorkloads,
   updateWorkload,
 } from '../services/projects-api'
@@ -32,12 +34,10 @@ function canDeployImage(workload: Workload) {
   return !!image && image !== 'pending-build' && workload.status !== 'building'
 }
 
-interface ProjectDetailPageProps {
-  project: Project
-  onBack: () => void
-}
-
-export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
+export function ProjectDetailPage() {
+  const { projectId = '' } = useParams()
+  const navigate = useNavigate()
+  const [project, setProject] = useState<Project | null>(null)
   const [workloads, setWorkloads] = useState<Workload[]>([])
   const [onlineNodes, setOnlineNodes] = useState(0)
   const [totalNodes, setTotalNodes] = useState(0)
@@ -70,9 +70,10 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
   }
 
   async function refresh() {
+    if (!projectId) return
     setError('')
     try {
-      const [items, nodes] = await Promise.all([listWorkloads(project.id), listNodes()])
+      const [items, nodes] = await Promise.all([listWorkloads(projectId), listNodes()])
       const visible = visibleWorkloads(items)
       setWorkloads(visible)
       setTotalNodes(nodes.length)
@@ -90,10 +91,22 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
   useEffect(() => {
     let cancelled = false
     void (async () => {
+      if (!projectId) return
       setLoading(true)
       try {
-        const [items, nodes] = await Promise.all([listWorkloads(project.id), listNodes()])
+        const [projects, items, nodes] = await Promise.all([
+          listProjects(),
+          listWorkloads(projectId),
+          listNodes(),
+        ])
         if (cancelled) return
+        const found = projects.find((item) => item.id === projectId) ?? null
+        setProject(found)
+        if (!found) {
+          setError('Project not found')
+          setLoading(false)
+          return
+        }
         const visible = visibleWorkloads(items)
         setWorkloads(visible)
         setTotalNodes(nodes.length)
@@ -105,7 +118,8 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
       }
     })()
     const timer = window.setInterval(() => {
-      void Promise.all([listWorkloads(project.id), listNodes()])
+      if (!projectId) return
+      void Promise.all([listWorkloads(projectId), listNodes()])
         .then(([items, nodes]) => {
           if (cancelled) return
           const visible = visibleWorkloads(items)
@@ -120,7 +134,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [project.id])
+  }, [projectId])
 
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -131,7 +145,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
     const form = new FormData(formEl)
     try {
       await createWorkload({
-        projectId: project.id,
+        projectId,
         name: String(form.get('name') ?? ''),
         imageOrSource: String(form.get('image') ?? ''),
         containerPort: Number(form.get('port') || 80),
@@ -157,26 +171,31 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
     setNotice('')
     const formEl = event.currentTarget
     const form = new FormData(formEl)
+    const dockerfilePath = String(form.get('dockerfile') || 'Dockerfile')
+    const containerPort = Number(form.get('port') || (dockerfilePath.includes('multi') ? 80 : 80))
     try {
       const workload = await createWorkload({
-        projectId: project.id,
+        projectId,
         name: String(form.get('name') ?? ''),
         sourceKind: 'git',
         gitUrl: String(form.get('gitUrl') ?? ''),
         gitRef: String(form.get('gitRef') || 'main'),
-        dockerfilePath: String(form.get('dockerfile') || 'Dockerfile'),
-        containerPort: Number(form.get('port') || 8080),
+        dockerfilePath,
+        containerPort,
       })
       const build = await deployFromGit({
         workloadId: workload.id,
         gitUrl: workload.gitUrl,
         gitRef: workload.gitRef || 'main',
-        dockerfilePath: workload.dockerfilePath || 'Dockerfile',
-        containerPort: workload.containerPort || 8080,
+        dockerfilePath: workload.dockerfilePath || dockerfilePath,
+        containerPort: workload.containerPort || containerPort,
       })
       formEl.reset()
-      setNotice(`Git build queued (${shortId(build.buildId)}). Watch build logs; deploy starts after the image is ready.`)
+      setNotice(`Git build queued (${shortId(build.buildId)}). Live build logs open below — deploy starts when the image is ready.`)
       await refresh()
+      if (build.buildId) {
+        await openBuildLogs(workload, build.buildId)
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not start git build')
     } finally {
@@ -272,7 +291,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
     try {
       const updated = await updateWorkload({
         id: selected.id,
-        projectId: project.id,
+        projectId,
         name: editName,
         imageOrSource: editImage,
         containerPort: editPort,
@@ -349,7 +368,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
       }
     }
     void tick()
-    const timer = window.setInterval(() => { void tick() }, 2000)
+    const timer = window.setInterval(() => { void tick() }, 1000)
     return () => {
       cancelled = true
       window.clearInterval(timer)
@@ -364,12 +383,24 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
     ? selected.status === 'deploying' || selected.status === 'building' || busyId === selected.id || gitBusyId === selected.id
     : false
 
+  if (!project) {
+    return (
+      <section className="page">
+        <div className="loading-row">
+          <span className="spinner" aria-hidden />
+          <span>{loading ? 'Loading project…' : (error || 'Project not found')}</span>
+        </div>
+        <Button variant="secondary" type="button" onClick={() => navigate('/projects')}>Back to projects</Button>
+      </section>
+    )
+  }
+
   return (
     <section className="page">
       <header className="page-header">
         <div>
           <div className="breadcrumb" aria-label="Breadcrumb">
-            <button type="button" onClick={onBack}>Projects</button>
+            <Link to="/projects">Projects</Link>
             <ChevronRight size={14} aria-hidden />
             <strong>{project.name}</strong>
           </div>
@@ -377,7 +408,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
           <p>Project ID <span className="mono">{project.id}</span> · org <span className="mono">{shortId(project.organizationId, 12)}</span></p>
         </div>
         <div className="page-actions">
-          <Button variant="secondary" type="button" onClick={onBack}>Back to projects</Button>
+          <Button variant="secondary" type="button" onClick={() => navigate('/projects')}>Back to projects</Button>
         </div>
       </header>
 
@@ -485,8 +516,11 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
           <FormField id="git-name" name="name" label="Workload name" required placeholder="hello-go" />
           <FormField id="git-url" name="gitUrl" label="Git URL" required placeholder="https://github.com/org/repo.git" />
           <FormField id="git-ref" name="gitRef" label="Ref" placeholder="main" defaultValue="main" />
-          <FormField id="git-dockerfile" name="dockerfile" label="Dockerfile or compose path" placeholder="Dockerfile or compose.yaml" defaultValue="Dockerfile" />
-          <FormField id="git-port" name="port" label="Container port" type="number" placeholder="8080" defaultValue={8080} />
+          <FormField id="git-dockerfile" name="dockerfile" label="Dockerfile or compose path" placeholder="Dockerfile.multi or compose.yaml" defaultValue="Dockerfile" />
+          <FormField id="git-port" name="port" label="Container port" type="number" placeholder="80" defaultValue={80} />
+          <p className="hint-line" style={{ gridColumn: '1 / -1' }}>
+            For <code>dockersamples/blog-react-app</code> leave Dockerfile (auto-picks <code>Dockerfile.multi</code>) and port <code>80</code>. Build logs open live after Deploy.
+          </p>
           <Button type="submit" disabled={creating || !hasOnlineNode}>
             {creating ? 'Queuing…' : 'Build & deploy'}
           </Button>
@@ -494,16 +528,16 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
       </section>
 
       <div className="split-detail">
-        <section className="panel flux-shadow lift-card">
+        <section className="panel flux-shadow lift-card panel-table">
           <header className="panel-header">
             <div>
-              <h3>Workloads</h3>
+              <h3>Workload instances</h3>
               <p className="muted">Select a row for full detail. Polls every 4s.</p>
             </div>
           </header>
 
           {loading ? (
-            <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading workloads…</span></div>
+            <div className="loading-row" style={{ margin: '0 20px 16px' }}><span className="spinner" aria-hidden /><span>Loading workloads…</span></div>
           ) : null}
 
           {!loading && workloads.length === 0 ? (
@@ -514,58 +548,78 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
             </div>
           ) : null}
 
-          <ul className="resource-list">
-            {workloads.map((workload) => (
-              <li
-                key={workload.id}
-                className={`workload-row ${selected?.id === workload.id ? 'is-selected' : ''}`}
-              >
-                <button type="button" className="resource-link" onClick={() => selectWorkload(workload)}>
-                  <strong>{workload.name}</strong>
-                  <div className="resource-meta">
-                    <span className="mono">{workload.imageOrSource}</span>
-                    <span className={`status-badge status-${workload.status || 'pending'} ${workload.status === 'deploying' || workload.status === 'building' || busyId === workload.id || gitBusyId === workload.id ? 'is-busy' : ''}`}>
-                      {busyId === workload.id || gitBusyId === workload.id
+          {workloads.length > 0 ? (
+            <div className="table-scroll">
+              <table className="dense-table">
+                <thead>
+                  <tr>
+                    <th>Workload</th>
+                    <th>Artifact</th>
+                    <th>Status</th>
+                    <th>Generation</th>
+                    <th>Port</th>
+                    <th className="align-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workloads.map((workload) => {
+                    const statusLabel =
+                      busyId === workload.id || gitBusyId === workload.id
                         ? (gitBusyId === workload.id ? 'queuing…' : 'working…')
-                        : (workload.status || 'pending')}
-                    </span>
-                    <span className="chip">gen {String(workload.observedGeneration)}/{String(workload.desiredGeneration)}</span>
-                  </div>
-                  <p className="hint-line">
-                    {workload.lastError
-                      ? workload.lastError
-                      : workloadHint(workload.status, workload.observedGeneration, workload.desiredGeneration, hasOnlineNode)}
-                  </p>
-                </button>
-                <div className="row-actions">
-                  <Button type="button" disabled={busyId === workload.id || gitBusyId === workload.id || !hasOnlineNode || !canDeployImage(workload)} onClick={() => void onDeploy(workload)}>
-                    <Rocket size={14} /> {busyId === workload.id ? 'Deploying…' : 'Deploy'}
-                  </Button>
-                  {workload.sourceKind === 'git' || workload.gitUrl ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={gitBusyId === workload.id || !hasOnlineNode || !workload.gitUrl}
-                      onClick={() => void onRebuildGit(workload)}
-                    >
-                      Rebuild
-                    </Button>
-                  ) : null}
-                  {workload.latestBuildId ? (
-                    <Button type="button" variant="secondary" onClick={() => void openBuildLogs(workload)}>
-                      Build logs
-                    </Button>
-                  ) : null}
-                  <Button type="button" variant="secondary" disabled={busyId === workload.id} onClick={() => void openLogs(workload)}>
-                    <ScrollText size={14} /> Logs
-                  </Button>
-                  <Button variant="danger" type="button" disabled={busyId === workload.id} onClick={() => void onDelete(workload)}>
-                    Delete
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                        : (workload.status || 'pending')
+                    const chipClass =
+                      workload.status === 'running' ? 'status-running'
+                        : workload.status === 'building' || workload.status === 'deploying' ? 'status-building'
+                          : workload.status === 'failed' ? 'status-failed'
+                            : 'status-pending'
+                    return (
+                      <tr
+                        key={workload.id}
+                        className={`row-clickable ${selected?.id === workload.id ? 'is-selected' : ''}`}
+                        onClick={() => selectWorkload(workload)}
+                      >
+                        <td><strong>{workload.name}</strong></td>
+                        <td className="mono">{workload.imageOrSource || '—'}</td>
+                        <td>
+                          <span className={`status-chip ${chipClass}`}>{statusLabel}</span>
+                        </td>
+                        <td className="mono">{String(workload.observedGeneration)}/{String(workload.desiredGeneration)}</td>
+                        <td className="mono">{workload.hostPort ? `:${workload.hostPort}` : '—'}</td>
+                        <td className="align-right">
+                          <div className="row-actions" onClick={(event) => event.stopPropagation()}>
+                            <Button type="button" disabled={busyId === workload.id || gitBusyId === workload.id || !hasOnlineNode || !canDeployImage(workload)} onClick={() => void onDeploy(workload)}>
+                              <Rocket size={14} /> {busyId === workload.id ? '…' : 'Deploy'}
+                            </Button>
+                            {workload.sourceKind === 'git' || workload.gitUrl ? (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                disabled={gitBusyId === workload.id || !hasOnlineNode || !workload.gitUrl}
+                                onClick={() => void onRebuildGit(workload)}
+                              >
+                                Rebuild
+                              </Button>
+                            ) : null}
+                            {workload.latestBuildId ? (
+                              <Button type="button" variant="secondary" onClick={() => void openBuildLogs(workload)}>
+                                Build
+                              </Button>
+                            ) : null}
+                            <Button type="button" variant="secondary" disabled={busyId === workload.id} onClick={() => void openLogs(workload)}>
+                              <ScrollText size={14} />
+                            </Button>
+                            <Button variant="danger" type="button" disabled={busyId === workload.id} onClick={() => void onDelete(workload)}>
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </section>
 
         <aside className="panel flux-shadow lift-card detail-pane">

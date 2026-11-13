@@ -237,11 +237,11 @@ export function NodesPage() {
       </section>
 
       <div className="split-detail">
-        <section className="panel flux-shadow lift-card">
+        <section className="panel flux-shadow lift-card panel-table">
           <header className="panel-header">
             <div>
-              <h3>Fleet</h3>
-              <p className="muted">Offline after ~45s without heartbeat. Click a node for capabilities.</p>
+              <h3>Compute fleet</h3>
+              <p className="muted">Offline after ~45s without heartbeat. Click a row for capabilities.</p>
             </div>
           </header>
 
@@ -257,30 +257,53 @@ export function NodesPage() {
             </div>
           ) : null}
 
-          <ul className="resource-list">
-            {nodes.map((node) => (
-              <li key={node.id} className={selected?.id === node.id ? 'is-selected' : ''}>
-                <button type="button" className="resource-link" onClick={() => selectNode(node)}>
-                  <strong>{node.name}{node.isLocal ? ' · local' : ''}</strong>
-                  <div className="resource-meta">
-                    <span className={`status-badge ${statusClass(node.status)}`}>{node.status}</span>
-                    <span className="chip">{node.role || 'worker'}</span>
-                    {node.cordoned ? <span className="chip">cordoned</span> : null}
-                    {node.draining ? <span className="chip">draining</span> : null}
-                    <span className="mono">seen {relativeAge(node.lastSeenAt)}</span>
-                  </div>
-                  <p className="hint-line">
-                    {node.zone || 'default'} · {node.capabilities?.hostname || 'unknown host'} · {node.isLocal ? 'control-plane' : `agent v${node.capabilities?.agentVersion || '?'}`}
-                  </p>
-                </button>
-                {node.isLocal
-                  ? <span className="chip chip-info">VPS host</span>
-                  : node.status === 'online'
-                    ? <span className="chip chip-info"><LoaderCircle size={12} className="spin-slow" /> Live</span>
-                    : <span className="chip">Offline</span>}
-              </li>
-            ))}
-          </ul>
+          <div className="table-scroll">
+            <table className="dense-table">
+              <thead>
+                <tr>
+                  <th>Node</th>
+                  <th>Status</th>
+                  <th>Role / zone</th>
+                  <th>Host</th>
+                  <th>Last seen</th>
+                  <th>Kind</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nodes.map((node) => (
+                  <tr
+                    key={node.id}
+                    className={`row-clickable ${selected?.id === node.id ? 'is-selected' : ''}`}
+                    onClick={() => selectNode(node)}
+                  >
+                    <td>
+                      <strong>{node.name}</strong>
+                      {node.isLocal ? <span className="chip chip-info" style={{ marginLeft: 8 }}>local</span> : null}
+                    </td>
+                    <td>
+                      <span className={`status-chip ${statusClass(node.status)}`}>{node.status}</span>
+                    </td>
+                    <td className="mono">
+                      {node.role || 'worker'} · {node.zone || 'default'}
+                      {node.cordoned ? ' · cordoned' : ''}
+                      {node.draining ? ' · drain' : ''}
+                    </td>
+                    <td className="mono">{node.capabilities?.hostname || '—'}</td>
+                    <td className="mono">{relativeAge(node.lastSeenAt)}</td>
+                    <td>
+                      {node.isLocal ? (
+                        <span className="chip chip-info">VPS</span>
+                      ) : node.status === 'online' ? (
+                        <span className="chip chip-info"><LoaderCircle size={12} className="spin-slow" /> Live</span>
+                      ) : (
+                        <span className="chip">Offline</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <aside className="panel flux-shadow lift-card detail-pane">

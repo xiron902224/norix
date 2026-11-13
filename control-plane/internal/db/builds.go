@@ -251,6 +251,39 @@ func GetBuild(ctx context.Context, pool *pgxpool.Pool, tenantID, buildID string)
 	return build, tx.Commit(ctx)
 }
 
+// AppendBuildLogLines streams live builder output so the UI can poll mid-build.
+func AppendBuildLogLines(ctx context.Context, pool *pgxpool.Pool, tenantID, buildID string, lines []string) error {
+	if len(lines) == 0 {
+		return nil
+	}
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if err := WithTenant(ctx, tx, tenantID); err != nil {
+		return err
+	}
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO build_logs (organization_id, build_id, line)
+			VALUES ($1::uuid, $2::uuid, $3)`, tenantID, buildID, truncate(line, 4000)); err != nil {
+			return err
+		}
+	}
+	_, _ = tx.Exec(ctx, `
+		DELETE FROM build_logs
+		WHERE build_id = $1::uuid
+		  AND id < COALESCE((
+			SELECT id FROM build_logs WHERE build_id = $1::uuid ORDER BY id DESC OFFSET 800 LIMIT 1
+		  ), 0)`, buildID)
+	return tx.Commit(ctx)
+}
+
 func ListBuildLogs(ctx context.Context, pool *pgxpool.Pool, tenantID, buildID string, tail int32) ([]string, error) {
 	if tail <= 0 || tail > 500 {
 		tail = 200
@@ -490,7 +523,8 @@ func FindWorkloadByGitURL(ctx context.Context, pool *pgxpool.Pool, tenantID, git
 		       desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
 		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
-		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text
+		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
+		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker')
 		FROM workloads
 		WHERE source_kind = 'git' AND git_url = $1 AND status <> 'deleting'
 		ORDER BY updated_at DESC

@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -66,6 +68,38 @@ func OpsRestoreHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		}
 		response.WriteHeader(status)
 		writeJSON(response, map[string]any{"backup": backup, "error": errorString(restoreErr)})
+	}
+}
+
+func OpsBackupDownloadHandler(pool *pgxpool.Pool) http.HandlerFunc {
+	return func(response http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodGet {
+			http.Error(response, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		identity, err := sessionFromRequest(request, pool)
+		if err != nil {
+			http.Error(response, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		backupID := strings.TrimSpace(request.PathValue("backupID"))
+		backup, err := db.GetBackup(request.Context(), pool, identity.OrganizationID, backupID)
+		if err != nil {
+			http.Error(response, err.Error(), http.StatusNotFound)
+			return
+		}
+		if backup.Status == "failed" || backup.Filename == "" {
+			http.Error(response, "backup file is not available", http.StatusBadRequest)
+			return
+		}
+		path := filepath.Join(db.BackupDir(), backup.Filename)
+		if _, statErr := os.Stat(path); statErr != nil {
+			http.Error(response, "backup file missing on disk", http.StatusNotFound)
+			return
+		}
+		response.Header().Set("Content-Type", "application/sql")
+		response.Header().Set("Content-Disposition", `attachment; filename="`+backup.Filename+`"`)
+		http.ServeFile(response, request, path)
 	}
 }
 

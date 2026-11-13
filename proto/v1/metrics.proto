@@ -15,6 +15,83 @@ message StreamLogsResponse {
   int64 timestamp = 3;
 }
 
+message MetricSample {
+  string id = 1;
+  string node_id = 2;
+  string name = 3;
+  map<string, string> labels = 4;
+  double value = 5;
+  int64 timestamp = 6;
+}
+
+message GetClusterMetricsRequest {
+  string node_id = 1;
+  string name_prefix = 2;
+  int32 limit = 3;
+}
+
+message GetClusterMetricsResponse {
+  repeated MetricSample samples = 1;
+}
+
+message LogSegment {
+  string id = 1;
+  string project_id = 2;
+  string workload_id = 3;
+  string body = 4;
+  string level = 5;
+  int64 timestamp = 6;
+}
+
+message QueryLogsRequest {
+  string project_id = 1;
+  string workload_id = 2;
+  string level = 3;
+  int32 limit = 4;
+}
+
+message QueryLogsResponse {
+  repeated LogSegment segments = 1;
+}
+
+message AlertRule {
+  string id = 1;
+  string name = 2;
+  string kind = 3;
+  double threshold = 4;
+  string channel = 5;
+  bool enabled = 6;
+}
+
+message ObservabilityAlertEvent {
+  string id = 1;
+  string rule_id = 2;
+  string message = 3;
+  string status = 4;
+  int64 created_at = 5;
+}
+
+message ListAlertsRequest {
+  int32 limit = 1;
+}
+
+message ListAlertsResponse {
+  repeated AlertRule rules = 1;
+  repeated ObservabilityAlertEvent events = 2;
+}
+
+message UpsertAlertRuleRequest {
+  AlertRule rule = 1;
+}
+
+message UpsertAlertRuleResponse {
+  AlertRule rule = 1;
+}
+
 service MetricsService {
   rpc StreamLogs(StreamLogsRequest) returns (stream StreamLogsResponse);
+  rpc GetClusterMetrics(GetClusterMetricsRequest) returns (GetClusterMetricsResponse);
+  rpc QueryLogs(QueryLogsRequest) returns (QueryLogsResponse);
+  rpc ListAlerts(ListAlertsRequest) returns (ListAlertsResponse);
+  rpc UpsertAlertRule(UpsertAlertRuleRequest) returns (UpsertAlertRuleResponse);
 }

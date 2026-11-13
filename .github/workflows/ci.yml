@@ -80,9 +80,23 @@ jobs:
         run: |
           psql -h 127.0.0.1 -U norix -d norix -v ON_ERROR_STOP=1 <<'SQL'
           SELECT version, dirty FROM schema_migrations;
-          SELECT count(*) = 17 FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens', 'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens', 'domain_routes', 'edge_snapshots', 'backups', 'alert_events');
+          SELECT count(*) = 31 FROM pg_tables WHERE schemaname = 'public' AND tablename IN (
+            'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
+            'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens',
+            'domain_routes', 'edge_snapshots', 'backups', 'ops_alert_events', 'workload_replicas',
+            'project_network', 'workload_egress_policies', 'network_dns_records', 'platform_certificates',
+            'metric_samples', 'log_segments', 'alert_rules', 'alert_events', 'managed_databases',
+            'sandboxes', 'pr_previews', 'wasm_functions', 'audit_events'
+          );
           SELECT to_regclass('public.audit_events') IS NOT NULL;
-          SELECT count(*) = 17 FROM pg_class WHERE relname IN ('organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens', 'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens', 'domain_routes', 'edge_snapshots', 'backups', 'alert_events') AND relrowsecurity AND relforcerowsecurity;
+          SELECT count(*) = 31 FROM pg_class WHERE relname IN (
+            'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
+            'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens',
+            'domain_routes', 'edge_snapshots', 'backups', 'ops_alert_events', 'workload_replicas',
+            'project_network', 'workload_egress_policies', 'network_dns_records', 'platform_certificates',
+            'metric_samples', 'log_segments', 'alert_rules', 'alert_events', 'managed_databases',
+            'sandboxes', 'pr_previews', 'wasm_functions', 'audit_events'
+          ) AND relrowsecurity AND relforcerowsecurity;
           SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE relname = 'audit_events';
           SQL
 

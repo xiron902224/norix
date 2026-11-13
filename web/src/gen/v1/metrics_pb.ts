@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/metrics.proto.
  */
 export const file_v1_metrics: GenFile = /*@__PURE__*/
-  fileDesc("ChB2MS9tZXRyaWNzLnByb3RvEgJ2MSI4ChFTdHJlYW1Mb2dzUmVxdWVzdBITCgt3b3JrbG9hZF9pZBgBIAEoCRIOCgZmb2xsb3cYAiABKAgiTQoSU3RyZWFtTG9nc1Jlc3BvbnNlEhMKC3dvcmtsb2FkX2lkGAEgASgJEg8KB2NvbnRlbnQYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDMk8KDk1ldHJpY3NTZXJ2aWNlEj0KClN0cmVhbUxvZ3MSFS52MS5TdHJlYW1Mb2dzUmVxdWVzdBoWLnYxLlN0cmVhbUxvZ3NSZXNwb25zZTABQoEBCgZjb20udjFCDE1ldHJpY3NQcm90b1ABWkFnaXRodWIuY29tL3hpcm9uOTAyMjI0L25vcml4L2NvbnRyb2wtcGxhbmUvaW50ZXJuYWwvZ2VuL3YxO3BhYXN2MaICA1ZYWKoCAlYxygICVjHiAg5WMVxHUEJNZXRhZGF0YeoCAlYxYgZwcm90bzM");
+  fileDesc("ChB2MS9tZXRyaWNzLnByb3RvEgJ2MSI4ChFTdHJlYW1Mb2dzUmVxdWVzdBITCgt3b3JrbG9hZF9pZBgBIAEoCRIOCgZmb2xsb3cYAiABKAgiTQoSU3RyZWFtTG9nc1Jlc3BvbnNlEhMKC3dvcmtsb2FkX2lkGAEgASgJEg8KB2NvbnRlbnQYAiABKAkSEQoJdGltZXN0YW1wGAMgASgDIrgBCgxNZXRyaWNTYW1wbGUSCgoCaWQYASABKAkSDwoHbm9kZV9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEiwKBmxhYmVscxgEIAMoCzIcLnYxLk1ldHJpY1NhbXBsZS5MYWJlbHNFbnRyeRINCgV2YWx1ZRgFIAEoARIRCgl0aW1lc3RhbXAYBiABKAMaLQoLTGFiZWxzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJPChhHZXRDbHVzdGVyTWV0cmljc1JlcXVlc3QSDwoHbm9kZV9pZBgBIAEoCRITCgtuYW1lX3ByZWZpeBgCIAEoCRINCgVsaW1pdBgDIAEoBSI+ChlHZXRDbHVzdGVyTWV0cmljc1Jlc3BvbnNlEiEKB3NhbXBsZXMYASADKAsyEC52MS5NZXRyaWNTYW1wbGUicQoKTG9nU2VnbWVudBIKCgJpZBgBIAEoCRISCgpwcm9qZWN0X2lkGAIgASgJEhMKC3dvcmtsb2FkX2lkGAMgASgJEgwKBGJvZHkYBCABKAkSDQoFbGV2ZWwYBSABKAkSEQoJdGltZXN0YW1wGAYgASgDIlkKEFF1ZXJ5TG9nc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRINCgVsZXZlbBgDIAEoCRINCgVsaW1pdBgEIAEoBSI1ChFRdWVyeUxvZ3NSZXNwb25zZRIgCghzZWdtZW50cxgBIAMoCzIOLnYxLkxvZ1NlZ21lbnQiaAoJQWxlcnRSdWxlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEa2luZBgDIAEoCRIRCgl0aHJlc2hvbGQYBCABKAESDwoHY2hhbm5lbBgFIAEoCRIPCgdlbmFibGVkGAYgASgIImsKF09ic2VydmFiaWxpdHlBbGVydEV2ZW50EgoKAmlkGAEgASgJEg8KB3J1bGVfaWQYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSEgoKY3JlYXRlZF9hdBgFIAEoAyIiChFMaXN0QWxlcnRzUmVxdWVzdBINCgVsaW1pdBgBIAEoBSJfChJMaXN0QWxlcnRzUmVzcG9uc2USHAoFcnVsZXMYASADKAsyDS52MS5BbGVydFJ1bGUSKwoGZXZlbnRzGAIgAygLMhsudjEuT2JzZXJ2YWJpbGl0eUFsZXJ0RXZlbnQiNQoWVXBzZXJ0QWxlcnRSdWxlUmVxdWVzdBIbCgRydWxlGAEgASgLMg0udjEuQWxlcnRSdWxlIjYKF1Vwc2VydEFsZXJ0UnVsZVJlc3BvbnNlEhsKBHJ1bGUYASABKAsyDS52MS5BbGVydFJ1bGUy5AIKDk1ldHJpY3NTZXJ2aWNlEj0KClN0cmVhbUxvZ3MSFS52MS5TdHJlYW1Mb2dzUmVxdWVzdBoWLnYxLlN0cmVhbUxvZ3NSZXNwb25zZTABElAKEUdldENsdXN0ZXJNZXRyaWNzEhwudjEuR2V0Q2x1c3Rlck1ldHJpY3NSZXF1ZXN0Gh0udjEuR2V0Q2x1c3Rlck1ldHJpY3NSZXNwb25zZRI4CglRdWVyeUxvZ3MSFC52MS5RdWVyeUxvZ3NSZXF1ZXN0GhUudjEuUXVlcnlMb2dzUmVzcG9uc2USOwoKTGlzdEFsZXJ0cxIVLnYxLkxpc3RBbGVydHNSZXF1ZXN0GhYudjEuTGlzdEFsZXJ0c1Jlc3BvbnNlEkoKD1Vwc2VydEFsZXJ0UnVsZRIaLnYxLlVwc2VydEFsZXJ0UnVsZVJlcXVlc3QaGy52MS5VcHNlcnRBbGVydFJ1bGVSZXNwb25zZUKBAQoGY29tLnYxQgxNZXRyaWNzUHJvdG9QAVpBZ2l0aHViLmNvbS94aXJvbjkwMjIyNC9ub3JpeC9jb250cm9sLXBsYW5lL2ludGVybmFsL2dlbi92MTtwYWFzdjGiAgNWWFiqAgJWMcoCAlYx4gIOVjFcR1BCTWV0YWRhdGHqAgJWMWIGcHJvdG8z");
 
 /**
  * @generated from message v1.StreamLogsRequest
@@ -62,6 +62,335 @@ export const StreamLogsResponseSchema: GenMessage<StreamLogsResponse> = /*@__PUR
   messageDesc(file_v1_metrics, 1);
 
 /**
+ * @generated from message v1.MetricSample
+ */
+export type MetricSample = Message<"v1.MetricSample"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string node_id = 2;
+   */
+  nodeId: string;
+
+  /**
+   * @generated from field: string name = 3;
+   */
+  name: string;
+
+  /**
+   * @generated from field: map<string, string> labels = 4;
+   */
+  labels: { [key: string]: string };
+
+  /**
+   * @generated from field: double value = 5;
+   */
+  value: number;
+
+  /**
+   * @generated from field: int64 timestamp = 6;
+   */
+  timestamp: bigint;
+};
+
+/**
+ * Describes the message v1.MetricSample.
+ * Use `create(MetricSampleSchema)` to create a new message.
+ */
+export const MetricSampleSchema: GenMessage<MetricSample> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 2);
+
+/**
+ * @generated from message v1.GetClusterMetricsRequest
+ */
+export type GetClusterMetricsRequest = Message<"v1.GetClusterMetricsRequest"> & {
+  /**
+   * @generated from field: string node_id = 1;
+   */
+  nodeId: string;
+
+  /**
+   * @generated from field: string name_prefix = 2;
+   */
+  namePrefix: string;
+
+  /**
+   * @generated from field: int32 limit = 3;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message v1.GetClusterMetricsRequest.
+ * Use `create(GetClusterMetricsRequestSchema)` to create a new message.
+ */
+export const GetClusterMetricsRequestSchema: GenMessage<GetClusterMetricsRequest> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 3);
+
+/**
+ * @generated from message v1.GetClusterMetricsResponse
+ */
+export type GetClusterMetricsResponse = Message<"v1.GetClusterMetricsResponse"> & {
+  /**
+   * @generated from field: repeated v1.MetricSample samples = 1;
+   */
+  samples: MetricSample[];
+};
+
+/**
+ * Describes the message v1.GetClusterMetricsResponse.
+ * Use `create(GetClusterMetricsResponseSchema)` to create a new message.
+ */
+export const GetClusterMetricsResponseSchema: GenMessage<GetClusterMetricsResponse> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 4);
+
+/**
+ * @generated from message v1.LogSegment
+ */
+export type LogSegment = Message<"v1.LogSegment"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string project_id = 2;
+   */
+  projectId: string;
+
+  /**
+   * @generated from field: string workload_id = 3;
+   */
+  workloadId: string;
+
+  /**
+   * @generated from field: string body = 4;
+   */
+  body: string;
+
+  /**
+   * @generated from field: string level = 5;
+   */
+  level: string;
+
+  /**
+   * @generated from field: int64 timestamp = 6;
+   */
+  timestamp: bigint;
+};
+
+/**
+ * Describes the message v1.LogSegment.
+ * Use `create(LogSegmentSchema)` to create a new message.
+ */
+export const LogSegmentSchema: GenMessage<LogSegment> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 5);
+
+/**
+ * @generated from message v1.QueryLogsRequest
+ */
+export type QueryLogsRequest = Message<"v1.QueryLogsRequest"> & {
+  /**
+   * @generated from field: string project_id = 1;
+   */
+  projectId: string;
+
+  /**
+   * @generated from field: string workload_id = 2;
+   */
+  workloadId: string;
+
+  /**
+   * @generated from field: string level = 3;
+   */
+  level: string;
+
+  /**
+   * @generated from field: int32 limit = 4;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message v1.QueryLogsRequest.
+ * Use `create(QueryLogsRequestSchema)` to create a new message.
+ */
+export const QueryLogsRequestSchema: GenMessage<QueryLogsRequest> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 6);
+
+/**
+ * @generated from message v1.QueryLogsResponse
+ */
+export type QueryLogsResponse = Message<"v1.QueryLogsResponse"> & {
+  /**
+   * @generated from field: repeated v1.LogSegment segments = 1;
+   */
+  segments: LogSegment[];
+};
+
+/**
+ * Describes the message v1.QueryLogsResponse.
+ * Use `create(QueryLogsResponseSchema)` to create a new message.
+ */
+export const QueryLogsResponseSchema: GenMessage<QueryLogsResponse> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 7);
+
+/**
+ * @generated from message v1.AlertRule
+ */
+export type AlertRule = Message<"v1.AlertRule"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string kind = 3;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: double threshold = 4;
+   */
+  threshold: number;
+
+  /**
+   * @generated from field: string channel = 5;
+   */
+  channel: string;
+
+  /**
+   * @generated from field: bool enabled = 6;
+   */
+  enabled: boolean;
+};
+
+/**
+ * Describes the message v1.AlertRule.
+ * Use `create(AlertRuleSchema)` to create a new message.
+ */
+export const AlertRuleSchema: GenMessage<AlertRule> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 8);
+
+/**
+ * @generated from message v1.ObservabilityAlertEvent
+ */
+export type ObservabilityAlertEvent = Message<"v1.ObservabilityAlertEvent"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string rule_id = 2;
+   */
+  ruleId: string;
+
+  /**
+   * @generated from field: string message = 3;
+   */
+  message: string;
+
+  /**
+   * @generated from field: string status = 4;
+   */
+  status: string;
+
+  /**
+   * @generated from field: int64 created_at = 5;
+   */
+  createdAt: bigint;
+};
+
+/**
+ * Describes the message v1.ObservabilityAlertEvent.
+ * Use `create(ObservabilityAlertEventSchema)` to create a new message.
+ */
+export const ObservabilityAlertEventSchema: GenMessage<ObservabilityAlertEvent> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 9);
+
+/**
+ * @generated from message v1.ListAlertsRequest
+ */
+export type ListAlertsRequest = Message<"v1.ListAlertsRequest"> & {
+  /**
+   * @generated from field: int32 limit = 1;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message v1.ListAlertsRequest.
+ * Use `create(ListAlertsRequestSchema)` to create a new message.
+ */
+export const ListAlertsRequestSchema: GenMessage<ListAlertsRequest> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 10);
+
+/**
+ * @generated from message v1.ListAlertsResponse
+ */
+export type ListAlertsResponse = Message<"v1.ListAlertsResponse"> & {
+  /**
+   * @generated from field: repeated v1.AlertRule rules = 1;
+   */
+  rules: AlertRule[];
+
+  /**
+   * @generated from field: repeated v1.ObservabilityAlertEvent events = 2;
+   */
+  events: ObservabilityAlertEvent[];
+};
+
+/**
+ * Describes the message v1.ListAlertsResponse.
+ * Use `create(ListAlertsResponseSchema)` to create a new message.
+ */
+export const ListAlertsResponseSchema: GenMessage<ListAlertsResponse> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 11);
+
+/**
+ * @generated from message v1.UpsertAlertRuleRequest
+ */
+export type UpsertAlertRuleRequest = Message<"v1.UpsertAlertRuleRequest"> & {
+  /**
+   * @generated from field: v1.AlertRule rule = 1;
+   */
+  rule?: AlertRule | undefined;
+};
+
+/**
+ * Describes the message v1.UpsertAlertRuleRequest.
+ * Use `create(UpsertAlertRuleRequestSchema)` to create a new message.
+ */
+export const UpsertAlertRuleRequestSchema: GenMessage<UpsertAlertRuleRequest> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 12);
+
+/**
+ * @generated from message v1.UpsertAlertRuleResponse
+ */
+export type UpsertAlertRuleResponse = Message<"v1.UpsertAlertRuleResponse"> & {
+  /**
+   * @generated from field: v1.AlertRule rule = 1;
+   */
+  rule?: AlertRule | undefined;
+};
+
+/**
+ * Describes the message v1.UpsertAlertRuleResponse.
+ * Use `create(UpsertAlertRuleResponseSchema)` to create a new message.
+ */
+export const UpsertAlertRuleResponseSchema: GenMessage<UpsertAlertRuleResponse> = /*@__PURE__*/
+  messageDesc(file_v1_metrics, 13);
+
+/**
  * @generated from service v1.MetricsService
  */
 export const MetricsService: GenService<{
@@ -72,6 +401,38 @@ export const MetricsService: GenService<{
     methodKind: "server_streaming";
     input: typeof StreamLogsRequestSchema;
     output: typeof StreamLogsResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.MetricsService.GetClusterMetrics
+   */
+  getClusterMetrics: {
+    methodKind: "unary";
+    input: typeof GetClusterMetricsRequestSchema;
+    output: typeof GetClusterMetricsResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.MetricsService.QueryLogs
+   */
+  queryLogs: {
+    methodKind: "unary";
+    input: typeof QueryLogsRequestSchema;
+    output: typeof QueryLogsResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.MetricsService.ListAlerts
+   */
+  listAlerts: {
+    methodKind: "unary";
+    input: typeof ListAlertsRequestSchema;
+    output: typeof ListAlertsResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.MetricsService.UpsertAlertRule
+   */
+  upsertAlertRule: {
+    methodKind: "unary";
+    input: typeof UpsertAlertRuleRequestSchema;
+    output: typeof UpsertAlertRuleResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_v1_metrics, 0);

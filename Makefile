@@ -17,7 +17,7 @@ embed-web: web
 	mkdir -p control-plane/internal/webui/dist
 	cp -R web/dist/. control-plane/internal/webui/dist/
 
-build: embed-web control-plane
+build: embed-web control-plane agent
 
 control-plane:
 	@echo "Compilando Control Plane (Go)..."

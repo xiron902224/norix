@@ -80,6 +80,9 @@ func (runtime *Runtime) reconcileOne(ctx context.Context, desired db.DesiredWork
 			}, nil
 		}
 		_ = runtime.remove(ctx, name)
+	} else {
+		// Remove stopped/created leftovers that block `docker run --name`.
+		_ = runtime.remove(ctx, name)
 	}
 
 	if err := runtime.pull(ctx, desired.Image); err != nil {
@@ -166,7 +169,11 @@ func (runtime *Runtime) inspectRunning(ctx context.Context, name string) (map[st
 	}
 	state, _ := parsed[0]["State"].(map[string]any)
 	running, _ := state["Running"].(bool)
-	if !running {
+	restarting, _ := state["Restarting"].(bool)
+	oomKilled, _ := state["OOMKilled"].(bool)
+	// Docker reports Running=true while Restarting=true during crash loops;
+	// treat those as not healthy so reconcile recreates / surfaces failure.
+	if !running || restarting || oomKilled {
 		return nil, false
 	}
 	return parsed[0], true

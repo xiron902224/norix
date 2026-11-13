@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FolderKanban, Plus, Server } from 'lucide-react'
 import { Button } from '../../../shared/ui/Button'
 import { FormField } from '../../../shared/ui/FormField'
@@ -7,18 +8,16 @@ import type { Project } from '../../../gen/v1/workload_pb'
 import { listNodes } from '../../nodes/services/nodes-api'
 import { createProject, deleteProject, listProjects, listWorkloads } from '../services/projects-api'
 
-interface ProjectsPageProps {
-  onOpenProject: (project: Project) => void
-}
-
 interface ProjectSummary extends Project {
   workloadCount: number
   runningCount: number
 }
 
-export function ProjectsPage({ onOpenProject }: ProjectsPageProps) {
+export function ProjectsPage() {
+  const navigate = useNavigate()
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [selected, setSelected] = useState<ProjectSummary | null>(null)
+  const openProject = (project: Project) => navigate(`/projects/${project.id}`)
   const [onlineNodes, setOnlineNodes] = useState(0)
   const [totalNodes, setTotalNodes] = useState(0)
   const [error, setError] = useState('')
@@ -130,7 +129,7 @@ export function ProjectsPage({ onOpenProject }: ProjectsPageProps) {
       </section>
 
       <div className="split-detail">
-        <section className="panel flux-shadow lift-card">
+        <section className="panel flux-shadow lift-card panel-table">
           <header className="panel-header">
             <div>
               <h3>All projects</h3>
@@ -150,29 +149,42 @@ export function ProjectsPage({ onOpenProject }: ProjectsPageProps) {
             </div>
           ) : null}
 
-          <ul className="resource-list">
-            {projects.map((project) => (
-              <li key={project.id} className={selected?.id === project.id ? 'is-selected' : ''}>
-                <button
-                  type="button"
-                  className="resource-link"
-                  onClick={() => setSelected(project)}
-                  onDoubleClick={() => onOpenProject(project)}
-                >
-                  <strong>{project.name}</strong>
-                  <div className="resource-meta">
-                    <span className="chip">{project.workloadCount} workloads</span>
-                    <span className="chip chip-info">{project.runningCount} running</span>
-                  </div>
-                  <span className="mono">{shortId(project.id, 12)}</span>
-                </button>
-                <div className="row-actions">
-                  <Button type="button" variant="secondary" onClick={() => onOpenProject(project)}>Open</Button>
-                  <Button variant="danger" type="button" onClick={() => void onDelete(project)}>Delete</Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="table-scroll">
+            <table className="dense-table">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Workloads</th>
+                  <th>Running</th>
+                  <th>ID</th>
+                  <th className="align-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {projects.map((project) => (
+                  <tr
+                    key={project.id}
+                    className={`row-clickable ${selected?.id === project.id ? 'is-selected' : ''}`}
+                    onClick={() => setSelected(project)}
+                    onDoubleClick={() => openProject(project)}
+                  >
+                    <td><strong>{project.name}</strong></td>
+                    <td className="mono">{project.workloadCount}</td>
+                    <td>
+                      <span className="status-chip status-running">{project.runningCount}</span>
+                    </td>
+                    <td className="mono">{shortId(project.id, 12)}</td>
+                    <td className="align-right">
+                      <div className="row-actions">
+                        <Button type="button" variant="secondary" onClick={(event) => { event.stopPropagation(); openProject(project) }}>Open</Button>
+                        <Button variant="danger" type="button" onClick={(event) => { event.stopPropagation(); void onDelete(project) }}>Delete</Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <aside className="panel flux-shadow lift-card detail-pane">
@@ -208,7 +220,7 @@ export function ProjectsPage({ onOpenProject }: ProjectsPageProps) {
           )}
           {selected ? (
             <div className="page-actions" style={{ marginTop: 16 }}>
-              <Button type="button" onClick={() => onOpenProject(selected)}>Open project</Button>
+              <Button type="button" onClick={() => openProject(selected)}>Open project</Button>
             </div>
           ) : null}
         </aside>

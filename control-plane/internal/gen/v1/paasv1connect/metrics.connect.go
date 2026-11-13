@@ -26,6 +26,16 @@ const (
 const (
 	// MetricsServiceStreamLogsProcedure is the procedure name of the MetricsService's StreamLogs RPC.
 	MetricsServiceStreamLogsProcedure = "/v1.MetricsService/StreamLogs"
+	// MetricsServiceGetClusterMetricsProcedure is the procedure name of the MetricsService's
+	// GetClusterMetrics RPC.
+	MetricsServiceGetClusterMetricsProcedure = "/v1.MetricsService/GetClusterMetrics"
+	// MetricsServiceQueryLogsProcedure is the procedure name of the MetricsService's QueryLogs RPC.
+	MetricsServiceQueryLogsProcedure = "/v1.MetricsService/QueryLogs"
+	// MetricsServiceListAlertsProcedure is the procedure name of the MetricsService's ListAlerts RPC.
+	MetricsServiceListAlertsProcedure = "/v1.MetricsService/ListAlerts"
+	// MetricsServiceUpsertAlertRuleProcedure is the procedure name of the MetricsService's
+	// UpsertAlertRule RPC.
+	MetricsServiceUpsertAlertRuleProcedure = "/v1.MetricsService/UpsertAlertRule"
 )
 
 var (
@@ -36,11 +46,43 @@ var (
 			Procedure:  MetricsServiceStreamLogsProcedure,
 		}
 	})
+	metricsServiceGetClusterMetricsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_metrics_proto.Services().ByName("MetricsService").Methods().ByName("GetClusterMetrics"),
+			Procedure:  MetricsServiceGetClusterMetricsProcedure,
+		}
+	})
+	metricsServiceQueryLogsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_metrics_proto.Services().ByName("MetricsService").Methods().ByName("QueryLogs"),
+			Procedure:  MetricsServiceQueryLogsProcedure,
+		}
+	})
+	metricsServiceListAlertsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_metrics_proto.Services().ByName("MetricsService").Methods().ByName("ListAlerts"),
+			Procedure:  MetricsServiceListAlertsProcedure,
+		}
+	})
+	metricsServiceUpsertAlertRuleSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_metrics_proto.Services().ByName("MetricsService").Methods().ByName("UpsertAlertRule"),
+			Procedure:  MetricsServiceUpsertAlertRuleProcedure,
+		}
+	})
 )
 
 // MetricsServiceClient is a client for the v1.MetricsService service.
 type MetricsServiceClient interface {
 	StreamLogs(context.Context, *v1.StreamLogsRequest) (MetricsServiceStreamLogsClientStream, error)
+	GetClusterMetrics(context.Context, *v1.GetClusterMetricsRequest) (*v1.GetClusterMetricsResponse, error)
+	QueryLogs(context.Context, *v1.QueryLogsRequest) (*v1.QueryLogsResponse, error)
+	ListAlerts(context.Context, *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error)
+	UpsertAlertRule(context.Context, *v1.UpsertAlertRuleRequest) (*v1.UpsertAlertRuleResponse, error)
 }
 
 // NewMetricsServiceClient constructs a client for the v1.MetricsService service. Multiple service
@@ -73,6 +115,10 @@ func (s MetricsServiceStreamLogsClientStream) Close() error {
 // MetricsServiceHandler is an implementation of the v1.MetricsService service.
 type MetricsServiceHandler interface {
 	StreamLogs(context.Context, *v1.StreamLogsRequest, MetricsServiceStreamLogsServerStream) error
+	GetClusterMetrics(context.Context, *v1.GetClusterMetricsRequest) (*v1.GetClusterMetricsResponse, error)
+	QueryLogs(context.Context, *v1.QueryLogsRequest) (*v1.QueryLogsResponse, error)
+	ListAlerts(context.Context, *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error)
+	UpsertAlertRule(context.Context, *v1.UpsertAlertRuleRequest) (*v1.UpsertAlertRuleResponse, error)
 }
 
 // RegisterMetricsServiceHandler registers svc as the v1.MetricsService implementation on server.
@@ -80,6 +126,10 @@ func RegisterMetricsServiceHandler(server *connect.Server, svc MetricsServiceHan
 	adapter := metricsServiceHandler{svc: svc}
 	server.Register(
 		connect.Method{Spec: metricsServiceStreamLogsSpec(), Handler: adapter.streamLogs},
+		connect.Method{Spec: metricsServiceGetClusterMetricsSpec(), Handler: adapter.getClusterMetrics},
+		connect.Method{Spec: metricsServiceQueryLogsSpec(), Handler: adapter.queryLogs},
+		connect.Method{Spec: metricsServiceListAlertsSpec(), Handler: adapter.listAlerts},
+		connect.Method{Spec: metricsServiceUpsertAlertRuleSpec(), Handler: adapter.upsertAlertRule},
 	)
 }
 
@@ -106,6 +156,22 @@ func (UnimplementedMetricsServiceHandler) StreamLogs(context.Context, *v1.Stream
 	return connect.NewError(connect.CodeUnimplemented, "v1.MetricsService.StreamLogs is not implemented")
 }
 
+func (UnimplementedMetricsServiceHandler) GetClusterMetrics(context.Context, *v1.GetClusterMetricsRequest) (*v1.GetClusterMetricsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.MetricsService.GetClusterMetrics is not implemented")
+}
+
+func (UnimplementedMetricsServiceHandler) QueryLogs(context.Context, *v1.QueryLogsRequest) (*v1.QueryLogsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.MetricsService.QueryLogs is not implemented")
+}
+
+func (UnimplementedMetricsServiceHandler) ListAlerts(context.Context, *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.MetricsService.ListAlerts is not implemented")
+}
+
+func (UnimplementedMetricsServiceHandler) UpsertAlertRule(context.Context, *v1.UpsertAlertRuleRequest) (*v1.UpsertAlertRuleResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.MetricsService.UpsertAlertRule is not implemented")
+}
+
 type metricsServiceClient struct {
 	client *connect.Client
 }
@@ -118,6 +184,38 @@ func (c *metricsServiceClient) StreamLogs(ctx context.Context, req *v1.StreamLog
 	return MetricsServiceStreamLogsClientStream{stream: stream}, nil
 }
 
+func (c *metricsServiceClient) GetClusterMetrics(ctx context.Context, req *v1.GetClusterMetricsRequest) (*v1.GetClusterMetricsResponse, error) {
+	var res v1.GetClusterMetricsResponse
+	if err := c.client.CallUnary(ctx, metricsServiceGetClusterMetricsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *metricsServiceClient) QueryLogs(ctx context.Context, req *v1.QueryLogsRequest) (*v1.QueryLogsResponse, error) {
+	var res v1.QueryLogsResponse
+	if err := c.client.CallUnary(ctx, metricsServiceQueryLogsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *metricsServiceClient) ListAlerts(ctx context.Context, req *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
+	var res v1.ListAlertsResponse
+	if err := c.client.CallUnary(ctx, metricsServiceListAlertsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *metricsServiceClient) UpsertAlertRule(ctx context.Context, req *v1.UpsertAlertRuleRequest) (*v1.UpsertAlertRuleResponse, error) {
+	var res v1.UpsertAlertRuleResponse
+	if err := c.client.CallUnary(ctx, metricsServiceUpsertAlertRuleSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 type metricsServiceHandler struct{ svc MetricsServiceHandler }
 
 func (h metricsServiceHandler) streamLogs(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
@@ -126,4 +224,52 @@ func (h metricsServiceHandler) streamLogs(ctx context.Context, _ connect.Spec, s
 		return err
 	}
 	return h.svc.StreamLogs(ctx, &req, MetricsServiceStreamLogsServerStream{stream: stream})
+}
+
+func (h metricsServiceHandler) getClusterMetrics(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetClusterMetricsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetClusterMetrics(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h metricsServiceHandler) queryLogs(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.QueryLogsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.QueryLogs(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h metricsServiceHandler) listAlerts(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListAlertsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListAlerts(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h metricsServiceHandler) upsertAlertRule(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpsertAlertRuleRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpsertAlertRule(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

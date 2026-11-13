@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Bell, DatabaseBackup, HardDriveDownload, RefreshCw } from 'lucide-react'
+import { Bell, DatabaseBackup, Download, HardDriveDownload, RefreshCw } from 'lucide-react'
 import { Button } from '../../../shared/ui/Button'
 import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
-import { createBackup, listAlerts, listBackups, restoreBackup, type AlertItem, type BackupItem } from '../services/ops-api'
+import {
+  createBackup,
+  downloadBackup,
+  listAlerts,
+  listBackups,
+  restoreBackup,
+  type AlertItem,
+  type BackupItem,
+} from '../services/ops-api'
 
 function formatBytes(value: number) {
   if (!value) return '0 B'
@@ -74,19 +82,35 @@ export function OpsPage() {
     }
   }
 
+  async function onDownload(backup: BackupItem) {
+    setBusy(`dl-${backup.ID}`)
+    setError('')
+    try {
+      await downloadBackup(backup)
+      setNotice(`Downloading ${backup.Filename}`)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Download failed')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const completed = backups.filter((item) => item.Status === 'completed' || item.Status === 'restored')
+  const lastBackup = completed[0]
+
   return (
     <section className="page">
       <header className="page-header">
         <div>
           <h2>Operations</h2>
-          <p>Backups, alerts, and runtime health for Alpha.</p>
+          <p>PostgreSQL snapshots, alert dispatch, and Alpha restore path (Stitch Domains &amp; Ops).</p>
         </div>
         <div className="page-actions">
           <Button variant="secondary" type="button" onClick={() => void refresh()}>
             <RefreshCw size={14} /> Refresh
           </Button>
           <Button type="button" disabled={busy === 'backup'} onClick={() => void onBackup()}>
-            <DatabaseBackup size={14} /> {busy === 'backup' ? 'Backing up…' : 'Create backup'}
+            <DatabaseBackup size={14} /> {busy === 'backup' ? 'Backing up…' : 'Trigger Backup'}
           </Button>
         </div>
       </header>
@@ -97,12 +121,30 @@ export function OpsPage() {
         <ActivityBanner title="Creating Postgres backup" detail="Running pg_dump into NORIX_BACKUP_DIR." />
       ) : null}
 
+      <div className="metric-grid">
+        <article className="metric-card">
+          <span className="label-sm">PostgreSQL backups</span>
+          <strong className="mono">{completed.length}</strong>
+          <p className="muted">completed archives</p>
+        </article>
+        <article className="metric-card">
+          <span className="label-sm">Last snapshot</span>
+          <strong className="mono">{lastBackup ? formatBytes(lastBackup.SizeBytes) : '—'}</strong>
+          <p className="muted">{lastBackup ? new Date(lastBackup.CreatedAt).toLocaleString() : 'none yet'}</p>
+        </article>
+        <article className="metric-card">
+          <span className="label-sm">Open alerts</span>
+          <strong className="mono">{alerts.length}</strong>
+          <p className="muted">node / deploy events</p>
+        </article>
+      </div>
+
       <div className="ops-grid">
         <section className="panel flux-shadow lift-card">
           <header className="panel-header">
             <div>
-              <h3>Backups</h3>
-              <p className="muted">pg_dump snapshots. Restore is destructive — use carefully.</p>
+              <h3>PostgreSQL automated snapshots</h3>
+              <p className="muted">Download SQL dumps or restore into the current database.</p>
             </div>
             <HardDriveDownload size={16} className="muted-icon" aria-hidden />
           </header>
@@ -111,42 +153,70 @@ export function OpsPage() {
             <div className="empty-state compact">
               <DatabaseBackup />
               <strong>No backups yet</strong>
-              <p className="muted">Create one to verify the Alpha restore path.</p>
+              <p className="muted">Trigger a backup to verify the Alpha restore path.</p>
             </div>
           ) : null}
-          <ul className="resource-list">
-            {backups.map((backup) => (
-              <li key={backup.ID} className="workload-row">
-                <div className="resource-link">
-                  <strong className="mono">{backup.Filename}</strong>
-                  <div className="resource-meta">
-                    <span className={`status-badge status-${backup.Status === 'completed' || backup.Status === 'restored' ? 'running' : backup.Status === 'failed' ? 'failed' : 'pending'}`}>
-                      {backup.Status}
-                    </span>
-                    <span className="chip">{formatBytes(backup.SizeBytes)}</span>
-                  </div>
-                  <p className="hint-line">{new Date(backup.CreatedAt).toLocaleString()} · {backup.CreatedBy || 'system'}</p>
-                </div>
-                <div className="row-actions">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={busy === backup.ID || backup.Status === 'failed'}
-                    onClick={() => void onRestore(backup)}
-                  >
-                    {busy === backup.ID ? 'Restoring…' : 'Restore'}
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="table-wrap">
+            <table className="dense-table">
+              <thead>
+                <tr>
+                  <th>Archive</th>
+                  <th>Status</th>
+                  <th>Size</th>
+                  <th>Created</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {backups.map((backup) => {
+                  const canDownload = backup.Status === 'completed' || backup.Status === 'restored'
+                  return (
+                    <tr key={backup.ID}>
+                      <td className="mono">{backup.Filename}</td>
+                      <td>
+                        <span className={`status-badge status-${canDownload ? 'running' : backup.Status === 'failed' ? 'failed' : 'pending'}`}>
+                          {backup.Status}
+                        </span>
+                      </td>
+                      <td className="mono">{formatBytes(backup.SizeBytes)}</td>
+                      <td className="muted">{new Date(backup.CreatedAt).toLocaleString()}</td>
+                      <td>
+                        <div className="row-actions">
+                          {canDownload ? (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              disabled={busy === `dl-${backup.ID}`}
+                              onClick={() => void onDownload(backup)}
+                            >
+                              <Download size={14} /> {busy === `dl-${backup.ID}` ? '…' : 'Download'}
+                            </Button>
+                          ) : (
+                            <span className="muted">—</span>
+                          )}
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={busy === backup.ID || backup.Status === 'failed'}
+                            onClick={() => void onRestore(backup)}
+                          >
+                            {busy === backup.ID ? 'Restoring…' : 'Restore'}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="panel flux-shadow lift-card">
           <header className="panel-header">
             <div>
-              <h3>Alerts</h3>
-              <p className="muted">Node down and deploy failed events. Optional webhook: <code>NORIX_ALERT_WEBHOOK_URL</code>.</p>
+              <h3>Emergency alert webhooks</h3>
+              <p className="muted">Node down and deploy failed. Optional: <code>NORIX_ALERT_WEBHOOK_URL</code>.</p>
             </div>
             <Bell size={16} className="muted-icon" aria-hidden />
           </header>

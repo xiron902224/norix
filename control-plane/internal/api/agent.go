@@ -175,6 +175,7 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 	if networkPlan.Generation > 0 {
 		desiredNetwork = desiredNetworkToProto(networkPlan)
 	}
+	// S15: wasm desired state is not in HeartbeatResponse yet; agents write dry-run wasm/functions.json locally.
 	return &paasv1.HeartbeatResponse{
 		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds,
 		DesiredEdge: desiredEdge, DesiredNetwork: desiredNetwork,
@@ -264,6 +265,7 @@ func (service AgentService) GetNetworkStatus(ctx context.Context, _ *paasv1.GetN
 			Name: item.Name, Type: item.Type, Value: item.Value, TtlSeconds: item.TTL,
 		})
 	}
+	// apply_enabled mirrors NORIX_APPLY_WIREGUARD on the control plane (false => mesh dry-run).
 	return &paasv1.GetNetworkStatusResponse{
 		NodesReady: int32(status.NodesReady), NodesTotal: int32(status.NodesTotal),
 		DnsRecords: int32(status.DNSRecords), Certificates: int32(status.Certificates),

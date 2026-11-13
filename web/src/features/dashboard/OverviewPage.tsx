@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Activity,
   ArrowUpRight,
@@ -19,8 +20,6 @@ import { relativeAge } from '../../shared/lib/format'
 
 interface OverviewPageProps {
   user: SessionUser
-  onOpenProjects: () => void
-  onOpenProject: (project: Project) => void
 }
 
 const ACTIVITY = [
@@ -28,7 +27,7 @@ const ACTIVITY = [
   { title: 'Edge HTTPS on :8443', detail: 'Open domains as https://host:8443 (Caddy)', time: '2m ago', tone: 'info' },
   { title: 'Git builds & deploys', detail: 'Build from git or public images in Projects', time: '12m ago', tone: 'success' },
   { title: 'Node live metrics', detail: 'CPU / memory / disk on the Nodes detail pane', time: '1h ago', tone: 'success' },
-  { title: 'Next: hardening', detail: 'Threat model and release signing in Sprint 8', time: '3h ago', tone: 'muted' },
+  { title: 'S9–S15 foundations', detail: 'Observability, DBs, sandboxes, previews, Wasm in progress', time: '3h ago', tone: 'muted' },
 ] as const
 
 function greeting() {
@@ -57,7 +56,8 @@ function Sparkline({ values, className = '' }: { values: number[]; className?: s
   )
 }
 
-export function OverviewPage({ user, onOpenProjects, onOpenProject }: OverviewPageProps) {
+export function OverviewPage({ user }: OverviewPageProps) {
+  const navigate = useNavigate()
   const [projects, setProjects] = useState<Project[]>([])
   const [nodes, setNodes] = useState<Node[]>([])
   const [workloadCount, setWorkloadCount] = useState(0)
@@ -115,14 +115,16 @@ export function OverviewPage({ user, onOpenProjects, onOpenProject }: OverviewPa
       <header className="page-header hero-header">
         <div>
           <p className="eyebrow soft">{greeting()}, {firstName}</p>
-          <h2>Command center</h2>
-          <p>Projects, nodes, and container deploys — heartbeat keeps desired and observed in sync.</p>
+          <p className="muted">Workload reconciler · Connect RPC · containerd / micro-VM / Wasm engines</p>
         </div>
         <div className="page-actions">
-          <button type="button" className="primary-button flux-glow" onClick={onOpenProjects}>
-            Manage projects
+          <Link to="/projects" className="secondary-button">
+            Last 1 hour
+          </Link>
+          <Link to="/projects" className="primary-button flux-glow">
+            Deploy image / Git
             <ArrowUpRight size={16} aria-hidden />
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -276,7 +278,7 @@ export function OverviewPage({ user, onOpenProjects, onOpenProject }: OverviewPa
               <h3>Recent projects</h3>
               <p className="muted">Jump back into your workspace.</p>
             </div>
-            <button type="button" className="ghost-button" onClick={onOpenProjects}>View all</button>
+            <Link to="/projects" className="ghost-button">View all</Link>
           </header>
           {loading ? (
             <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading projects…</span></div>
@@ -286,13 +288,17 @@ export function OverviewPage({ user, onOpenProjects, onOpenProject }: OverviewPa
               <FolderKanban />
               <strong>No projects yet</strong>
               <p className="muted">Create one to populate this feed.</p>
-              <button type="button" className="primary-button" onClick={onOpenProjects}>Create project</button>
+              <Link to="/projects" className="primary-button">Create project</Link>
             </div>
           ) : (
             <ul className="resource-list">
               {projects.slice(0, 5).map((project) => (
                 <li key={project.id}>
-                  <button type="button" className="resource-link" onClick={() => onOpenProject(project)}>
+                  <button
+                    type="button"
+                    className="resource-link"
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                  >
                     <strong>{project.name}</strong>
                     <span className="mono">{project.id}</span>
                   </button>

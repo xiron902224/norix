@@ -40,6 +40,8 @@ type Workload struct {
 	PreferredZone      string
 	AffinityLabels     map[string]string
 	AntiAffinityLabels map[string]string
+	IsolationMode      string
+	ExecutionRuntime   string
 }
 
 func CreateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, workload Workload, actor AuditActor) (Workload, error) {
@@ -165,7 +167,8 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 		       desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
 		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
-		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text
+		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
+		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker')
 		FROM workloads WHERE project_id = $1::uuid AND status <> 'deleting' ORDER BY created_at, name`, projectID)
 	if err != nil {
 		return nil, err
@@ -184,7 +187,7 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 			&workload.AssignedNodeID, &workload.ContainerID, &workload.LastError, &workload.DesiredAction,
 			&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 			&workload.ReplicaCount, &workload.ScheduleStrategy, &workload.RequireKVM, &workload.PreferredZone,
-			&affinityText, &antiText,
+			&affinityText, &antiText, &workload.IsolationMode, &workload.ExecutionRuntime,
 		); err != nil {
 			return nil, err
 		}
