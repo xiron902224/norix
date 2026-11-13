@@ -26,12 +26,50 @@ type ManagedDatabase struct {
 }
 
 func engineFromString(engine string) (string, error) {
+	return NormalizeManagedEngine(engine)
+}
+
+// NormalizeManagedEngine validates the S10 1-click catalog.
+func NormalizeManagedEngine(engine string) (string, error) {
 	switch strings.ToLower(strings.TrimSpace(engine)) {
 	case "postgres", "mysql", "redis", "mongodb":
-		return strings.ToLower(engine), nil
+		return strings.ToLower(strings.TrimSpace(engine)), nil
 	default:
 		return "", fmt.Errorf("unsupported database engine")
 	}
+}
+
+// CatalogImageForEngine returns the default container image for a managed DB.
+func CatalogImageForEngine(engine string) (string, error) {
+	engine, err := NormalizeManagedEngine(engine)
+	if err != nil {
+		return "", err
+	}
+	switch engine {
+	case "postgres":
+		return "postgres:16-alpine", nil
+	case "mysql":
+		return "mysql:8.4", nil
+	case "redis":
+		return "redis:7-alpine", nil
+	case "mongodb":
+		return "mongo:7", nil
+	default:
+		return "", fmt.Errorf("unsupported database engine")
+	}
+}
+
+// DefaultBackupPath builds a local backup artifact path (S10).
+func DefaultBackupPath(volumePath, databaseID string) string {
+	base := strings.TrimSpace(volumePath)
+	if base == "" {
+		base = "/var/lib/norix/dbs"
+	}
+	id := strings.TrimSpace(databaseID)
+	if id == "" {
+		id = "db"
+	}
+	return fmt.Sprintf("%s/backups/%s-%d.dump", base, id, time.Now().UTC().Unix())
 }
 
 func CreateManagedDatabase(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID, engine, name, backupSchedule string) (ManagedDatabase, error) {
