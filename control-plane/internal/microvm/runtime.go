@@ -42,13 +42,15 @@ func ValidateBootSpec(spec BootSpec) error {
 	if spec.MemoryMB < 128 {
 		return fmt.Errorf("memory_mb must be >= 128")
 	}
-	if spec.RequireKVM && (spec.Hypervisor == "" || spec.Hypervisor == HypervisorCloudHypervisor || spec.Hypervisor == HypervisorFirecracker) {
-		return nil
-	}
 	if !spec.RequireKVM {
 		return fmt.Errorf("microvm requires KVM")
 	}
-	return nil
+	switch spec.Hypervisor {
+	case "", HypervisorCloudHypervisor, HypervisorFirecracker:
+		return nil
+	default:
+		return fmt.Errorf("unsupported hypervisor %q", spec.Hypervisor)
+	}
 }
 
 // SelectHypervisor picks CH by default (ADR spike); Firecracker if requested.

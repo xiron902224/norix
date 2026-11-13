@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-13  
 **Plan canónico:** [`docs/PLAN_SPRINTS_S0_S22.md`](./PLAN_SPRINTS_S0_S22.md)  
-**Hito:** **Beta privada v0.5 (S10 cerrado)** — siguiente S11 micro-VM
+**Hito:** Beta 0.5 — **S11 cerrado** (control-plane micro-VM); siguiente S12 sandboxes
 
 ---
 
@@ -11,8 +11,8 @@
 | | |
 |---|---|
 | **Fase** | **Fase 3** (S11–S14 sandboxes) |
-| **Sprint activo** | **S11** — Runtime micro-VM y guest agent |
-| **Último cerrado** | **S10** managed DBs + backups |
+| **Sprint activo** | **S12** — Snapshots, pools y API sandboxes |
+| **Último cerrado** | **S11** micro-VM runtime (KVM boot pendiente hardware) |
 | **Versión** | `0.5.0-beta` |
 
 ---
@@ -23,17 +23,14 @@
 |---|---|---|
 | S0 | Parcial (spikes KVM informe) | — |
 | S1–S6 | **Cerrado** (Alpha) | SPRINT_1…6 |
-| S7 | **Cerrado** | SPRINT_7_CIERRE |
-| S8 | **Cerrado** (apply WG opt-in) | SPRINT_8_CIERRE |
-| S9 | **Cerrado** | SPRINT_9_CIERRE |
-| S10 | **Cerrado** (Beta 0.5) | SPRINT_10_CIERRE |
-| S11 | Abierto | — |
-| S12–S14 | Pendiente | — |
-| S15–S18 | Pendiente | — |
-| S19–S22 | Pendiente | — |
+| S7–S10 | **Cerrado** | SPRINT_7…10 |
+| S11 | **Cerrado** (control plane) | SPRINT_11_CIERRE |
+| S12 | Abierto | — |
+| S13–S14 | Pendiente | — |
+| S15–S22 | Pendiente | — |
 
 ---
 
 ## 3. Smoke local
 
-Ver README Quick Start. `curl -s http://127.0.0.1:8080/healthz` → 200.
+`curl -s http://127.0.0.1:8080/healthz` → 200.
