@@ -156,7 +156,7 @@ Deleting a workload marks it **deleting**, sends `stop` to the node that owns th
 **Alpha v0.1 (S6 reached).** One-node path works: auth, projects/workloads, local runtime and/or Rust agent, git→build, Caddy domains/TLS (Pebble), basic ops.
 
 **Canonical roadmap:** **S0–S22** through GA 1.0 — see [`docs/PLAN_SPRINTS_S0_S22.md`](docs/PLAN_SPRINTS_S0_S22.md).  
-**Where we are:** [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) — **S16 closed**; next **S17** HA leases → S18–S22 GA.
+**Where we are:** [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) — **S17 closed**; next **S18** autoscaling → S19–S22 GA.
 
 ---
 
