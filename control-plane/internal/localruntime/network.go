@@ -7,9 +7,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/xiron902224/norix/control-plane/internal/db"
+	"github.com/xiron902224/norix/control-plane/internal/network"
 )
 
 // ApplyNetwork writes mesh artifacts locally; live wg-quick/nft only when plan.Apply is true (NORIX_APPLY_WIREGUARD).
@@ -40,7 +40,11 @@ func (runtime *Runtime) ApplyNetwork(ctx context.Context, plan db.DesiredNetwork
 		return failNetwork(plan, logs, err)
 	}
 	logs = append(logs, "wrote "+nftPath)
-	if err := os.WriteFile(dnsPath, []byte(renderHosts(plan.DNSRecords)), 0o644); err != nil {
+	dnsRecords := make([]network.DNSRecord, 0, len(plan.DNSRecords))
+	for _, record := range plan.DNSRecords {
+		dnsRecords = append(dnsRecords, network.DNSRecord{Name: record.Name, Type: record.Type, Value: record.Value})
+	}
+	if err := os.WriteFile(dnsPath, []byte(network.RenderHostsFile(dnsRecords)), 0o644); err != nil {
 		return failNetwork(plan, logs, err)
 	}
 	logs = append(logs, fmt.Sprintf("wrote %s (%d records)", dnsPath, len(plan.DNSRecords)))
@@ -93,19 +97,6 @@ func failNetwork(plan db.DesiredNetworkPlan, logs []string, err error) db.Observ
 		Generation: plan.Generation, Status: "error",
 		Message: err.Error(), LogLines: append(logs, err.Error()),
 	}
-}
-
-func renderHosts(records []db.NetworkDNSRecord) string {
-	var b strings.Builder
-	b.WriteString("# norix internal DNS snapshot\n")
-	fmt.Fprintf(&b, "# generated %s\n", time.Now().UTC().Format(time.RFC3339))
-	for _, record := range records {
-		if record.Type != "A" && record.Type != "AAAA" {
-			continue
-		}
-		fmt.Fprintf(&b, "%s %s\n", record.Value, record.Name)
-	}
-	return b.String()
 }
 
 func sanitizeFile(value string) string {

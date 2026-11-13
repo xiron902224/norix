@@ -51,6 +51,32 @@ func ServiceFQDN(projectName, workloadName string) string {
 	return fmt.Sprintf("%s.%s.%s", sanitizeDNS(workloadName), sanitizeDNS(projectName), DNSSuffix)
 }
 
+// DNSRecord is an internal overlay DNS entry (hosts-file style).
+type DNSRecord struct {
+	Name  string
+	Type  string // A | AAAA | CNAME
+	Value string
+}
+
+// RenderHostsFile builds a hosts snapshot for service discovery on the overlay.
+func RenderHostsFile(records []DNSRecord) string {
+	var b strings.Builder
+	b.WriteString("# norix internal DNS snapshot\n")
+	for _, record := range records {
+		typ := strings.ToUpper(strings.TrimSpace(record.Type))
+		if typ != "A" && typ != "AAAA" {
+			continue
+		}
+		name := strings.TrimSpace(record.Name)
+		value := strings.TrimSpace(record.Value)
+		if name == "" || value == "" {
+			continue
+		}
+		fmt.Fprintf(&b, "%s %s\n", value, name)
+	}
+	return b.String()
+}
+
 func ProjectMark(projectIndex int) int {
 	if projectIndex <= 0 {
 		return 100
