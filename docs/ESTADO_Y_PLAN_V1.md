@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-13  
 **Plan canónico:** [`docs/PLAN_SPRINTS_S0_S22.md`](./PLAN_SPRINTS_S0_S22.md)  
-**Hito:** **Beta sandboxes v0.8 (S14 cerrado)** — siguiente S15 Wasm
+**Hito:** Beta sandboxes 0.8 — **S15 cerrado**; siguiente S16 teams/quotas
 
 ---
 
@@ -10,9 +10,9 @@
 
 | | |
 |---|---|
-| **Fase** | **Fase 4** (S15–S18 Wasm/empresa/HA) |
-| **Sprint activo** | **S15** — WebAssembly de primera clase |
-| **Último cerrado** | **S14** PR preview hostnames |
+| **Fase** | **Fase 4** (S15–S18) |
+| **Sprint activo** | **S16** — Multi-equipo, cuotas y medición |
+| **Último cerrado** | **S15** Wasm fuel/memory limits |
 | **Versión** | `0.8.0-beta` |
 
 ---
@@ -22,10 +22,10 @@
 | Sprint | Estado | Cierre |
 |---|---|---|
 | S0 | Parcial | — |
-| S1–S13 | **Cerrado** | SPRINT_1…13 |
-| S14 | **Cerrado** (Beta sandboxes 0.8) | SPRINT_14_CIERRE |
-| S15 | Abierto | — |
-| S16–S22 | Pendiente | — |
+| S1–S14 | **Cerrado** | SPRINT_1…14 |
+| S15 | **Cerrado** | SPRINT_15_CIERRE |
+| S16 | Abierto | — |
+| S17–S22 | Pendiente | — |
 
 ---
 
