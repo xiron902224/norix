@@ -1,194 +1,166 @@
-# Norix — Estado y plan hasta v1.0 GA
+# Norix — Estado vs plan S0–S22
 
 **Fecha:** 2026-11-13  
-**Fuente de verdad operativa:** este documento.  
-**Relacionados:** `docs/adr/`, `docs/SPRINT_*_CIERRE.md`, `docs/runbooks/S7_OPERATIONS.md`, `docs/AGENT_PRODUCTION_CHECKLIST.md`, `docs/ARQUITECTURA_Y_BUENAS_PRACTICAS.md`
+**Plan canónico (23 sprints):** [`docs/PLAN_SPRINTS_S0_S22.md`](./PLAN_SPRINTS_S0_S22.md) — **se mantiene S0…S22 hasta GA 1.0.**  
+**Relacionados:** `docs/adr/`, `docs/SPRINT_*_CIERRE.md`, `docs/runbooks/`, `docs/AGENT_PRODUCTION_CHECKLIST.md`, `docs/ARQUITECTURA_Y_BUENAS_PRACTICAS.md`
 
 ---
 
-## 1. Veredicto
+## 1. Dónde estamos
 
-Norix está en **Alpha operativa**: un solo nodo (control plane + local runtime Docker y/o agente Rust) puede autenticar, desplegar imagen/git, enrutar HTTPS local (Caddy + Pebble) y operar backups/métricas/alertas básicas.
+| | |
+|---|---|
+| **Fase actual** | Transición **Fase 1 → Fase 2** |
+| **Sprint activo (siguiente a completar)** | **S7 · Scheduler multi-nodo** (cerrar gaps vs DoD original) |
+| **Último hito alcanzado** | **Alpha v0.1 (S6)** en la práctica: un nodo, git/imagen, dominios/TLS local, ops mínimas |
+| **Hito siguiente** | **Beta privada v0.5 (S10)** |
 
-**Siguiente bloque hasta producción:** S8 hardening → S9 beta privada → S10 GA v1.0.
+El recorte “S8 hardening → S10 GA” fue un atajo documental. **Queda anulado como plan de numeración.** Hardening de producción vive en **S19–S22**; no sustituye S7–S18.
 
-Hay **scaffolds post-v1** en el árbol (sandboxes, Wasm, PR previews, teams/quotas, managed DBs, HA leases). Existen APIs/UI/migraciones, pero **no son DoD de v1.0**: no bloquean GA y no sustituyen hardening.
-
----
-
-## 2. Qué hay en el código (verificado)
-
-### Núcleo v1 (listo para endurecer)
-
-| Área | Estado | Evidencia |
-|---|---|---|
-| Auth / sesiones / bootstrap | Hecho | migraciones 000001+, Connect AuthService |
-| Projects / workloads / RLS | Hecho | 000002–000003, Project/Workload services |
-| Agente Rust | Hecho (mejorable) | enroll, heartbeat, reconcile Docker/nerdctl |
-| Local runtime embebido | Hecho | `internal/localruntime` (deploy sin agente remoto) |
-| Desired → observed + scheduler | Hecho | 000005, 000010–000011; self-heal si falta contenedor |
-| Git → build → imagen | Hecho | 000007, DeployFromGit, zot opcional |
-| Dominios + TLS local | Hecho | 000008, Caddy admin, retry de rutas `failed`, resync post-compose |
-| Ops (backup, métricas, alertas) | Hecho | 000009, Ops UI, runbook S7 |
-| Network hooks | Parcial | 000012 + UI Network; WireGuard apply opt-in |
-| Dashboard React/Vite + embed | Hecho | `web/` + `go:embed` dist |
-| CLI / SDK | Esqueleto | `cli/`, `sdk/` — no son interfaz primaria aún |
-
-### Scaffolds post-v1 (presentes, no GA)
-
-| Área | Migración / API | Nota |
-|---|---|---|
-| Observability extra | 000013, MetricsService, `/metrics` | Ampliar en ops; no bloquea GA |
-| Managed databases | 000014 + UI Databases | Útil; cerrar provision + secrets en post-GA o S9 si cabe |
-| Sandboxes / micro-VM | 000015 | Visión v1.1 — no bloquear GA |
-| PR previews | 000016 | Visión v1.2 |
-| Wasm | 000017 + agent `wasm.rs` | Visión v1.4 |
-| Teams / quotas / SSO/TOTP stubs | 000018 + UI Teams | Enterprise — post-GA salvo invites mínimos en S9 |
-| HA leases | 000019 | Multi-control-plane — post-GA |
-
-### Definición de v1.0 GA (recorte consciente)
-
-Instalable en un VPS: auth+RLS, dashboard, un runtime (agente o local), deploy imagen y git→build, dominio+HTTPS, secretos de build cifrados, logs/ops básicos, backup/restore Postgres, install/upgrade documentado, **hardening S8 cerrado**, beta S9 con installs reales.
-
-**Fuera de v1.0:** micro-VM sandboxes, Wasm first-class, WireGuard multi-nodo, HA Patroni, SSO/SAML completo, SDKs ricos.
+Hay **scaffolds adelantados** (S9–S18) en código: cuentan como progreso técnico, **no** como sprint cerrado.
 
 ---
 
-## 3. Sprints cerrados
+## 2. Tablero S0–S22 (código × plan)
+
+Leyenda: **Cerrado** · **Parcial** · **Scaffold** · **Pendiente**
+
+### Fase 0
+
+| Sprint | Objetivo | Estado | Notas |
+|---|---|---|---|
+| **S0** | Monorepo, CI, spikes, ADRs | **Parcial** | Monorepo+CI+ADRs 001–003; spikes KVM/Firecracker no cerrados como informe |
+
+### Fase 1 — Alpha (S1–S6)
+
+| Sprint | Objetivo | Estado | Evidencia |
+|---|---|---|---|
+| **S1** | Control plane auth/RLS/projects | **Cerrado** | `SPRINT_1_CIERRE.md`, migraciones 000001–000003 |
+| **S2** | Dashboard + embed | **Cerrado** | `SPRINT_2_CIERRE.md`, `web/` + `go:embed` |
+| **S3** | Agente enroll/heartbeat | **Cerrado** (mejorable) | `SPRINT_3_CIERRE.md`; mTLS/PKI 24h aún liviano → reforzar en S19 / checklist agente |
+| **S4** | Contenedores reconcile | **Cerrado** | `SPRINT_4_CIERRE.md`; self-heal local runtime 2026-11-13 |
+| **S5** | Git/build/registry | **Cerrado** | `SPRINT_5_CIERRE.md`, zot opcional |
+| **S6** | Edge/TLS/secretos — Alpha 0.1 | **Cerrado** (gaps) | `SPRINT_6_CIERRE.md`; retry/resync edge 2026-11-13; LE prod + install firmado → completar en S6 residual o S19 |
+
+**Alpha interna: alcanzada.** No reabrir S1–S5 salvo regresiones.
+
+### Fase 2 — Beta privada (S7–S10) ← **en curso**
+
+| Sprint | Objetivo | Estado | Qué falta para cerrar |
+|---|---|---|---|
+| **S7** | Scheduler multi-nodo | **Parcial** | Hay spread/binpack, cordon/drain, réplicas (`000010`). Falta: demo 2 nodos reales, reprogramación &lt; 60s fiable, filtro KVM estricto, roles worker/edge documentados |
+| **S8** | Red entre nodos | **Parcial / scaffold** | `000012` + UI Network + hooks WireGuard dry-run. Falta: mesh real, DNS interno, aislamiento nftables, egress policies, edge multi-nodo/DNS-01 |
+| **S9** | Observabilidad en vivo | **Parcial / scaffold** | Ops S7 (métricas/alertas/backup logs) + `000013` + `/metrics`. Falta: gráficas ricas, ingest/búsqueda de logs a escala, OTel completo, retención/segmentos |
+| **S10** | DB 1-click + backups — Beta 0.5 | **Parcial / scaffold** | Backups Postgres plataforma hechos; `000014` managed DBs UI. Falta: provision real multi-motor, backup a S3 cifrado, restore 1-click, **5–10 beta users** |
+
+### Fase 3 — Sandboxes (S11–S14)
 
 | Sprint | Objetivo | Estado |
 |---|---|---|
-| S0 | Monorepo, CI, spikes | Parcial (ADRs mínimos sí; spikes KVM históricos deferidos) |
-| S1 | Control plane auth/RLS | Cerrado (`SPRINT_1_CIERRE.md`) |
-| S2 | Dashboard embebido | Entregado |
-| S3 | Agente enroll/heartbeat | Entregado |
-| S4 | Contenedores reconcile | Entregado (+ self-heal 2026-11-13) |
-| S5 | Git/build/registry | Entregado |
-| S6 | Edge/TLS Alpha 0.1 | Entregado (+ retry/resync edge 2026-11-13) |
-| S7 | Ops backup/métricas/alertas | Entregado |
-| **S8** | Hardening | **Siguiente** |
-| S9 | Beta privada 0.5 | Pendiente |
-| S10 | GA 1.0 | Pendiente |
+| **S11** | Runtime micro-VM + guest agent | **Scaffold / pendiente** (`images/` stub; sin CH productivo) |
+| **S12** | Snapshots, pools, API sandbox | **Scaffold** (`000015`, API/UI Sandboxes) |
+| **S13** | SDKs, CLI, code interpreter | **Scaffold** (`cli/`, `sdk/` mínimos) |
+| **S14** | PR previews aislados — Beta 0.8 | **Scaffold** (`000016`, API/UI Previews) |
 
----
+### Fase 4 — Wasm / empresa / HA (S15–S18)
 
-## 4. Plan hasta producción
-
-Cadencia: sprints ~2 semanas, 1–2 personas. No abrir el siguiente si el DoD del actual falla.
-
-```text
-Ahora (Alpha) ── S8 hardening ── S9 beta privada ── S10 GA v1.0
-                      │
-                      └── agent checklist (docs/AGENT_PRODUCTION_CHECKLIST.md)
-```
-
-### S8 · Hardening (beta-ready)
-
-**Objetivo:** superficie de ataque y operación segura en un nodo.
-
-**Entregables**
-
-1. Threat model STRIDE corto + ADRs pendientes (edge, agent identity, secrets).
-2. Agente: cerrar checklist de producción (arranque `--check`, recover, degraded mode, E2E).
-3. Authz RBAC en todas las mutaciones; auditoría con actor completo.
-4. Rate limit / lockout persistente o compartido; rotación de join tokens.
-5. Secretos: permisos Unix, non-root, `NORIX_BUILD_SECRETS_KEY` obligatorio en prod.
-6. SBOM + firma de release (cosign/minisign); checklist pentest RLS/path traversal.
-7. Congelar o feature-flag scaffolds post-v1 que no estén listos (sandboxes/Wasm/HA) para no confundir beta.
-
-**DoD:** hallazgos P0/P1 cerrados; install limpio documentado; agente no arranca en estado ambiguo.
-
-### S9 · Beta privada v0.5
-
-**Objetivo:** 5–10 installs externos reales.
-
-**Entregables**
-
-- Quickstart + troubleshooting actualizados (README + este doc).
-- Invites / segundo usuario (member) si aún falta.
-- Freeze de features: solo bugs y UX bloqueante.
-- Managed Postgres 1-click **opcional** si estabiliza; si no, documentar como v1.1.
-- Telemetría de errores de install opt-in (sin secretos).
-
-**DoD:** ≥5 installs exitosos reportados; lista priorizada para GA.
-
-### S10 · GA v1.0
-
-**Objetivo:** lanzamiento.
-
-**Entregables**
-
-- Semver, changelog, upgrade N-1→N.
-- Artefactos multi-arch; checksums en `install.sh`.
-- Docs: límites de v1, seguridad, arquitectura resumida.
-- Tag `v1.0.0`.
-
-**DoD:** checklist GA firmado; comunicación explícita de lo que **no** incluye v1.
-
----
-
-## 5. Deuda activa (priorizada)
-
-| ID | Ítem | Sprint |
+| Sprint | Objetivo | Estado |
 |---|---|---|
-| D1 | Self-heal workloads/edge (hecho 2026-11-13) — vigilar regresiones | — |
-| D2 | Dependencias sidecar (p. ej. Redis del sample todo) no gestionadas por Norix | S8/S9 docs |
-| D3 | Token en `localStorage` (XSS) → cookie HttpOnly preferible | S8 |
-| D4 | CLI incompleta | S9/S10 |
-| D5 | ADRs incompletos vs visión | S8 |
-| D6 | Scaffolds post-v1 sin DoD → flags o docs “experimental” | S8 |
-| D7 | CI: cobertura web/e2e y RLS completa en todas las tablas nuevas | S8 |
+| **S15** | Wasm first-class | **Scaffold** (`000017`, agent `wasm.rs`) |
+| **S16** | Teams, cuotas, SSO/2FA | **Scaffold** (`000018`, UI Teams; SSO/TOTP stubs) |
+| **S17** | HA control plane | **Scaffold** (`000019` leases; sin Patroni/multi-réplica) |
+| **S18** | Autoscaling / hotplug | **Pendiente** |
+
+### Fase 5 — Endurecimiento y GA (S19–S22)
+
+| Sprint | Objetivo | Estado |
+|---|---|---|
+| **S19** | Seguridad y supply chain | **Pendiente** (+ usar `AGENT_PRODUCTION_CHECKLIST.md`) |
+| **S20** | Carga, caos, SLOs | **Pendiente** |
+| **S21** | Docs, upgrades, beta pública — RC 0.95 | **Pendiente** |
+| **S22** | GA 1.0 | **Pendiente** |
 
 ---
 
-## 6. Cómo levantar local (smoke)
+## 3. Paso a paso desde ahora (sin saltar numeración)
+
+Trabajar **en orden de fase**. Se puede picar scaffold del futuro, pero el DoD que importa es el del sprint activo.
+
+### Ahora → cerrar Fase 2
+
+1. **S7 — Scheduler multi-nodo**  
+   - 2 agentes (o 2 VMs) online.  
+   - Réplicas en nodos distintos; cordon/drain; matar nodo → reschedule &lt; 60s.  
+   - Cerrar con `docs/SPRINT_7_CIERRE.md` **reescrito al DoD de scheduler** (el cierre actual documenta ops Alpha; mover ops detalladas a S9/S10).  
+2. **S8 — Red entre nodos**  
+   - WireGuard apply real (`NORIX_APPLY_WIREGUARD=1` + rutas).  
+   - DNS/service discovery; aislamiento proyecto; egress allowlist.  
+   - `SPRINT_8_CIERRE.md`.  
+3. **S9 — Observabilidad**  
+   - Consolidar métricas/logs/alertas al DoD S9 (no solo ops mínimas).  
+   - Prometheus/OTel export estable; UI en vivo.  
+   - `SPRINT_9_CIERRE.md`.  
+4. **S10 — Managed DBs + backups usuario + beta**  
+   - Provision Postgres/Redis (mínimo) con secretos.  
+   - Backup/restore de esas DBs; invites beta.  
+   - **Hito Beta v0.5** + `SPRINT_10_CIERRE.md`.
+
+### Luego Fase 3 (S11–S14)
+
+5. S11 micro-VM real → S12 API sandbox dura → S13 CLI/SDK → S14 PR previews.  
+6. **Hito Beta sandboxes v0.8** al cerrar S14.
+
+### Luego Fase 4 (S15–S18)
+
+7. S15 Wasm productivo → S16 teams/SSO/cuotas → S17 HA → S18 autoscaling.
+
+### Luego Fase 5 (S19–S22) — producción
+
+8. **S19** threat model, SBOM, firmas, pentest, checklist agente.  
+9. **S20** carga/caos/SLOs.  
+10. **S21** docs + upgrades N-1 → RC 0.95.  
+11. **S22** freeze API, tag **`v1.0.0`**, anuncio — **GA**.
+
+---
+
+## 4. Aclaraciones (para no volver a comprimir el plan)
+
+| Idea incorrecta | Regla correcta |
+|---|---|
+| “Ya hicimos S7 ops, luego S8 hardening y GA” | Ops ricas = **S9**; backups/DB producto = **S10**; hardening GA = **S19–S22** |
+| “Wasm/teams en el árbol ⇒ esos sprints cerrados” | Solo **scaffold** hasta cumplir aceptación del plan |
+| “v1.0 = solo un nodo endurecido” | **GA 1.0 del plan original es S22** (incluye fases 2–5). Un “MVP instalable” ya existe como **Alpha S6**; no renombrar eso a GA |
+
+Si en el futuro se recorta el producto (GA mínima), debe ser un **ADR explícito** que modifique este plan — no un silencio en el README.
+
+---
+
+## 5. Smoke local (Alpha ya disponible)
 
 ```bash
-cp .env.example .env
-cp control-plane/.env.example control-plane/.env   # ajustar NORIX_BACKUP_DIR
-cp web/.env.example web/.env
-
 docker compose --env-file .env -f deploy/norix/docker-compose.yml up -d postgres pebble caddy
-
 cd control-plane && set -a && . ./.env && set +a && go run ./cmd/server
-# otra terminal
-cd web && npm install && npm run dev -- --host 127.0.0.1 --port 5173
+cd web && npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
 | Check | Esperado |
 |---|---|
 | `curl -s http://127.0.0.1:8080/healthz` | 200 |
-| Dashboard | http://127.0.0.1:5173 |
-| Deploy `nginx:alpine` | contenedor `norix-*` Up |
-| Dominio `*.localhost:8443` | 200 tras Assign (cert interno) |
+| Deploy imagen / git | contenedor `norix-*` Up |
+| Dominio `*.localhost:8443` | 200 (cert interno) |
 
 ---
 
-## 7. Mapa de documentación
+## 6. Mapa de docs
 
-| Documento | Rol |
+| Doc | Rol |
 |---|---|
-| **Este archivo** | Plan operativo y estado |
-| `docs/adr/*` | Decisiones vinculantes |
-| `docs/SPRINT_*_CIERRE.md` | Evidencia histórica de DoD |
-| `docs/runbooks/S7_OPERATIONS.md` | Backup/restore/alertas |
-| `docs/AGENT_PRODUCTION_CHECKLIST.md` | Trabajo S8 del agente |
-| `docs/ARQUITECTURA_Y_BUENAS_PRACTICAS.md` | Convención de carpetas/código |
-| README.md | Quick start público |
-
-Planes legacy (Next.js, calendarios de 23 sprints, DOCX duplicados) se eliminaron el 2026-11-13 para evitar thrash.
+| **`PLAN_SPRINTS_S0_S22.md`** | Roadmap canónico S0–S22 |
+| **Este archivo** | Estado real + sprint activo |
+| `SPRINT_*_CIERRE.md` | Evidencia de cierre |
+| `AGENT_PRODUCTION_CHECKLIST.md` | Trabajo de calidad del agente (encaja sobre todo en S3 residual + **S19**) |
+| `adr/*` | Decisiones |
 
 ---
 
-## 8. Post-v1 (visión, no bloquea GA)
-
-| Fase | Contenido |
-|---|---|
-| v1.1 | Sandboxes / micro-VM |
-| v1.2 | PR previews, CLI/SDK ricos, managed DB completo |
-| v1.3 | Multi-nodo, WireGuard, certs centralizados |
-| v1.4 | Wasm workers, OIDC/2FA, cuotas, HA Postgres |
-
----
-
-*Actualizar las secciones 2–5 al cerrar cada sprint.*
+*Al cerrar un sprint: actualizar la tabla de la §2 y crear/ajustar `SPRINT_N_CIERRE.md`. No renumerar.*

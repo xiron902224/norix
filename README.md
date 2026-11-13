@@ -153,17 +153,18 @@ Deleting a workload marks it **deleting**, sends `stop` to the node that owns th
 
 ## Status
 
-**Alpha (2026-11-13).** Core path works on one node: auth, projects/workloads, local runtime and/or Rust agent, git→build, Caddy domains/TLS (Pebble), ops backups/metrics/alerts.
+**Alpha v0.1 (S6 reached).** One-node path works: auth, projects/workloads, local runtime and/or Rust agent, git→build, Caddy domains/TLS (Pebble), basic ops.
 
-**Next:** **S8 hardening → S9 private beta → S10 GA v1.0.** Full plan: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md).
+**Canonical roadmap:** **S0–S22** through GA 1.0 — see [`docs/PLAN_SPRINTS_S0_S22.md`](docs/PLAN_SPRINTS_S0_S22.md).  
+**Where we are:** [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) — next sprint to complete is **S7 (multi-node scheduler)**, then S8–S10 (beta), S11–S14 (sandboxes), S15–S18 (Wasm/enterprise/HA), **S19–S22 (harden → GA 1.0)**.
 
-Scaffolds for sandboxes, Wasm, PR previews, teams/quotas and managed DBs exist in-tree as **experimental / post-v1** — they do not define the GA cut.
+In-tree scaffolds for later sprints (sandboxes, Wasm, previews, teams, …) do **not** close those sprints until their DoD is green.
 
 ---
 
 ## Contributing
 
-Operational source of truth: `docs/ESTADO_Y_PLAN_V1.md`. Keep secrets out of git (`.env` is ignored). Prefer small, reviewable PRs against `develop`.
+Roadmap: `docs/PLAN_SPRINTS_S0_S22.md`. Living status: `docs/ESTADO_Y_PLAN_V1.md`. Keep secrets out of git (`.env` is ignored). Prefer small, reviewable PRs against `develop`.
 
 ```bash
 cd control-plane && go test ./...
