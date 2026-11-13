@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-13  
 **Plan canónico:** [`docs/PLAN_SPRINTS_S0_S22.md`](./PLAN_SPRINTS_S0_S22.md)  
-**Hito:** Beta 0.8 — **S17 cerrado** (leases); siguiente S18 autoscaling
+**Hito:** Beta 0.8 — **S18 cerrado**; siguiente S19 security/SBOM
 
 ---
 
@@ -10,9 +10,9 @@
 
 | | |
 |---|---|
-| **Fase** | **Fase 4** (S15–S18) |
-| **Sprint activo** | **S18** — Escalado vertical y autoscaling |
-| **Último cerrado** | **S17** HA leases |
+| **Fase** | **Fase 5** (S19–S22 harden → GA) |
+| **Sprint activo** | **S19** — Seguridad y cadena de suministro |
+| **Último cerrado** | **S18** autoscaler policy |
 | **Versión** | `0.8.0-beta` |
 
 ---
@@ -22,10 +22,10 @@
 | Sprint | Estado | Cierre |
 |---|---|---|
 | S0 | Parcial | — |
-| S1–S16 | **Cerrado** | SPRINT_1…16 |
-| S17 | **Cerrado** (leases; Patroni ops follow-up) | SPRINT_17_CIERRE |
-| S18 | Abierto | — |
-| S19–S22 | Pendiente | — |
+| S1–S17 | **Cerrado** | SPRINT_1…17 |
+| S18 | **Cerrado** | SPRINT_18_CIERRE |
+| S19 | Abierto | — |
+| S20–S22 | Pendiente | — |
 
 ---
 
