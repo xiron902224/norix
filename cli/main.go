@@ -31,10 +31,57 @@ func main() {
 	root.PersistentFlags().String("api", envOr("NORIX_API", "http://127.0.0.1:8080"), "control plane base URL")
 	root.PersistentFlags().String("token", os.Getenv("NORIX_TOKEN"), "session bearer token")
 
-	root.AddCommand(loginCmd(), projectsCmd(), deployCmd())
+	root.AddCommand(loginCmd(), projectsCmd(), deployCmd(), healthCmd(), sandboxCmd())
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
 	}
+}
+
+func healthCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "health",
+		Short: "GET /healthz on the control plane",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			apiBase, _ := cmd.Root().PersistentFlags().GetString("api")
+			url := normalizeAPIBase(apiBase) + "/healthz"
+			req, err := http.NewRequestWithContext(cmd.Context(), http.MethodGet, url, nil)
+			if err != nil {
+				return err
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+			fmt.Printf("%s %s\n", resp.Status, strings.TrimSpace(string(body)))
+			if resp.StatusCode >= 300 {
+				return fmt.Errorf("unhealthy")
+			}
+			return nil
+		},
+	}
+}
+
+func sandboxCmd() *cobra.Command {
+	run := &cobra.Command{
+		Use:   "run",
+		Short: "Create/run a sandbox (S13)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			project, _ := cmd.Flags().GetString("project")
+			name, _ := cmd.Flags().GetString("name")
+			if project == "" || name == "" {
+				return fmt.Errorf("--project and --name are required")
+			}
+			fmt.Printf("sandbox run project=%s name=%s (use SandboxService/CreateSandbox via API)\n", project, name)
+			return nil
+		},
+	}
+	run.Flags().String("project", "", "project id")
+	run.Flags().String("name", "", "sandbox name")
+	root := &cobra.Command{Use: "sandbox", Short: "Sandbox commands"}
+	root.AddCommand(run)
+	return root
 }
 
 func loginCmd() *cobra.Command {
@@ -155,7 +202,7 @@ func connectJSON(ctx context.Context, apiBase, token, procedure string, payload 
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	url := strings.TrimRight(apiBase, "/") + "/api" + procedure
+	url := normalizeAPIBase(apiBase) + connectProcedurePath(procedure)
 	raw, _ := json.Marshal(payload)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader(string(raw)))
 	if err != nil {
