@@ -144,7 +144,8 @@ func main() {
 
 		go func() {
 			sessionTicker := time.NewTicker(time.Hour)
-			nodeTicker := time.NewTicker(20 * time.Second)
+			// 15s tick + 30s stale ⇒ orphan reschedule typically < 60s (S7 DoD).
+			nodeTicker := time.NewTicker(15 * time.Second)
 			defer sessionTicker.Stop()
 			defer nodeTicker.Stop()
 			cleanupSessions := func() {
@@ -156,7 +157,7 @@ func main() {
 				logger.Info("session cleanup completed", "removed", removed)
 			}
 			cleanupNodes := func() {
-				marked, err := norixdb.MarkStaleNodesOffline(context.Background(), bootstrapPool, 45*time.Second)
+				marked, err := norixdb.MarkStaleNodesOffline(context.Background(), bootstrapPool, 30*time.Second)
 				if err != nil {
 					logger.Error("stale node cleanup failed", "error", err)
 					return

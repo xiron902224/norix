@@ -1,32 +1,40 @@
-# Sprint 7 — Operación: backups, logs, métricas
+# Sprint 7 — Scheduler multi-nodo
 
-## Objetivo
+## Objetivo (plan S0–S22)
 
-Operar Alpha: backups, retención de logs, métricas de nodo, alertas mínimas.
+Scheduler con capacidades, spread/binpack, réplicas multi-nodo, cordon/drain, detección de nodo caído y reprogramación, roles `worker` / `edge`.
 
 ## Estado
 
-**Implementado el 2026-11-10.** Siguiente: S8 (hardening).
+**Cerrado 2026-11-13** (alineado al plan canónico).  
+
+> Nota: un cierre anterior en este archivo documentaba **ops Alpha** (backups/métricas). Ese trabajo sigue vigente en código y en `docs/runbooks/S7_OPERATIONS.md`, pero en el roadmap canónico corresponde a **S9/S10**, no a S7.
 
 ## Entregables
 
-- Migración `000009`: métricas en `nodes`, tablas `backups` + `alert_events`.
-- Heartbeat persiste CPU/memoria; UI Nodes muestra barras de métricas.
-- Retención de `workload_logs` / `build_logs` (worker ops).
-- Backups `pg_dump` vía UI Ops + `scripts/backup-postgres.sh` / `restore-postgres.sh`.
-- Alertas `node.down` / `deploy.failed` (+ webhook opcional `NORIX_ALERT_WEBHOOK_URL`).
-- Runbook: `docs/runbooks/S7_OPERATIONS.md`.
-- UX: Domains rediseñado, ActivityBanner en proyectos, badges busy, links HTTPS `:8443`.
+- Paquete `internal/scheduler`: filtros (online, cordon, drain, runtime, KVM, memoria, affinity/anti-affinity) + score spread/binpack/zona.
+- Roles de nodo `worker` | `edge` (vacío → worker); `control` no agenda workloads.
+- `PickScheduledNode` / `DeployWorkloadReplicas` / `RescheduleOrphanReplicas`.
+- Cordon / drain vía API + UI Nodes.
+- Nodos stale → `offline` (30s) + reschedule de huérfanos en tick 15s (DoD &lt; ~60s).
+- **Fix:** réplicas `desired_action=none` + `status=running` en nodo offline ahora sí se reprograman.
+- Tests unitarios en `internal/scheduler` (KVM, spread/binpack, drain, roles, orphan eligibility).
 
 ## DoD
 
 | Criterio | Estado |
 |---|---|
-| Backup + restore documentado/verificable | Cumple |
-| Métricas nodo en dashboard | Cumple |
-| Alerta al caer agente remoto | Cumple (45s stale) |
-| Retención logs | Cumple |
+| Spread / binpack | Cumple (unit) |
+| Cordon / drain | Cumple |
+| Micro-VM (`RequireKVM`) no va a nodo sin KVM | Cumple (unit) |
+| Nodo offline → réplicas reprogramables | Cumple (SQL + `ShouldReschedule`) |
+| Roles worker/edge | Cumple |
+| Tests verdes | `go test ./internal/scheduler/…` |
 
-## Nota dominio HTTPS
+## Cómo verificar
 
-Abrir siempre `https://hostname:8443` (edge local). Certificado internal: aceptar excepción del navegador en `*.localhost`.
+```bash
+cd control-plane && go test ./internal/scheduler/ ./internal/db/ ./internal/api/ -count=1
+```
+
+Demo multi-nodo (manual): 2 agentes online → workload `replica_count=2` strategy spread → cordon/drain uno → matar heartbeat del otro → en &lt; 60s réplicas en nodo sano.

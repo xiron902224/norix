@@ -6,6 +6,26 @@ import (
 	"strings"
 )
 
+// NormalizeNodeRole returns worker|edge|control|… trimmed lowercase.
+// Empty role defaults to worker (S7 node roles).
+func NormalizeNodeRole(role string) string {
+	role = strings.ToLower(strings.TrimSpace(role))
+	if role == "" {
+		return "worker"
+	}
+	return role
+}
+
+// IsSchedulableRole reports whether a node role may receive workloads.
+func IsSchedulableRole(role string) bool {
+	switch NormalizeNodeRole(role) {
+	case "worker", "edge":
+		return true
+	default:
+		return false
+	}
+}
+
 // Node is a scheduling candidate snapshot.
 type Node struct {
 	ID               string
@@ -82,14 +102,11 @@ func Feasible(node Node, req Request) (bool, string) {
 	if !req.AllowDraining && node.Draining {
 		return false, "draining"
 	}
-	role := strings.ToLower(strings.TrimSpace(node.Role))
-	if role == "" {
-		role = "worker"
-	}
+	role := NormalizeNodeRole(node.Role)
 	if role != "worker" && role != "edge" {
 		return false, "invalid role"
 	}
-	// Edge nodes can run workloads unless cordoned; both roles are schedulable.
+	// Edge and worker are both schedulable for container workloads (S7).
 	if !node.DockerSocket && !node.ContainerdSocket {
 		return false, "no container runtime"
 	}

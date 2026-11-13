@@ -641,9 +641,19 @@ func RescheduleOrphanReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID 
 			OR n.draining = TRUE
 		)
 		AND (
+			-- Explicit mutate intents.
 			wr.desired_action IN ('run', 'stop')
-			OR (wr.desired_action = 'none' AND wr.status IN ('stopped', 'failed', 'pending'))
-			OR (n.draining = TRUE AND wr.status IN ('running', 'deploying', 'stopped', 'failed', 'pending'))
+			-- S7: settled replicas on dead/missing nodes must move (incl. running+none).
+			OR (
+				(wr.assigned_node_id IS NULL OR n.id IS NULL OR n.status <> 'online')
+				AND wr.desired_action = 'none'
+				AND wr.status IN ('running', 'deploying', 'stopped', 'failed', 'pending')
+			)
+			-- Drain path: still-online draining node evacuates running replicas first.
+			OR (
+				n.draining = TRUE
+				AND wr.status IN ('running', 'deploying', 'stopped', 'failed', 'pending')
+			)
 		)
 		ORDER BY wr.updated_at`)
 	if err != nil {

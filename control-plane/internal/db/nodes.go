@@ -352,11 +352,11 @@ func RecordHeartbeat(ctx context.Context, pool *pgxpool.Pool, organizationID, no
 
 func MarkStaleNodesOffline(ctx context.Context, pool *pgxpool.Pool, staleAfter time.Duration) (int64, error) {
 	if staleAfter <= 0 {
-		staleAfter = 45 * time.Second
+		staleAfter = 30 * time.Second
 	}
 	seconds := int64(staleAfter.Seconds())
 	if seconds < 1 {
-		seconds = 45
+		seconds = 30
 	}
 	tag, err := pool.Exec(ctx, `
 		UPDATE nodes

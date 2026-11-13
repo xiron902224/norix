@@ -10,9 +10,10 @@
 
 | | |
 |---|---|
-| **Fase actual** | Transición **Fase 1 → Fase 2** |
-| **Sprint activo (siguiente a completar)** | **S7 · Scheduler multi-nodo** (cerrar gaps vs DoD original) |
-| **Último hito alcanzado** | **Alpha v0.1 (S6)** en la práctica: un nodo, git/imagen, dominios/TLS local, ops mínimas |
+| **Fase actual** | **Fase 2** (multi-nodo / operación) |
+| **Sprint activo (siguiente a completar)** | **S8 · Red entre nodos** |
+| **Último sprint cerrado** | **S7 · Scheduler multi-nodo** (2026-11-13) |
+| **Último hito alcanzado** | **Alpha v0.1 (S6)**; scheduler S7 listo para demo 2 nodos |
 | **Hito siguiente** | **Beta privada v0.5 (S10)** |
 
 El recorte “S8 hardening → S10 GA” fue un atajo documental. **Queda anulado como plan de numeración.** Hardening de producción vive en **S19–S22**; no sustituye S7–S18.
@@ -48,7 +49,7 @@ Leyenda: **Cerrado** · **Parcial** · **Scaffold** · **Pendiente**
 
 | Sprint | Objetivo | Estado | Qué falta para cerrar |
 |---|---|---|---|
-| **S7** | Scheduler multi-nodo | **Parcial** | Hay spread/binpack, cordon/drain, réplicas (`000010`). Falta: demo 2 nodos reales, reprogramación &lt; 60s fiable, filtro KVM estricto, roles worker/edge documentados |
+| **S7** | Scheduler multi-nodo | **Cerrado** | `SPRINT_7_CIERRE.md`; orphan reschedule fix; stale 30s; tests scheduler |
 | **S8** | Red entre nodos | **Parcial / scaffold** | `000012` + UI Network + hooks WireGuard dry-run. Falta: mesh real, DNS interno, aislamiento nftables, egress policies, edge multi-nodo/DNS-01 |
 | **S9** | Observabilidad en vivo | **Parcial / scaffold** | Ops S7 (métricas/alertas/backup logs) + `000013` + `/metrics`. Falta: gráficas ricas, ingest/búsqueda de logs a escala, OTel completo, retención/segmentos |
 | **S10** | DB 1-click + backups — Beta 0.5 | **Parcial / scaffold** | Backups Postgres plataforma hechos; `000014` managed DBs UI. Falta: provision real multi-motor, backup a S3 cifrado, restore 1-click, **5–10 beta users** |
@@ -88,19 +89,15 @@ Trabajar **en orden de fase**. Se puede picar scaffold del futuro, pero el DoD q
 
 ### Ahora → cerrar Fase 2
 
-1. **S7 — Scheduler multi-nodo**  
-   - 2 agentes (o 2 VMs) online.  
-   - Réplicas en nodos distintos; cordon/drain; matar nodo → reschedule &lt; 60s.  
-   - Cerrar con `docs/SPRINT_7_CIERRE.md` **reescrito al DoD de scheduler** (el cierre actual documenta ops Alpha; mover ops detalladas a S9/S10).  
-2. **S8 — Red entre nodos**  
+1. **S8 — Red entre nodos** ← **activo**  
    - WireGuard apply real (`NORIX_APPLY_WIREGUARD=1` + rutas).  
    - DNS/service discovery; aislamiento proyecto; egress allowlist.  
    - `SPRINT_8_CIERRE.md`.  
-3. **S9 — Observabilidad**  
-   - Consolidar métricas/logs/alertas al DoD S9 (no solo ops mínimas).  
+2. **S9 — Observabilidad**  
+   - Consolidar métricas/logs/alertas al DoD S9 (ops Alpha ya en runbook).  
    - Prometheus/OTel export estable; UI en vivo.  
    - `SPRINT_9_CIERRE.md`.  
-4. **S10 — Managed DBs + backups usuario + beta**  
+3. **S10 — Managed DBs + backups usuario + beta**  
    - Provision Postgres/Redis (mínimo) con secretos.  
    - Backup/restore de esas DBs; invites beta.  
    - **Hito Beta v0.5** + `SPRINT_10_CIERRE.md`.
