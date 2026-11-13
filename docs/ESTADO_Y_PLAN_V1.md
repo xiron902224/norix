@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-11-13  
 **Plan canónico:** [`docs/PLAN_SPRINTS_S0_S22.md`](./PLAN_SPRINTS_S0_S22.md)  
-**Hito:** Beta sandboxes 0.8 — **S15 cerrado**; siguiente S16 teams/quotas
+**Hito:** Beta 0.8 — **S16 cerrado**; siguiente S17 HA leases
 
 ---
 
@@ -11,8 +11,8 @@
 | | |
 |---|---|
 | **Fase** | **Fase 4** (S15–S18) |
-| **Sprint activo** | **S16** — Multi-equipo, cuotas y medición |
-| **Último cerrado** | **S15** Wasm fuel/memory limits |
+| **Sprint activo** | **S17** — Alta disponibilidad del control plane |
+| **Último cerrado** | **S16** teams/quotas coverage |
 | **Versión** | `0.8.0-beta` |
 
 ---
@@ -22,10 +22,10 @@
 | Sprint | Estado | Cierre |
 |---|---|---|
 | S0 | Parcial | — |
-| S1–S14 | **Cerrado** | SPRINT_1…14 |
-| S15 | **Cerrado** | SPRINT_15_CIERRE |
-| S16 | Abierto | — |
-| S17–S22 | Pendiente | — |
+| S1–S15 | **Cerrado** | SPRINT_1…15 |
+| S16 | **Cerrado** | SPRINT_16_CIERRE |
+| S17 | Abierto | — |
+| S18–S22 | Pendiente | — |
 
 ---
 
