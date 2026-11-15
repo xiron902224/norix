@@ -1,5 +1,5 @@
-# Self-host production stack (Coolify / OpenShip-shaped).
-# Used by scripts/get-norix.sh — pulls or builds published images.
+# Self-host production stack (Docker mode).
+# Used by scripts/get-norix.sh --mode docker — pulls or builds images.
 #
 # Default: postgres + control-plane (UI embed) with host docker.sock
 # so the first VPS is both panel and first worker (localruntime).
@@ -54,7 +54,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - norix_backups:/var/lib/norix/backups
     ports:
-      # Panel + API on the host (OpenShip/Coolify-style public port).
+      # Panel + API on the host.
       - "${NORIX_HTTP_PORT:-8000}:8080"
     networks: [norix]
 

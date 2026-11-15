@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0-beta.2 — 2026-11-15
+
+### Added
+- Installer `--mode bare`: system Postgres + control-plane binary + systemd (no Docker for the panel)
+- Runbook [`docs/runbooks/BARE_INSTALL.md`](docs/runbooks/BARE_INSTALL.md)
+- README focused on production install; local dev moved to CONTRIBUTING
+
+### Changed
+- Removed third-party PaaS comparisons from public docs
+- `main` promoted as public tip alongside develop (this release)
+
 ## 1.0.0-beta.1 — 2026-11-15
 
 First public **beta** pre-release (not GA). Semver pre-release of the 1.0 track.
@@ -23,10 +34,9 @@ First public **beta** pre-release (not GA). Semver pre-release of the 1.0 track.
 ### Beta caveats
 - CI must be green before tagging `v1.0.0-beta.1`
 - Several ops features are env-gated and need host validation (WG, KVM, DNS-01, Patroni, S3)
-- `main` is not yet the production tip — integration lands on `develop` first
-- GA / `v1.0.0` waits for signed release assets + stable E2E smoke
+- GA / `v1.0.0` waits for stable E2E smoke on a reference host
 
 ### Ops notes
 - WireGuard live apply: `NORIX_APPLY_WIREGUARD=1`
 - Micro-VM boot: KVM + `NORIX_MICROVM_KERNEL` / `NORIX_MICROVM_ROOTFS`
-- Publish: create git tag `v1.0.0-beta.1` to run the Release workflow
+- Publish: create git tag `v*` to run the Release workflow

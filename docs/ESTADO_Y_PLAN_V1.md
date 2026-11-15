@@ -2,8 +2,8 @@
 
 **Fecha:** 2026-11-15  
 **Plan canónico:** [`docs/PLAN_SPRINTS_S0_S22.md`](./PLAN_SPRINTS_S0_S22.md)  
-**Hito código:** **Beta 1** (`VERSION` = `1.0.0-beta.1`) — superficie S0–S22 en árbol, **no GA**  
-**Hito release:** **pendiente** — CI verde + tag `v1.0.0-beta.1` + smoke E2E
+**Hito código:** **Beta** (`VERSION` = `1.0.0-beta.2`) — superficie S0–S22 + installer docker/bare, **no GA**  
+**Hito release:** tag `v1.0.0-beta.2`; `main` alineado con develop tras promote
 
 ---
 
@@ -114,4 +114,4 @@ curl -s http://127.0.0.1:8080/status    # JSON components
 ```
 
 Quick Start + producción: README raíz. Contribución: [`CONTRIBUTING.md`](../CONTRIBUTING.md).  
-Self-host one-liner: [`scripts/get-norix.sh`](../scripts/get-norix.sh) · diseño [`proposals/SELFHOST_INSTALL.md`](./proposals/SELFHOST_INSTALL.md).
+Self-host: [`scripts/get-norix.sh`](../scripts/get-norix.sh) (`--mode docker|bare`) · bare [`runbooks/BARE_INSTALL.md`](./runbooks/BARE_INSTALL.md).
