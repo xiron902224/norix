@@ -20,17 +20,36 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
 
       - name: Lint and verify protobuf compatibility
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
           buf lint
-          # Prefer the PR base branch. Until main carries a real API freeze, develop is
-          # the compatibility baseline (origin/main is still the early buf stub).
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE="${{ github.base_ref }}"
-            git fetch --no-tags origin "${BASE}:refs/remotes/origin/${BASE}"
-            buf breaking --against ".git#ref=origin/${BASE}"
+
+          buf_breaking_against() {
+            local ref="$1"
+            if buf breaking --against ".git#ref=${ref}"; then
+              return 0
+            fi
+            # One-time promote: old main/develop tips used github.com/d2le2/paas go_package.
+            # Treat that baseline as exempt so merge commits are not permanently red.
+            if git show "${ref}:proto/v1/agent.proto" 2>/dev/null | grep -q 'd2le2/paas'; then
+              echo "Ignoring buf breaking vs legacy stub proto at ${ref}"
+              return 0
+            fi
+            return 1
+          }
+
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
+            git fetch --no-tags origin "${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+            buf_breaking_against "origin/${BASE_REF}"
+          elif [ -n "${BEFORE_SHA:-}" ] && [ "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]; then
+            # Prefer the pre-push tip (correct for merges; HEAD~1 is the wrong parent).
+            buf_breaking_against "${BEFORE_SHA}"
           elif git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
-            buf breaking --against ".git#ref=HEAD~1"
+            buf_breaking_against "HEAD~1"
           else
             echo "No parent commit; skipping buf breaking"
           fi
