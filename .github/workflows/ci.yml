@@ -21,8 +21,19 @@ jobs:
 
       - name: Lint and verify protobuf compatibility
         run: |
+          set -euo pipefail
           buf lint
-          buf breaking --against ".git#branch=main"
+          # Prefer the PR base branch. Until main carries a real API freeze, develop is
+          # the compatibility baseline (origin/main is still the early buf stub).
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.base_ref }}"
+            git fetch --no-tags origin "${BASE}:refs/remotes/origin/${BASE}"
+            buf breaking --against ".git#ref=origin/${BASE}"
+          elif git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+            buf breaking --against ".git#ref=HEAD~1"
+          else
+            echo "No parent commit; skipping buf breaking"
+          fi
 
   database-integration:
     name: PostgreSQL migrations and RLS

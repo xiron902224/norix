@@ -2,8 +2,8 @@
 
 **Fecha:** 2026-11-15  
 **Plan canónico:** [`docs/PLAN_SPRINTS_S0_S22.md`](./PLAN_SPRINTS_S0_S22.md)  
-**Hito código:** **GA 1.0 implementado** (`VERSION` = 1.0.0)  
-**Hito release:** **pendiente** — working tree sin merge/tag `v1.0.0` en remoto
+**Hito código:** **Beta 1** (`VERSION` = `1.0.0-beta.1`) — superficie S0–S22 en árbol, **no GA**  
+**Hito release:** **pendiente** — CI verde + tag `v1.0.0-beta.1` + smoke E2E
 
 ---
 
@@ -11,15 +11,17 @@
 
 | | |
 |---|---|
-| **Fase plan** | S0–S22 marcados cerrados en docs de sprint |
-| **Código local** | Superficie GA 1.0 presente en working tree (`develop` + ~140 archivos dirty) |
-| **Remoto** | `origin/develop` aún en commits GA “surface” previos; **sin tag `v*`** |
-| **Release** | Workflow listo (`.github/workflows/release.yml`); **no publicado** hasta tag |
+| **Fase plan** | S0–S22 con checklist de código; anuncio GA **aplazado** a favor de beta pública |
+| **Código** | Superficie amplia en `feature/ga-1.0-completion` → PR a `develop` |
+| **Remoto** | Sin tag `v*`; `main` aún es stub temprano (buf), no tip de producción |
+| **CI** | Históricamente rojo por `buf breaking` vs `main`; baseline corregida a rama base del PR |
+| **Release** | Workflow listo (`.github/workflows/release.yml`); no publicado hasta tag beta |
 
-### Qué significa
+### Por qué Beta 1 y no Alpha / GA
 
-El **código** cubre lo del plan GA (auth/OIDC/TOTP, compose, HA leases, HPA apply, DNS-01, SDKs, Patroni stack, release CI, etc.).  
-Lo que **falta para dar por cerrado el producto en git/producción** es operacional: commit/PR, CI verde, tag, smoke E2E estable, validar flags en host real.
+- **Alpha** (plan S6) ya quedó atrás: hay multi-nodo, DBs, sandboxes, HA/HPA, SDKs.
+- **GA 1.0** es prematuro: CI no verde de punta a punta, `main` desfasado, features ops gated sin smoke firmado, sin assets firmados en GitHub Releases.
+- **Beta 1** (`1.0.0-beta.1`) comunica “track 1.0 usable, API/ops aún en endurecimiento”.
 
 ---
 
@@ -33,11 +35,11 @@ Lo que **falta para dar por cerrado el producto en git/producción** es operacio
 | S11–S14 | Cerrado | micro-VM gated, sandboxes, CLI/SDK, previews+TTL |
 | S15–S18 | Cerrado | Wasm + teams + HA leases **cableados** + HPA **apply** |
 | S19–S21 | Cerrado | SBOM, k6/chaos scaffold, docs/upgrade; telemetría opt-in |
-| S22 | Cerrado en checklist | Cosign/multi-arch workflow presente; tag release pendiente |
+| S22 | Código listo / release abierto | Cosign/multi-arch workflow; tag **beta** pendiente (GA después) |
 
 ---
 
-## 3. Implementado en código (working tree)
+## 3. Implementado en código
 
 | Área | Estado | Evidencia |
 |---|---|---|
@@ -45,7 +47,7 @@ Lo que **falta para dar por cerrado el producto en git/producción** es operacio
 | TOTP real + enforce | Listo | `internal/db/totp.go`, mig `000022` |
 | OIDC login | Listo | `/auth/oidc/start\|callback` (`api/oidc.go`); guía [`AUTH_OIDC_TOTP.md`](./AUTH_OIDC_TOTP.md) |
 | Deploy imagen/git | Listo | localruntime + agent |
-| Compose stacks | Listo (WIP local) | `AnalyzeCompose`/`DeployCompose`, mig `000020` |
+| Compose stacks | Listo (endurecer en beta) | `AnalyzeCompose`/`DeployCompose`, mig `000020` |
 | Edge TLS local | Listo | Caddy + Pebble |
 | DNS-01 ACME | Listo (env) | lego `NORIX_ACME_DNS_PROVIDER` + email |
 | WireGuard apply | Listo (env) | `NORIX_APPLY_WIREGUARD=1` |
@@ -60,6 +62,7 @@ Lo que **falta para dar por cerrado el producto en git/producción** es operacio
 | Status + telemetry | Listo | `GET /status`, `NORIX_TELEMETRY=1` |
 | Patroni | Listo (compose) | `deploy/postgresql/patroni/` + `deploy/norix/docker-compose.patroni.yml` |
 | Release multi-arch+cosign | Workflow listo | `.github/workflows/release.yml` |
+| License / contrib | Listo | `LICENSE` (Apache-2.0), `CONTRIBUTING.md` |
 
 ### Flags de ops (feature on host)
 
@@ -77,26 +80,29 @@ Lo que **falta para dar por cerrado el producto en git/producción** es operacio
 
 ## 4. Qué queda (checklist operativo)
 
-### Must antes de anunciar / taggear `v1.0.0`
+### Must antes de anunciar / taggear `v1.0.0-beta.1`
 
-- [ ] **Commit + PR** del working tree GA a `develop` (hoy dirty / no pusheado)
-- [ ] **CI verde** en esa PR (`buf breaking`, RLS assert tablas nuevas, go/web/agent)
+- [ ] **PR verde** a `develop` (buf breaking vs base, RLS/migrations, go/web/agent)
 - [ ] **Migraciones 000020–000022** aplicadas en entornos locales/staging
 - [ ] **Smoke E2E**: login → proyecto → deploy (imagen o compose) → `running` + `/healthz` + `/status`
-- [ ] **Tag** `v1.0.0` y disparar workflow Release (artifacts + SHA256SUMS + cosign)
+- [ ] **Tag** `v1.0.0-beta.1` y disparar workflow Release
 - [ ] Validar un nodo agent real (`norix-agent --check` + enroll + workload)
+- [ ] (Should) Smoke **3 nodos** según [`runbooks/BETA1_3NODE_INSTALL.md`](./runbooks/BETA1_3NODE_INSTALL.md)
 
-### Should (validación en host, no código faltante)
+### Must antes de GA `v1.0.0`
+
+- [ ] `main` fast-forward al tip liberado; buf breaking baseline = tag GA o `main`
+- [ ] Smoke E2E estable repetible + al menos un host de producción de referencia
+- [ ] Validación host: WG / KVM / DNS-01 / Patroni / S3 según matriz soportada
+- [ ] Docs de upgrade probadas N-1 → N
+
+### Should (validación en host)
 
 - [ ] 2 nodos con `NORIX_APPLY_WIREGUARD=1` (`wg show`)
 - [ ] Micro-VM en máquina con `/dev/kvm` + artefacts
 - [ ] DNS-01 con provider real (Cloudflare/Route53/…)
 - [ ] Patroni failover smoke (`deploy/postgresql/patroni`)
 - [ ] Backup managed DB a S3-compatible
-
-### No es “código pendiente de sprint”
-
-Features gated por hardware/credenciales **ya están implementadas**; solo requieren activación y prueba en el entorno destino.
 
 ---
 
@@ -107,4 +113,5 @@ curl -s http://127.0.0.1:8080/healthz   # ok
 curl -s http://127.0.0.1:8080/status    # JSON components
 ```
 
-Quick Start: README raíz.
+Quick Start + producción: README raíz. Contribución: [`CONTRIBUTING.md`](../CONTRIBUTING.md).  
+Self-host one-liner: [`scripts/get-norix.sh`](../scripts/get-norix.sh) · diseño [`proposals/SELFHOST_INSTALL.md`](./proposals/SELFHOST_INSTALL.md).

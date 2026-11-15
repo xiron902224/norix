@@ -1,7 +1,7 @@
 # Norix Agent — Checklist de producción
 
-**Estado GA 1.0 (2026-11-15):** DoD de código cerrado (contenedor + wasm staging + micro-VM gated).  
-Pendiente ops: E2E agent↔CP en el entorno de release y tag `v1.0.0` (ver `docs/ESTADO_Y_PLAN_V1.md` §4).
+**Estado Beta 1 (2026-11-15):** DoD de código cerrado (contenedor + wasm staging + micro-VM gated).  
+Pendiente ops: E2E agent↔CP y tag `v1.0.0-beta.1` (GA después; ver `docs/ESTADO_Y_PLAN_V1.md` §4).
 
 ## DoD cumplido
 

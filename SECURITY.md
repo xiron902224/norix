@@ -8,8 +8,9 @@ Report vulnerabilities **privately** to the maintainers. Do not open public issu
 
 | Version | Supported |
 |---|---|
-| 1.0.x | Yes |
-| < 1.0 | Best effort (Alpha/Beta) |
+| 1.0.0-beta.x | Best effort (current beta) |
+| 1.0.x (GA) | Yes, once released |
+| < 1.0 / alpha | Best effort |
 
 ## Secrets
 

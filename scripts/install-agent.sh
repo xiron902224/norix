@@ -8,6 +8,7 @@ INSTALL_DIR="${NORIX_AGENT_INSTALL_DIR:-/usr/local/bin}"
 WORKDIR="${NORIX_AGENT_WORKDIR:-/var/lib/norix-agent}"
 BUILD_FROM_SOURCE=0
 SKIP_VERIFY=0
+NO_START=0
 NORIX_VERSION="${NORIX_VERSION:-}"
 NORIX_GITHUB_REPO="${NORIX_GITHUB_REPO:-xiron902224/norix}"
 NORIX_SHA256SUMS="${NORIX_SHA256SUMS:-}"
@@ -25,14 +26,17 @@ Options:
   --workdir PATH        Agent state directory (default: /var/lib/norix-agent)
   --install-dir PATH    Binary install directory (default: /usr/local/bin)
   --from-source         Build with cargo from this repository
-  --version TAG         Download release binary for TAG (e.g. v1.0.0); verifies SHA256SUMS
+  --version TAG         Download release binary for TAG (e.g. v1.0.0-beta.1); verifies SHA256SUMS
   --sums PATH|URL       SHA256SUMS file or URL (default: GitHub release asset for --version)
   --asset-url URL       Direct URL to norix-agent-linux-{amd64,arm64} binary
   --skip-verify         Skip SHA256SUMS verification (not recommended)
+  --no-start            Install binary + agent.env only (for systemd); do not exec the agent
   -h, --help            Show help
 
 Env:
   NORIX_VERSION, NORIX_GITHUB_REPO, NORIX_SHA256SUMS, NORIX_AGENT_ASSET_URL
+
+Production (3 nodes): see docs/runbooks/BETA1_3NODE_INSTALL.md and deploy/systemd/.
 EOF
 }
 
@@ -123,6 +127,7 @@ while [[ $# -gt 0 ]]; do
     --sums) NORIX_SHA256SUMS="$2"; shift 2 ;;
     --asset-url) NORIX_AGENT_ASSET_URL="$2"; shift 2 ;;
     --skip-verify) SKIP_VERIFY=1; shift ;;
+    --no-start) NO_START=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown argument: $1" >&2; usage; exit 1 ;;
   esac
@@ -173,7 +178,15 @@ chmod 600 "$WORKDIR/agent.env"
 
 echo "installed $INSTALL_DIR/norix-agent"
 echo "state dir: $WORKDIR"
-echo "starting agent..."
+echo "env file: $WORKDIR/agent.env"
+
+if [[ "$NO_START" -eq 1 ]]; then
+  echo "(--no-start) enable systemd unit: deploy/systemd/norix-agent.service"
+  echo "  systemctl enable --now norix-agent"
+  exit 0
+fi
+
+echo "starting agent (foreground)..."
 # shellcheck disable=SC1090
 set -a
 source "$WORKDIR/agent.env"

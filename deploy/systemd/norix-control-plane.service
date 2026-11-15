@@ -1,0 +1,22 @@
+[Unit]
+Description=Norix control plane
+Documentation=https://github.com/xiron902224/norix
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=norix
+Group=norix
+WorkingDirectory=/var/lib/norix
+EnvironmentFile=-/etc/norix/control-plane.env
+ExecStart=/usr/local/bin/norix-control-plane
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+# Migrations run on boot via MIGRATION_DATABASE_URL.
+# Do not expose Postgres publicly; bind HTTP behind Caddy/nginx when possible.
+
+[Install]
+WantedBy=multi-user.target
