@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- Release workflow: publish assets with sequential `gh release upload` (avoids softprops race that left beta.1–.3 drafts incomplete) (#62)
+
 ### Changed
 - Gitflow is **main-only**: branch from `main`, PR to `main` (`develop` retired as integration tip)
 - Default `NORIX_REF=main` in `get-norix.sh`; CI PRs target `main`
