@@ -395,7 +395,7 @@ POSTGRES_PASSWORD=${owner_pw}
 POSTGRES_APP_PASSWORD=${app_pw}
 DATABASE_URL=postgres://norix_app:${app_pw}@postgres:5432/norix?sslmode=disable
 MIGRATION_DATABASE_URL=postgres://norix:${owner_pw}@postgres:5432/norix?sslmode=disable
-NORIX_VERSION=1.0.0-beta.3
+NORIX_VERSION=${NORIX_VERSION:-$(tr -d '[:space:]' <"${SOURCE_DIR}/VERSION" 2>/dev/null || echo "${NORIX_REF#v}")}
 NORIX_HTTP_PORT=${NORIX_HTTP_PORT}
 NORIX_PUBLIC_URL=${public_url}
 NORIX_WEB_ORIGIN=${public_url}
@@ -666,6 +666,7 @@ NORIX_BUILD_SECRETS_KEY=${secrets_key}
 NORIX_REGISTRY=none
 NORIX_INSTALL_MODE=bare
 NORIX_SUPERVISE=${SUPERVISE_MODE}
+NORIX_VERSION=${NORIX_VERSION:-$(tr -d '[:space:]' <"${SOURCE_DIR}/VERSION" 2>/dev/null || echo "${NORIX_REF#v}")}
 EOF
   chmod 600 "$BARE_ENV"
   chown norix:norix "$BARE_ENV"

@@ -13,7 +13,16 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/xiron902224/norix/control-plane/internal/version"
 )
+
+func localAgentVersion() string {
+	v := version.Current()
+	if v == "" {
+		return "control-plane-local"
+	}
+	return v + "+local"
+}
 
 const localNodeName = "control-plane"
 
@@ -64,7 +73,7 @@ func DetectHostCapabilities() NodeCapabilities {
 		ContainerdSocket: containerd,
 		KVMLevel:         detectKVMLevel(),
 		Hostname:         hostname,
-		AgentVersion:     "control-plane-local",
+		AgentVersion:     localAgentVersion(),
 	}
 }
 

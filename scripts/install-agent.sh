@@ -225,6 +225,13 @@ else
   download_release_agent
 fi
 
+AGENT_VER_LINE=""
+if [[ -n "${NORIX_VERSION:-}" ]]; then
+  AGENT_VER_LINE="NORIX_AGENT_VERSION=${NORIX_VERSION#v}"
+elif [[ -x "$INSTALL_DIR/norix-agent" ]]; then
+  # Best-effort: leave unset → binary reports CARGO_PKG_VERSION.
+  AGENT_VER_LINE=""
+fi
 cat >"$WORKDIR/agent.env" <<EOF
 NORIX_CONTROL_PLANE_URL=$CONTROL_PLANE
 NORIX_JOIN_TOKEN=$JOIN_TOKEN
@@ -232,6 +239,7 @@ NORIX_NODE_NAME=$NODE_NAME
 NORIX_AGENT_WORKDIR=$WORKDIR
 NORIX_HEARTBEAT_SECS=10
 NORIX_AGENT_LOG_LEVEL=info
+${AGENT_VER_LINE}
 EOF
 chmod 600 "$WORKDIR/agent.env"
 

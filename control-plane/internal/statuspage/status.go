@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/xiron902224/norix/control-plane/internal/version"
 )
 
 type Component struct {
@@ -26,15 +27,12 @@ type Report struct {
 }
 
 // Handler returns a public JSON status page at GET /status.
-func Handler(pool *pgxpool.Pool, version string) http.HandlerFunc {
-	if version == "" {
-		version = os.Getenv("NORIX_VERSION")
-	}
-	if version == "" {
-		version = "1.0.0"
+func Handler(pool *pgxpool.Pool, ver string) http.HandlerFunc {
+	if ver == "" {
+		ver = version.Current()
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		report := Build(r.Context(), pool, version)
+		report := Build(r.Context(), pool, ver)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
 		_ = json.NewEncoder(w).Encode(report)
