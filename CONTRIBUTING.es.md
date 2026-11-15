@@ -2,129 +2,115 @@
 
 Gracias por ayudar. Norix es open source bajo Apache-2.0. Preferimos cambios pequeños y fáciles de revisar.
 
-**English:** [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`README.md`](README.md)
+**English:** [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`README.md`](README.md)  
+**Mapa de docs:** [`docs/README.md`](docs/README.md)
 
-Instalación en VPS: ver [Instalar](README.es.md#instalar) en el README en español (`--mode docker` o `--mode bare`). Este archivo es para quien **desarrolla** en el monorepo.
+Instalación en VPS: [Instalar](README.es.md#instalar). Este archivo es para quien **desarrolla** en el monorepo.
 
-**En qué trabajar:** [`ISSUES.md`](ISSUES.md) o [issues en GitHub](https://github.com/xiron902224/norix/issues) — prioriza **P0** / **good first issue** salvo que ya tengas un bloque más grande asignado.
+**En qué trabajar:** [`ISSUES.md`](ISSUES.md) o [issues](https://github.com/xiron902224/norix/issues) — prioriza **P0** / **good first issue**.
+
+## Requisitos (local)
+
+| Herramienta | Notas |
+|---|---|
+| Git | Clone |
+| Docker | Postgres |
+| Go | Como en CI / `go.mod` |
+| Node.js 22 + npm | Dashboard |
+| Rust 1.88 | Agent |
+| `buf` (opcional) | Solo si tocas `proto/` |
 
 ## Gitflow (solo `main`)
-
-| Rama | Rol |
-|---|---|
-| `main` | Rama por defecto · tip de integración · **único** destino de PRs |
-| `feature/*`, `fix/*`, `docs/*`, `chore/*` | Trabajo corto **partiendo de `main`** |
-| tags `v*` | Releases (binarios + SHA256SUMS + cosign) |
-
-`develop` queda **retirada** como rama de integración (solo histórico; no abras PRs nuevos hacia ella).
-
-### Flujo de trabajo
-
-1. Elige un [issue de GitHub](https://github.com/xiron902224/norix/issues) (comenta que lo tomas).
-2. Crea la rama desde `main` actualizado:
-   ```bash
-   git fetch origin && git checkout main && git pull
-   git checkout -b feature/123-slug-corto   # o fix/… docs/… chore/…
-   ```
-3. Implementa, prueba y haz commit.
-4. Abre un PR **hacia `main`**. Enlaza el issue (`Fixes #123` / `Refs #123`).
-5. Espera CI. Los maintainers mergean con CI verde (+ review requerida).
 
 ```text
 issue → rama desde main → PR → main → (opcional) tag v*
 ```
 
-Reglas rápidas:
+1. Comenta en el issue que lo tomas.
+2. `git fetch origin && git checkout main && git pull`
+3. `git checkout -b docs/123-slug` (o `fix/` / `feat/` / `chore/`)
+4. Implementa y prueba en local.
+5. PR **a `main`**, plantilla [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md), `Fixes #N`.
 
-1. **Siempre** PR a `main` (no a `develop`).
-2. Tags solo desde un `main` verde: `v1.0.0-beta.4`, luego `v1.0.0`.
-3. Empujar un tag `v*` dispara `.github/workflows/release.yml`.
-4. Compatibilidad protobuf en CI vs la base del PR (`main`).
+## Desarrollo local (camino completo)
 
-## Desarrollo local
+### 1. Clone y env
 
 ```bash
 git clone https://github.com/xiron902224/norix.git && cd norix
 git checkout main
-
 cp .env.example .env
 cp control-plane/.env.example control-plane/.env
 cp web/.env.example web/.env
+```
 
+### 2. Postgres
+
+```bash
 docker compose --env-file .env -f deploy/norix/docker-compose.yml up -d postgres
+```
 
+### 3. Control plane
+
+```bash
 cd control-plane && set -a && . ./.env && set +a && go run ./cmd/server
+```
 
-# otra terminal
+### 4. Dashboard (otra terminal)
+
+```bash
 cd web && npm install && npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Crea el **primer admin** en la UI.
+
+### 5. Agent (opcional, mismo host con Docker)
+
+```bash
+cd agent && cargo build --release
+export NORIX_CONTROL_PLANE_URL=http://127.0.0.1:8080
+export NORIX_JOIN_TOKEN='…'   # Nodes → Join token
+export NORIX_NODE_NAME="$(hostname -s)"
+./target/release/norix-agent
+```
+
+Antes de DeployFromGit: nodo `online` y `dockerSocket: true` (ver [BARE_INSTALL](docs/runbooks/BARE_INSTALL.md#un-worker-online-no-acepta-builds-git)).
+
+### 6. Binario único
+
+```bash
+make build && ./control-plane/bin/norix-control-plane
 ```
 
 | Servicio | URL |
 |---|---|
-| Dashboard (Vite) | http://127.0.0.1:5173 |
-| Control plane | http://127.0.0.1:8080/healthz |
-| Postgres | `127.0.0.1:5432` |
+| UI Vite | http://127.0.0.1:5173 |
+| API | http://127.0.0.1:8080/healthz · `/status` |
 
-**Binario único (UI embebida):**
-
-```bash
-make build
-./control-plane/bin/norix-control-plane
-```
-
-No subas `.env`, join tokens ni `NORIX_BUILD_SECRETS_KEY`.
-
-## Bucle de pruebas
+## Pruebas (como CI)
 
 ```bash
 cd control-plane && go test ./...
 cd web && npm ci && npm run lint && npm run build
 cd agent && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
-make proto-lint
-buf breaking --against ".git#ref=origin/main"
+curl -sf http://127.0.0.1:8080/healthz
 ```
 
 ## Pull requests
 
-1. Rama desde `main`.
-2. Diff enfocado; actualiza `docs/ESTADO_Y_PLAN_V1.md` / `ISSUES.md` solo si el estado cambia de verdad.
-3. Destino **`main`**. CI: protos → DB/RLS + web + agent → control-plane.
-4. Rellena la plantilla de PR (`.github/PULL_REQUEST_TEMPLATE.md`) — no dejes placeholders vacíos.
-5. Enlaza el issue (`Fixes #N` / `Refs #N`).
+- Destino **`main`**
+- Título: `type(#issue): resumen` (`fix` · `feat` · `docs` · `chore` · `refactor`)
+- Rellena la plantilla (incluye **Cómo probarlo**)
 
-### Formato del título (obligatorio para revisar)
+## Colaboradores y contributors
 
-```text
-type(#issue): resumen corto en imperativo
-```
-
-| `type` | Cuándo |
-|---|---|
-| `fix` | Bug |
-| `feat` | Feature / mejora visible |
-| `docs` | Solo documentación |
-| `chore` | CI, release, deps |
-| `refactor` | Limpieza interna |
-
-**Ejemplos:** `fix(#71): show real control-plane and agent versions` · `feat(#73): add norix-control-plane update` · `docs: add pull request template`
-
-## Estilo de código
-
-- Sigue el código vecino; sin refactors laterales.
-- Go: stdlib + paquetes en `control-plane/internal/`.
-- Web: patrones React/Vite en `web/src/`.
-- Agent: toolchain Rust 1.88 como en CI.
-- Tras editar protos: `make proto-generate` y commit de clientes generados.
+- **Contributors:** quien mergea PRs aparece en Insights y en el README ([Contributors](README.md#contributors)).
+- **Collaborators (write):** el maintainer invita en GitHub → **Settings** → **Collaborators** → **Add people**. Hay que **aceptar** la invitación.
 
 ## Docs
 
-- Estado: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md)
-- Visión: [`VISION.md`](VISION.md)
-- Backlog: [`ISSUES.md`](ISSUES.md)
-- Bare: [`docs/runbooks/BARE_INSTALL.md`](docs/runbooks/BARE_INSTALL.md)
-- Seguridad: [`SECURITY.md`](SECURITY.md) (privado)
-- Español: este archivo + [`README.es.md`](README.es.md)
+Ver [`docs/README.md`](docs/README.md).
 
 ## Licencia
 
-Al contribuir, aceptas que tus aportes se licencian bajo [Apache License 2.0](LICENSE).
+Aportes bajo [Apache License 2.0](LICENSE).

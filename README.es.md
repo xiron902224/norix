@@ -16,6 +16,7 @@
   <a href="#instalar">Instalar</a> ·
   <a href="#cómo-funciona">Cómo funciona</a> ·
   <a href="#para-colaboradores">Colaboradores</a> ·
+  <a href="#contribuidores">Contribuidores</a> ·
   <a href="CONTRIBUTING.es.md">Contribuir</a>
 </p>
 
@@ -97,13 +98,31 @@ curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/main/scripts/inst
 | Recurso | Uso |
 |---|---|
 | [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md) | Gitflow (`main`), setup local, PRs |
+| [`docs/README.md`](docs/README.md) | Mapa de toda la documentación |
 | [`ISSUES.md`](ISSUES.md) | Triage del backlog (P0–P3) |
 | [`VISION.md`](VISION.md) | Madurez de features + roadmap |
 | [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) | Estado vs plan S0–S22 |
 
 **Flujo:** tomar un issue → rama desde `main` → PR a `main`.
 
-Buenos puntos de entrada: labels **good first issue** y **priority/P0** (confianza y seguridad).
+**Local (resumen):** Postgres (`deploy/norix` compose) → `go run` control-plane `:8080` → Vite `:5173` → (opcional) agent con join token. Detalle en CONTRIBUTING.es.
+
+Buenos puntos de entrada: labels **good first issue** y **priority/P0**.
+
+---
+
+## Contribuidores
+
+<a href="https://github.com/xiron902224/norix/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=xiron902224/norix" alt="Contribuidores de Norix" />
+</a>
+
+| GitHub | Rol |
+|---|---|
+| [@xiron902224](https://github.com/xiron902224) | Maintainer |
+| [@Golden007-prog](https://github.com/Golden007-prog) | Colaborador |
+
+Para aparecer: mergear un PR a `main` y/o aceptar invitación en **Settings → Collaborators**. Ver [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md#colaboradores-y-contributors).
 
 ---
 
