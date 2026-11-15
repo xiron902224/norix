@@ -19,6 +19,7 @@
   <a href="#interfaces">Interfaces</a> ·
   <a href="#features">Features</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="#contributors">Contributors</a> ·
   <a href="README.es.md">Español</a>
 </p>
 
@@ -164,7 +165,7 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 | `deploy/norix/` | Compose prod/dev stacks |
 | `scripts/get-norix.sh` | Installer (`--mode docker\|bare`) |
 | `scripts/install-agent.sh` | Worker join (systemd or nohup) |
-| `docs/` | Plans and runbooks |
+| `docs/` | Plans and runbooks — start at [`docs/README.md`](docs/README.md) |
 | `VISION.md` / `ISSUES.md` | Product vision + GitHub issue triage |
 | `README.es.md` / `CONTRIBUTING.es.md` | Spanish collaborator docs |
 
@@ -174,7 +175,24 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 
 **Gitflow:** pick an issue → branch from **`main`** → PR to **`main`** (`develop` is retired).
 
-See **[`CONTRIBUTING.md`](CONTRIBUTING.md)** (EN) or **[`CONTRIBUTING.es.md`](CONTRIBUTING.es.md)** (ES). Pick work from [`ISSUES.md`](ISSUES.md) / [GitHub Issues](https://github.com/xiron902224/norix/issues).
+See **[`CONTRIBUTING.md`](CONTRIBUTING.md)** (EN) or **[`CONTRIBUTING.es.md`](CONTRIBUTING.es.md)** (ES). Local stack: Postgres + control-plane `:8080` + Vite `:5173` (+ optional agent). Doc map: [`docs/README.md`](docs/README.md). Pick work from [`ISSUES.md`](ISSUES.md) / [GitHub Issues](https://github.com/xiron902224/norix/issues).
+
+---
+
+## Contributors
+
+Thanks to everyone shipping PRs and reviews:
+
+<a href="https://github.com/xiron902224/norix/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=xiron902224/norix" alt="Norix contributors" />
+</a>
+
+| GitHub | Role |
+|---|---|
+| [@xiron902224](https://github.com/xiron902224) | Maintainer |
+| [@Golden007-prog](https://github.com/Golden007-prog) | Collaborator |
+
+To appear here: merge a PR to `main` (contributors graph) and/or accept a **Settings → Collaborators** invite (write access). Details: [`CONTRIBUTING.md`](CONTRIBUTING.md#collaborators--contributors-github).
 
 ---
 

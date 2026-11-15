@@ -19,6 +19,9 @@ jobs:
 
       - name: Setup Buf CLI
         uses: bufbuild/buf-setup-action@v1
+        with:
+          # Authenticated GitHub API avoids anonymous rate-limit failures on Setup Buf.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint and verify protobuf compatibility
         env:
