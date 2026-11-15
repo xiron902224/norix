@@ -70,7 +70,8 @@ impl Runtime {
             }
         }
 
-        let (kind, path, discover_logs) = resolve_build_source(&clone_dir, &build.dockerfile_path).await;
+        let (kind, path, discover_logs) =
+            resolve_build_source(&clone_dir, &build.dockerfile_path).await;
         logs.extend(discover_logs);
         match kind.as_str() {
             "dockerfile" => {
@@ -205,7 +206,10 @@ impl Runtime {
 
         let local_image = format!("{project}-{service}");
         let (ok, out) = self
-            .engine_capture(&["tag".into(), local_image.clone(), build.image_tag.clone()], None)
+            .engine_capture(
+                &["tag".into(), local_image.clone(), build.image_tag.clone()],
+                None,
+            )
             .await?;
         logs.extend(truncate_lines(&out, 10));
         if !ok {

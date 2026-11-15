@@ -7,8 +7,8 @@ use std::path::PathBuf;
 use std::time::Duration;
 use tracing::{info, warn};
 
-use crate::client::ObservedEdge;
 use crate::client::DesiredEdgePlan;
+use crate::client::ObservedEdge;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 struct EdgeState {
@@ -295,8 +295,12 @@ async fn health_check(client: &Client, upstream: &str) -> Result<()> {
 }
 
 fn edge_state_path() -> PathBuf {
-    let dir = std::env::var("NORIX_EDGE_STATE_DIR")
-        .unwrap_or_else(|_| std::env::temp_dir().join("norix-edge").display().to_string());
+    let dir = std::env::var("NORIX_EDGE_STATE_DIR").unwrap_or_else(|_| {
+        std::env::temp_dir()
+            .join("norix-edge")
+            .display()
+            .to_string()
+    });
     let path = PathBuf::from(dir);
     let _ = std::fs::create_dir_all(&path);
     path.join("state.json")

@@ -74,7 +74,11 @@ pub async fn apply_wasm_plan(workdir: &Path, plan: &DesiredWasmPlan) -> Observed
 
     ObservedWasm {
         generation: plan.generation,
-        status: if any_failed { "degraded".into() } else { "ready".into() },
+        status: if any_failed {
+            "degraded".into()
+        } else {
+            "ready".into()
+        },
         message: if any_failed {
             "one or more wasm functions failed staging".into()
         } else {
@@ -98,7 +102,9 @@ async fn stage_function(
     }
 
     if image.ends_with(".wasm")
-        && (image.starts_with("http://") || image.starts_with("https://") || Path::new(image).exists())
+        && (image.starts_with("http://")
+            || image.starts_with("https://")
+            || Path::new(image).exists())
     {
         fetch_wasm_file(image, &dest, logs)?;
     } else {
@@ -182,9 +188,7 @@ fn fetch_wasm_file(source: &str, dest: &Path, logs: &mut Vec<String>) -> Result<
 
 fn try_extract_from_oci(image: &str, dest: &Path, logs: &mut Vec<String>) -> Result<bool> {
     // Prefer `docker create` + `docker cp` when the image is a single-layer wasm blob layout.
-    let create = Command::new("docker")
-        .args(["create", image])
-        .output();
+    let create = Command::new("docker").args(["create", image]).output();
     let Ok(create) = create else {
         return Ok(false);
     };
@@ -223,14 +227,25 @@ fn try_extract_from_oci(image: &str, dest: &Path, logs: &mut Vec<String>) -> Res
 fn validate_wasm_magic(path: &Path) -> Result<()> {
     let bytes = fs::read(path).with_context(|| format!("read {}", path.display()))?;
     if bytes.len() < 4 || &bytes[0..4] != b"\0asm" {
-        bail!("{} is not a wasm binary (missing \\0asm magic)", path.display());
+        bail!(
+            "{} is not a wasm binary (missing \\0asm magic)",
+            path.display()
+        );
     }
     Ok(())
 }
 
 /// Try `wasmtime serve` for WASI HTTP components; returns running message on success.
-fn try_wasi_http_serve(path: &Path, fuel: u64, mem_mb: i32, logs: &mut Vec<String>) -> Option<String> {
-    let help = Command::new("wasmtime").args(["serve", "--help"]).output().ok()?;
+fn try_wasi_http_serve(
+    path: &Path,
+    fuel: u64,
+    mem_mb: i32,
+    logs: &mut Vec<String>,
+) -> Option<String> {
+    let help = Command::new("wasmtime")
+        .args(["serve", "--help"])
+        .output()
+        .ok()?;
     if !help.status.success() {
         return None;
     }

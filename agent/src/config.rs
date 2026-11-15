@@ -29,9 +29,8 @@ impl Config {
                 .and_then(|value| value.into_string().ok())
                 .unwrap_or_else(|| "norix-node".into())
         });
-        let workdir = PathBuf::from(
-            env::var("NORIX_AGENT_WORKDIR").unwrap_or_else(|_| "./.agent".into()),
-        );
+        let workdir =
+            PathBuf::from(env::var("NORIX_AGENT_WORKDIR").unwrap_or_else(|_| "./.agent".into()));
         let heartbeat_secs = env::var("NORIX_HEARTBEAT_SECS")
             .ok()
             .and_then(|value| value.parse().ok())

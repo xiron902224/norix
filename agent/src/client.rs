@@ -392,11 +392,7 @@ impl AgentClient {
             running_workload_ids,
         };
         let response = self
-            .post_json(
-                "/v1.AgentService/Heartbeat",
-                Some(&state.node_token),
-                &body,
-            )
+            .post_json("/v1.AgentService/Heartbeat", Some(&state.node_token), &body)
             .await?;
         match serde_json::from_value::<HeartbeatResponse>(response.clone()) {
             Ok(parsed) => Ok(HeartbeatResult {
@@ -452,7 +448,8 @@ impl AgentClient {
                     .get("desiredNetwork")
                     .or_else(|| response.get("desired_network"))
                 {
-                    if let Ok(parsed) = serde_json::from_value::<DesiredNetworkPlan>(network.clone())
+                    if let Ok(parsed) =
+                        serde_json::from_value::<DesiredNetworkPlan>(network.clone())
                     {
                         if parsed.generation > 0 {
                             result.desired_network = Some(parsed);

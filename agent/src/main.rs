@@ -274,10 +274,10 @@ fn read_state(path: &Path) -> Result<Option<NodeState>> {
     if !path.exists() {
         return Ok(None);
     }
-    let raw = std::fs::read_to_string(path)
-        .with_context(|| format!("read state {}", path.display()))?;
-    let state = serde_json::from_str(&raw)
-        .with_context(|| format!("parse state {}", path.display()))?;
+    let raw =
+        std::fs::read_to_string(path).with_context(|| format!("read state {}", path.display()))?;
+    let state =
+        serde_json::from_str(&raw).with_context(|| format!("parse state {}", path.display()))?;
     Ok(Some(state))
 }
 

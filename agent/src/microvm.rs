@@ -65,7 +65,11 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
         return failed(desired, error.to_string(), vec![]);
     }
 
-    if kernel.is_empty() || rootfs.is_empty() || !Path::new(&kernel).exists() || !Path::new(&rootfs).exists() {
+    if kernel.is_empty()
+        || rootfs.is_empty()
+        || !Path::new(&kernel).exists()
+        || !Path::new(&rootfs).exists()
+    {
         let msg = "microvm boot deferred: set NORIX_MICROVM_KERNEL and NORIX_MICROVM_ROOTFS to launch Cloud Hypervisor";
         info!(workload = %desired.id, "{msg}");
         return ObservedWorkload {
@@ -75,10 +79,7 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
             observed_generation: desired.desired_generation,
             message: msg.into(),
             host_port: desired.host_port,
-            log_lines: vec![
-                format!("wrote {}", intent_path.display()),
-                msg.into(),
-            ],
+            log_lines: vec![format!("wrote {}", intent_path.display()), msg.into()],
         };
     }
 
@@ -111,9 +112,7 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
     if desired.host_port > 0 {
         args.extend([
             "--net".into(),
-            format!(
-                "tap=,mac=,ip=,mask=,host_mac=,num_queues=1,queue_size=256"
-            ),
+            format!("tap=,mac=,ip=,mask=,host_mac=,num_queues=1,queue_size=256"),
         ]);
     }
 
@@ -124,7 +123,11 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
     };
     match Command::new(&ch_bin)
         .args(&args)
-        .stdout(log_file.try_clone().unwrap_or_else(|_| fs::File::create("/dev/null").unwrap()))
+        .stdout(
+            log_file
+                .try_clone()
+                .unwrap_or_else(|_| fs::File::create("/dev/null").unwrap()),
+        )
         .stderr(log_file)
         .spawn()
     {
@@ -159,7 +162,9 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
 fn stop_guest(dir: &Path) {
     if let Ok(raw) = fs::read_to_string(dir.join("pid")) {
         if let Ok(pid) = raw.trim().parse::<i32>() {
-            let _ = Command::new("kill").args(["-TERM", &pid.to_string()]).status();
+            let _ = Command::new("kill")
+                .args(["-TERM", &pid.to_string()])
+                .status();
         }
     }
 }

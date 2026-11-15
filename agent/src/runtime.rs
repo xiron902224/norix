@@ -42,7 +42,8 @@ impl Runtime {
                     status: "failed".into(),
                     container_id: String::new(),
                     observed_generation: item.desired_generation,
-                    message: "runtime=wasm is reconciled via DesiredWasmPlan, not container engine".into(),
+                    message: "runtime=wasm is reconciled via DesiredWasmPlan, not container engine"
+                        .into(),
                     host_port: item.host_port,
                     log_lines: vec!["skipped wasm workload in container reconcile".into()],
                 });
@@ -219,7 +220,10 @@ impl Runtime {
         dir: Option<&std::path::Path>,
     ) -> Result<(bool, String)> {
         let mut command = Command::new(self.bin());
-        command.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
+        command
+            .args(args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         if let Some(path) = dir {
             command.current_dir(path);
         }
@@ -416,14 +420,23 @@ impl Runtime {
 }
 
 fn container_name(workload_id: &str) -> String {
-    let compact: String = workload_id.chars().filter(|ch| ch.is_ascii_hexdigit()).collect();
+    let compact: String = workload_id
+        .chars()
+        .filter(|ch| ch.is_ascii_hexdigit())
+        .collect();
     format!("norix-{}", &compact[..compact.len().min(12)])
 }
 
 pub fn is_container_runtime(runtime: &str) -> bool {
     matches!(
         runtime.trim().to_ascii_lowercase().as_str(),
-        "" | "container" | "docker-compose" | "static-site" | "runtime_type_container" | "1" | "2" | "5"
+        "" | "container"
+            | "docker-compose"
+            | "static-site"
+            | "runtime_type_container"
+            | "1"
+            | "2"
+            | "5"
     )
 }
 
@@ -510,17 +523,29 @@ mod tests {
 
     #[test]
     fn matches_same_image_and_registry_prefix() {
-        assert!(image_matches("docker.io/library/nginx:latest", "nginx:latest"));
+        assert!(image_matches(
+            "docker.io/library/nginx:latest",
+            "nginx:latest"
+        ));
         assert!(image_matches("ghcr.io/acme/api:1.2.3", "api:1.2.3"));
         assert!(image_matches("ghcr.io/acme/nginx", "nginx"));
     }
 
     #[test]
     fn does_not_match_other_images_by_substring() {
-        assert!(!image_matches("ghcr.io/acme/nginx-prod:latest", "nginx:latest"));
-        assert!(!image_matches("ghcr.io/acme/not-nginx:latest", "nginx:latest"));
+        assert!(!image_matches(
+            "ghcr.io/acme/nginx-prod:latest",
+            "nginx:latest"
+        ));
+        assert!(!image_matches(
+            "ghcr.io/acme/not-nginx:latest",
+            "nginx:latest"
+        ));
         assert!(!image_matches("ghcr.io/acme/myapi:1.2.3", "api:1.2.3"));
-        assert!(!image_matches("ghcr.io/acme/my-nginx:latest", "nginx:latest"));
+        assert!(!image_matches(
+            "ghcr.io/acme/my-nginx:latest",
+            "nginx:latest"
+        ));
     }
 }
 
