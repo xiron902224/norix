@@ -1,6 +1,6 @@
-# Beta 1 — instalar Norix en 3 nodos (servidor real)
+# Beta — instalar Norix en 3 nodos (servidor real)
 
-Guía operativa para **`v1.0.0-beta.1`**. No es GA: mesh WireGuard, DNS-01 y HA Patroni quedan opt-in.
+Guía operativa para **`v1.0.0-beta.3`**. No es GA: mesh WireGuard, DNS-01 y HA Patroni quedan opt-in.
 
 ## Topología recomendada
 
@@ -45,7 +45,7 @@ Alternativa: CP-only en node-1 (sin agent ahí) y solo node-2/3 como workers —
 
 ### Antes de empezar (beta)
 
-1. Tag/release `v1.0.0-beta.1` publicado **o** build from source desde `develop`.
+1. Tag/release `v1.0.0-beta.3` publicado **o** build from source desde `develop`.
 2. Dominio apuntando a node-1, p.ej. `norix.example.com`.
 3. Tres join tokens (uno por agent) — se crean en la UI tras el bootstrap.
 
@@ -66,7 +66,7 @@ sudo chown -R norix:norix /var/lib/norix
 ```bash
 git clone https://github.com/xiron902224/norix.git /opt/norix
 cd /opt/norix
-git checkout v1.0.0-beta.1   # o develop hasta que exista el tag
+git checkout v1.0.0-beta.3   # o develop hasta que exista el tag
 
 sudo mkdir -p /root/.norix
 # Genera ~/.norix/.env con passwords aleatorios y levanta postgres (+ pebble/caddy de lab)
@@ -88,7 +88,7 @@ Postgres debe escuchar en `127.0.0.1:5432` (el compose del repo ya bindea así).
 **Desde release (preferido cuando exista el tag):**
 
 ```bash
-TAG=v1.0.0-beta.1
+TAG=v1.0.0-beta.3
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/norix-control-plane-linux-${ARCH}"
 curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/SHA256SUMS"
@@ -165,7 +165,7 @@ sudo apt-get update && sudo apt-get install -y docker.io
 sudo systemctl enable --now docker
 
 # Binario: release o source
-TAG=v1.0.0-beta.1
+TAG=v1.0.0-beta.3
 # … descargar norix-agent-linux-$ARCH + verificar SHA256SUMS …
 # o: cd /opt/norix && cargo +1.88.0 build --release -C agent && sudo install -m 755 agent/target/release/norix-agent /usr/local/bin/norix-agent
 
@@ -180,12 +180,15 @@ NORIX_AGENT_LOG_LEVEL=info
 EOF
 sudo chmod 600 /var/lib/norix-agent/agent.env
 
-# Alternativa con el script (no arranca el proceso si pasas --no-start):
+# Alternativa one-click (systemd en VPS; nohup si no hay systemd):
 # ./scripts/install-agent.sh --control-plane https://norix.example.com \
-#   --token '…' --name "$(hostname -s)" --version "$TAG" --no-start
+#   --token '…' --name "$(hostname -s)" --version "$TAG"
+# Labs sin systemd: añade --supervise none (o deja auto).
+# Solo instalar sin arrancar: --no-start
 
 sudo cp /opt/norix/deploy/systemd/norix-agent.service /etc/systemd/system/
 # Si el repo no está en el worker, copia solo el unit desde node-1.
+# (install-agent.sh sin --no-start ya escribe/activa el unit cuando hay systemd)
 sudo systemctl daemon-reload
 sudo systemctl enable --now norix-agent
 sudo systemctl status norix-agent --no-pager

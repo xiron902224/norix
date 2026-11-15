@@ -4,6 +4,8 @@ Thanks for helping. Norix is Apache-2.0 open source. Small, reviewable changes a
 
 Production install (VPS): see the [README Install](README.md#install) section (`--mode docker` or `--mode bare`). This file is for **developers** working on the monorepo.
 
+**What to work on:** [`ISSUES.md`](ISSUES.md) (triage) or [open GitHub issues](https://github.com/xiron902224/norix/issues) — prefer **P0** / **good first issue** unless you already own a larger slice.
+
 ## Gitflow
 
 | Branch | Role |
@@ -17,7 +19,7 @@ Production install (VPS): see the [README Install](README.md#install) section (`
 Rules of thumb:
 
 1. **Never** open feature PRs straight to `main`.
-2. Tag releases from a green `develop` (or `release`) only: `v1.0.0-beta.1`, later `v1.0.0`.
+2. Tag releases from a green `develop` (or `release`) only: `v1.0.0-beta.3`, later `v1.0.0`.
 3. Pushing a `v*` tag runs `.github/workflows/release.yml` (binaries + SHA256SUMS + cosign).
 4. Protobuf breaking changes are checked in CI against the PR **base** branch.
 

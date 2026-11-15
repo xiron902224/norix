@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License" /></a>
   <a href="https://github.com/xiron902224/norix"><img src="https://img.shields.io/badge/github-xiron902224%2Fnorix-0b7285" alt="GitHub" /></a>
   <a href="docs/ESTADO_Y_PLAN_V1.md"><img src="https://img.shields.io/badge/status-beta-0b7285" alt="Status" /></a>
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-1.0.0--beta.2-0b7285" alt="Version" /></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-1.0.0--beta.3-0b7285" alt="Version" /></a>
 </p>
 
 <p align="center">
@@ -25,30 +25,39 @@
 
 ## Install
 
-Norix runs on a Linux VPS you control. Pick how to install the **control plane**:
+Norix runs on a Linux VPS you control. **One command** installs the control plane (OpenShip-style). Pick a mode:
 
 | Mode | Command | Needs Docker? |
 |---|---|---|
 | **Docker** (default) | `… \| bash` | Yes — installs Engine if missing; panel + Postgres in Compose; this host can run workloads via `docker.sock` |
-| **Bare** | `… \| bash -s -- --mode bare` | No — system Postgres + binary + systemd. Add Docker/agent later for container workloads |
+| **Bare** | `… \| bash -s -- --mode bare` | No — system Postgres + release binary (SHA256 verified) + systemd. Add Docker/agent later for container workloads |
 
 Until `get.norix.dev` exists, the installer is served from this GitHub repo.
 
 ### Docker mode
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.2/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.2 bash
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.3 bash
 ```
 
 ### Bare mode (no Docker)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.2/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.2 bash -s -- --mode bare
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare
 ```
 
-Full bare walkthrough (manual steps, TLS, upgrades): [`docs/runbooks/BARE_INSTALL.md`](docs/runbooks/BARE_INSTALL.md).
+Labs / containers without systemd:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare --supervise none
+```
+
+Optional: `--port 8000`, `--public-url https://norix.example.com`. Re-runs are idempotent.
+
+Full bare walkthrough (TLS, upgrades, manual fallback): [`docs/runbooks/BARE_INSTALL.md`](docs/runbooks/BARE_INSTALL.md).
 
 Both modes print a URL like `http://YOUR_IP:8000`. Open it, create the first admin, then deploy.
 
@@ -63,10 +72,10 @@ Pin any branch/tag with `NORIX_REF=`. Integration tip: `develop`.
 Create a join token under **Nodes**, then on each worker:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/develop/scripts/install-agent.sh -o install-agent.sh
-chmod +x install-agent.sh
-./install-agent.sh --control-plane https://norix.example.com --token '…' --from-source --no-start
-# enable deploy/systemd/norix-agent.service — see docs/runbooks/BETA1_3NODE_INSTALL.md
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/develop/scripts/install-agent.sh \
+  | bash -s -- --control-plane https://norix.example.com --token '…'
+# auto: systemd on a real VPS; nohup in labs/containers without systemd
+# (--supervise none|systemd, --no-start, --foreground also supported)
 ```
 
 <details>
@@ -74,7 +83,7 @@ chmod +x install-agent.sh
 
 ```bash
 git clone https://github.com/xiron902224/norix.git && cd norix
-git checkout v1.0.0-beta.2
+git checkout v1.0.0-beta.3
 cp deploy/norix/env.production.example .env   # set strong passwords
 docker compose --env-file .env -f deploy/norix/docker-compose.prod.yml up -d --build
 ```
@@ -136,7 +145,7 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 
 ## Status
 
-**Beta** (`1.0.0-beta.2`). Living status: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md).
+**Beta** (`1.0.0-beta.3`). Living status: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) · vision: [`VISION.md`](VISION.md) · backlog: [`ISSUES.md`](ISSUES.md).
 
 ---
 
@@ -149,13 +158,15 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 | `agent/` | Rust node agent |
 | `deploy/norix/` | Compose prod/dev stacks |
 | `scripts/get-norix.sh` | Installer (`--mode docker\|bare`) |
+| `scripts/install-agent.sh` | Worker join (systemd or nohup) |
 | `docs/` | Plans and runbooks |
+| `VISION.md` / `ISSUES.md` | Product vision + GitHub issue triage |
 
 ---
 
 ## Contributing
 
-See **[`CONTRIBUTING.md`](CONTRIBUTING.md)** for gitflow, local development, tests, and PR rules.
+See **[`CONTRIBUTING.md`](CONTRIBUTING.md)** for gitflow, local development, tests, and PR rules. Pick work from [`ISSUES.md`](ISSUES.md) / [GitHub Issues](https://github.com/xiron902224/norix/issues).
 
 ---
 
