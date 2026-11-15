@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,6 +20,7 @@ type Component struct {
 type Report struct {
 	Status     string      `json:"status"`
 	Version    string      `json:"version"`
+	PublicURL  string      `json:"public_url,omitempty"`
 	CheckedAt  time.Time   `json:"checked_at"`
 	Components []Component `json:"components"`
 }
@@ -80,6 +82,7 @@ func Build(ctx context.Context, pool *pgxpool.Pool, version string) Report {
 	return Report{
 		Status:     overall,
 		Version:    version,
+		PublicURL:  strings.TrimRight(strings.TrimSpace(os.Getenv("NORIX_PUBLIC_URL")), "/"),
 		CheckedAt:  time.Now().UTC(),
 		Components: components,
 	}

@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+## 1.0.0-beta.3 — 2026-11-15
+
+### Added
+- `install-agent.sh --supervise auto|systemd|none` (default **auto**: systemd on real VPS, **nohup** in labs/containers); `--foreground` keeps the old blocking `exec`
+- Published contribution backlog: [`ISSUES.md`](ISSUES.md) (triage of 55 open GitHub issues) + refreshed [`VISION.md`](VISION.md)
+
+### Changed
+- Bare installer one-click path: preflight, idempotent DB bootstrap, release binary **SHA256** verification, `--supervise auto|systemd|none`, install-state JSON
+- Docs: README, [`BARE_INSTALL.md`](docs/runbooks/BARE_INSTALL.md), [`BETA1_3NODE_INSTALL.md`](docs/runbooks/BETA1_3NODE_INSTALL.md), [`ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) pinned to `v1.0.0-beta.3`
+- Dashboard join command / agent release pin → `v1.0.0-beta.3`
+
+### Notes
+- Stage 0 trust/safety GitHub issues remain open (see `ISSUES.md`); beta.3 does not claim Stage 0 exit
+- Tag `v1.0.0-beta.3` after merge to run the Release workflow
+
 ## 1.0.0-beta.2 — 2026-11-15
 
 ### Added
