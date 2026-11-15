@@ -1,37 +1,35 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   Check,
   Copy,
-  Cpu,
-  HardDrive,
-  LoaderCircle,
-  Radio,
-  Server,
-  Terminal,
+  Plus,
+  TriangleAlert,
 } from 'lucide-react'
 import { Button } from '../../../shared/ui/Button'
 import { FormField } from '../../../shared/ui/FormField'
+import { PageHero } from '../../../shared/ui/PageHero'
+import { MetricStrip } from '../../../shared/ui/MetricStrip'
+import { ResourceTable, type ResourceRow } from '../../../shared/ui/ResourceTable'
+import { CreateModal } from '../../../shared/ui/Modal'
+import { StatusPill } from '../../../shared/ui/StatusPill'
 import { formatWhen, relativeAge, shortId } from '../../../shared/lib/format'
 import type { Node } from '../../../gen/v1/agent_pb'
 import { cordonNode, createJoinToken, drainNode, listNodes, updateNodeSchedule } from '../services/nodes-api'
 
-function statusClass(status: string) {
-  if (status === 'online') return 'status-running'
-  if (status === 'degraded') return 'status-pending'
-  return 'status-stopped'
-}
-
 export function NodesPage() {
   const [nodes, setNodes] = useState<Node[]>([])
-  const [selected, setSelected] = useState<Node | null>(null)
+  const [selectedId, setSelectedId] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
   const [joinToken, setJoinToken] = useState<{ token: string; expiresAt: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [actionBusy, setActionBusy] = useState('')
   const [scheduleRole, setScheduleRole] = useState('worker')
   const [scheduleZone, setScheduleZone] = useState('default')
+
+  const selected = nodes.find((node) => node.id === selectedId) ?? null
 
   useEffect(() => {
     let cancelled = false
@@ -40,10 +38,7 @@ export function NodesPage() {
       setLoading(true)
       try {
         const items = await listNodes()
-        if (!cancelled) {
-          setNodes(items)
-          setSelected((current) => current ? items.find((item) => item.id === current.id) ?? null : null)
-        }
+        if (!cancelled) setNodes(items)
       } catch (cause) {
         if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not load nodes')
       } finally {
@@ -55,9 +50,8 @@ export function NodesPage() {
         .then((items) => {
           if (cancelled) return
           setNodes(items)
-          setSelected((current) => current ? items.find((item) => item.id === current.id) ?? current : null)
         })
-        .catch(() => { /* keep last good snapshot while polling */ })
+        .catch(() => { /* keep */ })
     }, 3000)
     return () => {
       cancelled = true
@@ -65,19 +59,27 @@ export function NodesPage() {
     }
   }, [])
 
+  function selectNode(id: string) {
+    setSelectedId(id)
+    const node = nodes.find((item) => item.id === id)
+    if (node) {
+      setScheduleRole(node.role || 'worker')
+      setScheduleZone(node.zone || 'default')
+    }
+  }
+
   async function onCreateToken(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setCreating(true)
     setError('')
     setCopied(false)
-    const formEl = event.currentTarget
-    const form = new FormData(formEl)
+    const form = new FormData(event.currentTarget)
     try {
       const created = await createJoinToken({
         nodeName: String(form.get('name') ?? ''),
       })
       setJoinToken(created)
-      formEl.reset()
+      setModalOpen(false)
       const items = await listNodes()
       setNodes(items)
     } catch (cause) {
@@ -94,18 +96,12 @@ export function NodesPage() {
     window.setTimeout(() => setCopied(false), 2000)
   }
 
-  function selectNode(node: Node) {
-    setSelected(node)
-    setScheduleRole(node.role || 'worker')
-    setScheduleZone(node.zone || 'default')
-  }
-
   async function refreshNodes(preferId?: string) {
     const items = await listNodes()
     setNodes(items)
-    const id = preferId ?? selected?.id
-    const next = id ? items.find((item) => item.id === id) ?? null : null
-    setSelected(next)
+    const id = preferId ?? selectedId
+    if (id && !items.some((item) => item.id === id)) setSelectedId('')
+    const next = id ? items.find((item) => item.id === id) : null
     if (next) {
       setScheduleRole(next.role || 'worker')
       setScheduleZone(next.zone || 'default')
@@ -154,7 +150,7 @@ export function NodesPage() {
       })
       await refreshNodes(selected.id)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not update schedule meta')
+      setError(cause instanceof Error ? cause.message : 'Could not save schedule')
     } finally {
       setActionBusy('')
     }
@@ -163,258 +159,155 @@ export function NodesPage() {
   const online = nodes.filter((node) => node.status === 'online').length
   const installCommand = joinToken
     ? `cd agent && NORIX_JOIN_TOKEN='${joinToken.token}' NORIX_CONTROL_PLANE_URL=http://127.0.0.1:8080 ./target/release/norix-agent`
-    : `cd agent && NORIX_JOIN_TOKEN='<token>' NORIX_CONTROL_PLANE_URL=http://127.0.0.1:8080 ./target/release/norix-agent`
+    : ''
+
+  const rows: ResourceRow[] = useMemo(() => nodes.map((node) => ({
+    id: node.id,
+    name: node.name,
+    subtitle: node.isLocal ? 'local · VPS' : (node.capabilities?.hostname || shortId(node.id, 12)),
+    status: node.status || 'offline',
+    values: [
+      `${node.role || 'worker'} · ${node.zone || 'default'}`,
+      relativeAge(node.lastSeenAt),
+      `${node.reportedWorkloadIds?.length ?? 0} reported`,
+      node.cordoned ? 'cordoned' : node.draining ? 'drain' : 'ok',
+    ],
+  })), [nodes])
 
   return (
-    <section className="page">
-      <header className="page-header">
-        <div>
-          <h2>Nodes</h2>
-          <p>Agents must be <strong>online</strong> (heartbeat &lt; ~45s) before Deploy can reconcile containers.</p>
-        </div>
-      </header>
+    <section className="compass-page">
+      <PageHero
+        title="Nodes"
+        subtitle="Online agents (heartbeat &lt; ~45s) before Deploy"
+        actions={(
+          <Button type="button" onClick={() => setModalOpen(true)}>
+            <Plus size={14} /> Join token
+          </Button>
+        )}
+      />
+
+      {error ? <div className="error" role="alert">{error}</div> : null}
 
       {online === 0 ? (
         <div className="callout callout-warn" role="status">
-          <TriangleWarn />
+          <TriangleAlert size={18} />
           <div>
             <strong>Fleet offline</strong>
             <p>
               {nodes.length === 0
-                ? 'Waiting for the control-plane host node, or create a join token to enroll a remote agent.'
-                : 'Enrolled remote agent(s) are offline. The local control-plane node should stay online for deploys on this VPS.'}
+                ? 'Create a join token or wait for the control-plane local node.'
+                : 'Enrolled agents offline. Start norix-agent on the host.'}
             </p>
           </div>
         </div>
       ) : null}
 
-      <div className="stats-grid">
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><Server /> Enrolled</div>
-          <strong>{loading ? '—' : nodes.length}</strong>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><Radio /> Online</div>
-          <strong>{loading ? '—' : online}</strong>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><Terminal /> Runtime</div>
-          <strong style={{ fontSize: '1.05rem' }}>docker / nerdctl</strong>
-        </article>
-      </div>
-
-      <section className="panel flux-shadow lift-card">
-        <header className="panel-header">
+      {joinToken ? (
+        <div className="compass-notice" role="status">
           <div>
-            <h3>Create join token</h3>
-            <p className="muted">One-time token (1h). After enroll, credentials live in <code>agent/.agent/node-state.json</code>.</p>
+            <strong>Join token</strong>
+            <span className="muted"> · expires {formatWhen(joinToken.expiresAt)}</span>
+            <code className="token-value" style={{ display: 'block', marginTop: 8 }}>{joinToken.token}</code>
+            <code className="install-command" style={{ display: 'block', marginTop: 8 }}>{installCommand}</code>
           </div>
-        </header>
+          <Button type="button" variant="secondary" onClick={() => void copyToken()}>
+            {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
+          </Button>
+        </div>
+      ) : null}
 
-        {error && <div className="error" role="alert">{error}</div>}
+      <MetricStrip
+        items={[
+          { label: 'Enrolled', value: loading ? '—' : nodes.length },
+          { label: 'Online', value: loading ? '—' : online },
+          { label: 'Offline', value: loading ? '—' : nodes.length - online },
+          { label: 'Runtime', value: 'docker' },
+        ]}
+      />
 
-        <form className="inline-form" onSubmit={(event) => void onCreateToken(event)}>
-          <FormField id="node-name" name="name" label="Suggested node name" placeholder="edge-1" />
-          <Button type="submit" disabled={creating}>{creating ? 'Creating…' : 'Create join token'}</Button>
-        </form>
-
-        {joinToken ? (
-          <div className="token-card">
-            <div className="token-meta">
-              <strong>Join token</strong>
-              <span className="muted">Expires {formatWhen(joinToken.expiresAt)}</span>
-            </div>
-            <code className="token-value">{joinToken.token}</code>
-            <div className="page-actions">
-              <Button type="button" variant="secondary" onClick={() => void copyToken()}>
-                {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy token</>}
-              </Button>
-            </div>
-            <p className="muted" style={{ marginTop: 12 }}>Start agent (needs Docker):</p>
-            <code className="install-command">{installCommand}</code>
-          </div>
-        ) : null}
-      </section>
-
-      <div className="split-detail">
-        <section className="panel flux-shadow lift-card panel-table">
-          <header className="panel-header">
-            <div>
-              <h3>Compute fleet</h3>
-              <p className="muted">Offline after ~45s without heartbeat. Click a row for capabilities.</p>
-            </div>
-          </header>
-
-          {loading ? (
-            <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading nodes…</span></div>
-          ) : null}
-
-          {!loading && nodes.length === 0 ? (
-            <div className="empty-state">
-              <Server />
-              <strong>No agents enrolled</strong>
-              <p className="muted">Create a join token and run the agent on the target host.</p>
-            </div>
-          ) : null}
-
-          <div className="table-scroll">
-            <table className="dense-table">
-              <thead>
-                <tr>
-                  <th>Node</th>
-                  <th>Status</th>
-                  <th>Role / zone</th>
-                  <th>Host</th>
-                  <th>Last seen</th>
-                  <th>Kind</th>
-                </tr>
-              </thead>
-              <tbody>
-                {nodes.map((node) => (
-                  <tr
-                    key={node.id}
-                    className={`row-clickable ${selected?.id === node.id ? 'is-selected' : ''}`}
-                    onClick={() => selectNode(node)}
-                  >
-                    <td>
-                      <strong>{node.name}</strong>
-                      {node.isLocal ? <span className="chip chip-info" style={{ marginLeft: 8 }}>local</span> : null}
-                    </td>
-                    <td>
-                      <span className={`status-chip ${statusClass(node.status)}`}>{node.status}</span>
-                    </td>
-                    <td className="mono">
-                      {node.role || 'worker'} · {node.zone || 'default'}
-                      {node.cordoned ? ' · cordoned' : ''}
-                      {node.draining ? ' · drain' : ''}
-                    </td>
-                    <td className="mono">{node.capabilities?.hostname || '—'}</td>
-                    <td className="mono">{relativeAge(node.lastSeenAt)}</td>
-                    <td>
-                      {node.isLocal ? (
-                        <span className="chip chip-info">VPS</span>
-                      ) : node.status === 'online' ? (
-                        <span className="chip chip-info"><LoaderCircle size={12} className="spin-slow" /> Live</span>
-                      ) : (
-                        <span className="chip">Offline</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <aside className="panel flux-shadow lift-card detail-pane">
-          <header className="panel-header">
-            <div>
-              <h3>Node detail</h3>
-              <p className="muted">{selected ? selected.name : 'Select a node'}</p>
-            </div>
-          </header>
-          {!selected ? (
-            <div className="empty-state compact">
-              <Server />
-              <strong>Nothing selected</strong>
-              <p className="muted">Pick a fleet member to inspect hardware and runtime sockets.</p>
-            </div>
-          ) : (
-            <>
-            <dl className="detail-grid">
-              <div><dt>ID</dt><dd className="mono">{selected.id}</dd></div>
-              <div><dt>Status</dt><dd><span className={`status-badge ${statusClass(selected.status)}`}>{selected.status}</span></dd></div>
-              <div><dt>Role</dt><dd>{selected.role || 'worker'}</dd></div>
-              <div><dt>Zone</dt><dd>{selected.zone || 'default'}</dd></div>
-              <div><dt>Schedule</dt><dd>{selected.cordoned ? 'cordoned' : 'schedulable'}{selected.draining ? ' · draining' : ''}</dd></div>
-              <div><dt>Last seen</dt><dd>{formatWhen(selected.lastSeenAt)} ({relativeAge(selected.lastSeenAt)})</dd></div>
-              <div><dt>Kind</dt><dd>{selected.isLocal ? 'Control-plane host (embedded)' : 'Remote agent'}</dd></div>
-              <div><dt>Hostname</dt><dd>{selected.capabilities?.hostname || '—'}</dd></div>
-              <div><dt>Agent</dt><dd>{selected.capabilities?.agentVersion || '—'}</dd></div>
-              <div><dt><Cpu size={12} /> CPU</dt><dd>{selected.capabilities?.cpuCores ?? 0} cores</dd></div>
-              <div><dt><HardDrive size={12} /> Memory</dt><dd>{selected.capabilities?.memoryTotalMb ?? 0} MB</dd></div>
-              <div><dt>Docker socket</dt><dd>{selected.capabilities?.dockerSocket ? 'yes' : 'no'}</dd></div>
-              <div><dt>Containerd socket</dt><dd>{selected.capabilities?.containerdSocket ? 'yes' : 'no'}</dd></div>
-              <div><dt>KVM level</dt><dd>{selected.capabilities?.kvmLevel ?? 0} (0=none, 1=/dev/kvm, 2=nested)</dd></div>
-              <div className="detail-span">
-                <dt>Live metrics</dt>
-                <dd>
-                  <div className="metric-bars">
-                    <div className="metric-bar">
-                      <label><span>CPU usage</span><span>{Number(selected.cpuUsagePercent || 0).toFixed(1)}%</span></label>
-                      <div className="track"><div className="fill" style={{ width: `${Math.min(100, Math.max(0, Number(selected.cpuUsagePercent || 0)))}%` }} /></div>
-                    </div>
-                    <div className="metric-bar">
-                      <label>
-                        <span>Memory free</span>
-                        <span>
-                          {String(selected.memoryFreeMb || 0)} / {String(selected.capabilities?.memoryTotalMb || 0)} MB
-                        </span>
-                      </label>
-                      <div className="track">
-                        <div
-                          className="fill"
-                          style={{
-                            width: `${selected.capabilities?.memoryTotalMb
-                              ? Math.min(100, Math.max(0, (1 - Number(selected.memoryFreeMb || 0) / Number(selected.capabilities.memoryTotalMb)) * 100))
-                              : 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="metric-bar">
-                      <label><span>Disk free</span><span>{String(selected.diskFreeMb || 0)} MB</span></label>
-                      <div className="track"><div className="fill" style={{ width: selected.diskFreeMb ? '35%' : '0%' }} /></div>
-                    </div>
-                  </div>
-                </dd>
-              </div>
-              <div className="detail-span">
-                <dt>Org</dt>
-                <dd className="mono">{shortId(selected.organizationId, 18)}</dd>
-              </div>
-            </dl>
-            <div className="detail-actions">
-              <Button type="button" variant="secondary" disabled={!!actionBusy || selected.cordoned} onClick={() => void onCordon(true)}>
-                {actionBusy === 'cordon' ? 'Cordoning…' : 'Cordon'}
-              </Button>
-              <Button type="button" variant="secondary" disabled={!!actionBusy || !selected.cordoned} onClick={() => void onCordon(false)}>
-                {actionBusy === 'uncordon' ? '…' : 'Uncordon'}
-              </Button>
-              <Button type="button" variant="secondary" disabled={!!actionBusy || selected.draining} onClick={() => void onDrain(true)}>
-                {actionBusy === 'drain' ? 'Draining…' : 'Drain'}
-              </Button>
-              <Button type="button" variant="secondary" disabled={!!actionBusy || !selected.draining} onClick={() => void onDrain(false)}>
-                {actionBusy === 'undrain' ? '…' : 'Stop drain'}
-              </Button>
-            </div>
-            <form className="form-grid form-grid-4" style={{ marginTop: 16 }} onSubmit={(event) => void onSaveSchedule(event)}>
-              <label>
-                <span>Role</span>
-                <select value={scheduleRole} onChange={(event) => setScheduleRole(event.target.value)}>
-                  <option value="worker">worker</option>
-                  <option value="edge">edge</option>
-                </select>
-              </label>
-              <FormField id="node-zone" label="Zone" value={scheduleZone} onChange={(event) => setScheduleZone(event.target.value)} placeholder="default" />
-              <Button type="submit" disabled={!!actionBusy}>
-                {actionBusy === 'schedule' ? 'Saving…' : 'Save schedule'}
-              </Button>
-            </form>
-            </>
-          )}
-        </aside>
+      <div className="compass-panel">
+        <div className="compass-toolbar">
+          <strong>{loading ? 'Loading…' : `${nodes.length} result${nodes.length === 1 ? '' : 's'}`}</strong>
+          <span className="muted">Poll every 3s</span>
+        </div>
+        <div className="compass-split">
+          <ResourceTable
+            headers={['Role / zone', 'Seen', 'Schedule']}
+            rows={rows}
+            selectedId={selectedId}
+            onSelect={(row) => selectNode(row.id)}
+            empty="No agents. Create a join token and start norix-agent."
+            leadingHeader="Node"
+          />
+          <aside className="compass-side-panel">
+            {!selected ? (
+              <>
+                <h3>Detail</h3>
+                <p className="muted">Select a node to view hardware and schedule.</p>
+              </>
+            ) : (
+              <>
+                <h3>{selected.name}</h3>
+                <p className="muted">{selected.isLocal ? 'Control-plane host' : 'Remote agent'}</p>
+                <div style={{ marginTop: 10 }}>
+                  <StatusPill status={selected.status || 'offline'} />
+                </div>
+                <dl className="compass-detail-grid" style={{ marginTop: 12 }}>
+                  <div><dt>ID</dt><dd className="mono">{shortId(selected.id, 16)}</dd></div>
+                  <div><dt>Role / zone</dt><dd>{selected.role || 'worker'} · {selected.zone || 'default'}</dd></div>
+                  <div><dt>Schedule</dt><dd>{selected.cordoned ? 'cordoned' : 'schedulable'}{selected.draining ? ' · draining' : ''}</dd></div>
+                  <div><dt>Seen</dt><dd>{relativeAge(selected.lastSeenAt)}</dd></div>
+                  <div><dt>Hostname</dt><dd>{selected.capabilities?.hostname || '—'}</dd></div>
+                  <div><dt>CPU / RAM</dt><dd>{selected.capabilities?.cpuCores ?? 0}c · {String(selected.capabilities?.memoryTotalMb ?? 0)} MB</dd></div>
+                  <div><dt>CPU uso</dt><dd>{Number(selected.cpuUsagePercent || 0).toFixed(1)}%</dd></div>
+                  <div><dt>RAM libre</dt><dd>{String(selected.memoryFreeMb || 0)} MB</dd></div>
+                  <div><dt>Docker</dt><dd>{selected.capabilities?.dockerSocket ? 'yes' : 'no'}</dd></div>
+                  <div><dt>KVM</dt><dd>{selected.capabilities?.kvmLevel ?? 0}</dd></div>
+                </dl>
+                <div className="page-actions" style={{ marginTop: 16, flexWrap: 'wrap' }}>
+                  <Button type="button" variant="secondary" disabled={!!actionBusy || selected.cordoned} onClick={() => void onCordon(true)}>
+                    {actionBusy === 'cordon' ? '…' : 'Cordon'}
+                  </Button>
+                  <Button type="button" variant="secondary" disabled={!!actionBusy || !selected.cordoned} onClick={() => void onCordon(false)}>
+                    Uncordon
+                  </Button>
+                  <Button type="button" variant="secondary" disabled={!!actionBusy || selected.draining} onClick={() => void onDrain(true)}>
+                    Drain
+                  </Button>
+                  <Button type="button" variant="secondary" disabled={!!actionBusy || !selected.draining} onClick={() => void onDrain(false)}>
+                    Stop drain
+                  </Button>
+                </div>
+                <form className="compass-create-form" style={{ marginTop: 16 }} onSubmit={(event) => void onSaveSchedule(event)}>
+                  <label>
+                    <span>Role</span>
+                    <select value={scheduleRole} onChange={(event) => setScheduleRole(event.target.value)}>
+                      <option value="worker">worker</option>
+                      <option value="edge">edge</option>
+                    </select>
+                  </label>
+                  <FormField id="node-zone" label="Zone" value={scheduleZone} onChange={(event) => setScheduleZone(event.target.value)} />
+                  <Button type="submit" disabled={!!actionBusy}>
+                    {actionBusy === 'schedule' ? 'Saving…' : 'Save schedule'}
+                  </Button>
+                </form>
+              </>
+            )}
+          </aside>
+        </div>
       </div>
-    </section>
-  )
-}
 
-function TriangleWarn() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
+      <CreateModal
+        open={modalOpen}
+        title="Create join token"
+        submitLabel="Create token"
+        busy={creating}
+        onClose={() => setModalOpen(false)}
+        onSubmit={(event) => void onCreateToken(event)}
+      >
+        <FormField id="node-name" name="name" label="Suggested name" placeholder="edge-1" />
+        <p className="muted">Single-use token (~1h). After enroll, credentials in agent/.agent/node-state.json.</p>
+      </CreateModal>
+    </section>
   )
 }

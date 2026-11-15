@@ -1,5 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { Activity, HardDrive, LineChart, Radio, Search } from 'lucide-react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { Search } from 'lucide-react'
+import { Button } from '../../../shared/ui/Button'
+import { FormField } from '../../../shared/ui/FormField'
+import { PageHero } from '../../../shared/ui/PageHero'
+import { MetricStrip } from '../../../shared/ui/MetricStrip'
+import { ResourceTable, type ResourceRow } from '../../../shared/ui/ResourceTable'
 import { listNodes } from '../../nodes/services/nodes-api'
 import type { Node } from '../../../gen/v1/agent_pb'
 import type { LogSegment, MetricSample, ObservabilityAlertEvent } from '../../../gen/v1/metrics_pb'
@@ -11,7 +16,10 @@ export function ObservabilityPage() {
   const [events, setEvents] = useState<ObservabilityAlertEvent[]>([])
   const [logs, setLogs] = useState<LogSegment[]>([])
   const [logQuery, setLogQuery] = useState('')
+  const [selectedId, setSelectedId] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [searchBusy, setSearchBusy] = useState(false)
 
   useEffect(() => {
     async function refresh() {
@@ -24,8 +32,12 @@ export function ObservabilityPage() {
         setNodes(nodeItems)
         if (metrics) setSamples(metrics.samples)
         if (alerts) setEvents(alerts.events)
+        if (selectedId && !nodeItems.some((node) => node.id === selectedId)) setSelectedId('')
+        setError('')
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'Could not load metrics')
+      } finally {
+        setLoading(false)
       }
     }
     void refresh()
@@ -34,165 +46,132 @@ export function ObservabilityPage() {
   }, [])
 
   useEffect(() => {
+    setSearchBusy(true)
     void queryLogs({ query: logQuery, limit: 80 })
       .then((response) => setLogs(response.segments))
       .catch(() => setLogs([]))
+      .finally(() => setSearchBusy(false))
   }, [logQuery])
 
   const online = nodes.filter((node) => node.status === 'online')
+  const selected = nodes.find((node) => node.id === selectedId) ?? null
+  const avgCpu = online.length
+    ? (online.reduce((sum, node) => sum + Number(node.cpuUsagePercent ?? 0), 0) / online.length).toFixed(1)
+    : null
+  const freeMemGb = online.length
+    ? Math.round(online.reduce((sum, node) => sum + Number(node.memoryFreeMb ?? 0), 0) / 1024)
+    : null
 
-  function onSearch(event: FormEvent) {
+  const rows: ResourceRow[] = useMemo(() => nodes.map((node) => ({
+    id: node.id,
+    name: node.name,
+    subtitle: node.id,
+    status: node.status || 'offline',
+    values: [
+      `${Number(node.cpuUsagePercent || 0).toFixed(1)}%`,
+      `${String(node.memoryFreeMb || 0)} MB`,
+      `${String(node.diskFreeMb || 0)} MB`,
+    ],
+  })), [nodes])
+
+  function onSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const form = new FormData(event.target as HTMLFormElement)
+    const form = new FormData(event.currentTarget)
     setLogQuery(String(form.get('q') ?? '').trim())
   }
 
   return (
-    <section className="page">
-      <header className="page-header">
-        <div>
-          <h2>Observability</h2>
-          <p>Live node telemetry, log search, metric samples, and alert events (S9).</p>
-        </div>
-      </header>
+    <section className="compass-page">
+      <PageHero
+        title="Observability"
+        subtitle="Node telemetry, log search, samples, and alerts"
+      />
+
       {error ? <div className="error" role="alert">{error}</div> : null}
 
-      <div className="stats-grid stats-grid-4">
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><Radio /> Online nodes</div>
-          <strong>{online.length}</strong>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><Activity /> Avg CPU</div>
-          <strong className="mono">
-            {online.length
-              ? `${(online.reduce((sum, node) => sum + Number(node.cpuUsagePercent ?? 0), 0) / online.length).toFixed(1)}%`
-              : '—'}
-          </strong>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><HardDrive /> Free memory</div>
-          <strong className="mono">
-            {online.length
-              ? `${Math.round(online.reduce((sum, node) => sum + Number(node.memoryFreeMb ?? 0), 0) / 1024)} GB`
-              : '—'}
-          </strong>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><LineChart /> Samples</div>
-          <strong>{samples.length}</strong>
-          <p className="muted">recent ingest</p>
-        </article>
+      <MetricStrip
+        items={[
+          { label: 'Nodes online', value: loading ? '—' : online.length },
+          { label: 'Avg CPU', value: avgCpu != null ? `${avgCpu}%` : '—' },
+          { label: 'Free RAM', value: freeMemGb != null ? `${freeMemGb} GB` : '—' },
+          { label: 'Samples', value: loading ? '—' : samples.length },
+          { label: 'Alerts', value: loading ? '—' : events.length },
+        ]}
+      />
+
+      <div className="compass-panel">
+        <div className="compass-toolbar">
+          <strong>{loading ? 'Loading…' : `${nodes.length} node${nodes.length === 1 ? '' : 's'}`}</strong>
+          <span className="muted">Poll every 5s · {samples.length} recent samples</span>
+        </div>
+        <div className="compass-split">
+          <ResourceTable
+            leadingHeader="Node"
+            headers={['CPU', 'Free RAM', 'Free disk']}
+            rows={rows}
+            selectedId={selectedId}
+            onSelect={(row) => setSelectedId(row.id)}
+            empty="No enrolled nodes."
+          />
+          <aside className="compass-side-panel">
+            {selected ? (
+              <>
+                <h3>{selected.name}</h3>
+                <p className="muted">{selected.status || 'offline'}</p>
+                <dl className="compass-detail-grid" style={{ marginTop: 12 }}>
+                  <div><dt>ID</dt><dd className="mono">{selected.id}</dd></div>
+                  <div><dt>CPU</dt><dd>{Number(selected.cpuUsagePercent || 0).toFixed(1)}%</dd></div>
+                  <div><dt>Free RAM</dt><dd>{String(selected.memoryFreeMb || 0)} MB</dd></div>
+                  <div><dt>Free disk</dt><dd>{String(selected.diskFreeMb || 0)} MB</dd></div>
+                </dl>
+              </>
+            ) : (
+              <>
+                <h3>Detail</h3>
+                <p className="muted">Select a node or search logs / review alerts below.</p>
+              </>
+            )}
+
+            <h4 style={{ marginTop: 20 }}>Search logs</h4>
+            <form className="compass-create-form" style={{ marginTop: 8 }} onSubmit={onSearch}>
+              <FormField id="obs-log-q" name="q" label="Query" placeholder="Search logs…" defaultValue={logQuery} />
+              <Button type="submit" variant="secondary" disabled={searchBusy}>
+                <Search size={14} /> {searchBusy ? '…' : 'Search'}
+              </Button>
+            </form>
+            {logs.length === 0 ? (
+              <p className="muted" style={{ marginTop: 8 }}>No matching lines.</p>
+            ) : (
+              <ul className="resource-list" style={{ marginTop: 8, maxHeight: 180, overflow: 'auto' }}>
+                {logs.slice(0, 20).map((line) => (
+                  <li key={line.id}>
+                    <div className="resource-link">
+                      <span className="status-chip">{line.level || 'info'}</span>
+                      <p className="hint-line mono">{line.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <h4 style={{ marginTop: 20 }}>Alerts</h4>
+            {events.length === 0 ? (
+              <p className="muted" style={{ marginTop: 8 }}>No alert events.</p>
+            ) : (
+              <ul className="resource-list" style={{ marginTop: 8 }}>
+                {events.slice(0, 10).map((event) => (
+                  <li key={event.id}>
+                    <div className="resource-link">
+                      <strong>{event.status}</strong>
+                      <p className="hint-line">{event.message}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </aside>
+        </div>
       </div>
-
-      <section className="panel flux-shadow lift-card panel-table">
-        <header className="panel-header">
-          <div>
-            <h3>Node samples</h3>
-            <p className="muted">CPU / memory / disk from heartbeat + metric_samples.</p>
-          </div>
-        </header>
-        {nodes.length === 0 ? (
-          <p className="muted">No nodes enrolled.</p>
-        ) : (
-          <div className="table-scroll">
-            <table className="dense-table">
-              <thead>
-                <tr>
-                  <th>Node</th>
-                  <th>Status</th>
-                  <th>CPU</th>
-                  <th>Mem free</th>
-                  <th>Disk free</th>
-                </tr>
-              </thead>
-              <tbody>
-                {nodes.map((node) => (
-                  <tr key={node.id}>
-                    <td>
-                      <strong>{node.name}</strong>
-                      <div className="mono table-sub">{node.id}</div>
-                    </td>
-                    <td>
-                      <span className={`status-chip status-${node.status === 'online' ? 'running' : 'stopped'}`}>{node.status}</span>
-                    </td>
-                    <td className="mono">{Number(node.cpuUsagePercent || 0).toFixed(1)}%</td>
-                    <td className="mono">{String(node.memoryFreeMb || 0)} MB</td>
-                    <td className="mono">{String(node.diskFreeMb || 0)} MB</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section className="panel flux-shadow lift-card panel-table">
-        <header className="panel-header">
-          <div>
-            <h3>Log search</h3>
-            <p className="muted">Query across log_segments, workload logs, and build logs.</p>
-          </div>
-          <form className="inline-form" onSubmit={onSearch}>
-            <label className="sr-only" htmlFor="obs-log-q">Search logs</label>
-            <input id="obs-log-q" name="q" placeholder="Search logs…" defaultValue={logQuery} />
-            <button type="submit"><Search size={16} /> Search</button>
-          </form>
-        </header>
-        {logs.length === 0 ? (
-          <p className="muted">No log lines matched.</p>
-        ) : (
-          <div className="table-scroll">
-            <table className="dense-table">
-              <thead>
-                <tr>
-                  <th>Level</th>
-                  <th>Body</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((line) => (
-                  <tr key={line.id}>
-                    <td><span className="status-chip">{line.level || 'info'}</span></td>
-                    <td className="mono">{line.body}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section className="panel flux-shadow lift-card panel-table">
-        <header className="panel-header">
-          <div>
-            <h3>Alert events</h3>
-            <p className="muted">Ops alerts + observability alert_events.</p>
-          </div>
-        </header>
-        {events.length === 0 ? (
-          <p className="muted">No alert events yet.</p>
-        ) : (
-          <div className="table-scroll">
-            <table className="dense-table">
-              <thead>
-                <tr>
-                  <th>Status</th>
-                  <th>Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {events.map((event) => (
-                  <tr key={event.id}>
-                    <td><span className="status-chip">{event.status}</span></td>
-                    <td>{event.message}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
     </section>
   )
 }

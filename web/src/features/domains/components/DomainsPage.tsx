@@ -1,17 +1,16 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { ExternalLink, Globe, Link2, Trash2, TriangleAlert } from 'lucide-react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { ExternalLink, Plus } from 'lucide-react'
 import { Button } from '../../../shared/ui/Button'
 import { FormField } from '../../../shared/ui/FormField'
 import { SelectField } from '../../../shared/ui/SelectField'
-import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
+import { PageHero } from '../../../shared/ui/PageHero'
+import { MetricStrip } from '../../../shared/ui/MetricStrip'
+import { ResourceTable, type ResourceRow } from '../../../shared/ui/ResourceTable'
+import { CreateModal } from '../../../shared/ui/Modal'
 import { domainPublicUrl } from '../../../shared/lib/edge'
 import type { DomainRoute, Project, Workload } from '../../../gen/v1/workload_pb'
 import { listProjects, listWorkloads } from '../../projects/services/projects-api'
 import { assignDomain, listDomains, unassignDomain } from '../services/domains-api'
-
-function busyStatus(status: string) {
-  return status === 'pending' || status === 'provisioning' || status === 'deleting'
-}
 
 export function DomainsPage() {
   const [routes, setRoutes] = useState<DomainRoute[]>([])
@@ -19,11 +18,13 @@ export function DomainsPage() {
   const [workloads, setWorkloads] = useState<Workload[]>([])
   const [projectId, setProjectId] = useState('')
   const [workloadId, setWorkloadId] = useState('')
+  const [selectedId, setSelectedId] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [removingId, setRemovingId] = useState('')
+  const [actionBusy, setActionBusy] = useState('')
 
   async function refresh() {
     try {
@@ -31,6 +32,7 @@ export function DomainsPage() {
       setRoutes(domainRoutes)
       setProjects(projectItems)
       if (!projectId && projectItems[0]) setProjectId(projectItems[0].id)
+      if (selectedId && !domainRoutes.some((route) => route.id === selectedId)) setSelectedId('')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load domains')
     } finally {
@@ -41,7 +43,7 @@ export function DomainsPage() {
   useEffect(() => {
     void refresh()
     const timer = window.setInterval(() => {
-      void listDomains().then(setRoutes).catch(() => { /* keep last */ })
+      void listDomains().then(setRoutes).catch(() => { /* keep */ })
     }, 4000)
     return () => window.clearInterval(timer)
   }, [])
@@ -60,23 +62,42 @@ export function DomainsPage() {
       .catch((cause) => setError(cause instanceof Error ? cause.message : 'Could not load workloads'))
   }, [projectId])
 
+  const selected = routes.find((route) => route.id === selectedId) ?? null
+  const active = routes.filter((route) => route.status === 'active').length
+  const failed = routes.filter((route) => route.status === 'failed').length
+  const pending = routes.filter((route) => route.status === 'pending' || route.status === 'provisioning').length
+
+  const rows: ResourceRow[] = useMemo(() => routes.map((route) => {
+    const https = domainPublicUrl(route.hostname, route.httpsUrl)
+    return {
+      id: route.id,
+      name: route.hostname,
+      subtitle: route.workloadId,
+      status: route.status || 'pending',
+      values: [
+        route.tlsMode || 'auto',
+        String(route.edgeGeneration),
+        route.status === 'active' ? https.replace(/^https?:\/\//, '') : (route.lastError || '—'),
+      ],
+    }
+  }), [routes])
+
   async function onAssign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setBusy(true)
     setError('')
     setNotice('')
     const form = new FormData(event.currentTarget)
-    const hostname = String(form.get('hostname') ?? '').trim()
     try {
       const route = await assignDomain({
         workloadId: String(form.get('workloadId') ?? workloadId),
-        hostname,
+        hostname: String(form.get('hostname') ?? '').trim(),
         tlsMode: String(form.get('tlsMode') ?? ''),
       })
-      const url = domainPublicUrl(route.hostname, route.httpsUrl)
-      setNotice(`Domain ${route.hostname} queued (${route.tlsMode}). When status is active, open ${url}`)
-      event.currentTarget.reset()
+      setNotice(`Domain ${route.hostname} queued (${route.tlsMode}).`)
+      setModalOpen(false)
       await refresh()
+      setSelectedId(route.id)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not assign domain')
     } finally {
@@ -84,212 +105,138 @@ export function DomainsPage() {
     }
   }
 
-  async function onRemove(route: DomainRoute) {
-    setRemovingId(route.id)
+  async function onRetry(route: DomainRoute) {
+    setActionBusy(route.id)
     setError('')
     try {
-      await unassignDomain(route.id)
+      await assignDomain({
+        workloadId: route.workloadId,
+        hostname: route.hostname,
+        tlsMode: route.tlsMode || 'internal',
+      })
+      setNotice(`Retry queued for ${route.hostname}`)
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not remove domain')
+      setError(cause instanceof Error ? cause.message : 'Could not retry')
     } finally {
-      setRemovingId('')
+      setActionBusy('')
     }
   }
 
-  const provisioning = routes.filter((route) => busyStatus(route.status)).length
-  const active = routes.filter((route) => route.status === 'active').length
-  const selectedWorkload = workloads.find((item) => item.id === workloadId)
+  async function onRemove(route: DomainRoute) {
+    setActionBusy(route.id)
+    setError('')
+    try {
+      await unassignDomain(route.id)
+      setSelectedId('')
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not delete')
+    } finally {
+      setActionBusy('')
+    }
+  }
 
   return (
-    <section className="page">
-      <header className="page-header">
-        <div>
-          <h2>Domains</h2>
-          <p>Publish a running workload on a hostname through the Caddy edge.</p>
-        </div>
-      </header>
+    <section className="compass-page">
+      <PageHero
+        title="Domains"
+        subtitle="Public routing and TLS certificates"
+        actions={(
+          <Button type="button" onClick={() => setModalOpen(true)}>
+            <Plus size={14} /> Add domain
+          </Button>
+        )}
+      />
 
       {error ? <div className="error" role="alert">{error}</div> : null}
-      {notice ? <div className="notice" role="status">{notice}</div> : null}
+      {notice ? <div className="compass-notice" role="status">{notice}</div> : null}
 
-      {provisioning > 0 ? (
-        <ActivityBanner
-          title={`Provisioning ${provisioning} domain route${provisioning === 1 ? '' : 's'}`}
-          detail="Caddy reloads config, checks the upstream, then marks the route active (or rolls back)."
-        />
-      ) : null}
+      <MetricStrip
+        items={[
+          { label: 'Domains', value: loading ? '—' : routes.length },
+          { label: 'TLS active', value: loading ? '—' : active },
+          { label: 'Pending', value: loading ? '—' : pending },
+          { label: 'Failed', value: loading ? '—' : failed },
+        ]}
+      />
 
-      {!selectedWorkload?.hostPort && workloadId ? (
-        <div className="callout callout-warn" role="status">
-          <TriangleAlert size={18} />
-          <div>
-            <strong>Selected workload has no host port yet</strong>
-            <p>Deploy the workload first so the edge can proxy to it. Domains stay pending until a port exists.</p>
-          </div>
+      <div className="compass-panel">
+        <div className="compass-toolbar">
+          <strong>{loading ? 'Loading…' : `${routes.length} result${routes.length === 1 ? '' : 's'}`}</strong>
         </div>
-      ) : null}
-
-      <div className="stats-grid stats-grid-4">
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><Globe /> Routes</div>
-          <strong>{loading ? '—' : routes.length}</strong>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label">Active</div>
-          <strong>{loading ? '—' : active}</strong>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label">Provisioning</div>
-          <strong>{loading ? '—' : provisioning}</strong>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label">Workloads</div>
-          <strong>{workloads.length}</strong>
-        </article>
+        <div className="compass-split">
+          <ResourceTable
+            leadingHeader="Domain"
+            headers={['TLS', 'Generation', 'Endpoint']}
+            rows={rows}
+            selectedId={selectedId}
+            onSelect={(row) => setSelectedId(row.id)}
+            empty="No domains. Add a hostname to publish a workload."
+          />
+          <aside className="compass-side-panel">
+            {!selected ? (
+              <>
+                <h3>Detail</h3>
+                <p className="muted">Select a domain to view TLS, errors, and actions.</p>
+              </>
+            ) : (
+              <>
+                <h3>{selected.hostname}</h3>
+                <p className="muted">{selected.status}</p>
+                <dl className="compass-detail-grid" style={{ marginTop: 12 }}>
+                  <div><dt>TLS</dt><dd>{selected.tlsMode || 'auto'}</dd></div>
+                  <div><dt>Generation</dt><dd>{String(selected.edgeGeneration)}</dd></div>
+                  <div><dt>Workload</dt><dd>{selected.workloadId}</dd></div>
+                  <div><dt>Error</dt><dd>{selected.lastError || '—'}</dd></div>
+                </dl>
+                <div className="page-actions" style={{ marginTop: 16 }}>
+                  {selected.status === 'active' ? (
+                    <Button type="button" variant="secondary" onClick={() => window.open(domainPublicUrl(selected.hostname, selected.httpsUrl), '_blank', 'noopener,noreferrer')}>
+                      <ExternalLink size={14} /> Open HTTPS
+                    </Button>
+                  ) : (
+                    <Button type="button" variant="secondary" disabled={actionBusy === selected.id} onClick={() => void onRetry(selected)}>
+                      {actionBusy === selected.id ? '…' : 'Retry'}
+                    </Button>
+                  )}
+                  <Button type="button" variant="danger" disabled={actionBusy === selected.id} onClick={() => void onRemove(selected)}>
+                    Delete
+                  </Button>
+                </div>
+              </>
+            )}
+          </aside>
+        </div>
       </div>
 
-      <section className="panel flux-shadow lift-card">
-        <header className="panel-header">
-          <div>
-            <h3>Assign domain</h3>
-            <p className="muted">Local demo: <code>app.localhost</code> + TLS internal → <code>https://app.localhost:8443</code></p>
-          </div>
-        </header>
-
-        <form className="form-grid form-grid-domains" onSubmit={(event) => void onAssign(event)}>
-          <SelectField
-            id="domain-project"
-            label="Project"
-            value={projectId}
-            onChange={(event) => setProjectId(event.target.value)}
-            required
-          >
-            <option value="" disabled>Select project</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>{project.name}</option>
-            ))}
-          </SelectField>
-
-          <SelectField
-            id="domain-workload"
-            name="workloadId"
-            label="Workload"
-            value={workloadId}
-            onChange={(event) => setWorkloadId(event.target.value)}
-            required
-          >
-            <option value="" disabled>Select workload</option>
-            {workloads.map((workload) => (
-              <option key={workload.id} value={workload.id}>
-                {workload.name} · {workload.status || 'pending'}
-                {workload.hostPort ? ` · :${workload.hostPort}` : ' · no port'}
-              </option>
-            ))}
-          </SelectField>
-
-          <FormField id="hostname" name="hostname" label="Hostname" required placeholder="app.localhost" />
-
-          <SelectField id="tls-mode" name="tlsMode" label="TLS" defaultValue="internal">
-            <option value="internal">internal</option>
-            <option value="acme">acme</option>
-            <option value="">auto</option>
-          </SelectField>
-
-          <Button type="submit" disabled={busy || !workloadId}>
-            {busy ? 'Assigning…' : 'Assign domain'}
-          </Button>
-        </form>
-      </section>
-
-      <section className="panel flux-shadow lift-card panel-table">
-        <header className="panel-header">
-          <div>
-            <h3>Domains &amp; routes</h3>
-            <p className="muted">Links open the edge listener on port 8443 (HTTPS) or 8088 (HTTP).</p>
-          </div>
-        </header>
-
-        {loading ? (
-          <div className="loading-row" style={{ margin: '0 20px 16px' }}><span className="spinner" aria-hidden /><span>Loading domains…</span></div>
-        ) : null}
-
-        {!loading && routes.length === 0 ? (
-          <div className="empty-state">
-            <Globe />
-            <strong>No domains yet</strong>
-            <p className="muted">Deploy a workload, then assign a hostname above.</p>
-          </div>
-        ) : null}
-
-        {routes.length > 0 ? (
-          <div className="table-scroll">
-            <table className="dense-table">
-              <thead>
-                <tr>
-                  <th>Hostname</th>
-                  <th>TLS</th>
-                  <th>Status</th>
-                  <th>Generation</th>
-                  <th>Endpoint</th>
-                  <th className="align-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {routes.map((route) => {
-                  const https = domainPublicUrl(route.hostname, route.httpsUrl)
-                  const isBusy = busyStatus(route.status)
-                  return (
-                    <tr key={route.id}>
-                      <td>
-                        <strong>{route.hostname}</strong>
-                        <div className="mono table-sub">{route.workloadId || route.id}</div>
-                      </td>
-                      <td className="mono">{route.tlsMode || 'auto'}</td>
-                      <td>
-                        <span className={`status-chip status-${route.status === 'active' ? 'running' : isBusy ? 'pending' : 'stopped'}`}>
-                          {route.status || 'pending'}
-                        </span>
-                      </td>
-                      <td className="mono">{String(route.edgeGeneration)}</td>
-                      <td>
-                        {route.status === 'active' ? (
-                          <a className="endpoint-link" href={https} target="_blank" rel="noreferrer">
-                            {https.split('://')[1]} <ExternalLink size={12} />
-                          </a>
-                        ) : (
-                          <span className="muted">{isBusy ? 'Reconciling…' : (route.lastError || '—')}</span>
-                        )}
-                      </td>
-                      <td className="align-right">
-                        <div className="row-actions">
-                          {route.status === 'active' ? (
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={() => window.open(https, '_blank', 'noopener,noreferrer')}
-                            >
-                              <Link2 size={14} /> HTTPS
-                            </Button>
-                          ) : null}
-                          <Button
-                            variant="danger"
-                            type="button"
-                            disabled={removingId === route.id}
-                            onClick={() => void onRemove(route)}
-                          >
-                            <Trash2 size={14} /> {removingId === route.id ? '…' : 'Remove'}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-      </section>
+      <CreateModal
+        open={modalOpen}
+        title="Add domain"
+        submitLabel="Assign domain"
+        busy={busy}
+        onClose={() => setModalOpen(false)}
+        onSubmit={(event) => void onAssign(event)}
+      >
+        <SelectField id="domain-project" label="Project" value={projectId} onChange={(e) => setProjectId(e.target.value)} required>
+          <option value="" disabled>Select</option>
+          {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+        </SelectField>
+        <SelectField id="domain-workload" name="workloadId" label="Target application" value={workloadId} onChange={(e) => setWorkloadId(e.target.value)} required>
+          <option value="" disabled>Select</option>
+          {workloads.map((workload) => (
+            <option key={workload.id} value={workload.id}>
+              {workload.name} · {workload.status || 'pending'}{workload.hostPort ? ` · :${workload.hostPort}` : ''}
+            </option>
+          ))}
+        </SelectField>
+        <FormField id="hostname" name="hostname" label="Domain" required placeholder="app.localhost" />
+        <SelectField id="tls-mode" name="tlsMode" label="TLS" defaultValue="internal">
+          <option value="internal">internal</option>
+          <option value="acme">acme</option>
+          <option value="">auto</option>
+        </SelectField>
+      </CreateModal>
     </section>
   )
 }

@@ -110,6 +110,7 @@ func workloadToProto(workload db.Workload) *paasv1.Workload {
 		ReplicaCount: workload.ReplicaCount, ScheduleStrategy: workload.ScheduleStrategy,
 		RequireKvm: workload.RequireKVM, PreferredZone: workload.PreferredZone,
 		AffinityLabels: workload.AffinityLabels, AntiAffinityLabels: workload.AntiAffinityLabels,
+		StackId: workload.StackID, ComposeService: workload.ComposeService, ComposeSpecJson: workload.ComposeSpecJSON,
 	}
 }
 

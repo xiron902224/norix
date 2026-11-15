@@ -36,6 +36,19 @@ impl Runtime {
     pub async fn reconcile(&self, desired: &[DesiredWorkload]) -> Vec<ObservedWorkload> {
         let mut observed = Vec::with_capacity(desired.len());
         for item in desired {
+            if is_wasm_runtime(&item.runtime) {
+                observed.push(ObservedWorkload {
+                    id: item.id.clone(),
+                    status: "failed".into(),
+                    container_id: String::new(),
+                    observed_generation: item.desired_generation,
+                    message: "runtime=wasm is reconciled via DesiredWasmPlan, not container engine"
+                        .into(),
+                    host_port: item.host_port,
+                    log_lines: vec!["skipped wasm workload in container reconcile".into()],
+                });
+                continue;
+            }
             match self.reconcile_one(item).await {
                 Ok(value) => observed.push(value),
                 Err(error) => {
@@ -55,7 +68,39 @@ impl Runtime {
         observed
     }
 
+    /// List workload IDs from containers labeled norix.workload_id (for heartbeat inventory).
+    pub async fn list_running_workload_ids(&self) -> Vec<String> {
+        let output = Command::new(self.bin())
+            .args([
+                "ps",
+                "--filter",
+                "label=norix.workload_id",
+                "--format",
+                "{{.Label \"norix.workload_id\"}}",
+            ])
+            .output()
+            .await;
+        let Ok(output) = output else {
+            return Vec::new();
+        };
+        if !output.status.success() {
+            return Vec::new();
+        }
+        String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .map(str::to_string)
+            .collect()
+    }
+
     async fn reconcile_one(&self, desired: &DesiredWorkload) -> Result<ObservedWorkload> {
+        if !is_container_runtime(&desired.runtime) && !is_microvm_runtime(&desired.runtime) {
+            bail!(
+                "unsupported runtime {:?} for container engine",
+                desired.runtime
+            );
+        }
         let name = container_name(&desired.id);
         if desired.action == "stop" {
             let _ = self.remove_container(&name).await;
@@ -69,6 +114,8 @@ impl Runtime {
                 log_lines: vec![format!("stopped {}", name)],
             });
         }
+
+        let ensure_only = desired.action == "none" || desired.action.is_empty();
 
         if let Some(existing) = self.inspect_running(&name).await? {
             let generation = existing
@@ -101,17 +148,60 @@ impl Runtime {
                 });
             }
             let _ = self.remove_container(&name).await;
+        } else if let Some(info) = self.inspect_any(&name).await? {
+            // Present but unhealthy: on ensure-only ticks, surface failure
+            // instead of rm/recreate thrashing that keeps status="running".
+            if ensure_only {
+                let logs = self.logs(&name, 40).await.unwrap_or_default();
+                let container_id = info
+                    .get("Id")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or_default()
+                    .to_string();
+                let message = unhealthy_message(&info);
+                let _ = self.remove_container(&name).await;
+                return Ok(ObservedWorkload {
+                    id: desired.id.clone(),
+                    status: "failed".into(),
+                    container_id,
+                    observed_generation: desired.desired_generation,
+                    message,
+                    host_port: desired.host_port,
+                    log_lines: logs,
+                });
+            }
+            let _ = self.remove_container(&name).await;
+        } else if !ensure_only {
+            let _ = self.remove_container(&name).await;
         }
 
         self.pull(&desired.image).await?;
         let container_id = self.run(desired, &name).await?;
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        if self.inspect_running(&name).await?.is_some() {
+            let logs = self.logs(&name, 40).await.unwrap_or_default();
+            return Ok(ObservedWorkload {
+                id: desired.id.clone(),
+                status: "running".into(),
+                container_id,
+                observed_generation: desired.desired_generation,
+                message: String::new(),
+                host_port: desired.host_port,
+                log_lines: logs,
+            });
+        }
         let logs = self.logs(&name, 40).await.unwrap_or_default();
+        let message = if let Some(info) = self.inspect_any(&name).await? {
+            unhealthy_message(&info)
+        } else {
+            "container exited or is restarting after start".into()
+        };
         Ok(ObservedWorkload {
             id: desired.id.clone(),
-            status: "running".into(),
+            status: "failed".into(),
             container_id,
             observed_generation: desired.desired_generation,
-            message: String::new(),
+            message,
             host_port: desired.host_port,
             log_lines: logs,
         })
@@ -130,7 +220,10 @@ impl Runtime {
         dir: Option<&std::path::Path>,
     ) -> Result<(bool, String)> {
         let mut command = Command::new(self.bin());
-        command.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
+        command
+            .args(args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         if let Some(path) = dir {
             command.current_dir(path);
         }
@@ -190,6 +283,19 @@ impl Runtime {
             "--label".into(),
             format!("norix.project_id={}", desired.project_id),
         ];
+        if desired.cpu_shares > 0 {
+            args.push("--cpu-shares".into());
+            args.push(desired.cpu_shares.to_string());
+        }
+        if !desired.network_name.trim().is_empty() {
+            let _ = self.ensure_network(desired.network_name.trim()).await;
+            args.push("--network".into());
+            args.push(desired.network_name.trim().into());
+            if !desired.network_alias.trim().is_empty() {
+                args.push("--network-alias".into());
+                args.push(desired.network_alias.trim().into());
+            }
+        }
         for (key, value) in &desired.env_vars {
             args.push("-e".into());
             args.push(format!("{key}={value}"));
@@ -220,7 +326,40 @@ impl Runtime {
         Ok(())
     }
 
-    async fn inspect_running(&self, name: &str) -> Result<Option<serde_json::Value>> {
+    async fn ensure_network(&self, name: &str) -> Result<()> {
+        let inspect = Command::new(self.bin())
+            .args(["network", "inspect", name])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .await;
+        if inspect.map(|s| s.success()).unwrap_or(false) {
+            return Ok(());
+        }
+        let status = Command::new(self.bin())
+            .args(["network", "create", name])
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .status()
+            .await
+            .context("docker network create")?;
+        if !status.success() {
+            // Race: another reconciler created it.
+            let again = Command::new(self.bin())
+                .args(["network", "inspect", name])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .await;
+            if again.map(|s| s.success()).unwrap_or(false) {
+                return Ok(());
+            }
+            bail!("could not create network {name}");
+        }
+        Ok(())
+    }
+
+    async fn inspect_any(&self, name: &str) -> Result<Option<serde_json::Value>> {
         let output = Command::new(self.bin())
             .args(["inspect", name])
             .output()
@@ -234,12 +373,27 @@ impl Runtime {
         let Some(first) = parsed.as_array().and_then(|items| items.first()) else {
             return Ok(None);
         };
+        Ok(Some(first.clone()))
+    }
+
+    async fn inspect_running(&self, name: &str) -> Result<Option<serde_json::Value>> {
+        let Some(first) = self.inspect_any(name).await? else {
+            return Ok(None);
+        };
         let running = first
             .pointer("/State/Running")
             .and_then(|value| value.as_bool())
             .unwrap_or(false);
-        if running {
-            Ok(Some(first.clone()))
+        let restarting = first
+            .pointer("/State/Restarting")
+            .and_then(|value| value.as_bool())
+            .unwrap_or(false);
+        let oom_killed = first
+            .pointer("/State/OOMKilled")
+            .and_then(|value| value.as_bool())
+            .unwrap_or(false);
+        if running && !restarting && !oom_killed {
+            Ok(Some(first))
         } else {
             Ok(None)
         }
@@ -266,8 +420,38 @@ impl Runtime {
 }
 
 fn container_name(workload_id: &str) -> String {
-    let compact: String = workload_id.chars().filter(|ch| ch.is_ascii_hexdigit()).collect();
+    let compact: String = workload_id
+        .chars()
+        .filter(|ch| ch.is_ascii_hexdigit())
+        .collect();
     format!("norix-{}", &compact[..compact.len().min(12)])
+}
+
+pub fn is_container_runtime(runtime: &str) -> bool {
+    matches!(
+        runtime.trim().to_ascii_lowercase().as_str(),
+        "" | "container"
+            | "docker-compose"
+            | "static-site"
+            | "runtime_type_container"
+            | "1"
+            | "2"
+            | "5"
+    )
+}
+
+pub fn is_microvm_runtime(runtime: &str) -> bool {
+    matches!(
+        runtime.trim().to_ascii_lowercase().as_str(),
+        "microvm" | "runtime_type_microvm" | "3"
+    )
+}
+
+pub fn is_wasm_runtime(runtime: &str) -> bool {
+    matches!(
+        runtime.trim().to_ascii_lowercase().as_str(),
+        "wasm" | "runtime_type_wasm" | "4"
+    )
 }
 
 fn normalize_image(value: &str) -> &str {
@@ -277,6 +461,43 @@ fn normalize_image(value: &str) -> &str {
         .trim_start_matches("docker.io/")
         .trim_start_matches("index.docker.io/")
         .trim_start_matches("library/")
+}
+
+fn unhealthy_message(info: &serde_json::Value) -> String {
+    let status = info
+        .pointer("/State/Status")
+        .and_then(|value| value.as_str())
+        .unwrap_or_default();
+    let error = info
+        .pointer("/State/Error")
+        .and_then(|value| value.as_str())
+        .unwrap_or_default();
+    let exit = info
+        .pointer("/State/ExitCode")
+        .and_then(|value| value.as_i64())
+        .unwrap_or(0);
+    let restarting = info
+        .pointer("/State/Restarting")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false);
+    let mut parts = Vec::new();
+    if !status.is_empty() {
+        parts.push(format!("status={status}"));
+    }
+    if restarting {
+        parts.push("restarting".into());
+    }
+    if exit != 0 {
+        parts.push(format!("exit={exit}"));
+    }
+    if !error.is_empty() {
+        parts.push(error.to_string());
+    }
+    if parts.is_empty() {
+        "container unhealthy".into()
+    } else {
+        format!("container unhealthy: {}", parts.join(" "))
+    }
 }
 
 fn image_matches(running: &str, desired: &str) -> bool {
@@ -296,26 +517,6 @@ fn image_matches(running: &str, desired: &str) -> bool {
     running.ends_with(&format!("/{desired}"))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::image_matches;
-
-    #[test]
-    fn matches_same_image_and_registry_prefix() {
-        assert!(image_matches("docker.io/library/nginx:latest", "nginx:latest"));
-        assert!(image_matches("ghcr.io/acme/api:1.2.3", "api:1.2.3"));
-        assert!(image_matches("ghcr.io/acme/nginx", "nginx"));
-    }
-
-    #[test]
-    fn does_not_match_other_images_by_substring() {
-        assert!(!image_matches("ghcr.io/acme/nginx-prod:latest", "nginx:latest"));
-        assert!(!image_matches("ghcr.io/acme/not-nginx:latest", "nginx:latest"));
-        assert!(!image_matches("ghcr.io/acme/myapi:1.2.3", "api:1.2.3"));
-        assert!(!image_matches("ghcr.io/acme/my-nginx:latest", "nginx:latest"));
-    }
-}
-
 async fn command_ok(bin: &str, args: &[&str]) -> bool {
     Command::new(bin)
         .args(args)
@@ -325,4 +526,36 @@ async fn command_ok(bin: &str, args: &[&str]) -> bool {
         .await
         .map(|status| status.success())
         .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::image_matches;
+
+    #[test]
+    fn matches_same_image_and_registry_prefix() {
+        assert!(image_matches(
+            "docker.io/library/nginx:latest",
+            "nginx:latest"
+        ));
+        assert!(image_matches("ghcr.io/acme/api:1.2.3", "api:1.2.3"));
+        assert!(image_matches("ghcr.io/acme/nginx", "nginx"));
+    }
+
+    #[test]
+    fn does_not_match_other_images_by_substring() {
+        assert!(!image_matches(
+            "ghcr.io/acme/nginx-prod:latest",
+            "nginx:latest"
+        ));
+        assert!(!image_matches(
+            "ghcr.io/acme/not-nginx:latest",
+            "nginx:latest"
+        ));
+        assert!(!image_matches("ghcr.io/acme/myapi:1.2.3", "api:1.2.3"));
+        assert!(!image_matches(
+            "ghcr.io/acme/my-nginx:latest",
+            "nginx:latest"
+        ));
+    }
 }

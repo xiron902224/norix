@@ -35,13 +35,13 @@ export function workloadHint(status: string, observed: bigint | number, desired:
     return 'Observed generation matches desired. Container should be reachable on the host port.'
   }
   if (status === 'failed') {
-    return 'Agent reported failure. Check last error and logs, then redeploy.'
+    return 'Runtime reported the container is down. Check last error and logs, then click Start.'
   }
   if (status === 'pending') {
-    return 'Created only. Click Deploy to push desired state to a node.'
+    return 'Created only. Click Start to push desired state to a node.'
   }
   if (status === 'stopped') {
-    return 'Workload is stopped.'
+    return 'Workload is stopped. Click Start to bring it back up.'
   }
   return 'Status updates when the agent reports observed state.'
 }

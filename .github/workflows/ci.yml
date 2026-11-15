@@ -21,8 +21,19 @@ jobs:
 
       - name: Lint and verify protobuf compatibility
         run: |
+          set -euo pipefail
           buf lint
-          buf breaking --against ".git#branch=main"
+          # Prefer the PR base branch. Until main carries a real API freeze, develop is
+          # the compatibility baseline (origin/main is still the early buf stub).
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.base_ref }}"
+            git fetch --no-tags origin "${BASE}:refs/remotes/origin/${BASE}"
+            buf breaking --against ".git#ref=origin/${BASE}"
+          elif git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+            buf breaking --against ".git#ref=HEAD~1"
+          else
+            echo "No parent commit; skipping buf breaking"
+          fi
 
   database-integration:
     name: PostgreSQL migrations and RLS
@@ -79,25 +90,67 @@ jobs:
           PGPASSWORD: ci-postgres-password
         run: |
           psql -h 127.0.0.1 -U norix -d norix -v ON_ERROR_STOP=1 <<'SQL'
-          SELECT version, dirty FROM schema_migrations;
-          SELECT count(*) = 31 FROM pg_tables WHERE schemaname = 'public' AND tablename IN (
-            'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
-            'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens',
-            'domain_routes', 'edge_snapshots', 'backups', 'ops_alert_events', 'workload_replicas',
-            'project_network', 'workload_egress_policies', 'network_dns_records', 'platform_certificates',
-            'metric_samples', 'log_segments', 'alert_rules', 'alert_events', 'managed_databases',
-            'sandboxes', 'pr_previews', 'wasm_functions', 'audit_events'
-          );
-          SELECT to_regclass('public.audit_events') IS NOT NULL;
-          SELECT count(*) = 31 FROM pg_class WHERE relname IN (
-            'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
-            'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens',
-            'domain_routes', 'edge_snapshots', 'backups', 'ops_alert_events', 'workload_replicas',
-            'project_network', 'workload_egress_policies', 'network_dns_records', 'platform_certificates',
-            'metric_samples', 'log_segments', 'alert_rules', 'alert_events', 'managed_databases',
-            'sandboxes', 'pr_previews', 'wasm_functions', 'audit_events'
-          ) AND relrowsecurity AND relforcerowsecurity;
-          SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE relname = 'audit_events';
+          -- Migrations through 000022 (000020 compose columns; 000021 preview TTL; 000022 oidc states).
+          DO $$
+          BEGIN
+            IF NOT (SELECT version = 22 AND NOT dirty FROM schema_migrations) THEN
+              RAISE EXCEPTION 'expected schema_migrations version=22 dirty=false';
+            END IF;
+            IF (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename IN (
+              'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
+              'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens',
+              'domain_routes', 'edge_snapshots', 'backups', 'ops_alert_events', 'workload_replicas',
+              'project_network', 'workload_egress_policies', 'network_dns_records', 'platform_certificates',
+              'metric_samples', 'log_segments', 'alert_rules', 'alert_events', 'managed_databases',
+              'sandboxes', 'pr_previews', 'wasm_functions', 'audit_events',
+              'teams', 'team_roles', 'team_members', 'team_quotas', 'usage_records',
+              'sso_providers', 'user_totp_secrets'
+            )) <> 38 THEN
+              RAISE EXCEPTION 'expected 38 tenant RLS tables through 000018';
+            END IF;
+            -- 000019: platform lease table (no tenant RLS by design).
+            IF to_regclass('public.control_plane_leases') IS NULL THEN
+              RAISE EXCEPTION 'control_plane_leases missing';
+            END IF;
+            IF (SELECT relrowsecurity FROM pg_class WHERE relname = 'control_plane_leases') THEN
+              RAISE EXCEPTION 'control_plane_leases must not enable RLS';
+            END IF;
+            -- 000020: compose stack inventory columns on workloads (no compose_stacks table).
+            IF (SELECT count(*) FROM information_schema.columns
+                  WHERE table_schema = 'public' AND table_name = 'workloads'
+                    AND column_name IN ('stack_id', 'compose_service', 'compose_spec')) <> 3 THEN
+              RAISE EXCEPTION 'workloads compose stack columns missing';
+            END IF;
+            -- 000021: preview TTL columns.
+            IF (SELECT count(*) FROM information_schema.columns
+                  WHERE table_schema = 'public' AND table_name = 'pr_previews'
+                    AND column_name IN ('ttl_seconds', 'expires_at')) <> 2 THEN
+              RAISE EXCEPTION 'pr_previews TTL columns missing';
+            END IF;
+            -- 000022: short-lived OIDC login states (no FORCE RLS; org FK + grants only).
+            IF to_regclass('public.oidc_login_states') IS NULL THEN
+              RAISE EXCEPTION 'oidc_login_states missing';
+            END IF;
+            IF to_regclass('public.audit_events') IS NULL THEN
+              RAISE EXCEPTION 'audit_events missing';
+            END IF;
+            IF (SELECT count(*) FROM pg_class WHERE relname IN (
+              'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
+              'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens',
+              'domain_routes', 'edge_snapshots', 'backups', 'ops_alert_events', 'workload_replicas',
+              'project_network', 'workload_egress_policies', 'network_dns_records', 'platform_certificates',
+              'metric_samples', 'log_segments', 'alert_rules', 'alert_events', 'managed_databases',
+              'sandboxes', 'pr_previews', 'wasm_functions', 'audit_events',
+              'teams', 'team_roles', 'team_members', 'team_quotas', 'usage_records',
+              'sso_providers', 'user_totp_secrets'
+            ) AND relrowsecurity AND relforcerowsecurity) <> 38 THEN
+              RAISE EXCEPTION 'expected 38 tables with FORCE RLS';
+            END IF;
+            IF NOT (SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE relname = 'audit_events') THEN
+              RAISE EXCEPTION 'audit_events RLS not forced';
+            END IF;
+          END
+          $$;
           SQL
 
       - name: Run RLS isolation tests

@@ -124,6 +124,7 @@ func (runtime *Runtime) runBuild(ctx context.Context, build db.DesiredBuild, onL
 		}
 	case "compose":
 		appendLog(fmt.Sprintf("using compose file %s", path))
+		rewriteNpmDockerfilesForCompose(cloneDir, appendLog)
 		buildErr = runtime.buildCompose(ctx, cloneDir, path, build, appendLog)
 	default:
 		buildErr = fmt.Errorf("unknown build kind %s", kind)
@@ -168,14 +169,25 @@ func (runtime *Runtime) buildDockerfile(ctx context.Context, cloneDir, dockerfil
 	if cmdRewritten {
 		dockerfile = effectiveDockerfile
 	}
-	args := []string{"build", "--progress=plain", "--network=host", "-f", dockerfile, "-t", build.ImageTag}
+
+	// Nested Dockerfiles (backend/Dockerfile) must build with that directory as context.
+	// Using the repo root breaks COPY package*.json / COPY . . for multi-folder apps.
+	buildCtx := cloneDir
+	dockerfileArg := dockerfile
+	if dir := filepath.Dir(dockerfile); dir != "." && dir != "" {
+		buildCtx = filepath.Join(cloneDir, dir)
+		dockerfileArg = filepath.Base(dockerfile)
+		appendLog(fmt.Sprintf("using build context %s (dockerfile %s)", dir, dockerfileArg))
+	}
+
+	args := []string{"build", "--progress=plain", "--network=host", "-f", dockerfileArg, "-t", build.ImageTag}
 	for key, value := range build.BuildArgs {
 		args = append(args, "--build-arg", fmt.Sprintf("%s=%s", key, value))
 	}
 	args = append(args, ".")
 	appendLog(fmt.Sprintf("docker %s", strings.Join(args, " ")))
 	cmd := exec.CommandContext(ctx, string(runtime.engine), args...)
-	cmd.Dir = cloneDir
+	cmd.Dir = buildCtx
 	cmd.Env = append(os.Environ(), "DOCKER_BUILDKIT=1", "BUILDKIT_PROGRESS=plain")
 	return streamCommand(ctx, cmd, appendLog, "docker build failed")
 }
@@ -259,8 +271,49 @@ func dirExists(path string) bool {
 	return err == nil && info.IsDir()
 }
 
+// rewriteNpmDockerfilesForCompose applies npm ci→install / retry rewrites in-place
+// so `docker compose build` (which ignores *.norix sidecars) picks up the fixes.
+func rewriteNpmDockerfilesForCompose(cloneDir string, appendLog func(string)) {
+	_ = filepath.WalkDir(cloneDir, func(walkPath string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			base := d.Name()
+			if base == ".git" || base == "node_modules" || base == "vendor" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		name := d.Name()
+		if name != "Dockerfile" && name != "dockerfile" && name != "Containerfile" {
+			return nil
+		}
+		rel, relErr := filepath.Rel(cloneDir, walkPath)
+		if relErr != nil {
+			return nil
+		}
+		outName, changed, rewriteErr := maybeRewriteNpmDockerfile(cloneDir, filepath.ToSlash(rel), appendLog)
+		if rewriteErr != nil || !changed {
+			return nil
+		}
+		rewritten := filepath.Join(cloneDir, outName)
+		data, readErr := os.ReadFile(rewritten)
+		if readErr != nil {
+			return nil
+		}
+		if err := os.WriteFile(walkPath, data, 0o644); err != nil {
+			appendLog(fmt.Sprintf("could not apply npm rewrite to %s: %v", rel, err))
+			return nil
+		}
+		appendLog(fmt.Sprintf("applied npm rewrite in-place for compose: %s", rel))
+		return nil
+	})
+}
+
 // maybeRewriteNpmDockerfile injects npm retry flags so flaky registries survive local builds.
 // Also pins bare `redis` to redis@3 — many sample apps still use the v3 callback API.
+// When package-lock.json is missing next to the Dockerfile, rewrites `npm ci` → `npm install`.
 func maybeRewriteNpmDockerfile(cloneDir, dockerfile string, appendLog func(string)) (string, bool, error) {
 	srcPath := filepath.Join(cloneDir, dockerfile)
 	raw, err := os.ReadFile(srcPath)
@@ -272,6 +325,14 @@ func maybeRewriteNpmDockerfile(cloneDir, dockerfile string, appendLog func(strin
 		return dockerfile, false, nil
 	}
 	replaced := false
+	dfDir := filepath.Join(cloneDir, filepath.Dir(dockerfile))
+	hasLock := fileExists(filepath.Join(dfDir, "package-lock.json")) ||
+		fileExists(filepath.Join(dfDir, "npm-shrinkwrap.json"))
+	if !hasLock && strings.Contains(text, "npm ci") {
+		text = strings.ReplaceAll(text, "RUN npm ci", "RUN npm install")
+		replaced = true
+		appendLog("no package-lock.json beside Dockerfile; rewriting npm ci → npm install")
+	}
 	for _, from := range []string{
 		"RUN npm install",
 		"RUN npm ci",
@@ -388,6 +449,7 @@ func (runtime *Runtime) buildCompose(ctx context.Context, cloneDir, composeFile 
 		all := append([]string{"compose", "-p", project, "-f", composeFile}, args...)
 		cmd := exec.CommandContext(ctx, bin, all...)
 		cmd.Dir = cloneDir
+		cmd.Env = append(os.Environ(), "DOCKER_BUILDKIT=1", "BUILDKIT_PROGRESS=plain", "COMPOSE_DOCKER_CLI_BUILD=1")
 		return cmd
 	}
 
@@ -409,6 +471,7 @@ func (runtime *Runtime) buildCompose(ctx context.Context, cloneDir, composeFile 
 			all := append([]string{"-p", project, "-f", composeFile}, args...)
 			cmd := exec.CommandContext(ctx, "docker-compose", all...)
 			cmd.Dir = cloneDir
+			cmd.Env = append(os.Environ(), "DOCKER_BUILDKIT=1", "BUILDKIT_PROGRESS=plain", "COMPOSE_DOCKER_CLI_BUILD=1")
 			return cmd
 		}
 	}
@@ -420,47 +483,188 @@ func (runtime *Runtime) buildCompose(ctx context.Context, cloneDir, composeFile 
 	service := pickComposeService(services)
 	appendLog(fmt.Sprintf("building compose service %s", service))
 
-	buildCmd := composeArgs("build", service)
-	if err := streamCommand(ctx, buildCmd, appendLog, "compose build failed"); err != nil {
-		appendLog("compose build failed; trying pull for image-based services")
+	// Prefer a direct `docker build --network=host` of the service Dockerfile.
+	// `docker compose build` often fails npm DNS on constrained networks and
+	// names images inconsistently (project-service vs project_service vs bake).
+	if dfRel, ok := composeServiceDockerfile(cloneDir, composeFile, service); ok {
+		appendLog(fmt.Sprintf("compose→dockerfile path %s (network=host)", dfRel))
+		return runtime.buildDockerfile(ctx, cloneDir, dfRel, build, appendLog)
+	}
+
+	// Inject build.network=host into a temp compose override when possible.
+	overridePath := filepath.Join(cloneDir, "docker-compose.norix-build.yml")
+	if err := writeComposeHostNetworkOverride(overridePath, services); err == nil {
+		appendLog("using compose override with build.network=host")
+		orig := composeArgs
+		composeArgs = func(args ...string) *exec.Cmd {
+			withOverride := append([]string{"-f", filepath.Base(overridePath)}, args...)
+			return orig(withOverride...)
+		}
+	}
+
+	buildCmd := composeArgs("build", "--progress=plain", service)
+	buildErr := streamCommand(ctx, buildCmd, appendLog, "compose build failed")
+	if buildErr != nil {
+		appendLog(fmt.Sprintf("compose build failed: %v; trying pull for image-based services", buildErr))
 		upCmd := composeArgs("pull", service)
 		_ = streamCommand(ctx, upCmd, appendLog, "compose pull failed")
 	}
 
-	localImage := fmt.Sprintf("%s-%s", project, service)
-	alt := fmt.Sprintf("%s_%s", project, service)
-	tagCmd := exec.CommandContext(ctx, string(runtime.engine), "tag", localImage, build.ImageTag)
-	if out, tagErr := tagCmd.CombinedOutput(); tagErr != nil {
-		for _, line := range truncateLines(string(out), 10) {
-			appendLog(line)
+	candidates := composeImageCandidates(project, service, composeArgs)
+	var lastTagErr error
+	for _, localImage := range candidates {
+		if localImage == "" {
+			continue
 		}
-		tagCmd = exec.CommandContext(ctx, string(runtime.engine), "tag", alt, build.ImageTag)
-		if out, tagErr = tagCmd.CombinedOutput(); tagErr != nil {
-			for _, line := range truncateLines(string(out), 10) {
+		appendLog(fmt.Sprintf("trying tag %s → %s", localImage, build.ImageTag))
+		tagCmd := exec.CommandContext(ctx, string(runtime.engine), "tag", localImage, build.ImageTag)
+		if out, tagErr := tagCmd.CombinedOutput(); tagErr != nil {
+			lastTagErr = tagErr
+			for _, line := range truncateLines(string(out), 5) {
 				appendLog(line)
 			}
-			imgOut, imgErr := composeArgs("config", "--images", service).CombinedOutput()
-			for _, line := range truncateLines(string(imgOut), 10) {
-				appendLog(line)
+			continue
+		}
+		appendLog(fmt.Sprintf("tagged image %s", build.ImageTag))
+		return nil
+	}
+	if buildErr != nil {
+		return fmt.Errorf("compose build failed: %w", buildErr)
+	}
+	if lastTagErr != nil {
+		return fmt.Errorf("compose image tag failed for %s: %w", strings.Join(candidates, " / "), lastTagErr)
+	}
+	return fmt.Errorf("compose produced no image for service %s", service)
+}
+
+// composeServiceDockerfile resolves context/dockerfile for a named compose service.
+func composeServiceDockerfile(cloneDir, composeFile, service string) (string, bool) {
+	raw, err := os.ReadFile(filepath.Join(cloneDir, composeFile))
+	if err != nil {
+		return "", false
+	}
+	ctx, df := extractComposeBuild(string(raw), service)
+	if ctx == "" && df == "" {
+		return "", false
+	}
+	if df == "" {
+		df = "Dockerfile"
+	}
+	ctx = strings.TrimPrefix(strings.TrimSpace(ctx), "./")
+	if ctx == "" || ctx == "." {
+		if fileExists(filepath.Join(cloneDir, df)) {
+			return df, true
+		}
+		return "", false
+	}
+	rel := filepath.ToSlash(filepath.Join(ctx, df))
+	if fileExists(filepath.Join(cloneDir, rel)) {
+		return rel, true
+	}
+	return "", false
+}
+
+func extractComposeBuild(composeYAML, service string) (contextDir, dockerfile string) {
+	// Find the service block and its build: key without a full YAML dependency
+	// in this package path — keep it resilient to common compose shapes.
+	lines := strings.Split(composeYAML, "\n")
+	inServices := false
+	inTarget := false
+	inBuild := false
+	serviceIndent := -1
+	buildIndent := -1
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " \t"))
+		if !inServices {
+			if trimmed == "services:" {
+				inServices = true
 			}
-			if imgErr != nil {
-				return fmt.Errorf("compose image tag failed for %s / %s", localImage, alt)
+			continue
+		}
+		if indent == 0 && strings.HasSuffix(trimmed, ":") && trimmed != "services:" {
+			break
+		}
+		if !inTarget {
+			if indent == 2 && strings.TrimSuffix(trimmed, ":") == service {
+				inTarget = true
+				serviceIndent = indent
 			}
-			images := strings.Fields(string(imgOut))
-			if len(images) == 0 {
-				return fmt.Errorf("compose produced no image for service %s", service)
-			}
-			tagCmd = exec.CommandContext(ctx, string(runtime.engine), "tag", images[0], build.ImageTag)
-			if out, tagErr = tagCmd.CombinedOutput(); tagErr != nil {
-				for _, line := range truncateLines(string(out), 10) {
-					appendLog(line)
+			continue
+		}
+		if indent <= serviceIndent && strings.HasSuffix(trimmed, ":") {
+			break
+		}
+		if !inBuild {
+			if strings.HasPrefix(trimmed, "build:") {
+				rest := strings.TrimSpace(strings.TrimPrefix(trimmed, "build:"))
+				if rest != "" && !strings.HasPrefix(rest, "|") && !strings.HasPrefix(rest, ">") {
+					return strings.Trim(rest, `"'`), "Dockerfile"
 				}
-				return fmt.Errorf("compose image tag failed: %w", tagErr)
+				inBuild = true
+				buildIndent = indent
 			}
+			continue
+		}
+		if indent <= buildIndent {
+			break
+		}
+		if strings.HasPrefix(trimmed, "context:") {
+			contextDir = strings.Trim(strings.TrimSpace(strings.TrimPrefix(trimmed, "context:")), `"'`)
+		}
+		if strings.HasPrefix(trimmed, "dockerfile:") {
+			dockerfile = strings.Trim(strings.TrimSpace(strings.TrimPrefix(trimmed, "dockerfile:")), `"'`)
 		}
 	}
-	appendLog(fmt.Sprintf("tagged image %s", build.ImageTag))
-	return nil
+	return contextDir, dockerfile
+}
+
+func writeComposeHostNetworkOverride(path string, services []string) error {
+	var b strings.Builder
+	b.WriteString("services:\n")
+	for _, svc := range services {
+		b.WriteString("  ")
+		b.WriteString(svc)
+		b.WriteString(":\n    build:\n      network: host\n")
+	}
+	return os.WriteFile(path, []byte(b.String()), 0o644)
+}
+
+func composeImageCandidates(project, service string, composeArgs func(args ...string) *exec.Cmd) []string {
+	candidates := []string{
+		fmt.Sprintf("%s-%s", project, service),
+		fmt.Sprintf("%s_%s", project, service),
+		fmt.Sprintf("%s-%s:latest", project, service),
+		fmt.Sprintf("%s_%s:latest", project, service),
+	}
+	if out, err := composeArgs("images", "-q", service).CombinedOutput(); err == nil {
+		for _, id := range strings.Fields(string(out)) {
+			candidates = append([]string{id}, candidates...)
+		}
+	}
+	if out, err := composeArgs("config", "--images", service).CombinedOutput(); err == nil {
+		for _, img := range strings.Fields(string(out)) {
+			candidates = append(candidates, img)
+		}
+	}
+	// Dedup while preserving order.
+	seen := map[string]struct{}{}
+	out := make([]string, 0, len(candidates))
+	for _, c := range candidates {
+		c = strings.TrimSpace(c)
+		if c == "" {
+			continue
+		}
+		if _, ok := seen[c]; ok {
+			continue
+		}
+		seen[c] = struct{}{}
+		out = append(out, c)
+	}
+	return out
 }
 
 func streamCommand(ctx context.Context, cmd *exec.Cmd, appendLog func(string), failPrefix string) error {
@@ -524,12 +728,35 @@ func resolveBuildSource(cloneDir, hint string) (kind, path string, logs []string
 		logs = append(logs, fmt.Sprintf("hinted path %s not found; auto-detecting", hint))
 	}
 
-	// Prefer multi-stage / alpine production Dockerfiles when present.
+	// Prefer multi-stage / alpine production Dockerfiles when present at repo root.
 	for _, name := range []string{"Dockerfile.multi", "Dockerfile.prod", "Dockerfile", "dockerfile", "Containerfile", "docker/Dockerfile", "build/Dockerfile", ".docker/Dockerfile"} {
 		if fileExists(filepath.Join(cloneDir, name)) {
 			return "dockerfile", name, append(logs, fmt.Sprintf("auto-detected Dockerfile %s", name))
 		}
 	}
+
+	// Multi-service samples (frontend+backend) usually ship compose at root and
+	// nested Dockerfiles. Prefer the primary service's nested Dockerfile so the
+	// single-workload path uses `docker build --network=host` (reliable npm DNS
+	// + direct -t tagging). Explicit compose hints still use buildCompose.
+	for _, name := range []string{"compose.yaml", "compose.yml", "docker-compose.yml", "docker-compose.yaml"} {
+		if !fileExists(filepath.Join(cloneDir, name)) {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(cloneDir, name))
+		if err == nil {
+			services := listComposeServiceNames(string(raw))
+			if len(services) > 0 {
+				svc := pickComposeService(services)
+				if dfRel, ok := composeServiceDockerfile(cloneDir, name, svc); ok {
+					return "dockerfile", dfRel, append(logs,
+						fmt.Sprintf("auto-detected compose %s → building service %s via %s", name, svc, dfRel))
+				}
+			}
+		}
+		return "compose", name, append(logs, fmt.Sprintf("auto-detected compose %s (no root Dockerfile)", name))
+	}
+
 	var foundDockerfile string
 	_ = filepath.WalkDir(cloneDir, func(walkPath string, d os.DirEntry, err error) error {
 		if err != nil || foundDockerfile != "" {
@@ -559,11 +786,6 @@ func resolveBuildSource(cloneDir, hint string) (kind, path string, logs []string
 		return "dockerfile", foundDockerfile, logs
 	}
 
-	for _, name := range []string{"compose.yaml", "compose.yml", "docker-compose.yml", "docker-compose.yaml"} {
-		if fileExists(filepath.Join(cloneDir, name)) {
-			return "compose", name, append(logs, fmt.Sprintf("auto-detected compose %s", name))
-		}
-	}
 	return "", "", append(logs, "no Dockerfile or compose file found in repo")
 }
 
@@ -586,6 +808,32 @@ func pickComposeService(services []string) string {
 		}
 	}
 	return services[0]
+}
+
+func listComposeServiceNames(composeYAML string) []string {
+	lines := strings.Split(composeYAML, "\n")
+	inServices := false
+	var names []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " \t"))
+		if !inServices {
+			if trimmed == "services:" {
+				inServices = true
+			}
+			continue
+		}
+		if indent == 0 && strings.HasSuffix(trimmed, ":") {
+			break
+		}
+		if indent == 2 && strings.HasSuffix(trimmed, ":") && !strings.Contains(trimmed, " ") {
+			names = append(names, strings.TrimSuffix(trimmed, ":"))
+		}
+	}
+	return names
 }
 
 func sanitizeProject(id string) string {

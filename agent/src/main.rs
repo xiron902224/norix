@@ -3,6 +3,7 @@ mod capabilities;
 mod client;
 mod config;
 mod edge;
+mod microvm;
 mod network;
 mod proto_num;
 mod runtime;
@@ -20,7 +21,7 @@ use tracing::{info, warn};
 use crate::capabilities::detect;
 use crate::client::{AgentClient, NodeState};
 use crate::config::Config;
-use crate::runtime::Runtime;
+use crate::runtime::{is_container_runtime, is_microvm_runtime, Runtime};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -87,8 +88,13 @@ async fn main() -> Result<()> {
             _ = sleep(heartbeat) => {
                 let memory_free = memory_free_mb();
                 let cpu_usage = cpu_usage_percent();
+                let running_ids = if let Some(runtime) = runtime.as_ref() {
+                    runtime.list_running_workload_ids().await
+                } else {
+                    Vec::new()
+                };
                 match client
-                    .heartbeat(&state, &caps, memory_free, cpu_usage, Vec::new())
+                    .heartbeat(&state, &caps, memory_free, cpu_usage, running_ids)
                     .await
                 {
                     Ok(desired) => {
@@ -114,7 +120,38 @@ async fn main() -> Result<()> {
                             }
                             if !desired.desired_workloads.is_empty() {
                                 info!(count = desired.desired_workloads.len(), "reconciling desired workloads");
-                                let observed = runtime.reconcile(&desired.desired_workloads).await;
+                                let mut observed = Vec::new();
+                                let mut containers = Vec::new();
+                                for item in &desired.desired_workloads {
+                                    if is_microvm_runtime(&item.runtime) {
+                                        observed.push(microvm::reconcile_one(&config.workdir, item).await);
+                                    } else if is_container_runtime(&item.runtime) {
+                                        containers.push(item.clone());
+                                    } else if runtime::is_wasm_runtime(&item.runtime) {
+                                        observed.push(client::ObservedWorkload {
+                                            id: item.id.clone(),
+                                            status: "failed".into(),
+                                            container_id: String::new(),
+                                            observed_generation: item.desired_generation,
+                                            message: "use Runtimes / DesiredWasmPlan for wasm functions".into(),
+                                            host_port: item.host_port,
+                                            log_lines: vec!["skipped wasm workload".into()],
+                                        });
+                                    } else {
+                                        observed.push(client::ObservedWorkload {
+                                            id: item.id.clone(),
+                                            status: "failed".into(),
+                                            container_id: String::new(),
+                                            observed_generation: item.desired_generation,
+                                            message: format!("unsupported runtime {}", item.runtime),
+                                            host_port: item.host_port,
+                                            log_lines: vec![],
+                                        });
+                                    }
+                                }
+                                if !containers.is_empty() {
+                                    observed.extend(runtime.reconcile(&containers).await);
+                                }
                                 if let Err(error) = retry_operation(
                                     "report_observed",
                                     || client.report_observed(&state, &observed),
@@ -157,9 +194,19 @@ async fn main() -> Result<()> {
                                 warn!(%error, "report network failed after retries");
                             }
                         }
-                        // S15: dry-run wasm config until DesiredWorkload runtime=wasm lands.
-                        if let Err(error) = wasm::apply_wasm_plan(&config.workdir, &[]) {
-                            warn!(%error, "wasm plan write failed");
+                        if let Some(plan) = desired.desired_wasm.as_ref() {
+                            info!(generation = plan.generation, count = plan.functions.len(), "applying wasm plan");
+                            let observed = wasm::apply_wasm_plan(&config.workdir, plan).await;
+                            if let Err(error) = retry_operation(
+                                "report_wasm",
+                                || client.report_wasm(&state, &observed),
+                                3,
+                                Duration::from_millis(300),
+                            )
+                            .await
+                            {
+                                warn!(%error, "report wasm failed after retries");
+                            }
                         }
                     }
                     Err(error) => {
@@ -227,10 +274,10 @@ fn read_state(path: &Path) -> Result<Option<NodeState>> {
     if !path.exists() {
         return Ok(None);
     }
-    let raw = std::fs::read_to_string(path)
-        .with_context(|| format!("read state {}", path.display()))?;
-    let state = serde_json::from_str(&raw)
-        .with_context(|| format!("parse state {}", path.display()))?;
+    let raw =
+        std::fs::read_to_string(path).with_context(|| format!("read state {}", path.display()))?;
+    let state =
+        serde_json::from_str(&raw).with_context(|| format!("parse state {}", path.display()))?;
     Ok(Some(state))
 }
 

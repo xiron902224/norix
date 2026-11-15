@@ -34,6 +34,12 @@ const (
 	// WorkloadServiceDeployFromGitProcedure is the procedure name of the WorkloadService's
 	// DeployFromGit RPC.
 	WorkloadServiceDeployFromGitProcedure = "/v1.WorkloadService/DeployFromGit"
+	// WorkloadServiceAnalyzeComposeFromGitProcedure is the procedure name of the WorkloadService's
+	// AnalyzeComposeFromGit RPC.
+	WorkloadServiceAnalyzeComposeFromGitProcedure = "/v1.WorkloadService/AnalyzeComposeFromGit"
+	// WorkloadServiceDeployComposeStackProcedure is the procedure name of the WorkloadService's
+	// DeployComposeStack RPC.
+	WorkloadServiceDeployComposeStackProcedure = "/v1.WorkloadService/DeployComposeStack"
 	// WorkloadServiceListWorkloadsProcedure is the procedure name of the WorkloadService's
 	// ListWorkloads RPC.
 	WorkloadServiceListWorkloadsProcedure = "/v1.WorkloadService/ListWorkloads"
@@ -91,6 +97,20 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("DeployFromGit"),
 			Procedure:  WorkloadServiceDeployFromGitProcedure,
+		}
+	})
+	workloadServiceAnalyzeComposeFromGitSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("AnalyzeComposeFromGit"),
+			Procedure:  WorkloadServiceAnalyzeComposeFromGitProcedure,
+		}
+	})
+	workloadServiceDeployComposeStackSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("DeployComposeStack"),
+			Procedure:  WorkloadServiceDeployComposeStackProcedure,
 		}
 	})
 	workloadServiceListWorkloadsSpec = sync.OnceValue(func() connect.Spec {
@@ -163,6 +183,8 @@ type WorkloadServiceClient interface {
 	CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error)
 	Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error)
 	DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error)
+	AnalyzeComposeFromGit(context.Context, *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error)
+	DeployComposeStack(context.Context, *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error)
 	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
@@ -185,6 +207,8 @@ type WorkloadServiceHandler interface {
 	CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error)
 	Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error)
 	DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error)
+	AnalyzeComposeFromGit(context.Context, *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error)
+	DeployComposeStack(context.Context, *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error)
 	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
@@ -203,6 +227,8 @@ func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceH
 		connect.Method{Spec: workloadServiceCreateWorkloadSpec(), Handler: adapter.createWorkload},
 		connect.Method{Spec: workloadServiceDeploySpec(), Handler: adapter.deploy},
 		connect.Method{Spec: workloadServiceDeployFromGitSpec(), Handler: adapter.deployFromGit},
+		connect.Method{Spec: workloadServiceAnalyzeComposeFromGitSpec(), Handler: adapter.analyzeComposeFromGit},
+		connect.Method{Spec: workloadServiceDeployComposeStackSpec(), Handler: adapter.deployComposeStack},
 		connect.Method{Spec: workloadServiceListWorkloadsSpec(), Handler: adapter.listWorkloads},
 		connect.Method{Spec: workloadServiceUpdateWorkloadSpec(), Handler: adapter.updateWorkload},
 		connect.Method{Spec: workloadServiceDeleteWorkloadSpec(), Handler: adapter.deleteWorkload},
@@ -228,6 +254,14 @@ func (UnimplementedWorkloadServiceHandler) Deploy(context.Context, *v1.DeployReq
 
 func (UnimplementedWorkloadServiceHandler) DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeployFromGit is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) AnalyzeComposeFromGit(context.Context, *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.AnalyzeComposeFromGit is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) DeployComposeStack(context.Context, *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeployComposeStack is not implemented")
 }
 
 func (UnimplementedWorkloadServiceHandler) ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error) {
@@ -289,6 +323,22 @@ func (c *workloadServiceClient) Deploy(ctx context.Context, req *v1.DeployReques
 func (c *workloadServiceClient) DeployFromGit(ctx context.Context, req *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error) {
 	var res v1.DeployFromGitResponse
 	if err := c.client.CallUnary(ctx, workloadServiceDeployFromGitSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) AnalyzeComposeFromGit(ctx context.Context, req *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error) {
+	var res v1.AnalyzeComposeFromGitResponse
+	if err := c.client.CallUnary(ctx, workloadServiceAnalyzeComposeFromGitSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) DeployComposeStack(ctx context.Context, req *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error) {
+	var res v1.DeployComposeStackResponse
+	if err := c.client.CallUnary(ctx, workloadServiceDeployComposeStackSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -398,6 +448,30 @@ func (h workloadServiceHandler) deployFromGit(ctx context.Context, _ connect.Spe
 		return err
 	}
 	res, err := h.svc.DeployFromGit(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) analyzeComposeFromGit(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.AnalyzeComposeFromGitRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.AnalyzeComposeFromGit(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) deployComposeStack(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeployComposeStackRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeployComposeStack(ctx, &req)
 	if err != nil {
 		return err
 	}

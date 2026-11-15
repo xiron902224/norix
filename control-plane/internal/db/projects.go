@@ -2,9 +2,11 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -29,10 +31,14 @@ func CreateProject(ctx context.Context, pool *pgxpool.Pool, organizationID, name
 	}
 
 	var defaultTeam string
-	if err := tx.QueryRow(ctx, `
+	err = tx.QueryRow(ctx, `
 		SELECT id::text FROM teams
 		WHERE organization_id = $1::uuid AND is_default
-		ORDER BY created_at LIMIT 1`, organizationID).Scan(&defaultTeam); err != nil {
+		ORDER BY created_at LIMIT 1`, organizationID).Scan(&defaultTeam)
+	if errors.Is(err, pgx.ErrNoRows) {
+		defaultTeam, err = EnsureDefaultTeam(ctx, tx, organizationID, actor.UserID)
+	}
+	if err != nil {
 		return Project{}, fmt.Errorf("default team for project: %w", err)
 	}
 	var project Project

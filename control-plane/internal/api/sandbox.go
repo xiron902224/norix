@@ -1,10 +1,13 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"os/exec"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect/v2"
 	"github.com/jackc/pgx/v5"
@@ -135,9 +138,109 @@ func (service SandboxService) ExecSandbox(ctx context.Context, request *paasv1.E
 			ExitCode: 1,
 		}, nil
 	}
-	output := fmt.Sprintf(
-		"[%s] template=%s status=%s pool_ready=%v\n$ %s\n(local exec stub — command accepted)\n",
-		item.Name, item.Template, item.Status, item.PoolReady, cmd,
-	)
-	return &paasv1.ExecSandboxResponse{Output: output, ExitCode: 0}, nil
+	argv := request.GetCommand()
+	if len(argv) == 0 {
+		argv = []string{"true"}
+	}
+	output, exitCode, execErr := execSandboxCommand(ctx, item, argv)
+	if execErr != nil {
+		return &paasv1.ExecSandboxResponse{
+			Output:   fmt.Sprintf("[%s] exec error: %v\n%s", item.Name, execErr, output),
+			ExitCode: 1,
+		}, nil
+	}
+	header := fmt.Sprintf("[%s] template=%s status=%s pool_ready=%v\n$ %s\n",
+		item.Name, item.Template, item.Status, item.PoolReady, strings.Join(argv, " "))
+	return &paasv1.ExecSandboxResponse{Output: header + output, ExitCode: exitCode}, nil
+}
+
+// execSandboxCommand runs the command inside a short-lived container labeled for the sandbox.
+// Prefers an existing norix-sandbox-<id> container; otherwise starts template image ephemeral.
+func execSandboxCommand(ctx context.Context, item db.Sandbox, argv []string) (string, int32, error) {
+	engine := "docker"
+	if _, err := exec.LookPath(engine); err != nil {
+		engine = "nerdctl"
+		if _, err := exec.LookPath(engine); err != nil {
+			return "", 1, fmt.Errorf("docker/nerdctl not available")
+		}
+	}
+	name := fmt.Sprintf("norix-sandbox-%s", strings.ReplaceAll(item.ID, "-", "")[:12])
+	runCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	// Try docker exec into running warm-pool container.
+	inspect := exec.CommandContext(runCtx, engine, "inspect", "-f", "{{.State.Running}}", name)
+	if out, err := inspect.CombinedOutput(); err == nil && strings.TrimSpace(string(out)) == "true" {
+		args := append([]string{"exec", name}, argv...)
+		cmd := exec.CommandContext(runCtx, engine, args...)
+		var buf bytes.Buffer
+		cmd.Stdout = &buf
+		cmd.Stderr = &buf
+		err := cmd.Run()
+		code := int32(0)
+		if err != nil {
+			if ee, ok := err.(*exec.ExitError); ok {
+				code = int32(ee.ExitCode())
+			} else {
+				return buf.String(), 1, err
+			}
+		}
+		return buf.String(), code, nil
+	}
+
+	image := sandboxTemplateImage(item.Template)
+	mem := fmt.Sprintf("%dm", item.MemoryMB)
+	if item.MemoryMB <= 0 {
+		mem = "512m"
+	}
+	args := []string{
+		"run", "--rm",
+		"--name", name + "-exec",
+		"--network", "none",
+		"--memory", mem,
+		"--label", "norix.sandbox_id=" + item.ID,
+		"--label", "norix.sandbox=1",
+		image,
+	}
+	if item.EgressMode != "allow" && item.EgressMode != "open" {
+		// already --network none (deny-by-default)
+	} else {
+		// recreate with default bridge when egress allowed
+		args = []string{
+			"run", "--rm",
+			"--name", name + "-exec",
+			"--memory", mem,
+			"--label", "norix.sandbox_id=" + item.ID,
+			"--label", "norix.sandbox=1",
+			image,
+		}
+	}
+	args = append(args, argv...)
+	cmd := exec.CommandContext(runCtx, engine, args...)
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	cmd.Stderr = &buf
+	err := cmd.Run()
+	code := int32(0)
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			code = int32(ee.ExitCode())
+		} else {
+			return buf.String(), 1, err
+		}
+	}
+	return buf.String(), code, nil
+}
+
+func sandboxTemplateImage(template string) string {
+	switch strings.ToLower(strings.TrimSpace(template)) {
+	case "python", "python3":
+		return "python:3.12-alpine"
+	case "node", "nodejs":
+		return "node:20-alpine"
+	case "go", "golang":
+		return "golang:1.22-alpine"
+	default:
+		return "alpine:3.20"
+	}
 }

@@ -1,0 +1,21 @@
+[Unit]
+Description=Norix node agent
+Documentation=https://github.com/xiron902224/norix
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+# Root (or a user in the docker group) is typical so the agent can talk to the Docker socket.
+User=root
+WorkingDirectory=/var/lib/norix-agent
+EnvironmentFile=-/var/lib/norix-agent/agent.env
+# After first successful enroll, clear NORIX_JOIN_TOKEN from agent.env (token is one-time).
+ExecStart=/usr/local/bin/norix-agent
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

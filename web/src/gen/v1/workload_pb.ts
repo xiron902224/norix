@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/workload.proto.
  */
 export const file_v1_workload: GenFile = /*@__PURE__*/
-  fileDesc("ChF2MS93b3JrbG9hZC5wcm90bxICdjEikAcKCFdvcmtsb2FkEgoKAmlkGAEgASgJEhIKCnByb2plY3RfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRIgCgdydW50aW1lGAQgASgOMg8udjEuUnVudGltZVR5cGUSFwoPaW1hZ2Vfb3Jfc291cmNlGAUgASgJEisKCGVudl92YXJzGAYgAygLMhkudjEuV29ya2xvYWQuRW52VmFyc0VudHJ5EhIKCmNwdV9zaGFyZXMYByABKAUSFwoPbWVtb3J5X2xpbWl0X21iGAggASgDEg4KBmRvbWFpbhgJIAEoCRIOCgZzdGF0dXMYCiABKAkSGgoSZGVzaXJlZF9nZW5lcmF0aW9uGAsgASgDEhsKE29ic2VydmVkX2dlbmVyYXRpb24YDCABKAMSEQoJaG9zdF9wb3J0GA0gASgFEhYKDmNvbnRhaW5lcl9wb3J0GA4gASgFEhgKEGFzc2lnbmVkX25vZGVfaWQYDyABKAkSEAoIZW5kcG9pbnQYECABKAkSEgoKbGFzdF9lcnJvchgRIAEoCRIUCgxjb250YWluZXJfaWQYEiABKAkSEwoLc291cmNlX2tpbmQYEyABKAkSDwoHZ2l0X3VybBgUIAEoCRIPCgdnaXRfcmVmGBUgASgJEhcKD2RvY2tlcmZpbGVfcGF0aBgWIAEoCRIXCg9sYXRlc3RfYnVpbGRfaWQYFyABKAkSFQoNcmVwbGljYV9jb3VudBgYIAEoBRIZChFzY2hlZHVsZV9zdHJhdGVneRgZIAEoCRITCgtyZXF1aXJlX2t2bRgaIAEoCBIWCg5wcmVmZXJyZWRfem9uZRgbIAEoCRI5Cg9hZmZpbml0eV9sYWJlbHMYHCADKAsyIC52MS5Xb3JrbG9hZC5BZmZpbml0eUxhYmVsc0VudHJ5EkIKFGFudGlfYWZmaW5pdHlfbGFiZWxzGB0gAygLMiQudjEuV29ya2xvYWQuQW50aUFmZmluaXR5TGFiZWxzRW50cnkaLgoMRW52VmFyc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEaNQoTQWZmaW5pdHlMYWJlbHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBGjkKF0FudGlBZmZpbml0eUxhYmVsc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiKgoUTGlzdFdvcmtsb2Fkc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSI4ChVMaXN0V29ya2xvYWRzUmVzcG9uc2USHwoJd29ya2xvYWRzGAEgAygLMgwudjEuV29ya2xvYWQiNwoVVXBkYXRlV29ya2xvYWRSZXF1ZXN0Eh4KCHdvcmtsb2FkGAEgASgLMgwudjEuV29ya2xvYWQiOAoWVXBkYXRlV29ya2xvYWRSZXNwb25zZRIeCgh3b3JrbG9hZBgBIAEoCzIMLnYxLldvcmtsb2FkIiMKFURlbGV0ZVdvcmtsb2FkUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZEZWxldGVXb3JrbG9hZFJlc3BvbnNlIjcKFUNyZWF0ZVdvcmtsb2FkUmVxdWVzdBIeCgh3b3JrbG9hZBgBIAEoCzIMLnYxLldvcmtsb2FkIjgKFkNyZWF0ZVdvcmtsb2FkUmVzcG9uc2USHgoId29ya2xvYWQYASABKAsyDC52MS5Xb3JrbG9hZCJHCg1EZXBsb3lSZXF1ZXN0Eh4KCHdvcmtsb2FkGAEgASgLMgwudjEuV29ya2xvYWQSFgoOY29udGFpbmVyX3BvcnQYAiABKAUiZAoORGVwbG95UmVzcG9uc2USFQoNZGVwbG95bWVudF9pZBgBIAEoCRIOCgZzdGF0dXMYAiABKAkSEQoJaG9zdF9wb3J0GAMgASgFEhgKEGFzc2lnbmVkX25vZGVfaWQYBCABKAkiQQoWR2V0V29ya2xvYWRMb2dzUmVxdWVzdBITCgt3b3JrbG9hZF9pZBgBIAEoCRISCgp0YWlsX2xpbmVzGAIgASgFIigKF0dldFdvcmtsb2FkTG9nc1Jlc3BvbnNlEg0KBWxpbmVzGAEgAygJItgBCgVCdWlsZBIKCgJpZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIPCgdnaXRfdXJsGAMgASgJEg8KB2dpdF9yZWYYBCABKAkSFwoPZG9ja2VyZmlsZV9wYXRoGAUgASgJEg4KBnN0YXR1cxgGIAEoCRINCgVpbWFnZRgHIAEoCRIYChBhc3NpZ25lZF9ub2RlX2lkGAggASgJEhIKCmxhc3RfZXJyb3IYCSABKAkSEgoKY3JlYXRlZF9hdBgKIAEoCRISCgp1cGRhdGVkX2F0GAsgASgJIvYBChREZXBsb3lGcm9tR2l0UmVxdWVzdBITCgt3b3JrbG9hZF9pZBgBIAEoCRIPCgdnaXRfdXJsGAIgASgJEg8KB2dpdF9yZWYYAyABKAkSFwoPZG9ja2VyZmlsZV9wYXRoGAQgASgJEhYKDmNvbnRhaW5lcl9wb3J0GAUgASgFEkEKDWJ1aWxkX3NlY3JldHMYBiADKAsyKi52MS5EZXBsb3lGcm9tR2l0UmVxdWVzdC5CdWlsZFNlY3JldHNFbnRyeRozChFCdWlsZFNlY3JldHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIk4KFURlcGxveUZyb21HaXRSZXNwb25zZRIQCghidWlsZF9pZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIOCgZzdGF0dXMYAyABKAkiKAoRTGlzdEJ1aWxkc1JlcXVlc3QSEwoLd29ya2xvYWRfaWQYASABKAkiLwoSTGlzdEJ1aWxkc1Jlc3BvbnNlEhkKBmJ1aWxkcxgBIAMoCzIJLnYxLkJ1aWxkIjsKE0dldEJ1aWxkTG9nc1JlcXVlc3QSEAoIYnVpbGRfaWQYASABKAkSEgoKdGFpbF9saW5lcxgCIAEoBSI/ChRHZXRCdWlsZExvZ3NSZXNwb25zZRIYCgVidWlsZBgBIAEoCzIJLnYxLkJ1aWxkEg0KBWxpbmVzGAIgAygJIqIBCgtEb21haW5Sb3V0ZRIKCgJpZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIQCghob3N0bmFtZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSEAoIdGxzX21vZGUYBSABKAkSEgoKbGFzdF9lcnJvchgGIAEoCRIRCglodHRwc191cmwYByABKAkSFwoPZWRnZV9nZW5lcmF0aW9uGAggASgDIk4KE0Fzc2lnbkRvbWFpblJlcXVlc3QSEwoLd29ya2xvYWRfaWQYASABKAkSEAoIaG9zdG5hbWUYAiABKAkSEAoIdGxzX21vZGUYAyABKAkiNgoUQXNzaWduRG9tYWluUmVzcG9uc2USHgoFcm91dGUYASABKAsyDy52MS5Eb21haW5Sb3V0ZSIoChJMaXN0RG9tYWluc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSI2ChNMaXN0RG9tYWluc1Jlc3BvbnNlEh8KBnJvdXRlcxgBIAMoCzIPLnYxLkRvbWFpblJvdXRlIiMKFVVuYXNzaWduRG9tYWluUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZVbmFzc2lnbkRvbWFpblJlc3BvbnNlIjwKB1Byb2plY3QSCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkiJAoUQ3JlYXRlUHJvamVjdFJlcXVlc3QSDAoEbmFtZRgBIAEoCSI1ChVDcmVhdGVQcm9qZWN0UmVzcG9uc2USHAoHcHJvamVjdBgBIAEoCzILLnYxLlByb2plY3QiFQoTTGlzdFByb2plY3RzUmVxdWVzdCI1ChRMaXN0UHJvamVjdHNSZXNwb25zZRIdCghwcm9qZWN0cxgBIAMoCzILLnYxLlByb2plY3QiIgoURGVsZXRlUHJvamVjdFJlcXVlc3QSCgoCaWQYASABKAkiFwoVRGVsZXRlUHJvamVjdFJlc3BvbnNlKrcBCgtSdW50aW1lVHlwZRIcChhSVU5USU1FX1RZUEVfVU5TUEVDSUZJRUQQABIaChZSVU5USU1FX1RZUEVfQ09OVEFJTkVSEAESHwobUlVOVElNRV9UWVBFX0RPQ0tFUl9DT01QT1NFEAISGAoUUlVOVElNRV9UWVBFX01JQ1JPVk0QAxIVChFSVU5USU1FX1RZUEVfV0FTTRAEEhwKGFJVTlRJTUVfVFlQRV9TVEFUSUNfU0lURRAFMsEGCg9Xb3JrbG9hZFNlcnZpY2USRwoOQ3JlYXRlV29ya2xvYWQSGS52MS5DcmVhdGVXb3JrbG9hZFJlcXVlc3QaGi52MS5DcmVhdGVXb3JrbG9hZFJlc3BvbnNlEi8KBkRlcGxveRIRLnYxLkRlcGxveVJlcXVlc3QaEi52MS5EZXBsb3lSZXNwb25zZRJECg1EZXBsb3lGcm9tR2l0EhgudjEuRGVwbG95RnJvbUdpdFJlcXVlc3QaGS52MS5EZXBsb3lGcm9tR2l0UmVzcG9uc2USRAoNTGlzdFdvcmtsb2FkcxIYLnYxLkxpc3RXb3JrbG9hZHNSZXF1ZXN0GhkudjEuTGlzdFdvcmtsb2Fkc1Jlc3BvbnNlEkcKDlVwZGF0ZVdvcmtsb2FkEhkudjEuVXBkYXRlV29ya2xvYWRSZXF1ZXN0GhoudjEuVXBkYXRlV29ya2xvYWRSZXNwb25zZRJHCg5EZWxldGVXb3JrbG9hZBIZLnYxLkRlbGV0ZVdvcmtsb2FkUmVxdWVzdBoaLnYxLkRlbGV0ZVdvcmtsb2FkUmVzcG9uc2USSgoPR2V0V29ya2xvYWRMb2dzEhoudjEuR2V0V29ya2xvYWRMb2dzUmVxdWVzdBobLnYxLkdldFdvcmtsb2FkTG9nc1Jlc3BvbnNlEjsKCkxpc3RCdWlsZHMSFS52MS5MaXN0QnVpbGRzUmVxdWVzdBoWLnYxLkxpc3RCdWlsZHNSZXNwb25zZRJBCgxHZXRCdWlsZExvZ3MSFy52MS5HZXRCdWlsZExvZ3NSZXF1ZXN0GhgudjEuR2V0QnVpbGRMb2dzUmVzcG9uc2USQQoMQXNzaWduRG9tYWluEhcudjEuQXNzaWduRG9tYWluUmVxdWVzdBoYLnYxLkFzc2lnbkRvbWFpblJlc3BvbnNlEj4KC0xpc3REb21haW5zEhYudjEuTGlzdERvbWFpbnNSZXF1ZXN0GhcudjEuTGlzdERvbWFpbnNSZXNwb25zZRJHCg5VbmFzc2lnbkRvbWFpbhIZLnYxLlVuYXNzaWduRG9tYWluUmVxdWVzdBoaLnYxLlVuYXNzaWduRG9tYWluUmVzcG9uc2Uy3wEKDlByb2plY3RTZXJ2aWNlEkQKDUNyZWF0ZVByb2plY3QSGC52MS5DcmVhdGVQcm9qZWN0UmVxdWVzdBoZLnYxLkNyZWF0ZVByb2plY3RSZXNwb25zZRJBCgxMaXN0UHJvamVjdHMSFy52MS5MaXN0UHJvamVjdHNSZXF1ZXN0GhgudjEuTGlzdFByb2plY3RzUmVzcG9uc2USRAoNRGVsZXRlUHJvamVjdBIYLnYxLkRlbGV0ZVByb2plY3RSZXF1ZXN0GhkudjEuRGVsZXRlUHJvamVjdFJlc3BvbnNlQoIBCgZjb20udjFCDVdvcmtsb2FkUHJvdG9QAVpBZ2l0aHViLmNvbS94aXJvbjkwMjIyNC9ub3JpeC9jb250cm9sLXBsYW5lL2ludGVybmFsL2dlbi92MTtwYWFzdjGiAgNWWFiqAgJWMcoCAlYx4gIOVjFcR1BCTWV0YWRhdGHqAgJWMWIGcHJvdG8z");
+  fileDesc("ChF2MS93b3JrbG9hZC5wcm90bxICdjEi1gcKCFdvcmtsb2FkEgoKAmlkGAEgASgJEhIKCnByb2plY3RfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRIgCgdydW50aW1lGAQgASgOMg8udjEuUnVudGltZVR5cGUSFwoPaW1hZ2Vfb3Jfc291cmNlGAUgASgJEisKCGVudl92YXJzGAYgAygLMhkudjEuV29ya2xvYWQuRW52VmFyc0VudHJ5EhIKCmNwdV9zaGFyZXMYByABKAUSFwoPbWVtb3J5X2xpbWl0X21iGAggASgDEg4KBmRvbWFpbhgJIAEoCRIOCgZzdGF0dXMYCiABKAkSGgoSZGVzaXJlZF9nZW5lcmF0aW9uGAsgASgDEhsKE29ic2VydmVkX2dlbmVyYXRpb24YDCABKAMSEQoJaG9zdF9wb3J0GA0gASgFEhYKDmNvbnRhaW5lcl9wb3J0GA4gASgFEhgKEGFzc2lnbmVkX25vZGVfaWQYDyABKAkSEAoIZW5kcG9pbnQYECABKAkSEgoKbGFzdF9lcnJvchgRIAEoCRIUCgxjb250YWluZXJfaWQYEiABKAkSEwoLc291cmNlX2tpbmQYEyABKAkSDwoHZ2l0X3VybBgUIAEoCRIPCgdnaXRfcmVmGBUgASgJEhcKD2RvY2tlcmZpbGVfcGF0aBgWIAEoCRIXCg9sYXRlc3RfYnVpbGRfaWQYFyABKAkSFQoNcmVwbGljYV9jb3VudBgYIAEoBRIZChFzY2hlZHVsZV9zdHJhdGVneRgZIAEoCRITCgtyZXF1aXJlX2t2bRgaIAEoCBIWCg5wcmVmZXJyZWRfem9uZRgbIAEoCRI5Cg9hZmZpbml0eV9sYWJlbHMYHCADKAsyIC52MS5Xb3JrbG9hZC5BZmZpbml0eUxhYmVsc0VudHJ5EkIKFGFudGlfYWZmaW5pdHlfbGFiZWxzGB0gAygLMiQudjEuV29ya2xvYWQuQW50aUFmZmluaXR5TGFiZWxzRW50cnkSEAoIc3RhY2tfaWQYHiABKAkSFwoPY29tcG9zZV9zZXJ2aWNlGB8gASgJEhkKEWNvbXBvc2Vfc3BlY19qc29uGCAgASgJGi4KDEVudlZhcnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBGjUKE0FmZmluaXR5TGFiZWxzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ARo5ChdBbnRpQWZmaW5pdHlMYWJlbHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIioKFExpc3RXb3JrbG9hZHNSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkiOAoVTGlzdFdvcmtsb2Fkc1Jlc3BvbnNlEh8KCXdvcmtsb2FkcxgBIAMoCzIMLnYxLldvcmtsb2FkIjcKFVVwZGF0ZVdvcmtsb2FkUmVxdWVzdBIeCgh3b3JrbG9hZBgBIAEoCzIMLnYxLldvcmtsb2FkIjgKFlVwZGF0ZVdvcmtsb2FkUmVzcG9uc2USHgoId29ya2xvYWQYASABKAsyDC52MS5Xb3JrbG9hZCIjChVEZWxldGVXb3JrbG9hZFJlcXVlc3QSCgoCaWQYASABKAkiGAoWRGVsZXRlV29ya2xvYWRSZXNwb25zZSI3ChVDcmVhdGVXb3JrbG9hZFJlcXVlc3QSHgoId29ya2xvYWQYASABKAsyDC52MS5Xb3JrbG9hZCI4ChZDcmVhdGVXb3JrbG9hZFJlc3BvbnNlEh4KCHdvcmtsb2FkGAEgASgLMgwudjEuV29ya2xvYWQiRwoNRGVwbG95UmVxdWVzdBIeCgh3b3JrbG9hZBgBIAEoCzIMLnYxLldvcmtsb2FkEhYKDmNvbnRhaW5lcl9wb3J0GAIgASgFImQKDkRlcGxveVJlc3BvbnNlEhUKDWRlcGxveW1lbnRfaWQYASABKAkSDgoGc3RhdHVzGAIgASgJEhEKCWhvc3RfcG9ydBgDIAEoBRIYChBhc3NpZ25lZF9ub2RlX2lkGAQgASgJIkEKFkdldFdvcmtsb2FkTG9nc1JlcXVlc3QSEwoLd29ya2xvYWRfaWQYASABKAkSEgoKdGFpbF9saW5lcxgCIAEoBSIoChdHZXRXb3JrbG9hZExvZ3NSZXNwb25zZRINCgVsaW5lcxgBIAMoCSLYAQoFQnVpbGQSCgoCaWQYASABKAkSEwoLd29ya2xvYWRfaWQYAiABKAkSDwoHZ2l0X3VybBgDIAEoCRIPCgdnaXRfcmVmGAQgASgJEhcKD2RvY2tlcmZpbGVfcGF0aBgFIAEoCRIOCgZzdGF0dXMYBiABKAkSDQoFaW1hZ2UYByABKAkSGAoQYXNzaWduZWRfbm9kZV9pZBgIIAEoCRISCgpsYXN0X2Vycm9yGAkgASgJEhIKCmNyZWF0ZWRfYXQYCiABKAkSEgoKdXBkYXRlZF9hdBgLIAEoCSL2AQoURGVwbG95RnJvbUdpdFJlcXVlc3QSEwoLd29ya2xvYWRfaWQYASABKAkSDwoHZ2l0X3VybBgCIAEoCRIPCgdnaXRfcmVmGAMgASgJEhcKD2RvY2tlcmZpbGVfcGF0aBgEIAEoCRIWCg5jb250YWluZXJfcG9ydBgFIAEoBRJBCg1idWlsZF9zZWNyZXRzGAYgAygLMioudjEuRGVwbG95RnJvbUdpdFJlcXVlc3QuQnVpbGRTZWNyZXRzRW50cnkaMwoRQnVpbGRTZWNyZXRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJOChVEZXBsb3lGcm9tR2l0UmVzcG9uc2USEAoIYnVpbGRfaWQYASABKAkSEwoLd29ya2xvYWRfaWQYAiABKAkSDgoGc3RhdHVzGAMgASgJIkMKDkNvbXBvc2VQb3J0TWFwEgwKBGhvc3QYASABKAUSEQoJY29udGFpbmVyGAIgASgFEhAKCHByb3RvY29sGAMgASgJIqEDChJDb21wb3NlU2VydmljZVNwZWMSDAoEbmFtZRgBIAEoCRINCgVpbWFnZRgCIAEoCRIVCg1idWlsZF9jb250ZXh0GAMgASgJEhIKCmRvY2tlcmZpbGUYBCABKAkSFwoPY29udGFpbmVyX3BvcnRzGAUgAygFEisKD3B1Ymxpc2hlZF9wb3J0cxgGIAMoCzISLnYxLkNvbXBvc2VQb3J0TWFwEhIKCmRlcGVuZHNfb24YByADKAkSPAoLZW52aXJvbm1lbnQYCCADKAsyJy52MS5Db21wb3NlU2VydmljZVNwZWMuRW52aXJvbm1lbnRFbnRyeRIPCgdlbmFibGVkGAkgASgIEhUKDWV4cG9zZV9wdWJsaWMYCiABKAgSEQoJaG9zdF9wb3J0GAsgASgFEhYKDmNvbnRhaW5lcl9wb3J0GAwgASgFEhEKCWhhc19idWlsZBgNIAEoCBIRCgloYXNfaW1hZ2UYDiABKAgaMgoQRW52aXJvbm1lbnRFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlYKHEFuYWx5emVDb21wb3NlRnJvbUdpdFJlcXVlc3QSDwoHZ2l0X3VybBgBIAEoCRIPCgdnaXRfcmVmGAIgASgJEhQKDGNvbXBvc2VfcGF0aBgDIAEoCSJfCh1BbmFseXplQ29tcG9zZUZyb21HaXRSZXNwb25zZRIUCgxjb21wb3NlX2ZpbGUYASABKAkSKAoIc2VydmljZXMYAiADKAsyFi52MS5Db21wb3NlU2VydmljZVNwZWMipQEKGURlcGxveUNvbXBvc2VTdGFja1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRISCgpzdGFja19uYW1lGAIgASgJEg8KB2dpdF91cmwYAyABKAkSDwoHZ2l0X3JlZhgEIAEoCRIUCgxjb21wb3NlX3BhdGgYBSABKAkSKAoIc2VydmljZXMYBiADKAsyFi52MS5Db21wb3NlU2VydmljZVNwZWMiTwoaRGVwbG95Q29tcG9zZVN0YWNrUmVzcG9uc2USEAoIc3RhY2tfaWQYASABKAkSHwoJd29ya2xvYWRzGAIgAygLMgwudjEuV29ya2xvYWQiKAoRTGlzdEJ1aWxkc1JlcXVlc3QSEwoLd29ya2xvYWRfaWQYASABKAkiLwoSTGlzdEJ1aWxkc1Jlc3BvbnNlEhkKBmJ1aWxkcxgBIAMoCzIJLnYxLkJ1aWxkIjsKE0dldEJ1aWxkTG9nc1JlcXVlc3QSEAoIYnVpbGRfaWQYASABKAkSEgoKdGFpbF9saW5lcxgCIAEoBSI/ChRHZXRCdWlsZExvZ3NSZXNwb25zZRIYCgVidWlsZBgBIAEoCzIJLnYxLkJ1aWxkEg0KBWxpbmVzGAIgAygJIqIBCgtEb21haW5Sb3V0ZRIKCgJpZBgBIAEoCRITCgt3b3JrbG9hZF9pZBgCIAEoCRIQCghob3N0bmFtZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSEAoIdGxzX21vZGUYBSABKAkSEgoKbGFzdF9lcnJvchgGIAEoCRIRCglodHRwc191cmwYByABKAkSFwoPZWRnZV9nZW5lcmF0aW9uGAggASgDIk4KE0Fzc2lnbkRvbWFpblJlcXVlc3QSEwoLd29ya2xvYWRfaWQYASABKAkSEAoIaG9zdG5hbWUYAiABKAkSEAoIdGxzX21vZGUYAyABKAkiNgoUQXNzaWduRG9tYWluUmVzcG9uc2USHgoFcm91dGUYASABKAsyDy52MS5Eb21haW5Sb3V0ZSIoChJMaXN0RG9tYWluc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSI2ChNMaXN0RG9tYWluc1Jlc3BvbnNlEh8KBnJvdXRlcxgBIAMoCzIPLnYxLkRvbWFpblJvdXRlIiMKFVVuYXNzaWduRG9tYWluUmVxdWVzdBIKCgJpZBgBIAEoCSIYChZVbmFzc2lnbkRvbWFpblJlc3BvbnNlIjwKB1Byb2plY3QSCgoCaWQYASABKAkSFwoPb3JnYW5pemF0aW9uX2lkGAIgASgJEgwKBG5hbWUYAyABKAkiJAoUQ3JlYXRlUHJvamVjdFJlcXVlc3QSDAoEbmFtZRgBIAEoCSI1ChVDcmVhdGVQcm9qZWN0UmVzcG9uc2USHAoHcHJvamVjdBgBIAEoCzILLnYxLlByb2plY3QiFQoTTGlzdFByb2plY3RzUmVxdWVzdCI1ChRMaXN0UHJvamVjdHNSZXNwb25zZRIdCghwcm9qZWN0cxgBIAMoCzILLnYxLlByb2plY3QiIgoURGVsZXRlUHJvamVjdFJlcXVlc3QSCgoCaWQYASABKAkiFwoVRGVsZXRlUHJvamVjdFJlc3BvbnNlKrcBCgtSdW50aW1lVHlwZRIcChhSVU5USU1FX1RZUEVfVU5TUEVDSUZJRUQQABIaChZSVU5USU1FX1RZUEVfQ09OVEFJTkVSEAESHwobUlVOVElNRV9UWVBFX0RPQ0tFUl9DT01QT1NFEAISGAoUUlVOVElNRV9UWVBFX01JQ1JPVk0QAxIVChFSVU5USU1FX1RZUEVfV0FTTRAEEhwKGFJVTlRJTUVfVFlQRV9TVEFUSUNfU0lURRAFMvQHCg9Xb3JrbG9hZFNlcnZpY2USRwoOQ3JlYXRlV29ya2xvYWQSGS52MS5DcmVhdGVXb3JrbG9hZFJlcXVlc3QaGi52MS5DcmVhdGVXb3JrbG9hZFJlc3BvbnNlEi8KBkRlcGxveRIRLnYxLkRlcGxveVJlcXVlc3QaEi52MS5EZXBsb3lSZXNwb25zZRJECg1EZXBsb3lGcm9tR2l0EhgudjEuRGVwbG95RnJvbUdpdFJlcXVlc3QaGS52MS5EZXBsb3lGcm9tR2l0UmVzcG9uc2USXAoVQW5hbHl6ZUNvbXBvc2VGcm9tR2l0EiAudjEuQW5hbHl6ZUNvbXBvc2VGcm9tR2l0UmVxdWVzdBohLnYxLkFuYWx5emVDb21wb3NlRnJvbUdpdFJlc3BvbnNlElMKEkRlcGxveUNvbXBvc2VTdGFjaxIdLnYxLkRlcGxveUNvbXBvc2VTdGFja1JlcXVlc3QaHi52MS5EZXBsb3lDb21wb3NlU3RhY2tSZXNwb25zZRJECg1MaXN0V29ya2xvYWRzEhgudjEuTGlzdFdvcmtsb2Fkc1JlcXVlc3QaGS52MS5MaXN0V29ya2xvYWRzUmVzcG9uc2USRwoOVXBkYXRlV29ya2xvYWQSGS52MS5VcGRhdGVXb3JrbG9hZFJlcXVlc3QaGi52MS5VcGRhdGVXb3JrbG9hZFJlc3BvbnNlEkcKDkRlbGV0ZVdvcmtsb2FkEhkudjEuRGVsZXRlV29ya2xvYWRSZXF1ZXN0GhoudjEuRGVsZXRlV29ya2xvYWRSZXNwb25zZRJKCg9HZXRXb3JrbG9hZExvZ3MSGi52MS5HZXRXb3JrbG9hZExvZ3NSZXF1ZXN0GhsudjEuR2V0V29ya2xvYWRMb2dzUmVzcG9uc2USOwoKTGlzdEJ1aWxkcxIVLnYxLkxpc3RCdWlsZHNSZXF1ZXN0GhYudjEuTGlzdEJ1aWxkc1Jlc3BvbnNlEkEKDEdldEJ1aWxkTG9ncxIXLnYxLkdldEJ1aWxkTG9nc1JlcXVlc3QaGC52MS5HZXRCdWlsZExvZ3NSZXNwb25zZRJBCgxBc3NpZ25Eb21haW4SFy52MS5Bc3NpZ25Eb21haW5SZXF1ZXN0GhgudjEuQXNzaWduRG9tYWluUmVzcG9uc2USPgoLTGlzdERvbWFpbnMSFi52MS5MaXN0RG9tYWluc1JlcXVlc3QaFy52MS5MaXN0RG9tYWluc1Jlc3BvbnNlEkcKDlVuYXNzaWduRG9tYWluEhkudjEuVW5hc3NpZ25Eb21haW5SZXF1ZXN0GhoudjEuVW5hc3NpZ25Eb21haW5SZXNwb25zZTLfAQoOUHJvamVjdFNlcnZpY2USRAoNQ3JlYXRlUHJvamVjdBIYLnYxLkNyZWF0ZVByb2plY3RSZXF1ZXN0GhkudjEuQ3JlYXRlUHJvamVjdFJlc3BvbnNlEkEKDExpc3RQcm9qZWN0cxIXLnYxLkxpc3RQcm9qZWN0c1JlcXVlc3QaGC52MS5MaXN0UHJvamVjdHNSZXNwb25zZRJECg1EZWxldGVQcm9qZWN0EhgudjEuRGVsZXRlUHJvamVjdFJlcXVlc3QaGS52MS5EZWxldGVQcm9qZWN0UmVzcG9uc2VCggEKBmNvbS52MUINV29ya2xvYWRQcm90b1ABWkFnaXRodWIuY29tL3hpcm9uOTAyMjI0L25vcml4L2NvbnRyb2wtcGxhbmUvaW50ZXJuYWwvZ2VuL3YxO3BhYXN2MaICA1ZYWKoCAlYxygICVjHiAg5WMVxHUEJNZXRhZGF0YeoCAlYxYgZwcm90bzM");
 
 /**
  * @generated from message v1.Workload
@@ -164,6 +164,23 @@ export type Workload = Message<"v1.Workload"> & {
    * @generated from field: map<string, string> anti_affinity_labels = 29;
    */
   antiAffinityLabels: { [key: string]: string };
+
+  /**
+   * Compose stack (Coolify-style multi-service)
+   *
+   * @generated from field: string stack_id = 30;
+   */
+  stackId: string;
+
+  /**
+   * @generated from field: string compose_service = 31;
+   */
+  composeService: string;
+
+  /**
+   * @generated from field: string compose_spec_json = 32;
+   */
+  composeSpecJson: string;
 };
 
 /**
@@ -537,6 +554,228 @@ export const DeployFromGitResponseSchema: GenMessage<DeployFromGitResponse> = /*
   messageDesc(file_v1_workload, 15);
 
 /**
+ * @generated from message v1.ComposePortMap
+ */
+export type ComposePortMap = Message<"v1.ComposePortMap"> & {
+  /**
+   * @generated from field: int32 host = 1;
+   */
+  host: number;
+
+  /**
+   * @generated from field: int32 container = 2;
+   */
+  container: number;
+
+  /**
+   * @generated from field: string protocol = 3;
+   */
+  protocol: string;
+};
+
+/**
+ * Describes the message v1.ComposePortMap.
+ * Use `create(ComposePortMapSchema)` to create a new message.
+ */
+export const ComposePortMapSchema: GenMessage<ComposePortMap> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 16);
+
+/**
+ * @generated from message v1.ComposeServiceSpec
+ */
+export type ComposeServiceSpec = Message<"v1.ComposeServiceSpec"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string image = 2;
+   */
+  image: string;
+
+  /**
+   * @generated from field: string build_context = 3;
+   */
+  buildContext: string;
+
+  /**
+   * @generated from field: string dockerfile = 4;
+   */
+  dockerfile: string;
+
+  /**
+   * @generated from field: repeated int32 container_ports = 5;
+   */
+  containerPorts: number[];
+
+  /**
+   * @generated from field: repeated v1.ComposePortMap published_ports = 6;
+   */
+  publishedPorts: ComposePortMap[];
+
+  /**
+   * @generated from field: repeated string depends_on = 7;
+   */
+  dependsOn: string[];
+
+  /**
+   * @generated from field: map<string, string> environment = 8;
+   */
+  environment: { [key: string]: string };
+
+  /**
+   * @generated from field: bool enabled = 9;
+   */
+  enabled: boolean;
+
+  /**
+   * @generated from field: bool expose_public = 10;
+   */
+  exposePublic: boolean;
+
+  /**
+   * @generated from field: int32 host_port = 11;
+   */
+  hostPort: number;
+
+  /**
+   * @generated from field: int32 container_port = 12;
+   */
+  containerPort: number;
+
+  /**
+   * @generated from field: bool has_build = 13;
+   */
+  hasBuild: boolean;
+
+  /**
+   * @generated from field: bool has_image = 14;
+   */
+  hasImage: boolean;
+};
+
+/**
+ * Describes the message v1.ComposeServiceSpec.
+ * Use `create(ComposeServiceSpecSchema)` to create a new message.
+ */
+export const ComposeServiceSpecSchema: GenMessage<ComposeServiceSpec> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 17);
+
+/**
+ * @generated from message v1.AnalyzeComposeFromGitRequest
+ */
+export type AnalyzeComposeFromGitRequest = Message<"v1.AnalyzeComposeFromGitRequest"> & {
+  /**
+   * @generated from field: string git_url = 1;
+   */
+  gitUrl: string;
+
+  /**
+   * @generated from field: string git_ref = 2;
+   */
+  gitRef: string;
+
+  /**
+   * @generated from field: string compose_path = 3;
+   */
+  composePath: string;
+};
+
+/**
+ * Describes the message v1.AnalyzeComposeFromGitRequest.
+ * Use `create(AnalyzeComposeFromGitRequestSchema)` to create a new message.
+ */
+export const AnalyzeComposeFromGitRequestSchema: GenMessage<AnalyzeComposeFromGitRequest> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 18);
+
+/**
+ * @generated from message v1.AnalyzeComposeFromGitResponse
+ */
+export type AnalyzeComposeFromGitResponse = Message<"v1.AnalyzeComposeFromGitResponse"> & {
+  /**
+   * @generated from field: string compose_file = 1;
+   */
+  composeFile: string;
+
+  /**
+   * @generated from field: repeated v1.ComposeServiceSpec services = 2;
+   */
+  services: ComposeServiceSpec[];
+};
+
+/**
+ * Describes the message v1.AnalyzeComposeFromGitResponse.
+ * Use `create(AnalyzeComposeFromGitResponseSchema)` to create a new message.
+ */
+export const AnalyzeComposeFromGitResponseSchema: GenMessage<AnalyzeComposeFromGitResponse> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 19);
+
+/**
+ * @generated from message v1.DeployComposeStackRequest
+ */
+export type DeployComposeStackRequest = Message<"v1.DeployComposeStackRequest"> & {
+  /**
+   * @generated from field: string project_id = 1;
+   */
+  projectId: string;
+
+  /**
+   * @generated from field: string stack_name = 2;
+   */
+  stackName: string;
+
+  /**
+   * @generated from field: string git_url = 3;
+   */
+  gitUrl: string;
+
+  /**
+   * @generated from field: string git_ref = 4;
+   */
+  gitRef: string;
+
+  /**
+   * @generated from field: string compose_path = 5;
+   */
+  composePath: string;
+
+  /**
+   * @generated from field: repeated v1.ComposeServiceSpec services = 6;
+   */
+  services: ComposeServiceSpec[];
+};
+
+/**
+ * Describes the message v1.DeployComposeStackRequest.
+ * Use `create(DeployComposeStackRequestSchema)` to create a new message.
+ */
+export const DeployComposeStackRequestSchema: GenMessage<DeployComposeStackRequest> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 20);
+
+/**
+ * @generated from message v1.DeployComposeStackResponse
+ */
+export type DeployComposeStackResponse = Message<"v1.DeployComposeStackResponse"> & {
+  /**
+   * @generated from field: string stack_id = 1;
+   */
+  stackId: string;
+
+  /**
+   * @generated from field: repeated v1.Workload workloads = 2;
+   */
+  workloads: Workload[];
+};
+
+/**
+ * Describes the message v1.DeployComposeStackResponse.
+ * Use `create(DeployComposeStackResponseSchema)` to create a new message.
+ */
+export const DeployComposeStackResponseSchema: GenMessage<DeployComposeStackResponse> = /*@__PURE__*/
+  messageDesc(file_v1_workload, 21);
+
+/**
  * @generated from message v1.ListBuildsRequest
  */
 export type ListBuildsRequest = Message<"v1.ListBuildsRequest"> & {
@@ -551,7 +790,7 @@ export type ListBuildsRequest = Message<"v1.ListBuildsRequest"> & {
  * Use `create(ListBuildsRequestSchema)` to create a new message.
  */
 export const ListBuildsRequestSchema: GenMessage<ListBuildsRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 16);
+  messageDesc(file_v1_workload, 22);
 
 /**
  * @generated from message v1.ListBuildsResponse
@@ -568,7 +807,7 @@ export type ListBuildsResponse = Message<"v1.ListBuildsResponse"> & {
  * Use `create(ListBuildsResponseSchema)` to create a new message.
  */
 export const ListBuildsResponseSchema: GenMessage<ListBuildsResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 17);
+  messageDesc(file_v1_workload, 23);
 
 /**
  * @generated from message v1.GetBuildLogsRequest
@@ -590,7 +829,7 @@ export type GetBuildLogsRequest = Message<"v1.GetBuildLogsRequest"> & {
  * Use `create(GetBuildLogsRequestSchema)` to create a new message.
  */
 export const GetBuildLogsRequestSchema: GenMessage<GetBuildLogsRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 18);
+  messageDesc(file_v1_workload, 24);
 
 /**
  * @generated from message v1.GetBuildLogsResponse
@@ -612,7 +851,7 @@ export type GetBuildLogsResponse = Message<"v1.GetBuildLogsResponse"> & {
  * Use `create(GetBuildLogsResponseSchema)` to create a new message.
  */
 export const GetBuildLogsResponseSchema: GenMessage<GetBuildLogsResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 19);
+  messageDesc(file_v1_workload, 25);
 
 /**
  * @generated from message v1.DomainRoute
@@ -664,7 +903,7 @@ export type DomainRoute = Message<"v1.DomainRoute"> & {
  * Use `create(DomainRouteSchema)` to create a new message.
  */
 export const DomainRouteSchema: GenMessage<DomainRoute> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 20);
+  messageDesc(file_v1_workload, 26);
 
 /**
  * @generated from message v1.AssignDomainRequest
@@ -693,7 +932,7 @@ export type AssignDomainRequest = Message<"v1.AssignDomainRequest"> & {
  * Use `create(AssignDomainRequestSchema)` to create a new message.
  */
 export const AssignDomainRequestSchema: GenMessage<AssignDomainRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 21);
+  messageDesc(file_v1_workload, 27);
 
 /**
  * @generated from message v1.AssignDomainResponse
@@ -710,7 +949,7 @@ export type AssignDomainResponse = Message<"v1.AssignDomainResponse"> & {
  * Use `create(AssignDomainResponseSchema)` to create a new message.
  */
 export const AssignDomainResponseSchema: GenMessage<AssignDomainResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 22);
+  messageDesc(file_v1_workload, 28);
 
 /**
  * @generated from message v1.ListDomainsRequest
@@ -727,7 +966,7 @@ export type ListDomainsRequest = Message<"v1.ListDomainsRequest"> & {
  * Use `create(ListDomainsRequestSchema)` to create a new message.
  */
 export const ListDomainsRequestSchema: GenMessage<ListDomainsRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 23);
+  messageDesc(file_v1_workload, 29);
 
 /**
  * @generated from message v1.ListDomainsResponse
@@ -744,7 +983,7 @@ export type ListDomainsResponse = Message<"v1.ListDomainsResponse"> & {
  * Use `create(ListDomainsResponseSchema)` to create a new message.
  */
 export const ListDomainsResponseSchema: GenMessage<ListDomainsResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 24);
+  messageDesc(file_v1_workload, 30);
 
 /**
  * @generated from message v1.UnassignDomainRequest
@@ -761,7 +1000,7 @@ export type UnassignDomainRequest = Message<"v1.UnassignDomainRequest"> & {
  * Use `create(UnassignDomainRequestSchema)` to create a new message.
  */
 export const UnassignDomainRequestSchema: GenMessage<UnassignDomainRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 25);
+  messageDesc(file_v1_workload, 31);
 
 /**
  * @generated from message v1.UnassignDomainResponse
@@ -774,7 +1013,7 @@ export type UnassignDomainResponse = Message<"v1.UnassignDomainResponse"> & {
  * Use `create(UnassignDomainResponseSchema)` to create a new message.
  */
 export const UnassignDomainResponseSchema: GenMessage<UnassignDomainResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 26);
+  messageDesc(file_v1_workload, 32);
 
 /**
  * @generated from message v1.Project
@@ -801,7 +1040,7 @@ export type Project = Message<"v1.Project"> & {
  * Use `create(ProjectSchema)` to create a new message.
  */
 export const ProjectSchema: GenMessage<Project> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 27);
+  messageDesc(file_v1_workload, 33);
 
 /**
  * @generated from message v1.CreateProjectRequest
@@ -818,7 +1057,7 @@ export type CreateProjectRequest = Message<"v1.CreateProjectRequest"> & {
  * Use `create(CreateProjectRequestSchema)` to create a new message.
  */
 export const CreateProjectRequestSchema: GenMessage<CreateProjectRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 28);
+  messageDesc(file_v1_workload, 34);
 
 /**
  * @generated from message v1.CreateProjectResponse
@@ -835,7 +1074,7 @@ export type CreateProjectResponse = Message<"v1.CreateProjectResponse"> & {
  * Use `create(CreateProjectResponseSchema)` to create a new message.
  */
 export const CreateProjectResponseSchema: GenMessage<CreateProjectResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 29);
+  messageDesc(file_v1_workload, 35);
 
 /**
  * @generated from message v1.ListProjectsRequest
@@ -848,7 +1087,7 @@ export type ListProjectsRequest = Message<"v1.ListProjectsRequest"> & {
  * Use `create(ListProjectsRequestSchema)` to create a new message.
  */
 export const ListProjectsRequestSchema: GenMessage<ListProjectsRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 30);
+  messageDesc(file_v1_workload, 36);
 
 /**
  * @generated from message v1.ListProjectsResponse
@@ -865,7 +1104,7 @@ export type ListProjectsResponse = Message<"v1.ListProjectsResponse"> & {
  * Use `create(ListProjectsResponseSchema)` to create a new message.
  */
 export const ListProjectsResponseSchema: GenMessage<ListProjectsResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 31);
+  messageDesc(file_v1_workload, 37);
 
 /**
  * @generated from message v1.DeleteProjectRequest
@@ -882,7 +1121,7 @@ export type DeleteProjectRequest = Message<"v1.DeleteProjectRequest"> & {
  * Use `create(DeleteProjectRequestSchema)` to create a new message.
  */
 export const DeleteProjectRequestSchema: GenMessage<DeleteProjectRequest> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 32);
+  messageDesc(file_v1_workload, 38);
 
 /**
  * @generated from message v1.DeleteProjectResponse
@@ -895,7 +1134,7 @@ export type DeleteProjectResponse = Message<"v1.DeleteProjectResponse"> & {
  * Use `create(DeleteProjectResponseSchema)` to create a new message.
  */
 export const DeleteProjectResponseSchema: GenMessage<DeleteProjectResponse> = /*@__PURE__*/
-  messageDesc(file_v1_workload, 33);
+  messageDesc(file_v1_workload, 39);
 
 /**
  * @generated from enum v1.RuntimeType
@@ -965,6 +1204,22 @@ export const WorkloadService: GenService<{
     methodKind: "unary";
     input: typeof DeployFromGitRequestSchema;
     output: typeof DeployFromGitResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.WorkloadService.AnalyzeComposeFromGit
+   */
+  analyzeComposeFromGit: {
+    methodKind: "unary";
+    input: typeof AnalyzeComposeFromGitRequestSchema;
+    output: typeof AnalyzeComposeFromGitResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.WorkloadService.DeployComposeStack
+   */
+  deployComposeStack: {
+    methodKind: "unary";
+    input: typeof DeployComposeStackRequestSchema;
+    output: typeof DeployComposeStackResponseSchema;
   },
   /**
    * @generated from rpc v1.WorkloadService.ListWorkloads

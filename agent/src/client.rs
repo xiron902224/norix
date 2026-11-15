@@ -22,14 +22,12 @@ pub struct DesiredWorkload {
     #[serde(default)]
     pub project_id: String,
     #[serde(default)]
-    #[allow(dead_code)]
     pub name: String,
     #[serde(default)]
     pub image: String,
     #[serde(default)]
     pub env_vars: HashMap<String, String>,
     #[serde(default, deserialize_with = "deserialize_i32")]
-    #[allow(dead_code)]
     pub cpu_shares: i32,
     #[serde(default, deserialize_with = "deserialize_i64")]
     pub memory_limit_mb: i64,
@@ -41,6 +39,13 @@ pub struct DesiredWorkload {
     pub desired_generation: i64,
     #[serde(default)]
     pub action: String,
+    /// container | docker-compose | microvm | wasm | static-site
+    #[serde(default)]
+    pub runtime: String,
+    #[serde(default)]
+    pub network_name: String,
+    #[serde(default)]
+    pub network_alias: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -251,12 +256,59 @@ pub struct ObservedNetwork {
     pub log_lines: Vec<String>,
 }
 
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredWasmFunction {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub project_id: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub image_ref: String,
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub fuel_limit: i64,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub memory_limit_mb: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredWasmPlan {
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub generation: i64,
+    #[serde(default)]
+    pub functions: Vec<DesiredWasmFunction>,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedWasmFunction {
+    pub id: String,
+    pub status: String,
+    pub message: String,
+    pub artifact_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedWasm {
+    pub generation: i64,
+    pub status: String,
+    pub message: String,
+    pub log_lines: Vec<String>,
+    pub functions: Vec<ObservedWasmFunction>,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct HeartbeatResult {
     pub desired_workloads: Vec<DesiredWorkload>,
     pub desired_builds: Vec<DesiredBuild>,
     pub desired_edge: Option<DesiredEdgePlan>,
     pub desired_network: Option<DesiredNetworkPlan>,
+    pub desired_wasm: Option<DesiredWasmPlan>,
 }
 
 #[derive(Deserialize)]
@@ -273,6 +325,8 @@ struct HeartbeatResponse {
     desired_edge: Option<DesiredEdgePlan>,
     #[serde(default)]
     desired_network: Option<DesiredNetworkPlan>,
+    #[serde(default)]
+    desired_wasm: Option<DesiredWasmPlan>,
 }
 
 #[derive(Serialize)]
@@ -338,11 +392,7 @@ impl AgentClient {
             running_workload_ids,
         };
         let response = self
-            .post_json(
-                "/v1.AgentService/Heartbeat",
-                Some(&state.node_token),
-                &body,
-            )
+            .post_json("/v1.AgentService/Heartbeat", Some(&state.node_token), &body)
             .await?;
         match serde_json::from_value::<HeartbeatResponse>(response.clone()) {
             Ok(parsed) => Ok(HeartbeatResult {
@@ -350,6 +400,9 @@ impl AgentClient {
                 desired_builds: parsed.desired_builds,
                 desired_edge: parsed.desired_edge,
                 desired_network: parsed.desired_network.filter(|plan| plan.generation > 0),
+                desired_wasm: parsed
+                    .desired_wasm
+                    .filter(|plan| !plan.functions.is_empty()),
             }),
             Err(error) => {
                 let mut result = HeartbeatResult::default();
@@ -395,10 +448,21 @@ impl AgentClient {
                     .get("desiredNetwork")
                     .or_else(|| response.get("desired_network"))
                 {
-                    if let Ok(parsed) = serde_json::from_value::<DesiredNetworkPlan>(network.clone())
+                    if let Ok(parsed) =
+                        serde_json::from_value::<DesiredNetworkPlan>(network.clone())
                     {
                         if parsed.generation > 0 {
                             result.desired_network = Some(parsed);
+                        }
+                    }
+                }
+                if let Some(wasm) = response
+                    .get("desiredWasm")
+                    .or_else(|| response.get("desired_wasm"))
+                {
+                    if let Ok(parsed) = serde_json::from_value::<DesiredWasmPlan>(wasm.clone()) {
+                        if !parsed.functions.is_empty() {
+                            result.desired_wasm = Some(parsed);
                         }
                     }
                 }
@@ -406,12 +470,33 @@ impl AgentClient {
                     && result.desired_builds.is_empty()
                     && result.desired_edge.is_none()
                     && result.desired_network.is_none()
+                    && result.desired_wasm.is_none()
                 {
                     tracing::warn!(%error, body = %response, "heartbeat decode partial; treating desired as empty");
                 }
                 Ok(result)
             }
         }
+    }
+
+    pub async fn report_wasm(&self, state: &NodeState, wasm: &ObservedWasm) -> Result<()> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body<'a> {
+            node_id: &'a str,
+            wasm: &'a ObservedWasm,
+        }
+        let body = Body {
+            node_id: &state.node_id,
+            wasm,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportWasm",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
     }
 
     pub async fn report_edge(&self, state: &NodeState, edge: &ObservedEdge) -> Result<()> {

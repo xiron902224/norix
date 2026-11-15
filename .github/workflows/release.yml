@@ -1,0 +1,364 @@
+# Norix release engineering: multi-arch binaries, SHA256SUMS, SBOM, keyless cosign.
+#
+# Required permissions:
+#   contents: write  — create/upload GitHub Release assets
+#   id-token: write  — keyless Sigstore/cosign OIDC (preferred)
+#
+# Optional repository secret:
+#   COSIGN_KEY       — PEM private key for key-based signing if keyless is unavailable
+#   COSIGN_PASSWORD  — password for COSIGN_KEY (if encrypted)
+#
+# Trigger: push tag v* (e.g. v1.0.0) or workflow_dispatch with optional tag input.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (e.g. v1.0.0). Defaults to VERSION file with v prefix."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GO_VERSION: "1.27"
+  RUST_TOOLCHAIN: "1.88.0"
+
+jobs:
+  meta:
+    name: Resolve release version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      tag: ${{ steps.ver.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve tag / version
+        id: ver
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.tag }}" ]]; then
+            TAG="${{ inputs.tag }}"
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            VER="$(tr -d '[:space:]' < VERSION)"
+            TAG="v${VER}"
+          fi
+          case "$TAG" in
+            v*) ;;
+            *) TAG="v${TAG}" ;;
+          esac
+          VERSION="${TAG#v}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Releasing tag=${TAG} version=${VERSION}"
+
+  build-go:
+    name: Build Go (${{ matrix.component }} ${{ matrix.goarch }})
+    needs: meta
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component: control-plane
+            goarch: amd64
+            package: ./cmd/server/main.go
+            workdir: control-plane
+            binary: norix-control-plane
+            embed_web: true
+          - component: control-plane
+            goarch: arm64
+            package: ./cmd/server/main.go
+            workdir: control-plane
+            binary: norix-control-plane
+            embed_web: true
+          - component: cli
+            goarch: amd64
+            package: .
+            workdir: cli
+            binary: norix-cli
+            embed_web: false
+          - component: cli
+            goarch: arm64
+            package: .
+            workdir: cli
+            binary: norix-cli
+            embed_web: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: |
+            control-plane/go.sum
+            cli/go.sum
+
+      - name: Set up Node (embed web)
+        if: matrix.embed_web
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build and embed web UI
+        if: matrix.embed_web
+        run: |
+          set -euo pipefail
+          cd web
+          npm ci
+          npm run build
+          rm -rf ../control-plane/internal/webui/dist
+          mkdir -p ../control-plane/internal/webui/dist
+          cp -R dist/. ../control-plane/internal/webui/dist/
+
+      - name: Build ${{ matrix.binary }} linux/${{ matrix.goarch }}
+        working-directory: ${{ matrix.workdir }}
+        env:
+          CGO_ENABLED: "0"
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          set -euo pipefail
+          mkdir -p "${GITHUB_WORKSPACE}/dist"
+          if [[ "${{ matrix.component }}" == "cli" ]]; then
+            OUT="norix-cli-linux-${{ matrix.goarch }}"
+          else
+            OUT="norix-control-plane-linux-${{ matrix.goarch }}"
+          fi
+          go build -trimpath -ldflags="-s -w" \
+            -o "${GITHUB_WORKSPACE}/dist/${OUT}" ${{ matrix.package }}
+          chmod +x "${GITHUB_WORKSPACE}/dist/${OUT}"
+
+      - name: Upload Go artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-${{ matrix.component }}-linux-${{ matrix.goarch }}
+          path: dist/
+          if-no-files-found: error
+
+  build-agent:
+    name: Build agent (${{ matrix.target }})
+    needs: meta
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            goarch: amd64
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            goarch: arm64
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: agent
+          key: release-${{ matrix.target }}
+
+      - name: Build agent release
+        run: |
+          set -euo pipefail
+          cargo build --release --target "${{ matrix.target }}"
+          mkdir -p "${GITHUB_WORKSPACE}/dist"
+          OUT="norix-agent-linux-${{ matrix.goarch }}"
+          cp "target/${{ matrix.target }}/release/norix-agent" "${GITHUB_WORKSPACE}/dist/${OUT}"
+          chmod +x "${GITHUB_WORKSPACE}/dist/${OUT}"
+
+      - name: Upload agent artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-linux-${{ matrix.goarch }}
+          path: dist/norix-agent-linux-${{ matrix.goarch }}
+          if-no-files-found: error
+
+  sbom:
+    name: Generate SBOM
+    needs: meta
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: |
+            control-plane/go.sum
+            cli/go.sum
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+
+      - name: Install syft (CycloneDX SBOM)
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
+            | sh -s -- -b /usr/local/bin
+          syft version
+
+      - name: Generate SBOM
+        run: |
+          set -euo pipefail
+          chmod +x scripts/sbom.sh
+          NORIX_SBOM_DIR="${GITHUB_WORKSPACE}/dist/sbom" ./scripts/sbom.sh
+          test -f dist/sbom/control-plane.cdx.json
+          test -f dist/sbom/agent.cdx.json
+          ls -la dist/sbom
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: dist/sbom/
+          if-no-files-found: error
+
+  publish:
+    name: Sign, checksum, and publish Release
+    needs: [meta, build-go, build-agent, sbom]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Assemble release directory
+        id: assemble
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          find artifacts -type f -name 'norix-*' -print0 | while IFS= read -r -d '' f; do
+            cp -f "$f" "release/$(basename "$f")"
+          done
+          if [[ -d artifacts/sbom ]]; then
+            tar -czf release/norix-sbom.tar.gz -C artifacts/sbom .
+          fi
+          cd release
+          ls -la
+          sha256sum norix-* > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Cosign sign artifacts (keyless OIDC, fallback COSIGN_KEY)
+        env:
+          COSIGN_YES: "true"
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cd release
+          mapfile -t FILES < <(find . -maxdepth 1 -type f \( -name 'norix-*' -o -name 'SHA256SUMS' \) | sed 's|^\./||' | sort)
+
+          sign_one() {
+            local f="$1"
+            if [[ -n "${COSIGN_KEY:-}" ]]; then
+              printf '%s\n' "${COSIGN_KEY}" > /tmp/cosign.key
+              chmod 600 /tmp/cosign.key
+              cosign sign-blob --yes --key /tmp/cosign.key \
+                --bundle "${f}.cosign.bundle" \
+                "$f"
+              rm -f /tmp/cosign.key
+            else
+              # Keyless Sigstore via Actions OIDC (requires permissions.id-token: write)
+              cosign sign-blob --yes \
+                --bundle "${f}.cosign.bundle" \
+                "$f"
+            fi
+          }
+
+          for f in "${FILES[@]}"; do
+            echo "Signing ${f}"
+            sign_one "$f"
+          done
+          ls -la
+
+      - name: Ensure release tag exists (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ needs.meta.outputs.tag }}"
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q .; then
+            echo "Tag ${TAG} already exists on remote"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "${TAG}" -m "Release ${TAG}"
+            git push origin "refs/tags/${TAG}"
+          fi
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.meta.outputs.tag }}
+          name: Norix ${{ needs.meta.outputs.version }}
+          generate_release_notes: true
+          body: |
+            ## Artifacts
+            Multi-arch Linux binaries (`amd64`, `arm64`) for control-plane, agent, and CLI.
+
+            ## Verify
+            ```bash
+            # Checksums
+            sha256sum -c SHA256SUMS --ignore-missing
+
+            # Cosign (keyless OIDC; identity matches this repo's Actions)
+            cosign verify-blob \
+              --bundle norix-control-plane-linux-amd64.cosign.bundle \
+              --certificate-identity-regexp 'https://github.com/.*/\.github/workflows/release\.yml@.*' \
+              --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+              norix-control-plane-linux-amd64
+            ```
+
+            SBOM: `norix-sbom.tar.gz` (CycloneDX JSON when syft is available; see `scripts/sbom.sh`).
+
+            Permissions used by this workflow: `contents: write`, `id-token: write`.
+          files: |
+            release/norix-*
+            release/SHA256SUMS
+            release/*.cosign.bundle
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -4,6 +4,7 @@ import { DashboardShell } from '../features/dashboard/DashboardShell'
 import { OverviewPage } from '../features/dashboard/OverviewPage'
 import { ProjectsPage } from '../features/projects/components/ProjectsPage'
 import { ProjectDetailPage } from '../features/projects/components/ProjectDetailPage'
+import { ApplicationDetailPage } from '../features/projects/components/ApplicationDetailPage'
 import { NodesPage } from '../features/nodes/components/NodesPage'
 import { DomainsPage } from '../features/domains/components/DomainsPage'
 import { NetworkPage } from '../features/network/components/NetworkPage'
@@ -29,6 +30,7 @@ export function AuthenticatedRoutes({
         <Route path="overview" element={<OverviewPage user={user} />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+        <Route path="projects/:projectId/workloads/:workloadId" element={<ApplicationDetailPage />} />
         <Route path="nodes" element={<NodesPage />} />
         <Route path="domains" element={<DomainsPage />} />
         <Route path="network" element={<NetworkPage />} />

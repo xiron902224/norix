@@ -12,6 +12,8 @@ import (
 	paasv1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
 )
 
+const totpRequiredMessage = "TOTP_REQUIRED: enter your authenticator code"
+
 // AuthService provides authentication and first-admin bootstrap behavior.
 type AuthService struct {
 	appPool         *pgxpool.Pool
@@ -39,9 +41,34 @@ func (service AuthService) Login(ctx context.Context, request *paasv1.LoginReque
 	if err != nil {
 		return nil, connect.NewError(connect.CodeUnauthenticated, "invalid email or password")
 	}
+	if user.PasswordHash == db.SSOPasswordPlaceholder {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "this account uses SSO; sign in with your identity provider")
+	}
 	valid, err := auth.VerifyPassword(request.GetPassword(), user.PasswordHash)
 	if err != nil || !valid {
 		return nil, connect.NewError(connect.CodeUnauthenticated, "invalid email or password")
+	}
+
+	totpEnabled, err := db.UserTOTPEnabled(ctx, service.bootstrapPool, user.OrganizationID, user.ID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, "could not check totp status")
+	}
+	mandatory, err := db.OrganizationMandatory2FA(ctx, service.bootstrapPool, user.OrganizationID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, "could not check organization 2fa policy")
+	}
+	if totpEnabled || mandatory {
+		code := strings.TrimSpace(request.GetTotpCode())
+		if code == "" {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, totpRequiredMessage)
+		}
+		if !totpEnabled {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, "TOTP_ENROLLMENT_REQUIRED: enable authenticator before signing in")
+		}
+		ok, validateErr := db.ValidateUserTOTP(ctx, service.bootstrapPool, user.OrganizationID, user.ID, code)
+		if validateErr != nil || !ok {
+			return nil, connect.NewError(connect.CodeUnauthenticated, "invalid authenticator code")
+		}
 	}
 
 	token, tokenHash, err := auth.NewSessionToken()
@@ -92,6 +119,26 @@ func (service AuthService) RenewSession(ctx context.Context, request *paasv1.Ren
 		return nil, connect.NewError(connect.CodeUnauthenticated, "session is invalid or expired")
 	}
 	return &paasv1.RenewSessionResponse{Token: request.GetToken(), ExpiresAtUnix: expiresAt.Unix()}, nil
+}
+
+func (service AuthService) GetCurrentUser(ctx context.Context, _ *paasv1.GetCurrentUserRequest) (*paasv1.GetCurrentUserResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "session is required")
+	}
+	role := paasv1.Role_ROLE_MEMBER
+	switch identity.Role {
+	case "owner":
+		role = paasv1.Role_ROLE_OWNER
+	case "admin":
+		role = paasv1.Role_ROLE_ADMIN
+	}
+	return &paasv1.GetCurrentUserResponse{User: &paasv1.User{
+		Id:    identity.UserID,
+		Email: identity.Email,
+		Name:  identity.Name,
+		Role:  role,
+	}}, nil
 }
 
 func (service AuthService) GetBootstrapStatus(ctx context.Context, _ *paasv1.GetBootstrapStatusRequest) (*paasv1.GetBootstrapStatusResponse, error) {

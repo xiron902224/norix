@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/xiron902224/norix/control-plane/internal/db"
 )
@@ -35,6 +37,15 @@ func Detect(ctx context.Context) (*Runtime, error) {
 func (runtime *Runtime) Reconcile(ctx context.Context, desired []db.DesiredWorkload) []db.ObservedWorkload {
 	observed := make([]db.ObservedWorkload, 0, len(desired))
 	for _, item := range desired {
+		if !isContainerRuntime(item.Runtime) {
+			observed = append(observed, db.ObservedWorkload{
+				ID: item.ID, Status: "failed", ObservedGeneration: item.DesiredGeneration,
+				HostPort: item.HostPort,
+				Message:  fmt.Sprintf("runtime %q is not reconciled by the container engine; use agent wasm/microvm paths", item.Runtime),
+				LogLines: []string{fmt.Sprintf("skipped non-container runtime=%s", item.Runtime)},
+			})
+			continue
+		}
 		result, err := runtime.reconcileOne(ctx, item)
 		if err != nil {
 			observed = append(observed, db.ObservedWorkload{
@@ -65,10 +76,25 @@ func (runtime *Runtime) reconcileOne(ctx context.Context, desired db.DesiredWork
 		}, nil
 	}
 
+	ensureOnly := desired.Action == "none" || desired.Action == ""
+
 	if existing, ok := runtime.inspectRunning(ctx, name); ok {
 		generation := labelInt64(existing, "norix.generation")
 		image := stringField(existing, "Config", "Image")
 		if generation == desired.DesiredGeneration && imageMatches(image, desired.Image) {
+			if ensureOnly && desired.HostPort > 0 && !tcpOpen(ctx, desired.HostPort) {
+				logs, _ := runtime.logs(ctx, name, 40)
+				_ = runtime.remove(ctx, name)
+				return db.ObservedWorkload{
+					ID:                 desired.ID,
+					Status:             "failed",
+					ContainerID:        stringField(existing, "Id"),
+					ObservedGeneration: desired.DesiredGeneration,
+					HostPort:           desired.HostPort,
+					Message:            fmt.Sprintf("host port :%d not accepting connections", desired.HostPort),
+					LogLines:           logs,
+				}, nil
+			}
 			logs, _ := runtime.logs(ctx, name, 40)
 			return db.ObservedWorkload{
 				ID:                 desired.ID,
@@ -80,10 +106,30 @@ func (runtime *Runtime) reconcileOne(ctx context.Context, desired db.DesiredWork
 			}, nil
 		}
 		_ = runtime.remove(ctx, name)
-	} else {
-		// Remove stopped/created leftovers that block `docker run --name`.
+	} else if info, exists := runtime.inspectAny(ctx, name); exists {
+		// Container present but not healthy. For ensure-only ticks, surface
+		// failure instead of rm/recreate thrashing (which resets RestartCount
+		// and keeps the UI stuck on "running").
+		if ensureOnly {
+			logs, _ := runtime.logs(ctx, name, 40)
+			msg := unhealthyMessage(info)
+			_ = runtime.remove(ctx, name)
+			return db.ObservedWorkload{
+				ID:                 desired.ID,
+				Status:             "failed",
+				ContainerID:        stringField(info, "Id"),
+				ObservedGeneration: desired.DesiredGeneration,
+				HostPort:           desired.HostPort,
+				Message:            msg,
+				LogLines:           logs,
+			}, nil
+		}
+		_ = runtime.remove(ctx, name)
+	} else if !ensureOnly {
+		// Explicit run: clear any name conflict leftovers.
 		_ = runtime.remove(ctx, name)
 	}
+	// ensureOnly + missing container → fall through and recreate (self-heal).
 
 	if err := runtime.pull(ctx, desired.Image); err != nil {
 		return db.ObservedWorkload{}, err
@@ -92,13 +138,51 @@ func (runtime *Runtime) reconcileOne(ctx context.Context, desired db.DesiredWork
 	if err != nil {
 		return db.ObservedWorkload{}, err
 	}
+
+	// Give the process a moment; crash-loops often exit within 1–2s.
+	select {
+	case <-ctx.Done():
+		return db.ObservedWorkload{}, ctx.Err()
+	case <-time.After(2 * time.Second):
+	}
+
+	if settled, ok := runtime.inspectRunning(ctx, name); ok {
+		if desired.HostPort > 0 && !tcpOpen(ctx, desired.HostPort) {
+			logs, _ := runtime.logs(ctx, name, 40)
+			return db.ObservedWorkload{
+				ID:                 desired.ID,
+				Status:             "failed",
+				ContainerID:        stringField(settled, "Id"),
+				ObservedGeneration: desired.DesiredGeneration,
+				HostPort:           desired.HostPort,
+				Message:            fmt.Sprintf("host port :%d not accepting connections", desired.HostPort),
+				LogLines:           logs,
+			}, nil
+		}
+		logs, _ := runtime.logs(ctx, name, 40)
+		return db.ObservedWorkload{
+			ID:                 desired.ID,
+			Status:             "running",
+			ContainerID:        stringField(settled, "Id"),
+			ObservedGeneration: desired.DesiredGeneration,
+			HostPort:           desired.HostPort,
+			LogLines:           logs,
+		}, nil
+	}
+
 	logs, _ := runtime.logs(ctx, name, 40)
+	info, _ := runtime.inspectAny(ctx, name)
+	msg := "container exited or is restarting after start"
+	if info != nil {
+		msg = unhealthyMessage(info)
+	}
 	return db.ObservedWorkload{
 		ID:                 desired.ID,
-		Status:             "running",
+		Status:             "failed",
 		ContainerID:        containerID,
 		ObservedGeneration: desired.DesiredGeneration,
 		HostPort:           desired.HostPort,
+		Message:            msg,
 		LogLines:           logs,
 	}, nil
 }
@@ -126,6 +210,29 @@ func (runtime *Runtime) pull(ctx context.Context, image string) error {
 	return nil
 }
 
+func (runtime *Runtime) ensureNetwork(ctx context.Context, name string) error {
+	if commandOK(ctx, runtime.bin(), "network", "inspect", name) {
+		return nil
+	}
+	cmd := exec.CommandContext(ctx, runtime.bin(), "network", "create", name)
+	if err := cmd.Run(); err != nil {
+		if commandOK(ctx, runtime.bin(), "network", "inspect", name) {
+			return nil
+		}
+		return fmt.Errorf("network create %s: %w", name, err)
+	}
+	return nil
+}
+
+func isContainerRuntime(runtime string) bool {
+	switch strings.ToLower(strings.TrimSpace(runtime)) {
+	case "", "container", "docker-compose", "static-site", "runtime_type_container", "1", "2", "5":
+		return true
+	default:
+		return false
+	}
+}
+
 func (runtime *Runtime) run(ctx context.Context, desired db.DesiredWorkload, name string) (string, error) {
 	port := fmt.Sprintf("%d:%d", desired.HostPort, max32(desired.ContainerPort, 1))
 	memory := fmt.Sprintf("%dm", max64(desired.MemoryLimitMB, 64))
@@ -135,6 +242,16 @@ func (runtime *Runtime) run(ctx context.Context, desired db.DesiredWorkload, nam
 		"--label", fmt.Sprintf("norix.workload_id=%s", desired.ID),
 		"--label", fmt.Sprintf("norix.generation=%d", desired.DesiredGeneration),
 		"--label", fmt.Sprintf("norix.project_id=%s", desired.ProjectID),
+	}
+	if desired.CPUShares > 0 {
+		args = append(args, "--cpu-shares", fmt.Sprintf("%d", desired.CPUShares))
+	}
+	if name := strings.TrimSpace(desired.NetworkName); name != "" {
+		_ = runtime.ensureNetwork(ctx, name)
+		args = append(args, "--network", name)
+		if alias := strings.TrimSpace(desired.NetworkAlias); alias != "" {
+			args = append(args, "--network-alias", alias)
+		}
 	}
 	for key, value := range desired.Environment {
 		args = append(args, "-e", fmt.Sprintf("%s=%s", key, value))
@@ -157,7 +274,7 @@ func (runtime *Runtime) remove(ctx context.Context, name string) error {
 	return nil
 }
 
-func (runtime *Runtime) inspectRunning(ctx context.Context, name string) (map[string]any, bool) {
+func (runtime *Runtime) inspectAny(ctx context.Context, name string) (map[string]any, bool) {
 	cmd := exec.CommandContext(ctx, runtime.bin(), "inspect", name)
 	out, err := cmd.Output()
 	if err != nil {
@@ -167,16 +284,73 @@ func (runtime *Runtime) inspectRunning(ctx context.Context, name string) (map[st
 	if err := json.Unmarshal(out, &parsed); err != nil || len(parsed) == 0 {
 		return nil, false
 	}
-	state, _ := parsed[0]["State"].(map[string]any)
+	return parsed[0], true
+}
+
+func (runtime *Runtime) inspectRunning(ctx context.Context, name string) (map[string]any, bool) {
+	info, ok := runtime.inspectAny(ctx, name)
+	if !ok {
+		return nil, false
+	}
+	state, _ := info["State"].(map[string]any)
 	running, _ := state["Running"].(bool)
 	restarting, _ := state["Restarting"].(bool)
 	oomKilled, _ := state["OOMKilled"].(bool)
 	// Docker reports Running=true while Restarting=true during crash loops;
-	// treat those as not healthy so reconcile recreates / surfaces failure.
+	// treat those as not healthy so reconcile surfaces failure.
 	if !running || restarting || oomKilled {
 		return nil, false
 	}
-	return parsed[0], true
+	return info, true
+}
+
+func tcpOpen(ctx context.Context, port int32) bool {
+	if port <= 0 {
+		return true
+	}
+	dialer := net.Dialer{Timeout: 800 * time.Millisecond}
+	conn, err := dialer.DialContext(ctx, "tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return false
+	}
+	_ = conn.Close()
+	return true
+}
+
+func unhealthyMessage(info map[string]any) string {
+	state, _ := info["State"].(map[string]any)
+	if state == nil {
+		return "container unhealthy"
+	}
+	status, _ := state["Status"].(string)
+	errMsg, _ := state["Error"].(string)
+	exitCode, _ := state["ExitCode"].(float64)
+	restarting, _ := state["Restarting"].(bool)
+	oomKilled, _ := state["OOMKilled"].(bool)
+	restartCount, _ := state["RestartCount"].(float64)
+	parts := []string{}
+	if status != "" {
+		parts = append(parts, "status="+status)
+	}
+	if restarting {
+		parts = append(parts, "restarting")
+	}
+	if oomKilled {
+		parts = append(parts, "oom-killed")
+	}
+	if restartCount > 0 {
+		parts = append(parts, fmt.Sprintf("restarts=%.0f", restartCount))
+	}
+	if exitCode != 0 {
+		parts = append(parts, fmt.Sprintf("exit=%.0f", exitCode))
+	}
+	if errMsg != "" {
+		parts = append(parts, errMsg)
+	}
+	if len(parts) == 0 {
+		return "container unhealthy"
+	}
+	return "container unhealthy: " + strings.Join(parts, " ")
 }
 
 func (runtime *Runtime) logs(ctx context.Context, name string, tail int) ([]string, error) {

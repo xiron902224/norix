@@ -28,11 +28,13 @@ func (runtime *Runtime) ApplyEdge(ctx context.Context, plan db.DesiredEdgePlan) 
 	}
 
 	if err := pingCaddy(ctx, admin); err != nil {
+		msg := fmt.Sprintf("caddy admin unreachable at %s: %v", admin, err)
 		return db.ObservedEdge{
-			Generation: plan.Generation,
-			Status:     "failed",
-			Message:    fmt.Sprintf("caddy admin unreachable at %s: %v", admin, err),
-			LogLines:   append(logs, err.Error()),
+			Generation:    plan.Generation,
+			Status:        "failed",
+			Message:       msg,
+			LogLines:      append(logs, msg),
+			RouteStatuses: failAll(plan, msg),
 		}
 	}
 

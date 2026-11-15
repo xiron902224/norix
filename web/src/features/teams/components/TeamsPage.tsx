@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react'
-import { Download, KeyRound, Shield, Users } from 'lucide-react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { Download, KeyRound, Plus } from 'lucide-react'
 import { Button } from '../../../shared/ui/Button'
-import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
+import { FormField } from '../../../shared/ui/FormField'
+import { PageHero } from '../../../shared/ui/PageHero'
+import { MetricStrip } from '../../../shared/ui/MetricStrip'
+import { ResourceTable, type ResourceRow } from '../../../shared/ui/ResourceTable'
+import { CreateModal } from '../../../shared/ui/Modal'
 import {
   addTeamMember,
   auditExportUrl,
@@ -31,18 +35,34 @@ export function TeamsPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
-  const [newTeamName, setNewTeamName] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [actionBusy, setActionBusy] = useState('')
   const [memberEmail, setMemberEmail] = useState('')
   const [totpSecret, setTotpSecret] = useState('')
   const [totpCode, setTotpCode] = useState('')
-  const [quotaForm, setQuotaForm] = useState({ maxCpu: '4', maxMemoryMb: '8192', maxSandboxes: '5', maxPreviews: '10', maxDiskGb: '50' })
+  const [oidcForm, setOidcForm] = useState({
+    name: 'Local OIDC',
+    issuerUrl: 'http://127.0.0.1:5556/dex',
+    clientId: 'norix-local',
+    clientSecret: '',
+  })
+  const [quotaForm, setQuotaForm] = useState({
+    maxCpu: '4',
+    maxMemoryMb: '8192',
+    maxSandboxes: '5',
+    maxPreviews: '10',
+    maxDiskGb: '50',
+  })
 
   async function refresh(teamId = selectedId) {
     try {
       const [teamList, providers] = await Promise.all([listTeams(), listSSOProviders()])
       setTeams(teamList)
       setSsoProviders(providers.map((p) => ({ id: p.id, name: p.name, kind: p.kind, enabled: p.enabled })))
-      const active = teamId || teamList[0]?.id || ''
+      const active = teamId && teamList.some((t) => t.id === teamId)
+        ? teamId
+        : (teamList[0]?.id || '')
       setSelectedId(active)
       if (active) {
         const snapshot = await getTeamUsage(active)
@@ -54,6 +74,8 @@ export function TeamsPage() {
           maxPreviews: String(snapshot.quota.maxPreviews || 0),
           maxDiskGb: bigintInput(snapshot.quota.maxDiskGb),
         })
+      } else {
+        setUsage(null)
       }
       setError('')
     } catch (cause) {
@@ -67,22 +89,32 @@ export function TeamsPage() {
     void refresh()
   }, [])
 
-  async function onCreateTeam() {
-    if (!newTeamName.trim()) return
+  async function onCreateTeam(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const name = String(form.get('name') ?? '').trim()
+    if (!name) return
+    setBusy(true)
     setNotice('')
+    setError('')
     try {
-      await createTeam(newTeamName.trim(), '')
-      setNewTeamName('')
+      const created = await createTeam(name, '')
+      setModalOpen(false)
       setNotice('Team created')
-      await refresh()
+      await refresh(created?.id)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Create team failed')
+      setError(cause instanceof Error ? cause.message : 'Could not create team')
+    } finally {
+      setBusy(false)
     }
   }
 
-  async function onSaveQuota() {
+  async function onSaveQuota(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     if (!selectedId) return
-  setNotice('')
+    setActionBusy('quota')
+    setNotice('')
+    setError('')
     try {
       await setTeamQuota({
         teamId: selectedId,
@@ -95,192 +127,327 @@ export function TeamsPage() {
       setNotice('Quota updated')
       await refresh(selectedId)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Save quota failed')
+      setError(cause instanceof Error ? cause.message : 'Could not save quota')
+    } finally {
+      setActionBusy('')
     }
   }
 
-  async function onAddMember() {
+  async function onAddMember(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     if (!selectedId || !memberEmail.trim()) return
+    setActionBusy('member')
     setNotice('')
+    setError('')
     try {
       await addTeamMember(selectedId, memberEmail.trim(), 'member')
       setMemberEmail('')
       setNotice('Member added')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Add member failed')
+      setError(cause instanceof Error ? cause.message : 'Could not add member')
+    } finally {
+      setActionBusy('')
     }
   }
 
   async function onUpsertOIDC() {
+    setActionBusy('sso')
     setNotice('')
+    setError('')
     try {
       await upsertSSOProvider({
-        name: 'Local OIDC',
+        name: oidcForm.name.trim() || 'Local OIDC',
         kind: 'oidc',
-        issuerUrl: 'http://127.0.0.1:4180/',
-        clientId: 'norix-local',
+        issuerUrl: oidcForm.issuerUrl.trim(),
+        clientId: oidcForm.clientId.trim(),
+        clientSecret: oidcForm.clientSecret.trim() || undefined,
         enabled: true,
       })
-      setNotice('OIDC provider saved (local stub)')
+      setNotice('OIDC provider saved — use Sign in with SSO on the login page')
+      setOidcForm((prev) => ({ ...prev, clientSecret: '' }))
       await refresh(selectedId)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'SSO update failed')
+      setError(cause instanceof Error ? cause.message : 'Could not update SSO')
+    } finally {
+      setActionBusy('')
     }
   }
 
   async function onEnableTOTP() {
+    setActionBusy('totp')
     setNotice('')
+    setError('')
     try {
       const result = await enableTOTP()
       setTotpSecret(result.secret)
-      setNotice('Scan or copy the TOTP secret, then verify with a 6-digit code')
+      setNotice('Scan or copy the TOTP secret and verify with a 6-digit code')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Enable TOTP failed')
+      setError(cause instanceof Error ? cause.message : 'Could not enable TOTP')
+    } finally {
+      setActionBusy('')
     }
   }
 
   async function onVerifyTOTP() {
+    setActionBusy('verify')
     setNotice('')
+    setError('')
     try {
       const result = await verifyTOTP(totpCode)
       setNotice(result.verified ? '2FA enabled' : 'Verification failed')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Verify TOTP failed')
+      setError(cause instanceof Error ? cause.message : 'Could not verify TOTP')
+    } finally {
+      setActionBusy('')
     }
   }
 
   async function downloadExport(kind: 'audit' | 'usage', format: 'json' | 'csv') {
-    const meta = kind === 'audit' ? auditExportUrl(format) : usageExportUrl(format)
-    const response = await fetch(meta.url, {
-      headers: meta.token ? { Authorization: `Bearer ${meta.token}` } : {},
-    })
-    if (!response.ok) throw new Error(await response.text())
-    const blob = await response.blob()
-    const href = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = href
-    anchor.download = `${kind}-export.${format}`
-    anchor.click()
-    URL.revokeObjectURL(href)
+    setError('')
+    try {
+      const meta = kind === 'audit' ? auditExportUrl(format) : usageExportUrl(format)
+      const response = await fetch(meta.url, {
+        headers: meta.token ? { Authorization: `Bearer ${meta.token}` } : {},
+      })
+      if (!response.ok) throw new Error(await response.text())
+      const blob = await response.blob()
+      const href = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = href
+      anchor.download = `${kind}-export.${format}`
+      anchor.click()
+      URL.revokeObjectURL(href)
+      setNotice(`Export ${kind} (${format}) downloaded`)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Export failed')
+    }
+  }
+
+  async function selectTeam(id: string) {
+    setSelectedId(id)
+    setLoading(true)
+    await refresh(id)
   }
 
   const selected = teams.find((team) => team.id === selectedId)
+  const defaults = teams.filter((team) => team.isDefault).length
+
+  const rows: ResourceRow[] = useMemo(() => teams.map((team) => ({
+    id: team.id,
+    name: team.name,
+    subtitle: team.slug,
+    status: 'active',
+    values: [team.isDefault ? 'yes' : '—'],
+  })), [teams])
 
   return (
-    <div className="page-stack">
-      <header className="page-header">
-        <div>
-          <h1>Teams & quotas</h1>
-          <p>Organization teams, quota limits, SSO, and usage export for billing.</p>
-        </div>
-        <div className="header-actions">
-          <Button variant="secondary" type="button" onClick={() => void downloadExport('audit', 'json')}>
-            <Download size={14} /> Audit JSON
-          </Button>
-          <Button variant="secondary" type="button" onClick={() => void downloadExport('usage', 'csv')}>
-            <Download size={14} /> Usage CSV
-          </Button>
-        </div>
-      </header>
+    <section className="compass-page">
+      <PageHero
+        title="Teams"
+        subtitle="Teams, quotas, SSO, and usage export"
+        actions={(
+          <>
+            <Button variant="secondary" type="button" onClick={() => void downloadExport('audit', 'json')}>
+              <Download size={14} /> Audit JSON
+            </Button>
+            <Button variant="secondary" type="button" onClick={() => void downloadExport('usage', 'csv')}>
+              <Download size={14} /> Usage CSV
+            </Button>
+            <Button type="button" onClick={() => setModalOpen(true)}>
+              <Plus size={14} /> New team
+            </Button>
+          </>
+        )}
+      />
 
       {error ? <div className="error" role="alert">{error}</div> : null}
-      {notice ? <ActivityBanner title={notice} tone="ok" /> : null}
+      {notice ? <div className="compass-notice" role="status">{notice}</div> : null}
 
-      {loading ? (
-        <p className="muted">Loading teams…</p>
-      ) : (
-        <div className="split-panels">
-          <section className="panel">
-            <h2><Users size={16} /> Teams</h2>
-            <ul className="simple-list">
-              {teams.map((team) => (
-                <li key={team.id}>
-                  <button
-                    type="button"
-                    className={team.id === selectedId ? 'list-select active' : 'list-select'}
-                    onClick={() => { setSelectedId(team.id); void refresh(team.id) }}
-                  >
-                    <strong>{team.name}</strong>
-                    <span className="mono">{team.slug}{team.isDefault ? ' · default' : ''}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <div className="form-row" style={{ marginTop: 12 }}>
-              <input value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} placeholder="New team name" />
-              <Button type="button" onClick={() => void onCreateTeam()}>Add team</Button>
-            </div>
-          </section>
+      <MetricStrip
+        items={[
+          { label: 'Teams', value: loading ? '—' : teams.length },
+          { label: 'Default', value: loading ? '—' : defaults },
+          { label: 'SSO', value: loading ? '—' : ssoProviders.length },
+          { label: 'CPU used', value: usage ? String(usage.cpuUsed) : '—' },
+        ]}
+      />
 
-          <section className="panel">
-            <h2>Quota · {selected?.name ?? '—'}</h2>
-            {usage ? (
-              <dl className="kv-grid">
-                <div><dt>CPU used</dt><dd>{usage.cpuUsed}</dd></div>
-                <div><dt>Memory MB</dt><dd>{String(usage.memoryMbUsed)}</dd></div>
-                <div><dt>Sandboxes</dt><dd>{usage.sandboxesUsed}</dd></div>
-                <div><dt>Previews</dt><dd>{usage.previewsUsed}</dd></div>
-                <div><dt>Disk GB</dt><dd>{String(usage.diskGbUsed)}</dd></div>
-              </dl>
-            ) : null}
-            <div className="form-grid" style={{ marginTop: 12 }}>
-              <label>Max vCPU<input value={quotaForm.maxCpu} onChange={(e) => setQuotaForm((v) => ({ ...v, maxCpu: e.target.value }))} /></label>
-              <label>Max RAM MB<input value={quotaForm.maxMemoryMb} onChange={(e) => setQuotaForm((v) => ({ ...v, maxMemoryMb: e.target.value }))} /></label>
-              <label>Max sandboxes<input value={quotaForm.maxSandboxes} onChange={(e) => setQuotaForm((v) => ({ ...v, maxSandboxes: e.target.value }))} /></label>
-              <label>Max previews<input value={quotaForm.maxPreviews} onChange={(e) => setQuotaForm((v) => ({ ...v, maxPreviews: e.target.value }))} /></label>
-              <label>Max disk GB<input value={quotaForm.maxDiskGb} onChange={(e) => setQuotaForm((v) => ({ ...v, maxDiskGb: e.target.value }))} /></label>
-            </div>
-            <Button type="button" onClick={() => void onSaveQuota()} style={{ marginTop: 12 }}>Save quota</Button>
-            <p className="muted" style={{ marginTop: 8 }}>0 = unlimited. Exceeding quota returns FailedPrecondition without affecting other teams.</p>
-          </section>
-
-          <section className="panel">
-            <h2><Shield size={16} /> SSO &amp; 2FA</h2>
-            <p className="muted">Providers: {ssoProviders.length ? ssoProviders.map((p) => `${p.name} (${p.kind})`).join(', ') : 'none'}</p>
-            <Button variant="secondary" type="button" onClick={() => void onUpsertOIDC()}>Save local OIDC stub</Button>
-            <TotpBlock
-              totpSecret={totpSecret}
-              totpCode={totpCode}
-              setTotpCode={setTotpCode}
-              onEnable={() => void onEnableTOTP()}
-              onVerify={() => void onVerifyTOTP()}
-            />
-          </section>
-
-          <section className="panel">
-            <h2>Members</h2>
-            <div className="form-row">
-              <input value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} placeholder="user@example.com" />
-              <Button type="button" onClick={() => void onAddMember()}>Add</Button>
-            </div>
-          </section>
+      <div className="compass-panel">
+        <div className="compass-toolbar">
+          <strong>{loading ? 'Loading…' : `${teams.length} result${teams.length === 1 ? '' : 's'}`}</strong>
         </div>
-      )}
-    </div>
-  )
-}
+        <div className="compass-split">
+          <ResourceTable
+            leadingHeader="Team"
+            headers={['Default']}
+            rows={rows}
+            selectedId={selectedId}
+            onSelect={(row) => void selectTeam(row.id)}
+            empty="No teams. Create one to manage quotas and members."
+          />
+          <aside className="compass-side-panel">
+            {!selected ? (
+              <>
+                <h3>Detail</h3>
+                <p className="muted">Select a team for quota, members, and SSO.</p>
+              </>
+            ) : (
+              <>
+                <h3>{selected.name}</h3>
+                <p className="muted">{selected.slug}{selected.isDefault ? ' · default' : ''}</p>
 
-function TotpBlock({
-  totpSecret,
-  totpCode,
-  setTotpCode,
-  onEnable,
-  onVerify,
-}: {
-  totpSecret: string
-  totpCode: string
-  setTotpCode: (value: string) => void
-  onEnable: () => void
-  onVerify: () => void
-}) {
-  return (
-    <div style={{ marginTop: 12 }}>
-      <Button variant="secondary" type="button" onClick={onEnable}><KeyRound size={14} /> Enable TOTP</Button>
-      {totpSecret ? <p className="mono" style={{ marginTop: 8, wordBreak: 'break-all' }}>{totpSecret}</p> : null}
-      <div className="form-row" style={{ marginTop: 8 }}>
-        <input value={totpCode} onChange={(e) => setTotpCode(e.target.value)} placeholder="123456" />
-        <Button type="button" onClick={onVerify}>Verify</Button>
+                {usage ? (
+                  <dl className="compass-detail-grid" style={{ marginTop: 12 }}>
+                    <div><dt>CPU used</dt><dd>{usage.cpuUsed}</dd></div>
+                    <div><dt>RAM MB</dt><dd>{String(usage.memoryMbUsed)}</dd></div>
+                    <div><dt>Sandboxes</dt><dd>{usage.sandboxesUsed}</dd></div>
+                    <div><dt>Previews</dt><dd>{usage.previewsUsed}</dd></div>
+                    <div><dt>Disk GB</dt><dd>{String(usage.diskGbUsed)}</dd></div>
+                  </dl>
+                ) : null}
+
+                <form className="compass-create-form" style={{ marginTop: 16 }} onSubmit={(event) => void onSaveQuota(event)}>
+                  <h4>Quota</h4>
+                  <FormField
+                    id="quota-cpu"
+                    label="Max vCPU"
+                    value={quotaForm.maxCpu}
+                    onChange={(e) => setQuotaForm((v) => ({ ...v, maxCpu: e.target.value }))}
+                  />
+                  <FormField
+                    id="quota-ram"
+                    label="Max RAM MB"
+                    value={quotaForm.maxMemoryMb}
+                    onChange={(e) => setQuotaForm((v) => ({ ...v, maxMemoryMb: e.target.value }))}
+                  />
+                  <FormField
+                    id="quota-sandboxes"
+                    label="Max sandboxes"
+                    value={quotaForm.maxSandboxes}
+                    onChange={(e) => setQuotaForm((v) => ({ ...v, maxSandboxes: e.target.value }))}
+                  />
+                  <FormField
+                    id="quota-previews"
+                    label="Max previews"
+                    value={quotaForm.maxPreviews}
+                    onChange={(e) => setQuotaForm((v) => ({ ...v, maxPreviews: e.target.value }))}
+                  />
+                  <FormField
+                    id="quota-disk"
+                    label="Max disk GB"
+                    value={quotaForm.maxDiskGb}
+                    onChange={(e) => setQuotaForm((v) => ({ ...v, maxDiskGb: e.target.value }))}
+                  />
+                  <p className="muted">0 = unlimited. Exceeding quota → FailedPrecondition without affecting other teams.</p>
+                  <Button type="submit" disabled={actionBusy === 'quota'}>
+                    {actionBusy === 'quota' ? 'Saving…' : 'Save quota'}
+                  </Button>
+                </form>
+
+                <form className="compass-create-form" style={{ marginTop: 16 }} onSubmit={(event) => void onAddMember(event)}>
+                  <h4>Members</h4>
+                  <FormField
+                    id="team-member"
+                    label="Email"
+                    value={memberEmail}
+                    onChange={(e) => setMemberEmail(e.target.value)}
+                    placeholder="user@example.com"
+                  />
+                  <Button type="submit" disabled={actionBusy === 'member' || !memberEmail.trim()}>
+                    {actionBusy === 'member' ? '…' : 'Add member'}
+                  </Button>
+                </form>
+
+                <div style={{ marginTop: 16 }}>
+                  <h4>SSO and 2FA</h4>
+                  <p className="muted">
+                    Providers: {ssoProviders.length
+                      ? ssoProviders.map((p) => `${p.name} (${p.kind}${p.enabled ? '' : ', off'})`).join(', ')
+                      : 'none'}
+                  </p>
+                  <div className="compass-create-form" style={{ marginTop: 8 }}>
+                    <FormField
+                      id="oidc-name"
+                      label="OIDC name"
+                      value={oidcForm.name}
+                      onChange={(e) => setOidcForm((prev) => ({ ...prev, name: e.target.value }))}
+                    />
+                    <FormField
+                      id="oidc-issuer"
+                      label="Issuer URL"
+                      value={oidcForm.issuerUrl}
+                      onChange={(e) => setOidcForm((prev) => ({ ...prev, issuerUrl: e.target.value }))}
+                      placeholder="http://127.0.0.1:5556/dex"
+                    />
+                    <FormField
+                      id="oidc-client-id"
+                      label="Client ID"
+                      value={oidcForm.clientId}
+                      onChange={(e) => setOidcForm((prev) => ({ ...prev, clientId: e.target.value }))}
+                    />
+                    <FormField
+                      id="oidc-client-secret"
+                      label="Client secret"
+                      type="password"
+                      value={oidcForm.clientSecret}
+                      onChange={(e) => setOidcForm((prev) => ({ ...prev, clientSecret: e.target.value }))}
+                      placeholder="leave blank to keep existing"
+                    />
+                  </div>
+                  <div className="page-actions" style={{ marginTop: 8, flexWrap: 'wrap' }}>
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      disabled={actionBusy === 'sso' || !oidcForm.issuerUrl.trim() || !oidcForm.clientId.trim()}
+                      onClick={() => void onUpsertOIDC()}
+                    >
+                      {actionBusy === 'sso' ? '…' : 'Save OIDC provider'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      disabled={actionBusy === 'totp'}
+                      onClick={() => void onEnableTOTP()}
+                    >
+                      <KeyRound size={14} /> {actionBusy === 'totp' ? '…' : 'Enable TOTP'}
+                    </Button>
+                  </div>
+                  {totpSecret ? (
+                    <p className="mono" style={{ marginTop: 8, wordBreak: 'break-all' }}>{totpSecret}</p>
+                  ) : null}
+                  <div className="compass-create-form" style={{ marginTop: 8 }}>
+                    <FormField
+                      id="totp-code"
+                      label="TOTP code"
+                      value={totpCode}
+                      onChange={(e) => setTotpCode(e.target.value)}
+                      placeholder="123456"
+                    />
+                    <Button
+                      type="button"
+                      disabled={actionBusy === 'verify' || !totpCode.trim()}
+                      onClick={() => void onVerifyTOTP()}
+                    >
+                      {actionBusy === 'verify' ? '…' : 'Verify'}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </aside>
+        </div>
       </div>
-    </div>
+
+      <CreateModal
+        open={modalOpen}
+        title="New team"
+        submitLabel="Create team"
+        busy={busy}
+        onClose={() => setModalOpen(false)}
+        onSubmit={(event) => void onCreateTeam(event)}
+      >
+        <FormField id="team-name" name="name" label="Name" required placeholder="Engineering" />
+      </CreateModal>
+    </section>
   )
 }

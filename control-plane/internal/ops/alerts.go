@@ -19,6 +19,7 @@ func Start(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
 		logger = slog.Default()
 	}
 	go startSandboxGC(ctx, pool, logger)
+	// Telemetry is started separately from main via StartTelemetry.
 	ticker := time.NewTicker(20 * time.Second)
 	defer ticker.Stop()
 	runOnce(ctx, pool, logger)

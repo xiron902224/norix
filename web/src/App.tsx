@@ -59,13 +59,13 @@ function App() {
                         <div className="brand-mark" aria-hidden>
                           <PanelsTopLeft />
                         </div>
-                        <span className="eyebrow">Norix control plane</span>
+                        <span className="eyebrow">norix / control plane</span>
                       </div>
-                      <h1>{configured ? 'Welcome back' : 'Create your administrator'}</h1>
+                      <h1>{configured ? 'Welcome' : 'Create administrator'}</h1>
                       <p>
                         {configured
-                          ? 'Sign in to manage projects, workloads, and your platform.'
-                          : 'This one-time setup creates the first organization and owner account.'}
+                          ? 'Sign in to manage applications, workloads, and the platform.'
+                          : 'One-time setup: first organization and owner account.'}
                       </p>
                       {error && <div className="error" role="alert">{error}</div>}
                       {configured

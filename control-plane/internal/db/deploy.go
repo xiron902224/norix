@@ -23,6 +23,9 @@ type DesiredWorkload struct {
 	ContainerPort     int32
 	DesiredGeneration int64
 	Action            string
+	Runtime           string
+	NetworkName       string
+	NetworkAlias      string
 }
 
 type ObservedWorkload struct {
@@ -58,7 +61,8 @@ func GetWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID s
 		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
 		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
-		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker')
+		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker'),
+		       COALESCE(stack_id::text, ''), COALESCE(compose_service, ''), COALESCE(compose_spec::text, '{}')
 		FROM workloads WHERE id = $1::uuid`, workloadID)
 	if err != nil {
 		return Workload{}, err
@@ -80,6 +84,7 @@ func scanWorkload(ctx context.Context, tx pgx.Tx, query string, args ...any) (Wo
 		&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 		&workload.ReplicaCount, &workload.ScheduleStrategy, &workload.RequireKVM, &workload.PreferredZone,
 		&affinityText, &antiAffinityText, &workload.IsolationMode, &workload.ExecutionRuntime,
+		&workload.StackID, &workload.ComposeService, &workload.ComposeSpecJSON,
 	)
 	if err != nil {
 		return Workload{}, fmt.Errorf("get workload: %w", err)
@@ -150,7 +155,13 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 		       CASE WHEN wr.replica_index = 0 THEN w.name ELSE w.name || '-r' || wr.replica_index::text END,
 		       w.image_or_source, w.env_vars::text,
 		       w.cpu_shares, w.memory_limit_mb, COALESCE(wr.host_port, 0), wr.container_port,
-		       wr.desired_generation, wr.desired_action
+		       wr.desired_generation, wr.desired_action,
+		       COALESCE(NULLIF(w.runtime, ''), 'container'),
+		       CASE
+		         WHEN w.stack_id IS NULL THEN ''
+		         ELSE 'norix-stack-' || substr(replace(w.stack_id::text, '-', ''), 1, 12)
+		       END,
+		       COALESCE(NULLIF(w.compose_service, ''), '')
 		FROM workload_replicas wr
 		JOIN workloads w ON w.id = wr.workload_id
 		WHERE wr.assigned_node_id = $1::uuid
@@ -181,7 +192,8 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 		if err := rows.Scan(
 			&item.ID, &item.ProjectID, &item.Name, &item.Image, &envText,
 			&item.CPUShares, &item.MemoryLimitMB, &item.HostPort, &item.ContainerPort,
-			&item.DesiredGeneration, &item.Action,
+			&item.DesiredGeneration, &item.Action, &item.Runtime,
+			&item.NetworkName, &item.NetworkAlias,
 		); err != nil {
 			return nil, err
 		}

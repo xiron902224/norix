@@ -406,6 +406,21 @@ func ApplyObservedEdge(ctx context.Context, pool *pgxpool.Pool, organizationID s
 		}
 	}
 
+	// Safety net: edge apply failed without per-route statuses (older agents /
+	// ping failures) — don't leave domains sticky as "active".
+	if len(observed.RouteStatuses) == 0 && (status == "failed" || status == "rolled_back") {
+		msg := strings.TrimSpace(observed.Message)
+		if msg == "" {
+			msg = "edge apply failed"
+		}
+		_, _ = tx.Exec(ctx, `
+			UPDATE domain_routes
+			SET status = 'failed', last_error = $2, updated_at = NOW()
+			WHERE organization_id = $1::uuid
+			  AND status IN ('active', 'provisioning', 'pending')`,
+			organizationID, msg)
+	}
+
 	if status == "active" || status == "rolled_back" || status == "failed" {
 		_ = writeAudit(ctx, tx, organizationID, "edge."+status, "edge", fmt.Sprintf("%d", observed.Generation), actor, map[string]string{
 			"message": observed.Message,

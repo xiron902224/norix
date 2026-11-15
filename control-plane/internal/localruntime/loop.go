@@ -149,19 +149,22 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, runtime *Runtime, logger *
 		} else if len(builds) > 0 {
 			logger.Info("running local builds", "org", orgID, "count", len(builds))
 			buildCtx, cancel := context.WithTimeout(ctx, 20*time.Minute)
-			observedBuilds := runtime.RunBuilds(buildCtx, builds, func(buildID, line string) {
-				if err := db.AppendBuildLogLines(ctx, pool, orgID, buildID, []string{line}); err != nil {
-					logger.Debug("append build log", "build", buildID, "error", err)
-				}
-			})
-			cancel()
-			for _, observedBuild := range observedBuilds {
-				// Lines were already streamed live; avoid duplicating in ApplyObservedBuild.
-				observedBuild.LogLines = nil
-				if err := db.ApplyObservedBuild(ctx, pool, orgID, observedBuild, db.AuditActor{Email: "local-runtime"}); err != nil {
-					logger.Warn("apply observed build", "org", orgID, "build", observedBuild.ID, "error", err)
+			// Apply each build as it finishes so sibling compose services can
+			// deploy instead of waiting on the slowest image in the batch.
+			for _, build := range builds {
+				observedBuilds := runtime.RunBuilds(buildCtx, []db.DesiredBuild{build}, func(buildID, line string) {
+					if err := db.AppendBuildLogLines(ctx, pool, orgID, buildID, []string{line}); err != nil {
+						logger.Debug("append build log", "build", buildID, "error", err)
+					}
+				})
+				for _, observedBuild := range observedBuilds {
+					observedBuild.LogLines = nil
+					if err := db.ApplyObservedBuild(ctx, pool, orgID, observedBuild, db.AuditActor{Email: "local-runtime"}); err != nil {
+						logger.Warn("apply observed build", "org", orgID, "build", observedBuild.ID, "error", err)
+					}
 				}
 			}
+			cancel()
 		}
 	}
 }
