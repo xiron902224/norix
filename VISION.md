@@ -3,7 +3,7 @@
 > The self-hosted PaaS with a real scheduler and hard multi-tenant isolation.
 > Not "Docker on one server with a nice UI" — a control plane that places, isolates and reconciles workloads across many nodes.
 
-Status: **1.0.0-beta.3** · Audit date: 2026-11-15 · License: Apache-2.0
+Status: **1.0.0-beta.4** · Audit date: 2026-11-15 · License: Apache-2.0
 Living docs: this file (vision) · [`ISSUES.md`](ISSUES.md) (GitHub backlog triage) · [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) (sprint detail)
 
 ---

@@ -14,7 +14,7 @@ Vision / stages: [`VISION.md`](VISION.md) · Sprint detail: [`docs/ESTADO_Y_PLAN
 
 | | |
 |---|---|
-| Version | `1.0.0-beta.3` |
+| Version | `1.0.0-beta.4` |
 | Default branch | `main` (integration tip) |
 | `develop` | Retired for new work |
 | Stage 0 (trust/safety) | **Still open** — P0 security/docs |
@@ -41,7 +41,7 @@ Plus **good first issue** labels for docs and small defaults.
 |---|---|---|
 | [#59](https://github.com/xiron902224/norix/issues/59) | DeployFromGit opaque `internal` on unschedulable | Same mapping as `Deploy` |
 | [#60](https://github.com/xiron902224/norix/issues/60) | Clear error when no node has Docker/containerd | Lab failure mode |
-| [#62](https://github.com/xiron902224/norix/issues/62) | Publish `v1.0.0-beta.3` GitHub Release | Pins/assets |
+| [#62](https://github.com/xiron902224/norix/issues/62) | Publish `v1.0.0-beta.4` GitHub Release | Pins/assets |
 | [#63](https://github.com/xiron902224/norix/issues/63) | install-agent warn if no runtime socket | Early feedback |
 | [#64](https://github.com/xiron902224/norix/issues/64) | Retire develop / main-only gitflow | Process |
 | [#65](https://github.com/xiron902224/norix/issues/65) | Dashboard i18n (Spanish) | After docs.es |

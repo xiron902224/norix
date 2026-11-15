@@ -37,7 +37,7 @@ issue → branch from main → PR → main → (optional) tag v*
 Rules of thumb:
 
 1. **Always** PR to `main` (not `develop`).
-2. Tag releases from a green `main` only: `v1.0.0-beta.3`, later `v1.0.0`.
+2. Tag releases from a green `main` only: `v1.0.0-beta.4`, later `v1.0.0`.
 3. Pushing a `v*` tag runs `.github/workflows/release.yml`.
 4. Protobuf breaking changes are checked in CI against the PR **base** (`main`).
 
@@ -124,7 +124,7 @@ type(#issue): short imperative summary
 - `fix(#71): show real control-plane and agent versions`
 - `feat(#73): add norix-control-plane update command`
 - `docs: add pull request template`
-- `chore(#62): publish v1.0.0-beta.3 release assets`
+- `chore(#62): publish v1.0.0-beta.4 release assets`
 - `fix(#59): map DeployFromGit unschedulable to FailedPrecondition`
 
 Avoid: vague titles (`update`, `fixes`, `wip`), file dumps (`edit main.go and NodesPage.tsx`), or missing issue when one exists.
