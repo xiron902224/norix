@@ -142,6 +142,25 @@ curl -sf http://127.0.0.1:8000/healthz
 | Builds Git / contenedores | Docker o containerd en **workers** (el CP bare solo no basta) |
 | TLS público | Reverse proxy (Caddy/nginx) → `127.0.0.1:8000` o `HTTP_ADDR=127.0.0.1:8000` |
 
+### Un worker `online` no acepta builds Git
+
+El control plane en modo bare puede funcionar sin Docker. Cada nodo que vaya a
+ejecutar builds Git o contenedores necesita un runtime accesible al agent.
+Un agent sin runtime puede seguir enviando heartbeats y aparecer como `online`,
+pero el scheduler lo descarta con `no container runtime`.
+
+1. Revisa el worker en la respuesta de `AgentService.ListNodes`. Los campos
+   protobuf `capabilities.docker_socket` y `capabilities.containerd_socket` se
+   llaman `dockerSocket` y `containerdSocket` en JSON. La tabla `nodes` almacena
+   los mismos dos indicadores como `docker_socket` y `containerd_socket`.
+2. Si ambos son falsos, instala y activa Docker o un stack de containerd con
+   `nerdctl` en el worker. Comprueba que el usuario del servicio del agent puede
+   ejecutar `docker info` o `nerdctl info`. Para builds con `nerdctl`, comprueba
+   también que [BuildKit esté disponible](https://github.com/containerd/nerdctl/blob/main/docs/build.md).
+3. Reinicia el agent para que vuelva a detectar el runtime. Confirma que el
+   indicador correspondiente esté activo y reintenta el build. Un socket
+   detectado por sí solo no garantiza que el comando de build funcione.
+
 ## Upgrade bare
 
 Re-ejecutar el one-liner (conserva `/etc/norix/control-plane.env`, reemplaza binario tras SHA256).
