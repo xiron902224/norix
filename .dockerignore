@@ -1,0 +1,14 @@
+.git
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/bin
+**/target
+**/*.test
+web/dist
+web/playwright-report
+web/test-results
+docs
+*.md
+!web/README.md

@@ -1,0 +1,7 @@
+bin/
+.git/
+.vscode/
+.idea/
+*.log
+coverage.out
+**/*_test.go

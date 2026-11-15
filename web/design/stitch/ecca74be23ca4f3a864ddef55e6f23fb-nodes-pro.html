@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_dashboard" name="shell-type"/>
+<title>Norix PaaS — Compute Fleet &amp; Topology</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "status-enrolling": "#06B6D4",
+            "surface-tint": "#bbc3ff",
+            "tertiary-fixed": "#70fda7",
+            "surface-dim": "#10141a",
+            "surface-container-highest": "#31353c",
+            "tertiary-fixed-dim": "#51df8e",
+            "on-secondary-container": "#00424e",
+            "surface-container-high": "#262a31",
+            "status-running": "#12B76A",
+            "on-tertiary-fixed": "#00210e",
+            "on-surface-variant": "#c5c5d8",
+            "on-error": "#690005",
+            "background": "#10141a",
+            "on-error-container": "#ffdad6",
+            "surface-light-canvas": "#F8FAFC",
+            "error-container": "#93000a",
+            "on-tertiary-container": "#e3ffe7",
+            "on-secondary-fixed-variant": "#004e5c",
+            "primary-fixed": "#dfe0ff",
+            "surface-dark-overlay": "#21262D",
+            "on-tertiary": "#00391d",
+            "surface-container-low": "#181c22",
+            "inverse-on-surface": "#2d3137",
+            "inverse-surface": "#dfe2eb",
+            "error": "#ffb4ab",
+            "on-primary": "#001b96",
+            "on-secondary": "#003640",
+            "outline-variant": "#444656",
+            "status-degraded": "#F59E0B",
+            "surface-variant": "#31353c",
+            "secondary": "#4cd7f6",
+            "on-surface": "#dfe2eb",
+            "primary-container": "#465fff",
+            "surface-container": "#1c2026",
+            "tertiary": "#51df8e",
+            "inverse-primary": "#2e48eb",
+            "primary": "#bbc3ff",
+            "on-primary-fixed-variant": "#0029d2",
+            "on-background": "#dfe2eb",
+            "surface-light-card": "#FFFFFF",
+            "outline": "#8f8fa2",
+            "primary-fixed-dim": "#bbc3ff",
+            "border-dark": "#30363D",
+            "on-secondary-fixed": "#001f26",
+            "surface-dark-card": "#161B22",
+            "surface-dark-canvas": "#0D1117",
+            "surface-bright": "#353940",
+            "on-tertiary-fixed-variant": "#00522c",
+            "status-stopped": "#64748B",
+            "surface-light-subtle": "#F1F5F9",
+            "tertiary-container": "#008349",
+            "secondary-fixed-dim": "#4cd7f6",
+            "surface": "#10141a",
+            "on-primary-container": "#f9f7ff",
+            "on-primary-fixed": "#000d5f",
+            "border-light": "#E2E8F0",
+            "secondary-fixed": "#acedff",
+            "secondary-container": "#03b5d3",
+            "surface-container-lowest": "#0a0e14",
+            "status-failed": "#EF4444"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0a0e14; }
+    ::-webkit-scrollbar-thumb { background: #30363D; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #444656; }
+  </style>
+</head>
+<body class="bg-surface font-sans text-on-surface antialiased text-[13px] selection:bg-primary-container selection:text-white">
+<!-- Left Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-screen w-64 bg-surface-container-lowest border-r border-border-dark flex flex-col z-50 overflow-hidden">
+<!-- Brand / Cluster Switcher -->
+<div class="p-4 border-b border-border-dark">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-white shadow-sm ring-1 ring-white/20">
+<span class="material-symbols-outlined text-[20px]">token</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="text-base tracking-tight text-on-surface font-bold">Norix</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary text-[10px] font-mono tracking-wider font-semibold">v0.5-beta</span>
+</div>
+</div>
+</div>
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-border-dark hover:border-outline/40 hover:bg-surface-container transition-all text-left group">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-[15px] text-tertiary group-hover:scale-110 transition-transform">cloud</span>
+<div class="truncate">
+<span class="block text-[11px] font-mono text-on-surface truncate">Acme Cloud / Prod</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">unfold_more</span>
+</button>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Overview</div>
+<nav class="space-y-0.5">
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">layers</span>
+<span>Projects &amp; Apps</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Infrastructure</div>
+<nav class="space-y-0.5">
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md bg-primary-container/15 text-primary border border-primary/30 font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">dns</span>
+<span>Compute Nodes</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">memory</span>
+<span>Sandboxes &amp; Micro-VMs</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Traffic &amp; Networking</div>
+<nav class="space-y-0.5">
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">alt_route</span>
+<span>Domains &amp; Edge</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">hub</span>
+<span>WireGuard Mesh</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Operations</div>
+<nav class="space-y-0.5">
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">build_circle</span>
+<span>Builds &amp; CI</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">database</span>
+<span>Backups &amp; Storage</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">receipt_long</span>
+<span>Audit &amp; Activity</span>
+</a>
+</nav>
+</div>
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Settings</div>
+<nav class="space-y-0.5">
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">key</span>
+<span>API Keys &amp; Secrets</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">group</span>
+<span>Team &amp; RBAC</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[17px]">tune</span>
+<span>Cluster Config</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Daemon status pill -->
+<div class="p-3 border-t border-border-dark bg-surface-container-lowest/80 space-y-1.5">
+<div class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span>HTTP/Connect</span>
+<span class="text-status-running">200 OK</span>
+</div>
+<div class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>Postgres 16</span>
+<span class="text-tertiary">Healthy</span>
+</div>
+<div class="pt-1.5 border-t border-border-dark/60 flex items-center justify-between text-[10px] font-mono text-outline">
+<span>AGENT HEARTBEAT</span>
+<span class="text-secondary">1,248 pings/m</span>
+</div>
+</div>
+</aside>
+<!-- Top App Header -->
+<div class="pl-64">
+<header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-dark z-40 px-6 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[17px]">search</span>
+<input class="w-full bg-surface-container-low border border-border-dark rounded-lg px-2.5 pl-8 py-1.5 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all font-mono" placeholder="Search workloads, nodes, commits, routes... [Ctrl+K]" type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="hidden xl:flex items-center gap-1.5 font-mono text-[11px]">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span class="text-on-surface-variant">Nodes:</span>
+<span class="text-on-surface font-semibold">12/12</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-status-enrolling"></span>
+<span class="text-on-surface-variant">Workloads:</span>
+<span class="text-on-surface font-semibold">34</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="text-on-surface-variant">KVM:</span>
+<span class="text-tertiary font-semibold">L2 OK</span>
+</div>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high border border-border-dark text-on-surface text-xs font-medium transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">add</span>
+<span>New Workload</span>
+</button>
+<button aria-label="Notifications" class="relative p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[19px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-status-failed"></span>
+</button>
+<div class="h-4 w-px bg-border-dark"></div>
+<div class="flex items-center gap-2 pl-1">
+<div class="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-mono text-xs font-semibold">
+            DL
+          </div>
+<div class="hidden md:block text-left leading-none">
+<div class="text-[12px] font-semibold text-on-surface">DevOps Lead</div>
+<div class="text-[10px] text-tertiary font-mono mt-0.5">Owner</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="w-full pt-14 bg-surface min-h-screen">
+<div class="max-w-[1600px] mx-auto p-6 space-y-6">
+<!-- Top Context Header & Precision Fleet Capacity Summary -->
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4 pb-1 border-b border-border-dark/60">
+<div class="space-y-1.5">
+<!-- Contextual Breadcrumb -->
+<div class="flex items-center gap-2 text-[11px] font-mono tracking-wider uppercase text-outline">
+<span class="hover:text-on-surface transition-colors cursor-pointer">Infrastructure</span>
+<span>/</span>
+<span class="text-secondary font-semibold flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running animate-ping"></span>
+                Compute Fleet
+              </span>
+</div>
+<h1 class="text-2xl font-bold tracking-tight text-on-surface flex items-center gap-3">
+              Compute Fleet &amp; Topology
+            </h1>
+<p class="text-xs text-on-surface-variant max-w-2xl font-mono">
+              Rust node daemons (<code class="text-secondary">norix-agentd</code>), hardware virtualization detection (KVM L0–L3), and real-time sub-millisecond cluster capacity allocation.
+            </p>
+</div>
+<!-- Capacity Quick Summary Cards & Primary Action -->
+<div class="flex flex-wrap items-center gap-2.5">
+<div class="flex items-center bg-surface-container-low border border-border-dark rounded-xl p-1 shadow-sm divide-x divide-border-dark/70">
+<div class="px-3.5 py-1.5 text-center">
+<div class="text-[10px] font-mono text-outline uppercase font-semibold">Total Nodes</div>
+<div class="text-sm font-mono text-on-surface font-semibold">12</div>
+</div>
+<div class="px-3.5 py-1.5 text-center">
+<div class="text-[10px] font-mono text-outline uppercase font-semibold">Online</div>
+<div class="text-sm font-mono text-status-running font-semibold flex items-center justify-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>12
+                </div>
+</div>
+<div class="px-3.5 py-1.5 text-center">
+<div class="text-[10px] font-mono text-outline uppercase font-semibold">KVM Micro-VM</div>
+<div class="text-sm font-mono text-secondary font-semibold">8 Capable</div>
+</div>
+<div class="px-3.5 py-1.5 text-center">
+<div class="text-[10px] font-mono text-outline uppercase font-semibold">Avg Daemon RAM</div>
+<div class="text-sm font-mono text-tertiary font-semibold flex items-center justify-center gap-1">
+                  38.4 MB <span class="text-[10px] font-mono text-outline font-normal">(&lt;50MB)</span>
+</div>
+</div>
+</div>
+<!-- Prominent Enroll Button -->
+<button class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-fixed text-on-primary font-semibold text-xs transition-all shadow-md shadow-primary/10 active:scale-[0.98]" id="enrollNodeBtn">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>+ Enroll New Node</span>
+</button>
+</div>
+</div>
+<!-- Banner: Zero-Touch Node Join (Collapsible / Dynamic Action Box) -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low border border-border-dark shadow-lg transition-all duration-300" id="joinNodeBanner">
+<div class="absolute -top-24 -right-24 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-24 -left-24 w-80 h-80 bg-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="p-5 border-b border-border-dark/60 bg-gradient-to-r from-surface-container-low via-surface-container-low to-surface-container">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary-container font-mono text-[11px] font-semibold uppercase tracking-wider">
+                    Zero-Touch Node Join
+                  </span>
+<span class="text-on-surface-variant font-mono text-xs flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded border border-border-dark">
+<span class="material-symbols-outlined text-[14px] text-status-degraded">timer</span>
+                    Token expires in <span class="text-on-surface font-semibold ml-0.5" id="tokenTimer">14:52</span>
+</span>
+</div>
+<h2 class="text-base font-semibold text-on-surface tracking-tight">Quick Join Command (install-agent.sh)</h2>
+<p class="text-xs text-on-surface-variant font-mono max-w-3xl">
+                  Installs self-contained Rust daemon binaries, auto-probes <code class="text-secondary">/dev/kvm</code>, validates unified cgroups v2, and triggers ephemeral WireGuard mesh handshake.
+                </p>
+</div>
+<div class="flex items-center gap-2">
+<div class="hidden sm:flex flex-col text-right font-mono text-[11px] pr-2">
+<span class="text-on-surface-variant">Arch: <strong class="text-on-surface">x86_64 / aarch64</strong></span>
+<span class="text-outline">Kernel: Linux ≥ 5.15+</span>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high border border-border-dark text-on-surface text-xs font-mono transition-colors" id="regenTokenBtn">
+<span class="material-symbols-outlined text-[15px] text-secondary">refresh</span>
+<span>Regenerate Token</span>
+</button>
+</div>
+</div>
+<!-- Elevated Code Command Box with Syntax Highlighting -->
+<div class="mt-4 relative rounded-lg bg-surface-container-lowest border border-border-dark p-3 group">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="font-mono text-xs overflow-x-auto py-1 flex items-center gap-2 selection:bg-secondary/30">
+<span class="text-outline select-none font-bold">$</span>
+<span class="text-on-surface whitespace-nowrap" id="agentCmd">
+<span class="text-primary font-medium">curl</span> -fsSL https://get.norix.dev/agent <span class="text-outline">|</span> <span class="text-primary font-medium">sh</span> -s -- --token <span class="text-tertiary">norix_join_98a7df12cb90e4e2</span> --control-plane <span class="text-secondary">https://cp.norix.internal:8443</span>
+</span>
+</div>
+<button class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-container hover:bg-surface-container-high border border-border-dark text-on-surface font-mono text-xs transition-all shadow-sm active:scale-95" id="copyAgentCmd">
+<span class="material-symbols-outlined text-[15px] text-tertiary">content_copy</span>
+<span id="copyText">Copy Payload</span>
+</button>
+</div>
+</div>
+<!-- Verification Chips -->
+<div class="mt-3.5 pt-3 border-t border-border-dark/60 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs font-mono text-on-surface-variant">
+<div class="flex items-center gap-2 bg-surface-container-lowest/60 px-2.5 py-1.5 rounded border border-border-dark/40">
+<span class="material-symbols-outlined text-[16px] text-status-running">lock_reset</span>
+<span class="text-on-surface">Automatic mTLS rot. (24h lifespan)</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-lowest/60 px-2.5 py-1.5 rounded border border-border-dark/40">
+<span class="material-symbols-outlined text-[16px] text-secondary">hardware</span>
+<span class="text-on-surface">KVM hardware autodetection (L0-L3)</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-lowest/60 px-2.5 py-1.5 rounded border border-border-dark/40">
+<span class="material-symbols-outlined text-[16px] text-tertiary">verified_user</span>
+<span class="text-on-surface">Strict cgroups v2 namespace validation</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Registered Compute Fleet Section -->
+<div class="space-y-4">
+<!-- Controls bar: Headline, counter, switcher & filter -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="flex items-center gap-2.5">
+<h2 class="text-lg font-bold text-on-surface tracking-tight">Registered Compute Fleet</h2>
+<span class="px-2 py-0.5 rounded-md bg-surface-container border border-border-dark text-on-surface-variant font-mono text-[11px]">
+                4 Displayed / 12 Active
+              </span>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center bg-surface-container-low border border-border-dark rounded-lg p-0.5 text-xs font-mono">
+<button class="flex items-center gap-1 px-2.5 py-1 rounded bg-primary-container text-on-primary-container font-semibold transition-all" id="gridBtn">
+<span class="material-symbols-outlined text-[14px]">grid_view</span>
+<span>Grid</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface transition-all" id="listBtn">
+<span class="material-symbols-outlined text-[14px]">format_list_bulleted</span>
+<span>List</span>
+</button>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low border border-border-dark text-on-surface-variant hover:text-on-surface text-xs font-mono transition-colors">
+<span class="material-symbols-outlined text-[15px]">filter_list</span>
+<span>Filter Pools</span>
+</button>
+</div>
+</div>
+<!-- Node Cards Grid Layout -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-4" id="fleetContainer">
+<!-- Node 1: Bare-Metal node-us-east-01 -->
+<div class="rounded-xl bg-surface-container-low border border-border-dark p-4 space-y-3.5 shadow-sm hover:border-primary/40 transition-all duration-200">
+<!-- Top Row: Identity & Status -->
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container border border-border-dark flex items-center justify-center text-primary shadow-inner">
+<span class="material-symbols-outlined text-[22px]">dns</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-mono text-sm font-bold text-on-surface">node-us-east-01</span>
+<span class="px-2 py-0.5 rounded-full bg-status-running/15 text-status-running font-mono text-[11px] font-semibold flex items-center gap-1 border border-status-running/30">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span> Online
+                      </span>
+</div>
+<div class="font-mono text-[11px] text-on-surface-variant flex flex-wrap items-center gap-2 mt-0.5">
+<span class="text-on-surface font-medium">Dedicated Bare-Metal</span>
+<span class="text-outline">•</span>
+<span class="text-tertiary">Heartbeat 2s ago</span>
+<span class="text-outline">•</span>
+<span class="text-outline">IP: 10.42.0.14</span>
+</div>
+</div>
+</div>
+<button aria-label="Node options" class="p-1 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Badges & Features -->
+<div class="flex flex-wrap gap-1.5 text-[11px] font-mono">
+<span class="px-2 py-0.5 rounded bg-primary/10 border border-primary/30 text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">bolt</span> KVM Level 3 (Boot 42ms)
+                </span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">AMD EPYC 9354P</span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">cgroups v2</span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">Docker 26.1</span>
+<span class="px-2 py-0.5 rounded bg-secondary/10 border border-secondary/30 text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">hub</span> WireGuard Mesh OK
+                </span>
+</div>
+<!-- Metrics Bars: CPU & RAM -->
+<div class="space-y-2 bg-surface-container/60 border border-border-dark/80 rounded-lg p-3">
+<!-- CPU -->
+<div class="space-y-1">
+<div class="flex justify-between items-center font-mono text-[11px]">
+<span class="text-outline uppercase">CPU (16 Cores AMD EPYC 9354P)</span>
+<span class="text-on-surface font-semibold">32%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-status-running rounded-full" style="width: 32%"></div>
+</div>
+</div>
+<!-- RAM -->
+<div class="space-y-1">
+<div class="flex justify-between items-center font-mono text-[11px]">
+<span class="text-outline uppercase">Memory Allocation</span>
+<span class="text-on-surface font-semibold">18.4 GB / 64 GB (28.7%)</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 28.7%"></div>
+</div>
+</div>
+<!-- Telemetry Pill Footer -->
+<div class="grid grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+<div class="flex items-center justify-between bg-surface-container-low px-2 py-1 rounded border border-border-dark/40">
+<span class="text-outline">NVMe Storage:</span>
+<span class="text-on-surface font-medium">45% used (1.8 TB)</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low px-2 py-1 rounded border border-border-dark/40">
+<span class="text-outline">norix-agentd RSS:</span>
+<span class="text-tertiary font-semibold">34.2 MB</span>
+</div>
+</div>
+</div>
+<!-- Workload count & Action Buttons -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-border-dark/40">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-outline uppercase font-semibold">Workloads (8):</span>
+<div class="flex items-center gap-1 font-mono text-[10px]">
+<span class="px-1.5 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">4 containerd</span>
+<span class="px-1.5 py-0.5 rounded bg-primary/20 border border-primary/40 text-primary">3 Micro-VMs</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary/20 border border-tertiary/40 text-tertiary">1 Wasm</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 self-end sm:self-auto font-mono text-[11px]">
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-on-surface transition-colors">Logs</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-status-degraded transition-colors">Cordon</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-error-container/40 border border-border-dark text-error transition-colors">Drain</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-secondary transition-colors">Live Metrics</button>
+</div>
+</div>
+</div>
+<!-- Node 2: Hetzner Cloud VPS node-eu-west-01 -->
+<div class="rounded-xl bg-surface-container-low border border-border-dark p-4 space-y-3.5 shadow-sm hover:border-secondary/40 transition-all duration-200">
+<!-- Top Row -->
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container border border-border-dark flex items-center justify-center text-secondary shadow-inner">
+<span class="material-symbols-outlined text-[22px]">cloud</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-mono text-sm font-bold text-on-surface">node-eu-west-01</span>
+<span class="px-2 py-0.5 rounded-full bg-status-running/15 text-status-running font-mono text-[11px] font-semibold flex items-center gap-1 border border-status-running/30">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span> Online
+                      </span>
+</div>
+<div class="font-mono text-[11px] text-on-surface-variant flex flex-wrap items-center gap-2 mt-0.5">
+<span class="text-on-surface font-medium">Hetzner AX52 Cloud VPS</span>
+<span class="text-outline">•</span>
+<span class="text-tertiary">Heartbeat 4s ago</span>
+<span class="text-outline">•</span>
+<span class="text-outline">IP: 10.42.1.22</span>
+</div>
+</div>
+</div>
+<button aria-label="Node options" class="p-1 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Badges -->
+<div class="flex flex-wrap gap-1.5 text-[11px] font-mono">
+<span class="px-2 py-0.5 rounded bg-secondary/10 border border-secondary/30 text-secondary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">tune</span> KVM Level 2 (Nested Virt)
+                </span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">8 vCPU Dedicated</span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">cgroups v2</span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">containerd 1.7.13</span>
+</div>
+<!-- Metrics Bars: CPU & RAM -->
+<div class="space-y-2 bg-surface-container/60 border border-border-dark/80 rounded-lg p-3">
+<div class="space-y-1">
+<div class="flex justify-between items-center font-mono text-[11px]">
+<span class="text-outline uppercase">CPU (8 vCPU Virtualized)</span>
+<span class="text-on-surface font-semibold">18%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-status-running rounded-full" style="width: 18%"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between items-center font-mono text-[11px]">
+<span class="text-outline uppercase">Memory Allocation</span>
+<span class="text-on-surface font-semibold">9.1 GB / 32 GB (28.4%)</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 28.4%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+<div class="flex items-center justify-between bg-surface-container-low px-2 py-1 rounded border border-border-dark/40">
+<span class="text-outline">Ceph Block:</span>
+<span class="text-on-surface font-medium">22% (480 GB)</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low px-2 py-1 rounded border border-border-dark/40">
+<span class="text-outline">norix-agentd RSS:</span>
+<span class="text-tertiary font-semibold">31.8 MB</span>
+</div>
+</div>
+</div>
+<!-- Workload count & Action Buttons -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-border-dark/40">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-outline uppercase font-semibold">Workloads (5):</span>
+<div class="flex items-center gap-1 font-mono text-[10px]">
+<span class="px-1.5 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">3 Web apps</span>
+<span class="px-1.5 py-0.5 rounded bg-primary/20 border border-primary/40 text-primary">2 Micro-VMs</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 self-end sm:self-auto font-mono text-[11px]">
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-on-surface transition-colors">Logs</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-status-degraded transition-colors">Cordon</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-error-container/40 border border-border-dark text-error transition-colors">Drain</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-secondary transition-colors">Live Metrics</button>
+</div>
+</div>
+</div>
+<!-- Node 3: Linode Standard VPS - No KVM node-ap-south-01 -->
+<div class="rounded-xl bg-surface-container-low border border-border-dark p-4 space-y-3.5 shadow-sm hover:border-status-degraded/40 transition-all duration-200">
+<!-- Top Row -->
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container border border-border-dark flex items-center justify-center text-status-degraded shadow-inner">
+<span class="material-symbols-outlined text-[22px]">terminal</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-mono text-sm font-bold text-on-surface">node-ap-south-01</span>
+<span class="px-2 py-0.5 rounded-full bg-status-running/15 text-status-running font-mono text-[11px] font-semibold flex items-center gap-1 border border-status-running/30">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span> Online
+                      </span>
+</div>
+<div class="font-mono text-[11px] text-on-surface-variant flex flex-wrap items-center gap-2 mt-0.5">
+<span class="text-on-surface font-medium">Standard VPS (Mumbai Linode)</span>
+<span class="text-outline">•</span>
+<span class="text-tertiary">Heartbeat 1s ago</span>
+<span class="text-outline">•</span>
+<span class="text-outline">IP: 10.42.2.89</span>
+</div>
+</div>
+</div>
+<button aria-label="Node options" class="p-1 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Badges & Clear Warning Notice -->
+<div class="space-y-2">
+<div class="flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
+<span class="px-2 py-0.5 rounded bg-status-degraded/15 border border-status-degraded/30 text-status-degraded font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">warning</span> KVM Level 0: Missing /dev/kvm
+                  </span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">containerd Ready</span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">Wasmtime 18.0</span>
+</div>
+<div class="bg-status-degraded/10 border border-status-degraded/30 rounded-md px-2.5 py-1.5 font-mono text-[11px] text-status-degraded flex items-center gap-2">
+<span class="material-symbols-outlined text-[15px] shrink-0">info</span>
+<span>Scheduler enforces: <code class="text-on-surface font-semibold">container/wasm only</code> (No Micro-VM schedule)</span>
+</div>
+</div>
+<!-- Metrics Bars: CPU & RAM -->
+<div class="space-y-2 bg-surface-container/60 border border-border-dark/80 rounded-lg p-3">
+<div class="space-y-1">
+<div class="flex justify-between items-center font-mono text-[11px]">
+<span class="text-outline uppercase">CPU (4 vCPU Shared)</span>
+<span class="text-on-surface font-semibold">48%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-status-degraded rounded-full" style="width: 48%"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between items-center font-mono text-[11px]">
+<span class="text-outline uppercase">Memory Allocation</span>
+<span class="text-on-surface font-semibold">5.8 GB / 16 GB (36.2%)</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 36.2%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+<div class="flex items-center justify-between bg-surface-container-low px-2 py-1 rounded border border-border-dark/40">
+<span class="text-outline">SSD Storage:</span>
+<span class="text-on-surface font-medium">58% (120 GB)</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low px-2 py-1 rounded border border-border-dark/40">
+<span class="text-outline">norix-agentd RSS:</span>
+<span class="text-tertiary font-semibold">28.9 MB</span>
+</div>
+</div>
+</div>
+<!-- Workload count & Action Buttons -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-border-dark/40">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-outline uppercase font-semibold">Workloads (6):</span>
+<div class="flex items-center gap-1 font-mono text-[10px]">
+<span class="px-1.5 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">4 containers</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary/20 border border-tertiary/40 text-tertiary">2 Wasm workers</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 self-end sm:self-auto font-mono text-[11px]">
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-on-surface transition-colors">Logs</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-status-degraded transition-colors">Cordon</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-error-container/40 border border-border-dark text-error transition-colors">Drain</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-secondary transition-colors">Live Metrics</button>
+</div>
+</div>
+</div>
+<!-- Node 4: Edge Proxy Node node-edge-lon-01 -->
+<div class="rounded-xl bg-surface-container-low border border-border-dark p-4 space-y-3.5 shadow-sm hover:border-status-enrolling/40 transition-all duration-200">
+<!-- Top Row -->
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container border border-border-dark flex items-center justify-center text-status-enrolling shadow-inner">
+<span class="material-symbols-outlined text-[22px]">alt_route</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-mono text-sm font-bold text-on-surface">node-edge-lon-01</span>
+<span class="px-2 py-0.5 rounded-full bg-status-running/15 text-status-running font-mono text-[11px] font-semibold flex items-center gap-1 border border-status-running/30">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span> Online
+                      </span>
+</div>
+<div class="font-mono text-[11px] text-on-surface-variant flex flex-wrap items-center gap-2 mt-0.5">
+<span class="text-on-surface font-medium">Edge Gateway (Caddy Dynamic Reverse Proxy)</span>
+<span class="text-outline">•</span>
+<span class="text-tertiary">Heartbeat 1s ago</span>
+<span class="text-outline">•</span>
+<span class="text-outline">IP: 185.120.44.11</span>
+</div>
+</div>
+</div>
+<button aria-label="Node options" class="p-1 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Badges -->
+<div class="flex flex-wrap gap-1.5 text-[11px] font-mono">
+<span class="px-2 py-0.5 rounded bg-primary/10 border border-primary/30 text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">api</span> Caddy Dynamic API (HTTP/3)
+                </span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">Let's Encrypt / Pebble</span>
+<span class="px-2 py-0.5 rounded bg-secondary/10 border border-secondary/30 text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">shield</span> WireGuard Mesh Gateway
+                </span>
+</div>
+<!-- Metrics Bars: CPU & RAM -->
+<div class="space-y-2 bg-surface-container/60 border border-border-dark/80 rounded-lg p-3">
+<div class="space-y-1">
+<div class="flex justify-between items-center font-mono text-[11px]">
+<span class="text-outline uppercase">CPU (4 Cores Xeon E3)</span>
+<span class="text-on-surface font-semibold">12%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-status-running rounded-full" style="width: 12%"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between items-center font-mono text-[11px]">
+<span class="text-outline uppercase">Memory Allocation</span>
+<span class="text-on-surface font-semibold">3.2 GB / 16 GB (20.0%)</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 20%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+<div class="flex items-center justify-between bg-surface-container-low px-2 py-1 rounded border border-border-dark/40">
+<span class="text-outline">Managed TLS Certs:</span>
+<span class="text-tertiary font-semibold">48 domains live</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low px-2 py-1 rounded border border-border-dark/40">
+<span class="text-outline">norix-agentd RSS:</span>
+<span class="text-tertiary font-semibold">24.1 MB</span>
+</div>
+</div>
+</div>
+<!-- Routing Segment & Actions -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-border-dark/40">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-outline uppercase font-semibold">Edge Routing:</span>
+<div class="flex items-center gap-1 font-mono text-[10px]">
+<span class="px-1.5 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface">1,420 req/s</span>
+<span class="px-1.5 py-0.5 rounded bg-secondary/20 border border-secondary/40 text-secondary">0 TLS handshakes fail</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 self-end sm:self-auto font-mono text-[11px]">
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-on-surface transition-colors">Logs</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-status-degraded transition-colors">Cordon</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-error-container/40 border border-border-dark text-error transition-colors">Drain</button>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-secondary transition-colors">Live Metrics</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section: Live Agent gRPC Streams & Health Telemetry -->
+<div class="rounded-xl bg-surface-container-low border border-border-dark shadow-sm p-4 space-y-3.5">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="space-y-0.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-tertiary">monitor_heart</span>
+<h3 class="text-sm font-bold text-on-surface tracking-tight">Live Agent gRPC Streams &amp; Health Telemetry</h3>
+</div>
+<p class="text-xs text-on-surface-variant font-mono">
+                Real-time tonic gRPC bidirectional streams, mTLS lease rotations, and heartbeat loss failsafes.
+              </p>
+</div>
+<!-- PagerDuty notification pill -->
+<div class="flex items-center gap-2 px-3 py-1 rounded-lg bg-surface-container border border-border-dark font-mono text-[11px]">
+<span class="w-2 h-2 rounded-full bg-status-running animate-pulse"></span>
+<span class="text-on-surface-variant">45s Stale Failover:</span>
+<span class="text-secondary font-semibold">Active • pagerduty-prod-ops</span>
+</div>
+</div>
+<!-- Network Telemetry Table -->
+<div class="overflow-x-auto rounded-lg border border-border-dark bg-surface-container-lowest">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-border-dark text-outline font-mono text-[10px] uppercase tracking-wider">
+<th class="py-2.5 px-4 font-semibold">Node ID &amp; Address</th>
+<th class="py-2.5 px-4 font-semibold">gRPC Stream Transport</th>
+<th class="py-2.5 px-4 font-semibold">Round-Trip RTT</th>
+<th class="py-2.5 px-4 font-semibold">mTLS Cert Lifespan</th>
+<th class="py-2.5 px-4 font-semibold">Stale Failover Threshold</th>
+<th class="py-2.5 px-4 font-semibold text-right">Quick Diagnostics</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-dark/60 font-mono text-xs text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-4">
+<div class="font-semibold text-on-surface">node-us-east-01</div>
+<div class="text-[11px] text-outline">10.42.0.14:9290</div>
+</td>
+<td class="py-2.5 px-4">
+<span class="inline-flex items-center gap-1.5 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span> tonic::Transport::Connected
+                    </span>
+</td>
+<td class="py-2.5 px-4 text-secondary font-medium">
+                    3.8 ms <span class="text-outline text-[11px]">(±0.2ms)</span>
+</td>
+<td class="py-2.5 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface text-[11px]">Rotates in 18h 42m</span>
+</td>
+<td class="py-2.5 px-4 text-outline text-[11px]">
+                    45s heartbeat window (0 dropped)
+                  </td>
+<td class="py-2.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-primary hover:underline text-[11px] transition-colors">Ping Stream</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-4">
+<div class="font-semibold text-on-surface">node-eu-west-01</div>
+<div class="text-[11px] text-outline">10.42.1.22:9290</div>
+</td>
+<td class="py-2.5 px-4">
+<span class="inline-flex items-center gap-1.5 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span> tonic::Transport::Connected
+                    </span>
+</td>
+<td class="py-2.5 px-4 text-secondary font-medium">
+                    14.2 ms <span class="text-outline text-[11px]">(±0.8ms)</span>
+</td>
+<td class="py-2.5 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface text-[11px]">Rotates in 21h 05m</span>
+</td>
+<td class="py-2.5 px-4 text-outline text-[11px]">
+                    45s heartbeat window (0 dropped)
+                  </td>
+<td class="py-2.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-primary hover:underline text-[11px] transition-colors">Ping Stream</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-4">
+<div class="font-semibold text-on-surface">node-ap-south-01</div>
+<div class="text-[11px] text-outline">10.42.2.89:9290</div>
+</td>
+<td class="py-2.5 px-4">
+<span class="inline-flex items-center gap-1.5 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span> tonic::Transport::Connected
+                    </span>
+</td>
+<td class="py-2.5 px-4 text-secondary font-medium">
+                    64.1 ms <span class="text-outline text-[11px]">(±1.4ms)</span>
+</td>
+<td class="py-2.5 px-4">
+<span class="px-2 py-0.5 rounded bg-status-degraded/15 border border-status-degraded/30 text-status-degraded text-[11px]">Rotates in 2h 11m</span>
+</td>
+<td class="py-2.5 px-4 text-outline text-[11px]">
+                    45s heartbeat window (0 dropped)
+                  </td>
+<td class="py-2.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-primary hover:underline text-[11px] transition-colors">Ping Stream</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="py-2.5 px-4">
+<div class="font-semibold text-on-surface">node-edge-lon-01</div>
+<div class="text-[11px] text-outline">185.120.44.11:9290</div>
+</td>
+<td class="py-2.5 px-4">
+<span class="inline-flex items-center gap-1.5 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span> tonic::Transport::Connected
+                    </span>
+</td>
+<td class="py-2.5 px-4 text-secondary font-medium">
+                    6.5 ms <span class="text-outline text-[11px]">(±0.1ms)</span>
+</td>
+<td class="py-2.5 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container border border-border-dark text-on-surface text-[11px]">Rotates in 11h 50m</span>
+</td>
+<td class="py-2.5 px-4 text-outline text-[11px]">
+                    45s heartbeat window (0 dropped)
+                  </td>
+<td class="py-2.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-border-dark text-primary hover:underline text-[11px] transition-colors">Ping Stream</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Interactive JavaScript Logic -->
+<script>
+    (function() {
+      const copyAgentCmd = document.getElementById('copyAgentCmd');
+      const agentCmd = document.getElementById('agentCmd');
+      const copyText = document.getElementById('copyText');
+      const regenTokenBtn = document.getElementById('regenTokenBtn');
+      const tokenTimer = document.getElementById('tokenTimer');
+      const enrollNodeBtn = document.getElementById('enrollNodeBtn');
+      const joinNodeBanner = document.getElementById('joinNodeBanner');
+      const gridBtn = document.getElementById('gridBtn');
+      const listBtn = document.getElementById('listBtn');
+      const fleetContainer = document.getElementById('fleetContainer');
+
+      // Copy command functionality
+      if (copyAgentCmd) {
+        copyAgentCmd.addEventListener('click', () => {
+          const rawCommand = "curl -fsSL https://get.norix.dev/agent | sh -s -- --token norix_join_98a7df12cb90e4e2 --control-plane https://cp.norix.internal:8443";
+          navigator.clipboard.writeText(rawCommand).then(() => {
+            copyText.textContent = 'Copied!';
+            copyAgentCmd.classList.add('bg-tertiary/20', 'border-tertiary/50');
+            setTimeout(() => {
+              copyText.textContent = 'Copy Payload';
+              copyAgentCmd.classList.remove('bg-tertiary/20', 'border-tertiary/50');
+            }, 2000);
+          });
+        });
+      }
+
+      // Regenerate token simulation
+      if (regenTokenBtn) {
+        regenTokenBtn.addEventListener('click', () => {
+          const hex = Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+          agentCmd.innerHTML = `<span class="text-primary font-medium">curl</span> -fsSL https://get.norix.dev/agent <span class="text-outline">|</span> <span class="text-primary font-medium">sh</span> -s -- --token <span class="text-tertiary">norix_join_${hex}</span> --control-plane <span class="text-secondary">https://cp.norix.internal:8443</span>`;
+          tokenTimer.textContent = '15:00';
+          tokenTimer.classList.add('text-secondary');
+          setTimeout(() => tokenTimer.classList.remove('text-secondary'), 800);
+        });
+      }
+
+      // Smooth scroll & highlight to Zero-Touch Join Banner when clicking "+ Enroll New Node"
+      if (enrollNodeBtn && joinNodeBanner) {
+        enrollNodeBtn.addEventListener('click', () => {
+          joinNodeBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          joinNodeBanner.classList.add('ring-2', 'ring-primary', 'shadow-2xl');
+          setTimeout(() => {
+            joinNodeBanner.classList.remove('ring-2', 'ring-primary', 'shadow-2xl');
+          }, 1500);
+        });
+      }
+
+      // Switcher Grid / List toggling
+      if (gridBtn && listBtn && fleetContainer) {
+        gridBtn.addEventListener('click', () => {
+          fleetContainer.className = "grid grid-cols-1 xl:grid-cols-2 gap-4";
+          gridBtn.className = "flex items-center gap-1 px-2.5 py-1 rounded bg-primary-container text-on-primary-container font-semibold transition-all";
+          listBtn.className = "flex items-center gap-1 px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface transition-all";
+        });
+        listBtn.addEventListener('click', () => {
+          fleetContainer.className = "grid grid-cols-1 gap-4";
+          listBtn.className = "flex items-center gap-1 px-2.5 py-1 rounded bg-primary-container text-on-primary-container font-semibold transition-all";
+          gridBtn.className = "flex items-center gap-1 px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface transition-all";
+        });
+      }
+
+      // Live countdown simulation for token timer
+      let timeLeft = 14 * 60 + 52;
+      setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+          const s = (timeLeft % 60).toString().padStart(2, '0');
+          if (tokenTimer) tokenTimer.textContent = `${m}:${s}`;
+        }
+      }, 1000);
+    })();
+  </script>
+</body></html>

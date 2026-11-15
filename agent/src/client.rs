@@ -1,0 +1,624 @@
+use anyhow::{anyhow, bail, Context, Result};
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::HashMap;
+
+use crate::capabilities::Capabilities;
+use crate::proto_num::{deserialize_i32, deserialize_i64};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NodeState {
+    pub node_id: String,
+    pub node_token: String,
+    pub organization_id: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredWorkload {
+    pub id: String,
+    #[serde(default)]
+    pub project_id: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub image: String,
+    #[serde(default)]
+    pub env_vars: HashMap<String, String>,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub cpu_shares: i32,
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub memory_limit_mb: i64,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub host_port: i32,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub container_port: i32,
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub desired_generation: i64,
+    #[serde(default)]
+    pub action: String,
+    /// container | docker-compose | microvm | wasm | static-site
+    #[serde(default)]
+    pub runtime: String,
+    #[serde(default)]
+    pub network_name: String,
+    #[serde(default)]
+    pub network_alias: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedWorkload {
+    pub id: String,
+    pub status: String,
+    pub container_id: String,
+    pub observed_generation: i64,
+    pub message: String,
+    pub host_port: i32,
+    pub log_lines: Vec<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EnrollRequest<'a> {
+    join_token: &'a str,
+    node_name: &'a str,
+    capabilities: &'a Capabilities,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EnrollResponse {
+    node_id: String,
+    node_token: String,
+    organization_id: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HeartbeatRequest<'a> {
+    node_id: &'a str,
+    cpu_usage_percent: f64,
+    memory_free_mb: i64,
+    status: &'a str,
+    capabilities: &'a Capabilities,
+    #[serde(default)]
+    running_workload_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredBuild {
+    pub id: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub workload_id: String,
+    #[serde(default)]
+    pub git_url: String,
+    #[serde(default)]
+    pub git_ref: String,
+    #[serde(default)]
+    pub dockerfile_path: String,
+    #[serde(default)]
+    pub image_tag: String,
+    #[serde(default)]
+    pub build_args: HashMap<String, String>,
+    #[serde(default)]
+    pub registry: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedBuild {
+    pub id: String,
+    pub status: String,
+    pub image: String,
+    pub message: String,
+    pub log_lines: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredEdgeRoute {
+    #[serde(default)]
+    pub domain_id: String,
+    #[serde(default)]
+    pub hostname: String,
+    #[serde(default)]
+    pub upstream: String,
+    #[serde(default)]
+    pub tls_mode: String,
+    #[allow(dead_code)]
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub edge_generation: i64,
+    #[serde(default)]
+    pub action: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredEdgePlan {
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub generation: i64,
+    #[serde(default)]
+    pub routes: Vec<DesiredEdgeRoute>,
+    #[serde(default)]
+    pub acme_ca: String,
+    #[serde(default)]
+    pub caddy_admin_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedEdge {
+    pub generation: i64,
+    pub status: String,
+    pub message: String,
+    pub log_lines: Vec<String>,
+    pub route_statuses: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredNetworkPeer {
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub node_id: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub node_name: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub public_key: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub address: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub endpoint: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub allowed_ips: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredNetworkDNSRecord {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default, rename = "type")]
+    pub r#type: String,
+    #[serde(default)]
+    pub value: String,
+    #[allow(dead_code)]
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub ttl_seconds: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredNetworkCertificate {
+    #[serde(default)]
+    pub hostname: String,
+    #[serde(default)]
+    pub cert_pem: String,
+    #[serde(default)]
+    pub key_pem: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub not_after: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub issuer: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredNetworkPlan {
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub generation: i64,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub interface: String,
+    #[serde(default)]
+    pub address: String,
+    #[allow(dead_code)]
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub listen_port: i32,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub private_key: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub public_key: String,
+    #[serde(default)]
+    pub peers: Vec<DesiredNetworkPeer>,
+    #[serde(default)]
+    pub dns_records: Vec<DesiredNetworkDNSRecord>,
+    #[serde(default)]
+    pub nftables: String,
+    #[serde(default)]
+    pub wg_config: String,
+    #[serde(default)]
+    pub certificates: Vec<DesiredNetworkCertificate>,
+    #[serde(default)]
+    pub apply: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedNetwork {
+    pub generation: i64,
+    pub status: String,
+    pub message: String,
+    pub log_lines: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredWasmFunction {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub project_id: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub image_ref: String,
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub fuel_limit: i64,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub memory_limit_mb: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredWasmPlan {
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub generation: i64,
+    #[serde(default)]
+    pub functions: Vec<DesiredWasmFunction>,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedWasmFunction {
+    pub id: String,
+    pub status: String,
+    pub message: String,
+    pub artifact_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedWasm {
+    pub generation: i64,
+    pub status: String,
+    pub message: String,
+    pub log_lines: Vec<String>,
+    pub functions: Vec<ObservedWasmFunction>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct HeartbeatResult {
+    pub desired_workloads: Vec<DesiredWorkload>,
+    pub desired_builds: Vec<DesiredBuild>,
+    pub desired_edge: Option<DesiredEdgePlan>,
+    pub desired_network: Option<DesiredNetworkPlan>,
+    pub desired_wasm: Option<DesiredWasmPlan>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HeartbeatResponse {
+    #[serde(default)]
+    #[allow(dead_code)]
+    node_id: String,
+    #[serde(default)]
+    desired_workloads: Vec<DesiredWorkload>,
+    #[serde(default)]
+    desired_builds: Vec<DesiredBuild>,
+    #[serde(default)]
+    desired_edge: Option<DesiredEdgePlan>,
+    #[serde(default)]
+    desired_network: Option<DesiredNetworkPlan>,
+    #[serde(default)]
+    desired_wasm: Option<DesiredWasmPlan>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ReportObservedRequest<'a> {
+    node_id: &'a str,
+    workloads: &'a [ObservedWorkload],
+}
+
+#[derive(Clone)]
+pub struct AgentClient {
+    http: Client,
+    api_base: String,
+}
+
+impl AgentClient {
+    pub fn new(api_base: String) -> Result<Self> {
+        let http = Client::builder()
+            .user_agent(format!("norix-agent/{}", env!("CARGO_PKG_VERSION")))
+            .timeout(std::time::Duration::from_secs(60))
+            .build()
+            .context("build http client")?;
+        Ok(Self { http, api_base })
+    }
+
+    pub async fn enroll(
+        &self,
+        join_token: &str,
+        node_name: &str,
+        capabilities: &Capabilities,
+    ) -> Result<NodeState> {
+        let body = EnrollRequest {
+            join_token,
+            node_name,
+            capabilities,
+        };
+        let response = self
+            .post_json("/v1.AgentService/EnrollNode", None, &body)
+            .await?;
+        let parsed: EnrollResponse =
+            serde_json::from_value(response).context("decode enroll response")?;
+        Ok(NodeState {
+            node_id: parsed.node_id,
+            node_token: parsed.node_token,
+            organization_id: parsed.organization_id,
+        })
+    }
+
+    pub async fn heartbeat(
+        &self,
+        state: &NodeState,
+        capabilities: &Capabilities,
+        memory_free_mb: i64,
+        cpu_usage_percent: f64,
+        running_workload_ids: Vec<String>,
+    ) -> Result<HeartbeatResult> {
+        let body = HeartbeatRequest {
+            node_id: &state.node_id,
+            cpu_usage_percent,
+            memory_free_mb,
+            status: "online",
+            capabilities,
+            running_workload_ids,
+        };
+        let response = self
+            .post_json("/v1.AgentService/Heartbeat", Some(&state.node_token), &body)
+            .await?;
+        match serde_json::from_value::<HeartbeatResponse>(response.clone()) {
+            Ok(parsed) => Ok(HeartbeatResult {
+                desired_workloads: parsed.desired_workloads,
+                desired_builds: parsed.desired_builds,
+                desired_edge: parsed.desired_edge,
+                desired_network: parsed.desired_network.filter(|plan| plan.generation > 0),
+                desired_wasm: parsed
+                    .desired_wasm
+                    .filter(|plan| !plan.functions.is_empty()),
+            }),
+            Err(error) => {
+                let mut result = HeartbeatResult::default();
+                if let Some(items) = response
+                    .get("desiredWorkloads")
+                    .or_else(|| response.get("desired_workloads"))
+                    .and_then(|value| value.as_array())
+                {
+                    for item in items {
+                        match serde_json::from_value::<DesiredWorkload>(item.clone()) {
+                            Ok(workload) => result.desired_workloads.push(workload),
+                            Err(item_error) => {
+                                tracing::warn!(%item_error, item = %item, "skip undecodable desired workload");
+                            }
+                        }
+                    }
+                }
+                if let Some(items) = response
+                    .get("desiredBuilds")
+                    .or_else(|| response.get("desired_builds"))
+                    .and_then(|value| value.as_array())
+                {
+                    for item in items {
+                        match serde_json::from_value::<DesiredBuild>(item.clone()) {
+                            Ok(build) => result.desired_builds.push(build),
+                            Err(item_error) => {
+                                tracing::warn!(%item_error, item = %item, "skip undecodable desired build");
+                            }
+                        }
+                    }
+                }
+                if let Some(edge) = response
+                    .get("desiredEdge")
+                    .or_else(|| response.get("desired_edge"))
+                {
+                    if let Ok(parsed) = serde_json::from_value::<DesiredEdgePlan>(edge.clone()) {
+                        if parsed.generation > 0 {
+                            result.desired_edge = Some(parsed);
+                        }
+                    }
+                }
+                if let Some(network) = response
+                    .get("desiredNetwork")
+                    .or_else(|| response.get("desired_network"))
+                {
+                    if let Ok(parsed) =
+                        serde_json::from_value::<DesiredNetworkPlan>(network.clone())
+                    {
+                        if parsed.generation > 0 {
+                            result.desired_network = Some(parsed);
+                        }
+                    }
+                }
+                if let Some(wasm) = response
+                    .get("desiredWasm")
+                    .or_else(|| response.get("desired_wasm"))
+                {
+                    if let Ok(parsed) = serde_json::from_value::<DesiredWasmPlan>(wasm.clone()) {
+                        if !parsed.functions.is_empty() {
+                            result.desired_wasm = Some(parsed);
+                        }
+                    }
+                }
+                if result.desired_workloads.is_empty()
+                    && result.desired_builds.is_empty()
+                    && result.desired_edge.is_none()
+                    && result.desired_network.is_none()
+                    && result.desired_wasm.is_none()
+                {
+                    tracing::warn!(%error, body = %response, "heartbeat decode partial; treating desired as empty");
+                }
+                Ok(result)
+            }
+        }
+    }
+
+    pub async fn report_wasm(&self, state: &NodeState, wasm: &ObservedWasm) -> Result<()> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body<'a> {
+            node_id: &'a str,
+            wasm: &'a ObservedWasm,
+        }
+        let body = Body {
+            node_id: &state.node_id,
+            wasm,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportWasm",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn report_edge(&self, state: &NodeState, edge: &ObservedEdge) -> Result<()> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body<'a> {
+            node_id: &'a str,
+            edge: &'a ObservedEdge,
+        }
+        let body = Body {
+            node_id: &state.node_id,
+            edge,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportEdge",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn report_network(&self, state: &NodeState, network: &ObservedNetwork) -> Result<()> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body<'a> {
+            node_id: &'a str,
+            network: &'a ObservedNetwork,
+        }
+        let body = Body {
+            node_id: &state.node_id,
+            network,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportNetwork",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn report_observed(
+        &self,
+        state: &NodeState,
+        workloads: &[ObservedWorkload],
+    ) -> Result<()> {
+        if workloads.is_empty() {
+            return Ok(());
+        }
+        let body = ReportObservedRequest {
+            node_id: &state.node_id,
+            workloads,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportObserved",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn report_build(&self, state: &NodeState, build: &ObservedBuild) -> Result<()> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body<'a> {
+            node_id: &'a str,
+            build: &'a ObservedBuild,
+        }
+        let body = Body {
+            node_id: &state.node_id,
+            build,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportBuild",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
+    }
+
+    async fn post_json<T: Serialize>(
+        &self,
+        procedure: &str,
+        bearer: Option<&str>,
+        body: &T,
+    ) -> Result<Value> {
+        let url = format!("{}{}", self.api_base, procedure);
+        let mut request = self
+            .http
+            .post(url)
+            .header("Content-Type", "application/json")
+            .header("Connect-Protocol-Version", "1")
+            .json(body);
+        if let Some(token) = bearer {
+            request = request.bearer_auth(token);
+        }
+        let response = request.send().await.context("connect request failed")?;
+        let status = response.status();
+        let payload = response
+            .json::<Value>()
+            .await
+            .context("decode connect response")?;
+        if !status.is_success() {
+            let message = payload
+                .get("message")
+                .and_then(Value::as_str)
+                .or_else(|| payload.get("error").and_then(Value::as_str))
+                .unwrap_or("request failed");
+            bail!("connect {procedure} failed ({status}): {message}");
+        }
+        if payload.get("code").is_some() && payload.get("message").is_some() {
+            return Err(anyhow!(
+                "connect {procedure} error: {}",
+                payload
+                    .get("message")
+                    .and_then(Value::as_str)
+                    .unwrap_or("unknown")
+            ));
+        }
+        Ok(payload)
+    }
+}

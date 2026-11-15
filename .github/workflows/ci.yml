@@ -1,0 +1,247 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, nightly, release]
+  pull_request:
+    branches: [main, develop, release]
+
+jobs:
+  validate-protos:
+    name: Validate Protobuf Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Buf CLI
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Lint and verify protobuf compatibility
+        run: |
+          set -euo pipefail
+          buf lint
+          # Prefer the PR base branch. Until main carries a real API freeze, develop is
+          # the compatibility baseline (origin/main is still the early buf stub).
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.base_ref }}"
+            git fetch --no-tags origin "${BASE}:refs/remotes/origin/${BASE}"
+            buf breaking --against ".git#ref=origin/${BASE}"
+          elif git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+            buf breaking --against ".git#ref=HEAD~1"
+          else
+            echo "No parent commit; skipping buf breaking"
+          fi
+
+  database-integration:
+    name: PostgreSQL migrations and RLS
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: norix
+          POSTGRES_USER: norix
+          POSTGRES_PASSWORD: ci-postgres-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U norix -d norix"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+          cache-dependency-path: control-plane/go.sum
+
+      - name: Create application role
+        env:
+          PGPASSWORD: ci-postgres-password
+        run: |
+          psql -h 127.0.0.1 -U norix -d norix -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'norix_app') THEN
+              CREATE ROLE norix_app LOGIN PASSWORD 'ci-app-password';
+            ELSE
+              ALTER ROLE norix_app LOGIN PASSWORD 'ci-app-password';
+            END IF;
+          END
+          $$;
+          SQL
+
+      - name: Apply migrations
+        working-directory: control-plane
+        env:
+          DATABASE_URL: postgres://norix:ci-postgres-password@127.0.0.1:5432/norix?sslmode=disable
+        run: go run ./cmd/server -migrate-only
+
+      - name: Verify schema and RLS
+        env:
+          PGPASSWORD: ci-postgres-password
+        run: |
+          psql -h 127.0.0.1 -U norix -d norix -v ON_ERROR_STOP=1 <<'SQL'
+          -- Migrations through 000022 (000020 compose columns; 000021 preview TTL; 000022 oidc states).
+          DO $$
+          BEGIN
+            IF NOT (SELECT version = 22 AND NOT dirty FROM schema_migrations) THEN
+              RAISE EXCEPTION 'expected schema_migrations version=22 dirty=false';
+            END IF;
+            IF (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename IN (
+              'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
+              'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens',
+              'domain_routes', 'edge_snapshots', 'backups', 'ops_alert_events', 'workload_replicas',
+              'project_network', 'workload_egress_policies', 'network_dns_records', 'platform_certificates',
+              'metric_samples', 'log_segments', 'alert_rules', 'alert_events', 'managed_databases',
+              'sandboxes', 'pr_previews', 'wasm_functions', 'audit_events',
+              'teams', 'team_roles', 'team_members', 'team_quotas', 'usage_records',
+              'sso_providers', 'user_totp_secrets'
+            )) <> 38 THEN
+              RAISE EXCEPTION 'expected 38 tenant RLS tables through 000018';
+            END IF;
+            -- 000019: platform lease table (no tenant RLS by design).
+            IF to_regclass('public.control_plane_leases') IS NULL THEN
+              RAISE EXCEPTION 'control_plane_leases missing';
+            END IF;
+            IF (SELECT relrowsecurity FROM pg_class WHERE relname = 'control_plane_leases') THEN
+              RAISE EXCEPTION 'control_plane_leases must not enable RLS';
+            END IF;
+            -- 000020: compose stack inventory columns on workloads (no compose_stacks table).
+            IF (SELECT count(*) FROM information_schema.columns
+                  WHERE table_schema = 'public' AND table_name = 'workloads'
+                    AND column_name IN ('stack_id', 'compose_service', 'compose_spec')) <> 3 THEN
+              RAISE EXCEPTION 'workloads compose stack columns missing';
+            END IF;
+            -- 000021: preview TTL columns.
+            IF (SELECT count(*) FROM information_schema.columns
+                  WHERE table_schema = 'public' AND table_name = 'pr_previews'
+                    AND column_name IN ('ttl_seconds', 'expires_at')) <> 2 THEN
+              RAISE EXCEPTION 'pr_previews TTL columns missing';
+            END IF;
+            -- 000022: short-lived OIDC login states (no FORCE RLS; org FK + grants only).
+            IF to_regclass('public.oidc_login_states') IS NULL THEN
+              RAISE EXCEPTION 'oidc_login_states missing';
+            END IF;
+            IF to_regclass('public.audit_events') IS NULL THEN
+              RAISE EXCEPTION 'audit_events missing';
+            END IF;
+            IF (SELECT count(*) FROM pg_class WHERE relname IN (
+              'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
+              'deployments', 'workload_logs', 'builds', 'build_logs', 'build_secrets', 'webhook_tokens',
+              'domain_routes', 'edge_snapshots', 'backups', 'ops_alert_events', 'workload_replicas',
+              'project_network', 'workload_egress_policies', 'network_dns_records', 'platform_certificates',
+              'metric_samples', 'log_segments', 'alert_rules', 'alert_events', 'managed_databases',
+              'sandboxes', 'pr_previews', 'wasm_functions', 'audit_events',
+              'teams', 'team_roles', 'team_members', 'team_quotas', 'usage_records',
+              'sso_providers', 'user_totp_secrets'
+            ) AND relrowsecurity AND relforcerowsecurity) <> 38 THEN
+              RAISE EXCEPTION 'expected 38 tables with FORCE RLS';
+            END IF;
+            IF NOT (SELECT relrowsecurity AND relforcerowsecurity FROM pg_class WHERE relname = 'audit_events') THEN
+              RAISE EXCEPTION 'audit_events RLS not forced';
+            END IF;
+          END
+          $$;
+          SQL
+
+      - name: Run RLS isolation tests
+        working-directory: control-plane
+        env:
+          NORIX_TEST_DATABASE_URL: postgres://norix:ci-postgres-password@127.0.0.1:5432/norix?sslmode=disable
+          NORIX_TEST_APP_DATABASE_URL: postgres://norix_app:ci-app-password@127.0.0.1:5432/norix?sslmode=disable
+        run: go test ./internal/db -run TestRLSCrossTenantIsolation -count=1
+
+  build-web:
+    name: Build Web Dashboard
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install and build
+        working-directory: web
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+
+      - name: Upload web dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+
+  build-agent:
+    name: Build Rust Agent
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.88.0"
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: agent
+
+      - name: Check and build agent
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo build --release
+
+  build-control-plane:
+    name: Build Control Plane (Go)
+    runs-on: ubuntu-latest
+    needs: [validate-protos, database-integration, build-web, build-agent]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download web dist
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: control-plane/internal/webui/dist
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+          cache-dependency-path: control-plane/go.sum
+
+      - name: Download dependencies and test Go packages
+        working-directory: control-plane
+        run: |
+          go mod download
+          go test ./...
+
+      - name: Build Go binary
+        working-directory: control-plane
+        run: CGO_ENABLED=0 go build -o bin/norix-control-plane ./cmd/server/main.go

@@ -1,0 +1,56 @@
+scope: __SCOPE__
+namespace: /norix/
+name: __NAME__
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: __RESTAPI_CONNECT__
+
+etcd3:
+  hosts: __ETCD_HOSTS__
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      parameters:
+        max_connections: 100
+        shared_buffers: 128MB
+        wal_level: replica
+        hot_standby: "on"
+        max_wal_senders: 10
+        max_replication_slots: 10
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  users:
+    admin:
+      password: __SUPERUSER_PASSWORD__
+      options:
+        - createrole
+        - createdb
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: __PG_CONNECT__
+  data_dir: __DATA_DIR__
+  pgpass: /tmp/pgpass
+  authentication:
+    replication:
+      username: replicator
+      password: __REPLICATION_PASSWORD__
+    superuser:
+      username: postgres
+      password: __SUPERUSER_PASSWORD__
+  parameters:
+    unix_socket_directories: /var/run/postgresql
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false

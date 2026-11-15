@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
+
+message Team {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  bool is_default = 4;
+}
+
+message TeamMember {
+  string user_id = 1;
+  string email = 2;
+  string name = 3;
+  string role = 4;
+}
+
+message TeamQuota {
+  string team_id = 1;
+  int32 max_cpu = 2;
+  int64 max_memory_mb = 3;
+  int64 max_disk_gb = 4;
+  int32 max_sandboxes = 5;
+  int32 max_previews = 6;
+}
+
+message TeamUsage {
+  string team_id = 1;
+  int32 cpu_used = 2;
+  int64 memory_mb_used = 3;
+  int64 disk_gb_used = 4;
+  int32 sandboxes_used = 5;
+  int32 previews_used = 6;
+}
+
+message SSOProvider {
+  string id = 1;
+  string name = 2;
+  string kind = 3;
+  string issuer_url = 4;
+  string client_id = 5;
+  bool enabled = 6;
+}
+
+message ListTeamsRequest {}
+
+message ListTeamsResponse {
+  repeated Team teams = 1;
+}
+
+message CreateTeamRequest {
+  string name = 1;
+  string slug = 2;
+}
+
+message CreateTeamResponse {
+  Team team = 1;
+}
+
+message AddTeamMemberRequest {
+  string team_id = 1;
+  string user_email = 2;
+  string role = 3;
+}
+
+message AddTeamMemberResponse {
+  TeamMember member = 1;
+}
+
+message SetTeamQuotaRequest {
+  TeamQuota quota = 1;
+}
+
+message SetTeamQuotaResponse {
+  TeamQuota quota = 1;
+}
+
+message GetTeamUsageRequest {
+  string team_id = 1;
+}
+
+message GetTeamUsageResponse {
+  TeamUsage usage = 1;
+  TeamQuota quota = 2;
+}
+
+message ListSSOProvidersRequest {}
+
+message ListSSOProvidersResponse {
+  repeated SSOProvider providers = 1;
+}
+
+message UpsertSSOProviderRequest {
+  SSOProvider provider = 1;
+  string client_secret = 2;
+}
+
+message UpsertSSOProviderResponse {
+  SSOProvider provider = 1;
+}
+
+message EnableTOTPRequest {}
+
+message EnableTOTPResponse {
+  string secret = 1;
+  string otpauth_url = 2;
+}
+
+message VerifyTOTPRequest {
+  string code = 1;
+}
+
+message VerifyTOTPResponse {
+  bool verified = 1;
+}
+
+service TeamService {
+  rpc ListTeams(ListTeamsRequest) returns (ListTeamsResponse);
+  rpc CreateTeam(CreateTeamRequest) returns (CreateTeamResponse);
+  rpc AddTeamMember(AddTeamMemberRequest) returns (AddTeamMemberResponse);
+  rpc SetTeamQuota(SetTeamQuotaRequest) returns (SetTeamQuotaResponse);
+  rpc GetTeamUsage(GetTeamUsageRequest) returns (GetTeamUsageResponse);
+  rpc ListSSOProviders(ListSSOProvidersRequest) returns (ListSSOProvidersResponse);
+  rpc UpsertSSOProvider(UpsertSSOProviderRequest) returns (UpsertSSOProviderResponse);
+  rpc EnableTOTP(EnableTOTPRequest) returns (EnableTOTPResponse);
+  rpc VerifyTOTP(VerifyTOTPRequest) returns (VerifyTOTPResponse);
+}

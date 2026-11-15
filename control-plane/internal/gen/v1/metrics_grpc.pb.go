@@ -19,7 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MetricsService_StreamLogs_FullMethodName = "/v1.MetricsService/StreamLogs"
+	MetricsService_StreamLogs_FullMethodName        = "/v1.MetricsService/StreamLogs"
+	MetricsService_GetClusterMetrics_FullMethodName = "/v1.MetricsService/GetClusterMetrics"
+	MetricsService_QueryLogs_FullMethodName         = "/v1.MetricsService/QueryLogs"
+	MetricsService_ListAlerts_FullMethodName        = "/v1.MetricsService/ListAlerts"
+	MetricsService_UpsertAlertRule_FullMethodName   = "/v1.MetricsService/UpsertAlertRule"
 )
 
 // MetricsServiceClient is the client API for MetricsService service.
@@ -27,6 +31,10 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MetricsServiceClient interface {
 	StreamLogs(ctx context.Context, in *StreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[StreamLogsResponse], error)
+	GetClusterMetrics(ctx context.Context, in *GetClusterMetricsRequest, opts ...grpc.CallOption) (*GetClusterMetricsResponse, error)
+	QueryLogs(ctx context.Context, in *QueryLogsRequest, opts ...grpc.CallOption) (*QueryLogsResponse, error)
+	ListAlerts(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*ListAlertsResponse, error)
+	UpsertAlertRule(ctx context.Context, in *UpsertAlertRuleRequest, opts ...grpc.CallOption) (*UpsertAlertRuleResponse, error)
 }
 
 type metricsServiceClient struct {
@@ -56,11 +64,55 @@ func (c *metricsServiceClient) StreamLogs(ctx context.Context, in *StreamLogsReq
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type MetricsService_StreamLogsClient = grpc.ServerStreamingClient[StreamLogsResponse]
 
+func (c *metricsServiceClient) GetClusterMetrics(ctx context.Context, in *GetClusterMetricsRequest, opts ...grpc.CallOption) (*GetClusterMetricsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetClusterMetricsResponse)
+	err := c.cc.Invoke(ctx, MetricsService_GetClusterMetrics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *metricsServiceClient) QueryLogs(ctx context.Context, in *QueryLogsRequest, opts ...grpc.CallOption) (*QueryLogsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryLogsResponse)
+	err := c.cc.Invoke(ctx, MetricsService_QueryLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *metricsServiceClient) ListAlerts(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*ListAlertsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAlertsResponse)
+	err := c.cc.Invoke(ctx, MetricsService_ListAlerts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *metricsServiceClient) UpsertAlertRule(ctx context.Context, in *UpsertAlertRuleRequest, opts ...grpc.CallOption) (*UpsertAlertRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertAlertRuleResponse)
+	err := c.cc.Invoke(ctx, MetricsService_UpsertAlertRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetricsServiceServer is the server API for MetricsService service.
 // All implementations must embed UnimplementedMetricsServiceServer
 // for forward compatibility.
 type MetricsServiceServer interface {
 	StreamLogs(*StreamLogsRequest, grpc.ServerStreamingServer[StreamLogsResponse]) error
+	GetClusterMetrics(context.Context, *GetClusterMetricsRequest) (*GetClusterMetricsResponse, error)
+	QueryLogs(context.Context, *QueryLogsRequest) (*QueryLogsResponse, error)
+	ListAlerts(context.Context, *ListAlertsRequest) (*ListAlertsResponse, error)
+	UpsertAlertRule(context.Context, *UpsertAlertRuleRequest) (*UpsertAlertRuleResponse, error)
 	mustEmbedUnimplementedMetricsServiceServer()
 }
 
@@ -73,6 +125,18 @@ type UnimplementedMetricsServiceServer struct{}
 
 func (UnimplementedMetricsServiceServer) StreamLogs(*StreamLogsRequest, grpc.ServerStreamingServer[StreamLogsResponse]) error {
 	return status.Error(codes.Unimplemented, "method StreamLogs not implemented")
+}
+func (UnimplementedMetricsServiceServer) GetClusterMetrics(context.Context, *GetClusterMetricsRequest) (*GetClusterMetricsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetClusterMetrics not implemented")
+}
+func (UnimplementedMetricsServiceServer) QueryLogs(context.Context, *QueryLogsRequest) (*QueryLogsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method QueryLogs not implemented")
+}
+func (UnimplementedMetricsServiceServer) ListAlerts(context.Context, *ListAlertsRequest) (*ListAlertsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListAlerts not implemented")
+}
+func (UnimplementedMetricsServiceServer) UpsertAlertRule(context.Context, *UpsertAlertRuleRequest) (*UpsertAlertRuleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertAlertRule not implemented")
 }
 func (UnimplementedMetricsServiceServer) mustEmbedUnimplementedMetricsServiceServer() {}
 func (UnimplementedMetricsServiceServer) testEmbeddedByValue()                        {}
@@ -106,13 +170,102 @@ func _MetricsService_StreamLogs_Handler(srv interface{}, stream grpc.ServerStrea
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type MetricsService_StreamLogsServer = grpc.ServerStreamingServer[StreamLogsResponse]
 
+func _MetricsService_GetClusterMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClusterMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetricsServiceServer).GetClusterMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetricsService_GetClusterMetrics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetricsServiceServer).GetClusterMetrics(ctx, req.(*GetClusterMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MetricsService_QueryLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetricsServiceServer).QueryLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetricsService_QueryLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetricsServiceServer).QueryLogs(ctx, req.(*QueryLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MetricsService_ListAlerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAlertsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetricsServiceServer).ListAlerts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetricsService_ListAlerts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetricsServiceServer).ListAlerts(ctx, req.(*ListAlertsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MetricsService_UpsertAlertRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertAlertRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetricsServiceServer).UpsertAlertRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetricsService_UpsertAlertRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetricsServiceServer).UpsertAlertRule(ctx, req.(*UpsertAlertRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MetricsService_ServiceDesc is the grpc.ServiceDesc for MetricsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var MetricsService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "v1.MetricsService",
 	HandlerType: (*MetricsServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetClusterMetrics",
+			Handler:    _MetricsService_GetClusterMetrics_Handler,
+		},
+		{
+			MethodName: "QueryLogs",
+			Handler:    _MetricsService_QueryLogs_Handler,
+		},
+		{
+			MethodName: "ListAlerts",
+			Handler:    _MetricsService_ListAlerts_Handler,
+		},
+		{
+			MethodName: "UpsertAlertRule",
+			Handler:    _MetricsService_UpsertAlertRule_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "StreamLogs",

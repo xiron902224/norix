@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package v1;
 
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
 
-option go_package = "github.com/d2le2/paas/control-plane/internal/gen/v1;paasv1";
 enum RuntimeType {
   RUNTIME_TYPE_UNSPECIFIED = 0;
   RUNTIME_TYPE_CONTAINER = 1;
@@ -23,17 +23,259 @@ message Workload {
   int32 cpu_shares = 7;
   int64 memory_limit_mb = 8;
   string domain = 9;
+  string status = 10;
+  int64 desired_generation = 11;
+  int64 observed_generation = 12;
+  int32 host_port = 13;
+  int32 container_port = 14;
+  string assigned_node_id = 15;
+  string endpoint = 16;
+  string last_error = 17;
+  string container_id = 18;
+  // image | git
+  string source_kind = 19;
+  string git_url = 20;
+  string git_ref = 21;
+  string dockerfile_path = 22;
+  string latest_build_id = 23;
+  int32 replica_count = 24;
+  // spread | binpack
+  string schedule_strategy = 25;
+  bool require_kvm = 26;
+  string preferred_zone = 27;
+  map<string, string> affinity_labels = 28;
+  map<string, string> anti_affinity_labels = 29;
+  // Compose stack (Coolify-style multi-service)
+  string stack_id = 30;
+  string compose_service = 31;
+  string compose_spec_json = 32;
 }
+
+message ListWorkloadsRequest {
+  string project_id = 1;
+}
+
+message ListWorkloadsResponse {
+  repeated Workload workloads = 1;
+}
+
+message UpdateWorkloadRequest {
+  Workload workload = 1;
+}
+
+message UpdateWorkloadResponse {
+  Workload workload = 1;
+}
+
+message DeleteWorkloadRequest {
+  string id = 1;
+}
+
+message DeleteWorkloadResponse {}
+
+message CreateWorkloadRequest {
+  Workload workload = 1;
+}
+message CreateWorkloadResponse { Workload workload = 1; }
 
 message DeployRequest {
   Workload workload = 1;
+  int32 container_port = 2;
 }
 
 message DeployResponse {
   string deployment_id = 1;
   string status = 2;
+  int32 host_port = 3;
+  string assigned_node_id = 4;
 }
 
+message GetWorkloadLogsRequest {
+  string workload_id = 1;
+  int32 tail_lines = 2;
+}
+
+message GetWorkloadLogsResponse {
+  repeated string lines = 1;
+}
+
+message Build {
+  string id = 1;
+  string workload_id = 2;
+  string git_url = 3;
+  string git_ref = 4;
+  string dockerfile_path = 5;
+  string status = 6;
+  string image = 7;
+  string assigned_node_id = 8;
+  string last_error = 9;
+  string created_at = 10;
+  string updated_at = 11;
+}
+
+message DeployFromGitRequest {
+  string workload_id = 1;
+  string git_url = 2;
+  string git_ref = 3;
+  string dockerfile_path = 4;
+  int32 container_port = 5;
+  // optional plaintext build secrets (encrypted at rest)
+  map<string, string> build_secrets = 6;
+}
+
+message DeployFromGitResponse {
+  string build_id = 1;
+  string workload_id = 2;
+  string status = 3;
+}
+
+message ComposePortMap {
+  int32 host = 1;
+  int32 container = 2;
+  string protocol = 3;
+}
+
+message ComposeServiceSpec {
+  string name = 1;
+  string image = 2;
+  string build_context = 3;
+  string dockerfile = 4;
+  repeated int32 container_ports = 5;
+  repeated ComposePortMap published_ports = 6;
+  repeated string depends_on = 7;
+  map<string, string> environment = 8;
+  bool enabled = 9;
+  bool expose_public = 10;
+  int32 host_port = 11;
+  int32 container_port = 12;
+  bool has_build = 13;
+  bool has_image = 14;
+}
+
+message AnalyzeComposeFromGitRequest {
+  string git_url = 1;
+  string git_ref = 2;
+  string compose_path = 3;
+}
+
+message AnalyzeComposeFromGitResponse {
+  string compose_file = 1;
+  repeated ComposeServiceSpec services = 2;
+}
+
+message DeployComposeStackRequest {
+  string project_id = 1;
+  string stack_name = 2;
+  string git_url = 3;
+  string git_ref = 4;
+  string compose_path = 5;
+  repeated ComposeServiceSpec services = 6;
+}
+
+message DeployComposeStackResponse {
+  string stack_id = 1;
+  repeated Workload workloads = 2;
+}
+
+message ListBuildsRequest {
+  string workload_id = 1;
+}
+
+message ListBuildsResponse {
+  repeated Build builds = 1;
+}
+
+message GetBuildLogsRequest {
+  string build_id = 1;
+  int32 tail_lines = 2;
+}
+
+message GetBuildLogsResponse {
+  Build build = 1;
+  repeated string lines = 2;
+}
+
+message DomainRoute {
+  string id = 1;
+  string workload_id = 2;
+  string hostname = 3;
+  string status = 4;
+  string tls_mode = 5;
+  string last_error = 6;
+  string https_url = 7;
+  int64 edge_generation = 8;
+}
+
+message AssignDomainRequest {
+  string workload_id = 1;
+  string hostname = 2;
+  // internal | acme (empty = auto: localhost→internal, else acme)
+  string tls_mode = 3;
+}
+
+message AssignDomainResponse {
+  DomainRoute route = 1;
+}
+
+message ListDomainsRequest {
+  string project_id = 1;
+}
+
+message ListDomainsResponse {
+  repeated DomainRoute routes = 1;
+}
+
+message UnassignDomainRequest {
+  string id = 1;
+}
+
+message UnassignDomainResponse {}
+
 service WorkloadService {
+  rpc CreateWorkload(CreateWorkloadRequest) returns (CreateWorkloadResponse);
   rpc Deploy(DeployRequest) returns (DeployResponse);
+  rpc DeployFromGit(DeployFromGitRequest) returns (DeployFromGitResponse);
+  rpc AnalyzeComposeFromGit(AnalyzeComposeFromGitRequest) returns (AnalyzeComposeFromGitResponse);
+  rpc DeployComposeStack(DeployComposeStackRequest) returns (DeployComposeStackResponse);
+  rpc ListWorkloads(ListWorkloadsRequest) returns (ListWorkloadsResponse);
+  rpc UpdateWorkload(UpdateWorkloadRequest) returns (UpdateWorkloadResponse);
+  rpc DeleteWorkload(DeleteWorkloadRequest) returns (DeleteWorkloadResponse);
+  rpc GetWorkloadLogs(GetWorkloadLogsRequest) returns (GetWorkloadLogsResponse);
+  rpc ListBuilds(ListBuildsRequest) returns (ListBuildsResponse);
+  rpc GetBuildLogs(GetBuildLogsRequest) returns (GetBuildLogsResponse);
+  rpc AssignDomain(AssignDomainRequest) returns (AssignDomainResponse);
+  rpc ListDomains(ListDomainsRequest) returns (ListDomainsResponse);
+  rpc UnassignDomain(UnassignDomainRequest) returns (UnassignDomainResponse);
+}
+
+message Project {
+  string id = 1;
+  string organization_id = 2;
+  string name = 3;
+}
+
+message CreateProjectRequest {
+  string name = 1;
+}
+
+message CreateProjectResponse {
+  Project project = 1;
+}
+
+message ListProjectsRequest {}
+
+message ListProjectsResponse {
+  repeated Project projects = 1;
+}
+
+message DeleteProjectRequest {
+  string id = 1;
+}
+
+message DeleteProjectResponse {}
+
+service ProjectService {
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
 }

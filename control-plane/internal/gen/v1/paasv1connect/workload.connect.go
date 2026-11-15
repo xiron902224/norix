@@ -7,13 +7,15 @@ package paasv1connect
 import (
 	connect "connectrpc.com/connect/v2"
 	context "context"
-	v1 "github.com/d2le2/paas/control-plane/internal/gen/v1"
+	v1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
 	sync "sync"
 )
 
 const (
 	// WorkloadServiceName is the fully-qualified name of the WorkloadService service.
 	WorkloadServiceName = "v1.WorkloadService"
+	// ProjectServiceName is the fully-qualified name of the ProjectService service.
+	ProjectServiceName = "v1.ProjectService"
 )
 
 // These constants are the procedure names of the RPCs defined in this package. They're exposed at
@@ -24,11 +26,65 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// WorkloadServiceCreateWorkloadProcedure is the procedure name of the WorkloadService's
+	// CreateWorkload RPC.
+	WorkloadServiceCreateWorkloadProcedure = "/v1.WorkloadService/CreateWorkload"
 	// WorkloadServiceDeployProcedure is the procedure name of the WorkloadService's Deploy RPC.
 	WorkloadServiceDeployProcedure = "/v1.WorkloadService/Deploy"
+	// WorkloadServiceDeployFromGitProcedure is the procedure name of the WorkloadService's
+	// DeployFromGit RPC.
+	WorkloadServiceDeployFromGitProcedure = "/v1.WorkloadService/DeployFromGit"
+	// WorkloadServiceAnalyzeComposeFromGitProcedure is the procedure name of the WorkloadService's
+	// AnalyzeComposeFromGit RPC.
+	WorkloadServiceAnalyzeComposeFromGitProcedure = "/v1.WorkloadService/AnalyzeComposeFromGit"
+	// WorkloadServiceDeployComposeStackProcedure is the procedure name of the WorkloadService's
+	// DeployComposeStack RPC.
+	WorkloadServiceDeployComposeStackProcedure = "/v1.WorkloadService/DeployComposeStack"
+	// WorkloadServiceListWorkloadsProcedure is the procedure name of the WorkloadService's
+	// ListWorkloads RPC.
+	WorkloadServiceListWorkloadsProcedure = "/v1.WorkloadService/ListWorkloads"
+	// WorkloadServiceUpdateWorkloadProcedure is the procedure name of the WorkloadService's
+	// UpdateWorkload RPC.
+	WorkloadServiceUpdateWorkloadProcedure = "/v1.WorkloadService/UpdateWorkload"
+	// WorkloadServiceDeleteWorkloadProcedure is the procedure name of the WorkloadService's
+	// DeleteWorkload RPC.
+	WorkloadServiceDeleteWorkloadProcedure = "/v1.WorkloadService/DeleteWorkload"
+	// WorkloadServiceGetWorkloadLogsProcedure is the procedure name of the WorkloadService's
+	// GetWorkloadLogs RPC.
+	WorkloadServiceGetWorkloadLogsProcedure = "/v1.WorkloadService/GetWorkloadLogs"
+	// WorkloadServiceListBuildsProcedure is the procedure name of the WorkloadService's ListBuilds RPC.
+	WorkloadServiceListBuildsProcedure = "/v1.WorkloadService/ListBuilds"
+	// WorkloadServiceGetBuildLogsProcedure is the procedure name of the WorkloadService's GetBuildLogs
+	// RPC.
+	WorkloadServiceGetBuildLogsProcedure = "/v1.WorkloadService/GetBuildLogs"
+	// WorkloadServiceAssignDomainProcedure is the procedure name of the WorkloadService's AssignDomain
+	// RPC.
+	WorkloadServiceAssignDomainProcedure = "/v1.WorkloadService/AssignDomain"
+	// WorkloadServiceListDomainsProcedure is the procedure name of the WorkloadService's ListDomains
+	// RPC.
+	WorkloadServiceListDomainsProcedure = "/v1.WorkloadService/ListDomains"
+	// WorkloadServiceUnassignDomainProcedure is the procedure name of the WorkloadService's
+	// UnassignDomain RPC.
+	WorkloadServiceUnassignDomainProcedure = "/v1.WorkloadService/UnassignDomain"
+	// ProjectServiceCreateProjectProcedure is the procedure name of the ProjectService's CreateProject
+	// RPC.
+	ProjectServiceCreateProjectProcedure = "/v1.ProjectService/CreateProject"
+	// ProjectServiceListProjectsProcedure is the procedure name of the ProjectService's ListProjects
+	// RPC.
+	ProjectServiceListProjectsProcedure = "/v1.ProjectService/ListProjects"
+	// ProjectServiceDeleteProjectProcedure is the procedure name of the ProjectService's DeleteProject
+	// RPC.
+	ProjectServiceDeleteProjectProcedure = "/v1.ProjectService/DeleteProject"
 )
 
 var (
+	workloadServiceCreateWorkloadSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("CreateWorkload"),
+			Procedure:  WorkloadServiceCreateWorkloadProcedure,
+		}
+	})
 	workloadServiceDeploySpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -36,11 +92,108 @@ var (
 			Procedure:  WorkloadServiceDeployProcedure,
 		}
 	})
+	workloadServiceDeployFromGitSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("DeployFromGit"),
+			Procedure:  WorkloadServiceDeployFromGitProcedure,
+		}
+	})
+	workloadServiceAnalyzeComposeFromGitSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("AnalyzeComposeFromGit"),
+			Procedure:  WorkloadServiceAnalyzeComposeFromGitProcedure,
+		}
+	})
+	workloadServiceDeployComposeStackSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("DeployComposeStack"),
+			Procedure:  WorkloadServiceDeployComposeStackProcedure,
+		}
+	})
+	workloadServiceListWorkloadsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("ListWorkloads"),
+			Procedure:  WorkloadServiceListWorkloadsProcedure,
+		}
+	})
+	workloadServiceUpdateWorkloadSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("UpdateWorkload"),
+			Procedure:  WorkloadServiceUpdateWorkloadProcedure,
+		}
+	})
+	workloadServiceDeleteWorkloadSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("DeleteWorkload"),
+			Procedure:  WorkloadServiceDeleteWorkloadProcedure,
+		}
+	})
+	workloadServiceGetWorkloadLogsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("GetWorkloadLogs"),
+			Procedure:  WorkloadServiceGetWorkloadLogsProcedure,
+		}
+	})
+	workloadServiceListBuildsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("ListBuilds"),
+			Procedure:  WorkloadServiceListBuildsProcedure,
+		}
+	})
+	workloadServiceGetBuildLogsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("GetBuildLogs"),
+			Procedure:  WorkloadServiceGetBuildLogsProcedure,
+		}
+	})
+	workloadServiceAssignDomainSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("AssignDomain"),
+			Procedure:  WorkloadServiceAssignDomainProcedure,
+		}
+	})
+	workloadServiceListDomainsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("ListDomains"),
+			Procedure:  WorkloadServiceListDomainsProcedure,
+		}
+	})
+	workloadServiceUnassignDomainSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("UnassignDomain"),
+			Procedure:  WorkloadServiceUnassignDomainProcedure,
+		}
+	})
 )
 
 // WorkloadServiceClient is a client for the v1.WorkloadService service.
 type WorkloadServiceClient interface {
+	CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error)
 	Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error)
+	DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error)
+	AnalyzeComposeFromGit(context.Context, *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error)
+	DeployComposeStack(context.Context, *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error)
+	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
+	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
+	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
+	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
+	ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error)
+	GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error)
+	AssignDomain(context.Context, *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error)
+	ListDomains(context.Context, *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error)
+	UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error)
 }
 
 // NewWorkloadServiceClient constructs a client for the v1.WorkloadService service. Multiple service
@@ -51,26 +204,112 @@ func NewWorkloadServiceClient(client *connect.Client) WorkloadServiceClient {
 
 // WorkloadServiceHandler is an implementation of the v1.WorkloadService service.
 type WorkloadServiceHandler interface {
+	CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error)
 	Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error)
+	DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error)
+	AnalyzeComposeFromGit(context.Context, *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error)
+	DeployComposeStack(context.Context, *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error)
+	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
+	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
+	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
+	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
+	ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error)
+	GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error)
+	AssignDomain(context.Context, *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error)
+	ListDomains(context.Context, *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error)
+	UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error)
 }
 
 // RegisterWorkloadServiceHandler registers svc as the v1.WorkloadService implementation on server.
 func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceHandler) {
 	adapter := workloadServiceHandler{svc: svc}
 	server.Register(
+		connect.Method{Spec: workloadServiceCreateWorkloadSpec(), Handler: adapter.createWorkload},
 		connect.Method{Spec: workloadServiceDeploySpec(), Handler: adapter.deploy},
+		connect.Method{Spec: workloadServiceDeployFromGitSpec(), Handler: adapter.deployFromGit},
+		connect.Method{Spec: workloadServiceAnalyzeComposeFromGitSpec(), Handler: adapter.analyzeComposeFromGit},
+		connect.Method{Spec: workloadServiceDeployComposeStackSpec(), Handler: adapter.deployComposeStack},
+		connect.Method{Spec: workloadServiceListWorkloadsSpec(), Handler: adapter.listWorkloads},
+		connect.Method{Spec: workloadServiceUpdateWorkloadSpec(), Handler: adapter.updateWorkload},
+		connect.Method{Spec: workloadServiceDeleteWorkloadSpec(), Handler: adapter.deleteWorkload},
+		connect.Method{Spec: workloadServiceGetWorkloadLogsSpec(), Handler: adapter.getWorkloadLogs},
+		connect.Method{Spec: workloadServiceListBuildsSpec(), Handler: adapter.listBuilds},
+		connect.Method{Spec: workloadServiceGetBuildLogsSpec(), Handler: adapter.getBuildLogs},
+		connect.Method{Spec: workloadServiceAssignDomainSpec(), Handler: adapter.assignDomain},
+		connect.Method{Spec: workloadServiceListDomainsSpec(), Handler: adapter.listDomains},
+		connect.Method{Spec: workloadServiceUnassignDomainSpec(), Handler: adapter.unassignDomain},
 	)
 }
 
 // UnimplementedWorkloadServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedWorkloadServiceHandler struct{}
 
+func (UnimplementedWorkloadServiceHandler) CreateWorkload(context.Context, *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.CreateWorkload is not implemented")
+}
+
 func (UnimplementedWorkloadServiceHandler) Deploy(context.Context, *v1.DeployRequest) (*v1.DeployResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.Deploy is not implemented")
 }
 
+func (UnimplementedWorkloadServiceHandler) DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeployFromGit is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) AnalyzeComposeFromGit(context.Context, *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.AnalyzeComposeFromGit is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) DeployComposeStack(context.Context, *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeployComposeStack is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.ListWorkloads is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.UpdateWorkload is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeleteWorkload is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.GetWorkloadLogs is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.ListBuilds is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.GetBuildLogs is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) AssignDomain(context.Context, *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.AssignDomain is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) ListDomains(context.Context, *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.ListDomains is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.UnassignDomain is not implemented")
+}
+
 type workloadServiceClient struct {
 	client *connect.Client
+}
+
+func (c *workloadServiceClient) CreateWorkload(ctx context.Context, req *v1.CreateWorkloadRequest) (*v1.CreateWorkloadResponse, error) {
+	var res v1.CreateWorkloadResponse
+	if err := c.client.CallUnary(ctx, workloadServiceCreateWorkloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 func (c *workloadServiceClient) Deploy(ctx context.Context, req *v1.DeployRequest) (*v1.DeployResponse, error) {
@@ -81,7 +320,115 @@ func (c *workloadServiceClient) Deploy(ctx context.Context, req *v1.DeployReques
 	return &res, nil
 }
 
+func (c *workloadServiceClient) DeployFromGit(ctx context.Context, req *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error) {
+	var res v1.DeployFromGitResponse
+	if err := c.client.CallUnary(ctx, workloadServiceDeployFromGitSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) AnalyzeComposeFromGit(ctx context.Context, req *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error) {
+	var res v1.AnalyzeComposeFromGitResponse
+	if err := c.client.CallUnary(ctx, workloadServiceAnalyzeComposeFromGitSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) DeployComposeStack(ctx context.Context, req *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error) {
+	var res v1.DeployComposeStackResponse
+	if err := c.client.CallUnary(ctx, workloadServiceDeployComposeStackSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) ListWorkloads(ctx context.Context, req *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error) {
+	var res v1.ListWorkloadsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceListWorkloadsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) UpdateWorkload(ctx context.Context, req *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error) {
+	var res v1.UpdateWorkloadResponse
+	if err := c.client.CallUnary(ctx, workloadServiceUpdateWorkloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) DeleteWorkload(ctx context.Context, req *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error) {
+	var res v1.DeleteWorkloadResponse
+	if err := c.client.CallUnary(ctx, workloadServiceDeleteWorkloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) GetWorkloadLogs(ctx context.Context, req *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error) {
+	var res v1.GetWorkloadLogsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceGetWorkloadLogsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) ListBuilds(ctx context.Context, req *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error) {
+	var res v1.ListBuildsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceListBuildsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) GetBuildLogs(ctx context.Context, req *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error) {
+	var res v1.GetBuildLogsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceGetBuildLogsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) AssignDomain(ctx context.Context, req *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error) {
+	var res v1.AssignDomainResponse
+	if err := c.client.CallUnary(ctx, workloadServiceAssignDomainSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) ListDomains(ctx context.Context, req *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error) {
+	var res v1.ListDomainsResponse
+	if err := c.client.CallUnary(ctx, workloadServiceListDomainsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) UnassignDomain(ctx context.Context, req *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error) {
+	var res v1.UnassignDomainResponse
+	if err := c.client.CallUnary(ctx, workloadServiceUnassignDomainSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 type workloadServiceHandler struct{ svc WorkloadServiceHandler }
+
+func (h workloadServiceHandler) createWorkload(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateWorkloadRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateWorkload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
 
 func (h workloadServiceHandler) deploy(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
 	var req v1.DeployRequest
@@ -89,6 +436,285 @@ func (h workloadServiceHandler) deploy(ctx context.Context, _ connect.Spec, stre
 		return err
 	}
 	res, err := h.svc.Deploy(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) deployFromGit(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeployFromGitRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeployFromGit(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) analyzeComposeFromGit(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.AnalyzeComposeFromGitRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.AnalyzeComposeFromGit(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) deployComposeStack(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeployComposeStackRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeployComposeStack(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) listWorkloads(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListWorkloadsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListWorkloads(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) updateWorkload(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateWorkloadRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateWorkload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) deleteWorkload(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteWorkloadRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteWorkload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) getWorkloadLogs(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetWorkloadLogsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetWorkloadLogs(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) listBuilds(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListBuildsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListBuilds(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) getBuildLogs(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetBuildLogsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetBuildLogs(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) assignDomain(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.AssignDomainRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.AssignDomain(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) listDomains(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListDomainsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListDomains(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) unassignDomain(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UnassignDomainRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UnassignDomain(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+var (
+	projectServiceCreateProjectSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("ProjectService").Methods().ByName("CreateProject"),
+			Procedure:  ProjectServiceCreateProjectProcedure,
+		}
+	})
+	projectServiceListProjectsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("ProjectService").Methods().ByName("ListProjects"),
+			Procedure:  ProjectServiceListProjectsProcedure,
+		}
+	})
+	projectServiceDeleteProjectSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("ProjectService").Methods().ByName("DeleteProject"),
+			Procedure:  ProjectServiceDeleteProjectProcedure,
+		}
+	})
+)
+
+// ProjectServiceClient is a client for the v1.ProjectService service.
+type ProjectServiceClient interface {
+	CreateProject(context.Context, *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error)
+	ListProjects(context.Context, *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error)
+	DeleteProject(context.Context, *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error)
+}
+
+// NewProjectServiceClient constructs a client for the v1.ProjectService service. Multiple service
+// clients may share a single connect.Client.
+func NewProjectServiceClient(client *connect.Client) ProjectServiceClient {
+	return &projectServiceClient{client: client}
+}
+
+// ProjectServiceHandler is an implementation of the v1.ProjectService service.
+type ProjectServiceHandler interface {
+	CreateProject(context.Context, *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error)
+	ListProjects(context.Context, *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error)
+	DeleteProject(context.Context, *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error)
+}
+
+// RegisterProjectServiceHandler registers svc as the v1.ProjectService implementation on server.
+func RegisterProjectServiceHandler(server *connect.Server, svc ProjectServiceHandler) {
+	adapter := projectServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: projectServiceCreateProjectSpec(), Handler: adapter.createProject},
+		connect.Method{Spec: projectServiceListProjectsSpec(), Handler: adapter.listProjects},
+		connect.Method{Spec: projectServiceDeleteProjectSpec(), Handler: adapter.deleteProject},
+	)
+}
+
+// UnimplementedProjectServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedProjectServiceHandler struct{}
+
+func (UnimplementedProjectServiceHandler) CreateProject(context.Context, *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.CreateProject is not implemented")
+}
+
+func (UnimplementedProjectServiceHandler) ListProjects(context.Context, *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.ListProjects is not implemented")
+}
+
+func (UnimplementedProjectServiceHandler) DeleteProject(context.Context, *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.DeleteProject is not implemented")
+}
+
+type projectServiceClient struct {
+	client *connect.Client
+}
+
+func (c *projectServiceClient) CreateProject(ctx context.Context, req *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error) {
+	var res v1.CreateProjectResponse
+	if err := c.client.CallUnary(ctx, projectServiceCreateProjectSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *projectServiceClient) ListProjects(ctx context.Context, req *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error) {
+	var res v1.ListProjectsResponse
+	if err := c.client.CallUnary(ctx, projectServiceListProjectsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *projectServiceClient) DeleteProject(ctx context.Context, req *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error) {
+	var res v1.DeleteProjectResponse
+	if err := c.client.CallUnary(ctx, projectServiceDeleteProjectSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type projectServiceHandler struct{ svc ProjectServiceHandler }
+
+func (h projectServiceHandler) createProject(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateProjectRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateProject(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h projectServiceHandler) listProjects(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListProjectsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListProjects(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h projectServiceHandler) deleteProject(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteProjectRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteProject(ctx, &req)
 	if err != nil {
 		return err
 	}

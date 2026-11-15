@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  # Servidor ACME de pruebas (Simulador local de Let's Encrypt)
+  pebble:
+    image: ghcr.io/letsencrypt/pebble:latest
+    command: pebble -config /test/config/pebble-config.json -strict
+    ports:
+      - "14000:14000" # API ACME
+      - "15000:15000" # API de gestión / administración de Pebble
+    environment:
+      - PEBBLE_VA_ALWAYS_VALID=1
+    networks:
+      - paas-net
+
+  # Proxy inverso Caddy con soporte de administración dinámica y ACME
+  caddy:
+    image: caddy:latest
+    container_name: norix-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2019:2019" # API de administración para recargas en caliente (POST /load)
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      # Apunta el entorno ACME de Caddy hacia el servidor de pruebas local (Pebble)
+      - ACME_CA=https://pebble:14000/dir
+    depends_on:
+      - pebble
+    networks:
+      - paas-net
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  paas-net:
+    driver: bridge

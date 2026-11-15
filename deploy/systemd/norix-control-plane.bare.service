@@ -1,0 +1,21 @@
+[Unit]
+Description=Norix control plane (bare / no Docker)
+Documentation=https://github.com/xiron902224/norix
+Documentation=https://github.com/xiron902224/norix/blob/develop/docs/runbooks/BARE_INSTALL.md
+After=network-online.target postgresql.service
+Wants=network-online.target
+ConditionPathExists=/usr/local/bin/norix-control-plane
+
+[Service]
+Type=simple
+User=norix
+Group=norix
+WorkingDirectory=/var/lib/norix
+EnvironmentFile=-/etc/norix/control-plane.env
+ExecStart=/usr/local/bin/norix-control-plane
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

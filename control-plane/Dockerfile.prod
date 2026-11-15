@@ -1,0 +1,28 @@
+# Production image: embedded UI + docker CLI so the control plane can reconcile
+# workloads via the mounted host docker.sock (Coolify / OpenShip-style all-in-one).
+FROM node:22-alpine AS web
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
+
+FROM golang:1.27-alpine AS build
+WORKDIR /src
+COPY control-plane/go.mod control-plane/go.sum ./
+RUN go mod download
+COPY control-plane/ ./
+COPY --from=web /web/dist ./internal/webui/dist
+RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /norix-control-plane ./cmd/server
+
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates curl \
+    && addgroup -S norix \
+    && adduser -S -D -H -G norix norix
+# docker CLI only — daemon is the host via /var/run/docker.sock
+COPY --from=docker:27-cli /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=build /norix-control-plane /usr/local/bin/norix-control-plane
+# Root required to talk to the host docker socket in the default all-in-one install.
+USER root
+EXPOSE 8080
+ENTRYPOINT ["norix-control-plane"]

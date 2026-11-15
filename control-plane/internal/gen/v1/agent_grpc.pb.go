@@ -19,13 +19,43 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AgentService_ConnectStream_FullMethodName = "/v1.AgentService/ConnectStream"
+	AgentService_CreateJoinToken_FullMethodName    = "/v1.AgentService/CreateJoinToken"
+	AgentService_EnrollNode_FullMethodName         = "/v1.AgentService/EnrollNode"
+	AgentService_Heartbeat_FullMethodName          = "/v1.AgentService/Heartbeat"
+	AgentService_ReportObserved_FullMethodName     = "/v1.AgentService/ReportObserved"
+	AgentService_ReportBuild_FullMethodName        = "/v1.AgentService/ReportBuild"
+	AgentService_ReportEdge_FullMethodName         = "/v1.AgentService/ReportEdge"
+	AgentService_ReportNetwork_FullMethodName      = "/v1.AgentService/ReportNetwork"
+	AgentService_ReportWasm_FullMethodName         = "/v1.AgentService/ReportWasm"
+	AgentService_GetNetworkStatus_FullMethodName   = "/v1.AgentService/GetNetworkStatus"
+	AgentService_UpsertEgressPolicy_FullMethodName = "/v1.AgentService/UpsertEgressPolicy"
+	AgentService_ListEgressPolicies_FullMethodName = "/v1.AgentService/ListEgressPolicies"
+	AgentService_ListNodes_FullMethodName          = "/v1.AgentService/ListNodes"
+	AgentService_CordonNode_FullMethodName         = "/v1.AgentService/CordonNode"
+	AgentService_DrainNode_FullMethodName          = "/v1.AgentService/DrainNode"
+	AgentService_UpdateNodeSchedule_FullMethodName = "/v1.AgentService/UpdateNodeSchedule"
+	AgentService_ConnectStream_FullMethodName      = "/v1.AgentService/ConnectStream"
 )
 
 // AgentServiceClient is the client API for AgentService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AgentServiceClient interface {
+	CreateJoinToken(ctx context.Context, in *CreateJoinTokenRequest, opts ...grpc.CallOption) (*CreateJoinTokenResponse, error)
+	EnrollNode(ctx context.Context, in *EnrollNodeRequest, opts ...grpc.CallOption) (*EnrollNodeResponse, error)
+	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
+	ReportObserved(ctx context.Context, in *ReportObservedRequest, opts ...grpc.CallOption) (*ReportObservedResponse, error)
+	ReportBuild(ctx context.Context, in *ReportBuildRequest, opts ...grpc.CallOption) (*ReportBuildResponse, error)
+	ReportEdge(ctx context.Context, in *ReportEdgeRequest, opts ...grpc.CallOption) (*ReportEdgeResponse, error)
+	ReportNetwork(ctx context.Context, in *ReportNetworkRequest, opts ...grpc.CallOption) (*ReportNetworkResponse, error)
+	ReportWasm(ctx context.Context, in *ReportWasmRequest, opts ...grpc.CallOption) (*ReportWasmResponse, error)
+	GetNetworkStatus(ctx context.Context, in *GetNetworkStatusRequest, opts ...grpc.CallOption) (*GetNetworkStatusResponse, error)
+	UpsertEgressPolicy(ctx context.Context, in *UpsertEgressPolicyRequest, opts ...grpc.CallOption) (*UpsertEgressPolicyResponse, error)
+	ListEgressPolicies(ctx context.Context, in *ListEgressPoliciesRequest, opts ...grpc.CallOption) (*ListEgressPoliciesResponse, error)
+	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
+	CordonNode(ctx context.Context, in *CordonNodeRequest, opts ...grpc.CallOption) (*CordonNodeResponse, error)
+	DrainNode(ctx context.Context, in *DrainNodeRequest, opts ...grpc.CallOption) (*DrainNodeResponse, error)
+	UpdateNodeSchedule(ctx context.Context, in *UpdateNodeScheduleRequest, opts ...grpc.CallOption) (*UpdateNodeScheduleResponse, error)
 	ConnectStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ConnectStreamRequest, ConnectStreamResponse], error)
 }
 
@@ -35,6 +65,156 @@ type agentServiceClient struct {
 
 func NewAgentServiceClient(cc grpc.ClientConnInterface) AgentServiceClient {
 	return &agentServiceClient{cc}
+}
+
+func (c *agentServiceClient) CreateJoinToken(ctx context.Context, in *CreateJoinTokenRequest, opts ...grpc.CallOption) (*CreateJoinTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateJoinTokenResponse)
+	err := c.cc.Invoke(ctx, AgentService_CreateJoinToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) EnrollNode(ctx context.Context, in *EnrollNodeRequest, opts ...grpc.CallOption) (*EnrollNodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnrollNodeResponse)
+	err := c.cc.Invoke(ctx, AgentService_EnrollNode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HeartbeatResponse)
+	err := c.cc.Invoke(ctx, AgentService_Heartbeat_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) ReportObserved(ctx context.Context, in *ReportObservedRequest, opts ...grpc.CallOption) (*ReportObservedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportObservedResponse)
+	err := c.cc.Invoke(ctx, AgentService_ReportObserved_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) ReportBuild(ctx context.Context, in *ReportBuildRequest, opts ...grpc.CallOption) (*ReportBuildResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportBuildResponse)
+	err := c.cc.Invoke(ctx, AgentService_ReportBuild_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) ReportEdge(ctx context.Context, in *ReportEdgeRequest, opts ...grpc.CallOption) (*ReportEdgeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportEdgeResponse)
+	err := c.cc.Invoke(ctx, AgentService_ReportEdge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) ReportNetwork(ctx context.Context, in *ReportNetworkRequest, opts ...grpc.CallOption) (*ReportNetworkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportNetworkResponse)
+	err := c.cc.Invoke(ctx, AgentService_ReportNetwork_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) ReportWasm(ctx context.Context, in *ReportWasmRequest, opts ...grpc.CallOption) (*ReportWasmResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportWasmResponse)
+	err := c.cc.Invoke(ctx, AgentService_ReportWasm_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) GetNetworkStatus(ctx context.Context, in *GetNetworkStatusRequest, opts ...grpc.CallOption) (*GetNetworkStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetNetworkStatusResponse)
+	err := c.cc.Invoke(ctx, AgentService_GetNetworkStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) UpsertEgressPolicy(ctx context.Context, in *UpsertEgressPolicyRequest, opts ...grpc.CallOption) (*UpsertEgressPolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertEgressPolicyResponse)
+	err := c.cc.Invoke(ctx, AgentService_UpsertEgressPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) ListEgressPolicies(ctx context.Context, in *ListEgressPoliciesRequest, opts ...grpc.CallOption) (*ListEgressPoliciesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListEgressPoliciesResponse)
+	err := c.cc.Invoke(ctx, AgentService_ListEgressPolicies_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListNodesResponse)
+	err := c.cc.Invoke(ctx, AgentService_ListNodes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) CordonNode(ctx context.Context, in *CordonNodeRequest, opts ...grpc.CallOption) (*CordonNodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CordonNodeResponse)
+	err := c.cc.Invoke(ctx, AgentService_CordonNode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) DrainNode(ctx context.Context, in *DrainNodeRequest, opts ...grpc.CallOption) (*DrainNodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DrainNodeResponse)
+	err := c.cc.Invoke(ctx, AgentService_DrainNode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) UpdateNodeSchedule(ctx context.Context, in *UpdateNodeScheduleRequest, opts ...grpc.CallOption) (*UpdateNodeScheduleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateNodeScheduleResponse)
+	err := c.cc.Invoke(ctx, AgentService_UpdateNodeSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *agentServiceClient) ConnectStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ConnectStreamRequest, ConnectStreamResponse], error) {
@@ -54,6 +234,21 @@ type AgentService_ConnectStreamClient = grpc.BidiStreamingClient[ConnectStreamRe
 // All implementations must embed UnimplementedAgentServiceServer
 // for forward compatibility.
 type AgentServiceServer interface {
+	CreateJoinToken(context.Context, *CreateJoinTokenRequest) (*CreateJoinTokenResponse, error)
+	EnrollNode(context.Context, *EnrollNodeRequest) (*EnrollNodeResponse, error)
+	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
+	ReportObserved(context.Context, *ReportObservedRequest) (*ReportObservedResponse, error)
+	ReportBuild(context.Context, *ReportBuildRequest) (*ReportBuildResponse, error)
+	ReportEdge(context.Context, *ReportEdgeRequest) (*ReportEdgeResponse, error)
+	ReportNetwork(context.Context, *ReportNetworkRequest) (*ReportNetworkResponse, error)
+	ReportWasm(context.Context, *ReportWasmRequest) (*ReportWasmResponse, error)
+	GetNetworkStatus(context.Context, *GetNetworkStatusRequest) (*GetNetworkStatusResponse, error)
+	UpsertEgressPolicy(context.Context, *UpsertEgressPolicyRequest) (*UpsertEgressPolicyResponse, error)
+	ListEgressPolicies(context.Context, *ListEgressPoliciesRequest) (*ListEgressPoliciesResponse, error)
+	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
+	CordonNode(context.Context, *CordonNodeRequest) (*CordonNodeResponse, error)
+	DrainNode(context.Context, *DrainNodeRequest) (*DrainNodeResponse, error)
+	UpdateNodeSchedule(context.Context, *UpdateNodeScheduleRequest) (*UpdateNodeScheduleResponse, error)
 	ConnectStream(grpc.BidiStreamingServer[ConnectStreamRequest, ConnectStreamResponse]) error
 	mustEmbedUnimplementedAgentServiceServer()
 }
@@ -65,6 +260,51 @@ type AgentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAgentServiceServer struct{}
 
+func (UnimplementedAgentServiceServer) CreateJoinToken(context.Context, *CreateJoinTokenRequest) (*CreateJoinTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateJoinToken not implemented")
+}
+func (UnimplementedAgentServiceServer) EnrollNode(context.Context, *EnrollNodeRequest) (*EnrollNodeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnrollNode not implemented")
+}
+func (UnimplementedAgentServiceServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Heartbeat not implemented")
+}
+func (UnimplementedAgentServiceServer) ReportObserved(context.Context, *ReportObservedRequest) (*ReportObservedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportObserved not implemented")
+}
+func (UnimplementedAgentServiceServer) ReportBuild(context.Context, *ReportBuildRequest) (*ReportBuildResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportBuild not implemented")
+}
+func (UnimplementedAgentServiceServer) ReportEdge(context.Context, *ReportEdgeRequest) (*ReportEdgeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportEdge not implemented")
+}
+func (UnimplementedAgentServiceServer) ReportNetwork(context.Context, *ReportNetworkRequest) (*ReportNetworkResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportNetwork not implemented")
+}
+func (UnimplementedAgentServiceServer) ReportWasm(context.Context, *ReportWasmRequest) (*ReportWasmResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportWasm not implemented")
+}
+func (UnimplementedAgentServiceServer) GetNetworkStatus(context.Context, *GetNetworkStatusRequest) (*GetNetworkStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetNetworkStatus not implemented")
+}
+func (UnimplementedAgentServiceServer) UpsertEgressPolicy(context.Context, *UpsertEgressPolicyRequest) (*UpsertEgressPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertEgressPolicy not implemented")
+}
+func (UnimplementedAgentServiceServer) ListEgressPolicies(context.Context, *ListEgressPoliciesRequest) (*ListEgressPoliciesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListEgressPolicies not implemented")
+}
+func (UnimplementedAgentServiceServer) ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListNodes not implemented")
+}
+func (UnimplementedAgentServiceServer) CordonNode(context.Context, *CordonNodeRequest) (*CordonNodeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CordonNode not implemented")
+}
+func (UnimplementedAgentServiceServer) DrainNode(context.Context, *DrainNodeRequest) (*DrainNodeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DrainNode not implemented")
+}
+func (UnimplementedAgentServiceServer) UpdateNodeSchedule(context.Context, *UpdateNodeScheduleRequest) (*UpdateNodeScheduleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateNodeSchedule not implemented")
+}
 func (UnimplementedAgentServiceServer) ConnectStream(grpc.BidiStreamingServer[ConnectStreamRequest, ConnectStreamResponse]) error {
 	return status.Error(codes.Unimplemented, "method ConnectStream not implemented")
 }
@@ -89,6 +329,276 @@ func RegisterAgentServiceServer(s grpc.ServiceRegistrar, srv AgentServiceServer)
 	s.RegisterService(&AgentService_ServiceDesc, srv)
 }
 
+func _AgentService_CreateJoinToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateJoinTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).CreateJoinToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_CreateJoinToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).CreateJoinToken(ctx, req.(*CreateJoinTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_EnrollNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnrollNodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).EnrollNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_EnrollNode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).EnrollNode(ctx, req.(*EnrollNodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HeartbeatRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).Heartbeat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_Heartbeat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).Heartbeat(ctx, req.(*HeartbeatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_ReportObserved_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportObservedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ReportObserved(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ReportObserved_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ReportObserved(ctx, req.(*ReportObservedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_ReportBuild_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportBuildRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ReportBuild(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ReportBuild_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ReportBuild(ctx, req.(*ReportBuildRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_ReportEdge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportEdgeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ReportEdge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ReportEdge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ReportEdge(ctx, req.(*ReportEdgeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_ReportNetwork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportNetworkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ReportNetwork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ReportNetwork_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ReportNetwork(ctx, req.(*ReportNetworkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_ReportWasm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportWasmRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ReportWasm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ReportWasm_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ReportWasm(ctx, req.(*ReportWasmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_GetNetworkStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNetworkStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).GetNetworkStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_GetNetworkStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).GetNetworkStatus(ctx, req.(*GetNetworkStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_UpsertEgressPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertEgressPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).UpsertEgressPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_UpsertEgressPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).UpsertEgressPolicy(ctx, req.(*UpsertEgressPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_ListEgressPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListEgressPoliciesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ListEgressPolicies(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ListEgressPolicies_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ListEgressPolicies(ctx, req.(*ListEgressPoliciesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_ListNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListNodesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ListNodes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ListNodes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ListNodes(ctx, req.(*ListNodesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_CordonNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CordonNodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).CordonNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_CordonNode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).CordonNode(ctx, req.(*CordonNodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_DrainNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DrainNodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).DrainNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_DrainNode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).DrainNode(ctx, req.(*DrainNodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_UpdateNodeSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateNodeScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).UpdateNodeSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_UpdateNodeSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).UpdateNodeSchedule(ctx, req.(*UpdateNodeScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AgentService_ConnectStream_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(AgentServiceServer).ConnectStream(&grpc.GenericServerStream[ConnectStreamRequest, ConnectStreamResponse]{ServerStream: stream})
 }
@@ -102,7 +612,68 @@ type AgentService_ConnectStreamServer = grpc.BidiStreamingServer[ConnectStreamRe
 var AgentService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "v1.AgentService",
 	HandlerType: (*AgentServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateJoinToken",
+			Handler:    _AgentService_CreateJoinToken_Handler,
+		},
+		{
+			MethodName: "EnrollNode",
+			Handler:    _AgentService_EnrollNode_Handler,
+		},
+		{
+			MethodName: "Heartbeat",
+			Handler:    _AgentService_Heartbeat_Handler,
+		},
+		{
+			MethodName: "ReportObserved",
+			Handler:    _AgentService_ReportObserved_Handler,
+		},
+		{
+			MethodName: "ReportBuild",
+			Handler:    _AgentService_ReportBuild_Handler,
+		},
+		{
+			MethodName: "ReportEdge",
+			Handler:    _AgentService_ReportEdge_Handler,
+		},
+		{
+			MethodName: "ReportNetwork",
+			Handler:    _AgentService_ReportNetwork_Handler,
+		},
+		{
+			MethodName: "ReportWasm",
+			Handler:    _AgentService_ReportWasm_Handler,
+		},
+		{
+			MethodName: "GetNetworkStatus",
+			Handler:    _AgentService_GetNetworkStatus_Handler,
+		},
+		{
+			MethodName: "UpsertEgressPolicy",
+			Handler:    _AgentService_UpsertEgressPolicy_Handler,
+		},
+		{
+			MethodName: "ListEgressPolicies",
+			Handler:    _AgentService_ListEgressPolicies_Handler,
+		},
+		{
+			MethodName: "ListNodes",
+			Handler:    _AgentService_ListNodes_Handler,
+		},
+		{
+			MethodName: "CordonNode",
+			Handler:    _AgentService_CordonNode_Handler,
+		},
+		{
+			MethodName: "DrainNode",
+			Handler:    _AgentService_DrainNode_Handler,
+		},
+		{
+			MethodName: "UpdateNodeSchedule",
+			Handler:    _AgentService_UpdateNodeSchedule_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "ConnectStream",

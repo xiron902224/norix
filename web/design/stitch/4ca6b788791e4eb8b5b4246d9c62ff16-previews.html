@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_dashboard" name="shell-type"/>
+<title>Norix PaaS — PR Previews &amp; Isolated Micro-VM Builds</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "background": "#10141a",
+          "surface-container-low": "#181c22",
+          "surface-container": "#1c2026",
+          "tertiary": "#51df8e",
+          "error-container": "#93000a",
+          "inverse-primary": "#2e48eb",
+          "primary-fixed-dim": "#bbc3ff",
+          "outline-variant": "#444656",
+          "surface-light-subtle": "#F1F5F9",
+          "surface": "#10141a",
+          "status-running": "#12B76A",
+          "error": "#ffb4ab",
+          "on-surface-variant": "#c5c5d8",
+          "on-primary": "#001b96",
+          "on-background": "#dfe2eb",
+          "border-dark": "#30363D",
+          "tertiary-container": "#008349",
+          "secondary-fixed-dim": "#4cd7f6",
+          "on-tertiary-fixed": "#00210e",
+          "on-secondary-fixed": "#001f26",
+          "outline": "#8f8fa2",
+          "surface-light-canvas": "#F8FAFC",
+          "on-primary-container": "#f9f7ff",
+          "on-secondary-fixed-variant": "#004e5c",
+          "surface-container-lowest": "#0a0e14",
+          "inverse-surface": "#dfe2eb",
+          "surface-dim": "#10141a",
+          "on-secondary": "#003640",
+          "primary": "#bbc3ff",
+          "on-tertiary-container": "#e3ffe7",
+          "on-tertiary-fixed-variant": "#00522c",
+          "on-primary-fixed": "#000d5f",
+          "tertiary-fixed-dim": "#51df8e",
+          "on-error": "#690005",
+          "surface-tint": "#bbc3ff",
+          "surface-bright": "#353940",
+          "on-primary-fixed-variant": "#0029d2",
+          "status-degraded": "#F59E0B",
+          "surface-dark-overlay": "#21262D",
+          "surface-light-card": "#FFFFFF",
+          "on-tertiary": "#00391d",
+          "tertiary-fixed": "#70fda7",
+          "surface-dark-canvas": "#0D1117",
+          "status-stopped": "#64748B",
+          "surface-container-highest": "#31353c",
+          "on-secondary-container": "#00424e",
+          "surface-variant": "#31353c",
+          "on-error-container": "#ffdad6",
+          "secondary-container": "#03b5d3",
+          "status-enrolling": "#06B6D4",
+          "border-light": "#E2E8F0",
+          "surface-dark-card": "#161B22",
+          "status-failed": "#EF4444",
+          "surface-container-high": "#262a31",
+          "on-surface": "#dfe2eb",
+          "secondary-fixed": "#acedff",
+          "secondary": "#4cd7f6",
+          "primary-fixed": "#dfe0ff",
+          "primary-container": "#465fff",
+          "inverse-on-surface": "#2d3137"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "lg": "0.25rem",
+          "xl": "0.5rem",
+          "full": "0.75rem"
+        },
+        "spacing": {
+          "gutter": "1rem",
+          "space-2xl": "2rem",
+          "space-sm": "0.5rem",
+          "margin-md": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-lg": "1rem",
+          "margin-lg": "2rem",
+          "space-md": "0.75rem",
+          "margin": "1rem",
+          "space-xl": "1.5rem",
+          "gutter-lg": "1.5rem"
+        },
+        "fontFamily": {
+          "mono-lg": ["JetBrains Mono"],
+          "headline-md": ["Inter"],
+          "headline-lg": ["Inter"],
+          "label-md": ["Inter"],
+          "body-md": ["Inter"],
+          "mono-sm": ["JetBrains Mono"],
+          "label-sm": ["JetBrains Mono"],
+          "body-lg": ["Inter"],
+          "headline-xl": ["Inter"],
+          "headline-sm": ["Inter"],
+          "mono-md": ["JetBrains Mono"],
+          "body-sm": ["Inter"],
+          "headline-xl-mobile": ["Inter"],
+          sans: ["Inter", "sans-serif"],
+          mono: ["JetBrains Mono", "monospace"]
+        },
+        "fontSize": {
+          "mono-lg": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+          "headline-md": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+          "headline-lg": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+          "label-md": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.04em", "fontWeight": "600" }],
+          "body-md": ["0.875rem", { "lineHeight": "1.25rem", "fontWeight": "400" }],
+          "mono-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.02em", "fontWeight": "400" }],
+          "label-sm": ["0.625rem", { "lineHeight": "0.75rem", "letterSpacing": "0.06em", "fontWeight": "600" }],
+          "body-lg": ["1rem", { "lineHeight": "1.5rem", "fontWeight": "400" }],
+          "headline-xl": ["2rem", { "lineHeight": "2.5rem", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+          "headline-sm": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+          "mono-md": ["0.75rem", { "lineHeight": "1.125rem", "letterSpacing": "0em", "fontWeight": "400" }],
+          "body-sm": ["0.75rem", { "lineHeight": "1rem", "fontWeight": "400" }],
+          "headline-xl-mobile": ["1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+        }
+      }
+    }
+  };
+</script>
+<style>
+  @layer base {
+    html, body { margin: 0; padding: 0; }
+    body { overscroll-behavior: none; }
+  }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #0a0e14; }
+  ::-webkit-scrollbar-thumb { background: #30363D; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #444656; }
+</style>
+</head>
+<body class="bg-surface font-sans text-on-surface antialiased text-[13px] selection:bg-primary-container selection:text-white">
+<!-- Left Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-screen w-64 bg-surface-container-lowest border-r border-border-dark flex flex-col z-50 overflow-hidden">
+<!-- Brand / Cluster Switcher -->
+<div class="p-4 border-b border-border-dark">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-white shadow-sm ring-1 ring-white/20">
+<span class="material-symbols-outlined text-[20px]">token</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="text-base tracking-tight text-on-surface font-bold">Norix</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary text-[10px] font-mono tracking-wider font-semibold">v0.7-sprint14</span>
+</div>
+</div>
+</div>
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface-container-low border border-border-dark hover:border-outline/40 hover:bg-surface-container transition-all text-left group">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-[15px] text-tertiary group-hover:scale-110 transition-transform">cloud</span>
+<div class="truncate">
+<span class="block text-[11px] font-mono text-on-surface truncate">Acme Cloud / Prod</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">unfold_more</span>
+</button>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+<!-- Overview -->
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Overview</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#">
+<span>Dashboard</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="projects-apps" href="#">
+<span>Projects &amp; Apps</span>
+</a>
+</nav>
+</div>
+<!-- Infrastructure & Runtimes -->
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Infrastructure &amp; Runtimes</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="compute-nodes" href="#">
+<span>Compute Nodes</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="micro-vm-runtime-standby-pools-sprint-12" href="#">
+<span>Micro-VM Runtime &amp; Standby Pools</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="sandboxes-micro-vms" href="#">
+<span>Sandboxes &amp; Micro-VMs</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="ai-code-interpreter-sdks-sprint-13" href="#">
+<span>AI Code Interpreter &amp; SDKs</span>
+</a>
+</nav>
+</div>
+<!-- Deployments & Builds -->
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Deployments &amp; Builds</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="pr-previews-isolated-micro-vm-builds" href="#">
+<span>PR Previews &amp; Isolated Builds</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="builds-ci-registry" href="#">
+<span>Builds &amp; CI Registry</span>
+</a>
+</nav>
+</div>
+<!-- Traffic & Networking -->
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Traffic &amp; Networking</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="domains-edge" href="#">
+<span>Domains &amp; Edge</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="wireguard-mesh" href="#">
+<span>WireGuard Mesh</span>
+</a>
+</nav>
+</div>
+<!-- Operations -->
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Operations</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="observability-metrics" href="#">
+<span>Observability &amp; Metrics</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="backups-storage" href="#">
+<span>Backups &amp; Storage</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="audit-activity" href="#">
+<span>Audit &amp; Activity</span>
+</a>
+</nav>
+</div>
+<!-- Settings & Developer -->
+<div class="space-y-1">
+<div class="px-2 py-0.5 text-[10px] font-mono text-outline uppercase tracking-wider font-semibold">Settings &amp; Developer</div>
+<nav class="space-y-0.5" data-active-classes="bg-primary-container/15 text-primary border border-primary/30 font-medium">
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="api-keys-secrets" href="#">
+<span>API Keys &amp; Secrets</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="team-rbac" href="#">
+<span>Team &amp; RBAC</span>
+</a>
+<a class="flex items-center px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="cluster-config" href="#">
+<span>Cluster Config</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Daemon status pill & Heartbeat footer -->
+<div class="p-3 border-t border-border-dark bg-surface-container-lowest/80 space-y-1.5">
+<div class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running animate-pulse"></span>HTTP/Connect</span>
+<span class="text-status-running">200 OK</span>
+</div>
+<div class="flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>Postgres 16</span>
+<span class="text-tertiary">Healthy</span>
+</div>
+<div class="pt-1.5 border-t border-border-dark/60 flex items-center justify-between text-[10px] font-mono text-outline">
+<span>AGENT HEARTBEAT</span>
+<span class="text-secondary">1,248 pings/m</span>
+</div>
+</div>
+</aside>
+<!-- Top App Header -->
+<div class="pl-64">
+<header class="fixed top-0 left-64 right-0 h-14 bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-dark z-40 px-6 flex items-center justify-between gap-4">
+<!-- Organization Selector & Search Bar -->
+<div class="flex items-center gap-3 flex-1 max-w-2xl">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-low border border-border-dark text-[11px] font-mono text-on-surface shrink-0 hidden sm:flex">
+<span class="material-symbols-outlined text-[15px] text-tertiary">cloud</span>
+<span>Acme Cloud / Prod</span>
+</div>
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[17px]">search</span>
+<input class="w-full bg-surface-container-low border border-border-dark rounded-lg px-2.5 pl-8 py-1.5 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all font-mono" placeholder="Search PR previews, commit SHA, isolated sandboxes, routes... [Ctrl+K]" type="text"/>
+</div>
+</div>
+<!-- Cluster Metrics, Actions & User Profile -->
+<div class="flex items-center gap-3">
+<div class="hidden xl:flex items-center gap-1.5 font-mono text-[11px]">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running"></span>
+<span class="text-on-surface-variant">Nodes:</span>
+<span class="text-on-surface font-semibold">12/12</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-status-enrolling"></span>
+<span class="text-on-surface-variant">Workloads:</span>
+<span class="text-on-surface font-semibold">34</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container border border-border-dark">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="text-on-surface-variant">KVM:</span>
+<span class="text-tertiary font-semibold">L2 OK</span>
+</div>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary hover:bg-primary/90 text-xs font-semibold shadow-sm transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>New PR Preview</span>
+</button>
+<button aria-label="Notifications" class="relative p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[19px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-status-failed"></span>
+</button>
+<div class="h-4 w-px bg-border-dark"></div>
+<div class="flex items-center gap-2 pl-1">
+<div class="w-7 h-7 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-mono text-xs font-semibold">
+  DL
+</div>
+<div class="hidden md:block text-left leading-none">
+<div class="text-[12px] font-semibold text-on-surface">DevOps Lead</div>
+<div class="text-[10px] text-tertiary font-mono mt-0.5">Owner</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="w-full pt-14 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Interactive Notification Toast (Hidden by default, triggered via JS) -->
+<div class="fixed bottom-6 right-6 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-lg bg-surface-container-highest text-on-surface shadow-xl" id="toastNotification">
+<span class="material-symbols-outlined text-tertiary text-[20px]" id="toastIcon">check_circle</span>
+<div class="text-body-sm font-body-sm" id="toastMessage">Preview environment scheduled for rebuild.</div>
+</div>
+<!-- Operational Context Header -->
+<section class="px-6 py-5 bg-surface-container-lowest">
+<div class="flex flex-col gap-3">
+<!-- Breadcrumb Bar -->
+<div class="flex items-center gap-2 text-label-sm font-label-sm uppercase tracking-wider text-outline">
+<span>Deployments &amp; Builds</span>
+<span class="text-outline-variant">/</span>
+<span class="text-on-surface-variant">Sprint 14</span>
+<span class="text-outline-variant">/</span>
+<span class="text-primary font-mono-sm font-semibold">Beta Sandboxes v0.8</span>
+</div>
+<!-- Title & Main Command Bar -->
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+<div class="flex flex-wrap items-center gap-3">
+<h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Pull Request Previews &amp; Isolated Micro-VM Builds</h1>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary-container/20 text-primary text-label-sm font-label-sm uppercase tracking-wide">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+            Beta v0.8 Release
+          </span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-secondary text-mono-sm font-mono-sm">
+            KVM-L2 Enforced
+          </span>
+</div>
+<!-- Global Action Buttons -->
+<div class="flex flex-wrap items-center gap-2">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary-container text-on-primary-container hover:bg-inverse-primary text-label-md font-label-md transition-colors shadow-sm" onclick="triggerToast('Provisioning ephemeral builder Micro-VM (CID #5044)...', 'rocket_launch')">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>+ Trigger Preview Run</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container text-on-surface hover:bg-surface-container-high text-label-md font-label-md transition-colors" onclick="triggerToast('GitHub App Norix-Bot v2.4 verified: 4 hooks synchronized', 'check_circle')">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">integration_instructions</span>
+<span>GitHub App Settings</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container text-on-surface hover:bg-surface-container-high text-label-md font-label-md transition-colors" onclick="triggerToast('CoW Database catalog loaded: 4 golden snapshots available', 'storage')">
+<span class="material-symbols-outlined text-[16px] text-tertiary">schema</span>
+<span>Disposable DB Templates</span>
+</button>
+<div class="h-6 w-px bg-surface-container-highest"></div>
+<a class="flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container-low text-secondary text-label-md font-label-md hover:bg-surface-container transition-colors" href="#" target="_blank">
+<span class="material-symbols-outlined text-[16px]">public</span>
+<span class="font-mono-sm">*.preview.norix.dev</span>
+<span class="material-symbols-outlined text-[13px] text-outline">open_in_new</span>
+</a>
+</div>
+</div>
+<!-- Definition of Done (DoD) Sprint 14 Verification Badges -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-2">
+<div class="flex items-center gap-2 px-3 py-2 rounded bg-surface-container-low text-body-sm font-body-sm text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-[17px]">speed</span>
+<div class="flex flex-col leading-tight">
+<span class="text-label-sm font-label-sm text-outline">PR PREVIEW TIME</span>
+<span class="font-mono-sm text-on-surface font-semibold">&lt;2 min (Avg 1m 18s)</span>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 rounded bg-surface-container-low text-body-sm font-body-sm text-on-surface">
+<span class="material-symbols-outlined text-status-running text-[17px]">security</span>
+<div class="flex flex-col leading-tight">
+<span class="text-label-sm font-label-sm text-outline">SECRET LEAK PROTECTION</span>
+<span class="font-mono-sm text-on-surface font-semibold">Zero Prod Secrets in VMs</span>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 rounded bg-surface-container-low text-body-sm font-body-sm text-on-surface">
+<span class="material-symbols-outlined text-secondary text-[17px]">auto_delete</span>
+<div class="flex flex-col leading-tight">
+<span class="text-label-sm font-label-sm text-outline">AUTO-DESTRUCTION</span>
+<span class="font-mono-sm text-on-surface font-semibold">100% GC on PR Close / Merge</span>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 rounded bg-surface-container-low text-body-sm font-body-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-[17px]">difference</span>
+<div class="flex flex-col leading-tight">
+<span class="text-label-sm font-label-sm text-outline">DISPOSABLE PERSISTENCE</span>
+<span class="font-mono-sm text-on-surface font-semibold">CoW Snapshots (&lt;800ms clone)</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 4-Column KPI Dense Command Grid -->
+<section class="px-6 py-5">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- KPI 1: Active PR Previews -->
+<div class="p-4 rounded-lg bg-surface-container-low flex flex-col justify-between shadow-sm relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/5 rounded-full pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
+<div>
+<div class="flex items-center justify-between text-outline mb-1">
+<span class="text-label-md font-label-md uppercase tracking-wider">Active PR Previews</span>
+<span class="flex items-center gap-1 text-tertiary font-mono-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running animate-ping"></span> Live
+            </span>
+</div>
+<div class="flex items-baseline gap-2 mb-2">
+<span class="text-headline-xl font-headline-xl font-mono text-on-surface tracking-tight">18</span>
+<span class="text-mono-md font-mono-md text-outline">/ 25 quota</span>
+<span class="ml-auto text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary font-mono">72% cap</span>
+</div>
+<!-- Capacity progress track -->
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mb-3">
+<div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 72%"></div>
+</div>
+</div>
+<div class="pt-2 flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex flex-col text-outline">
+<span class="text-label-sm font-label-sm">AVG LIFE</span>
+<span class="text-on-surface font-mono-sm font-medium">3.4 hours</span>
+</div>
+<div class="flex gap-2 font-mono-sm text-[11px]">
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">14 FE</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-tertiary">4 Fullstack</span>
+</div>
+</div>
+<!-- Inline Sparkline Visual -->
+<div class="mt-3 pt-2 text-outline">
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-1 text-outline">
+<span>24H PREVIEW ACTIVITY</span>
+<span class="text-tertiary font-mono-sm">+5 today</span>
+</div>
+<svg class="w-full h-7 text-primary" fill="none" preserveaspectratio="none" viewbox="0 0 200 30">
+<path d="M0,22 Q15,25 30,18 T60,12 T90,20 T120,6 T150,14 T180,8 T200,10 L200,30 L0,30 Z" fill="currentColor" fill-opacity="0.08"></path>
+<path d="M0,22 Q15,25 30,18 T60,12 T90,20 T120,6 T150,14 T180,8 T200,10" stroke="currentColor" stroke-linecap="round" stroke-width="1.75"></path>
+</svg>
+</div>
+</div>
+<!-- KPI 2: Build Isolation Enforcement -->
+<div class="p-4 rounded-lg bg-surface-container-low flex flex-col justify-between shadow-sm relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-tertiary/5 rounded-full pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
+<div>
+<div class="flex items-center justify-between text-outline mb-1">
+<span class="text-label-md font-label-md uppercase tracking-wider">Build Isolation Sandbox</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary-container/30 text-on-tertiary-container text-label-sm font-label-sm font-mono">SLSA L3</span>
+</div>
+<div class="flex items-baseline gap-2 mb-2">
+<span class="text-headline-xl font-headline-xl font-mono text-tertiary tracking-tight">100%</span>
+<span class="text-mono-md font-mono-md text-on-surface">KVM Hypervisor</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mb-3">
+<div class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 100%"></div>
+</div>
+</div>
+<div class="pt-1 flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-outline text-label-sm font-label-sm">PROD SECRETS IN VMS</span>
+<span class="font-mono-sm font-semibold text-tertiary">0 Exposed (Mock Redacted)</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1.5 rounded bg-surface-container text-body-sm font-body-sm">
+<span class="flex items-center gap-1.5 text-on-surface-variant font-mono-sm">
+<span class="material-symbols-outlined text-[15px] text-error">fitbit_jumping_jacks</span>
+              Hostile Probe Traps
+            </span>
+<span class="text-mono-sm text-error font-semibold">14 Blocked</span>
+</div>
+</div>
+<div class="mt-3 pt-2 text-label-sm font-label-sm text-outline flex items-center gap-1.5">
+<span class="material-symbols-outlined text-tertiary text-[15px]">verified_user</span>
+<span>Zero socket access to AWS metadata / internal VPC</span>
+</div>
+</div>
+<!-- KPI 3: Disposable DB Clones -->
+<div class="p-4 rounded-lg bg-surface-container-low flex flex-col justify-between shadow-sm relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-secondary/5 rounded-full pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
+<div>
+<div class="flex items-center justify-between text-outline mb-1">
+<span class="text-label-md font-label-md uppercase tracking-wider">Disposable DB Clones</span>
+<span class="text-secondary font-mono-sm font-semibold">&lt;800ms CoW</span>
+</div>
+<div class="flex items-baseline gap-2 mb-2">
+<span class="text-headline-xl font-headline-xl font-mono text-on-surface tracking-tight">12</span>
+<span class="text-mono-md font-mono-md text-outline">Ephemeral DBs</span>
+<span class="ml-auto text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-mono">Btrfs Subvols</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mb-3">
+<div class="bg-secondary h-full rounded-full transition-all duration-500" style="width: 48%"></div>
+</div>
+</div>
+<div class="pt-1 flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-outline text-label-sm font-label-sm">TOTAL OVERHEAD RAM</span>
+<span class="font-mono-sm font-medium text-on-surface">4.8 GB (Postgres + Redis)</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1.5 rounded bg-surface-container text-body-sm font-body-sm">
+<span class="flex items-center gap-1.5 text-on-surface-variant font-mono-sm">
+<span class="material-symbols-outlined text-[15px] text-secondary">database</span>
+              Avg Clone Speed
+            </span>
+<span class="text-mono-sm text-secondary font-semibold">412 ms</span>
+</div>
+</div>
+<div class="mt-3 pt-2 text-label-sm font-label-sm text-outline flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-[15px]">sanitizer</span>
+<span>PII Sanitized Snapshot: staging-v14.4</span>
+</div>
+</div>
+<!-- KPI 4: Resource & Cost Quota -->
+<div class="p-4 rounded-lg bg-surface-container-low flex flex-col justify-between shadow-sm relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-primary-container/10 rounded-full pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
+<div>
+<div class="flex items-center justify-between text-outline mb-1">
+<span class="text-label-md font-label-md uppercase tracking-wider">Resource Allocation</span>
+<span class="text-tertiary font-mono-sm font-semibold">Auto-TTL: 48h</span>
+</div>
+<div class="flex items-baseline gap-2 mb-2">
+<span class="text-headline-xl font-headline-xl font-mono text-on-surface tracking-tight">24</span>
+<span class="text-mono-md font-mono-md text-outline">vCPU / 48 GB</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mb-3">
+<div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 62%"></div>
+</div>
+</div>
+<div class="pt-1 flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-outline text-label-sm font-label-sm">SAVINGS VS FIXED STAGING</span>
+<span class="font-mono-sm font-semibold text-tertiary">-$1,420 / mo</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1.5 rounded bg-surface-container text-body-sm font-body-sm">
+<span class="flex items-center gap-1.5 text-on-surface-variant font-mono-sm">
+<span class="material-symbols-outlined text-[15px] text-tertiary">savings</span>
+              Cost Efficiency
+            </span>
+<span class="text-mono-sm text-tertiary font-semibold">+84% idle reduction</span>
+</div>
+</div>
+<div class="mt-3 pt-2 text-label-sm font-label-sm text-outline flex items-center gap-1.5">
+<span class="material-symbols-outlined text-outline text-[15px]">timer</span>
+<span>Garbage Collector cycles every 120s</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Central Workload & Preview Environments Console -->
+<section class="px-6 py-2">
+<div class="rounded-lg bg-surface-container-low shadow-sm overflow-hidden">
+<!-- Tabs Navigation Header -->
+<div class="px-4 pt-3 flex flex-wrap items-center justify-between gap-4 bg-surface-container-lowest">
+<div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto">
+<button class="px-3 py-2 text-body-sm font-body-sm font-semibold text-primary border-b-2 border-primary flex items-center gap-2">
+<span>Active PR Environments</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary/20 text-primary text-mono-sm font-mono-sm">18</span>
+</button>
+<button class="px-3 py-2 text-body-sm font-body-sm text-on-surface-variant hover:text-on-surface flex items-center gap-2 transition-colors">
+<span>Micro-VM Build Queue</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-highest text-secondary text-mono-sm font-mono-sm">3</span>
+</button>
+<button class="px-3 py-2 text-body-sm font-body-sm text-on-surface-variant hover:text-on-surface flex items-center gap-2 transition-colors">
+<span>Disposable Database Pools</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-highest text-outline text-mono-sm font-mono-sm">8</span>
+</button>
+<button class="px-3 py-2 text-body-sm font-body-sm text-on-surface-variant hover:text-on-surface flex items-center gap-2 transition-colors hidden md:flex">
+<span>GitHub Check Runs</span>
+</button>
+<button class="px-3 py-2 text-body-sm font-body-sm text-on-surface-variant hover:text-on-surface flex items-center gap-2 transition-colors hidden lg:flex">
+<span>Hostile Build Traps</span>
+<span class="w-2 h-2 rounded-full bg-status-failed"></span>
+</button>
+</div>
+<!-- Quick Search & Refresh -->
+<div class="flex items-center gap-2 pb-2">
+<div class="relative w-48 sm:w-64">
+<span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-outline text-[15px]">filter_list</span>
+<input class="w-full bg-surface-container border-0 rounded px-2 pl-7 py-1 text-mono-sm font-mono-sm text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary" id="tableSearch" onkeyup="filterTable()" placeholder="Filter PR #, branch, repo..." type="text"/>
+</div>
+<button class="p-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" onclick="triggerToast('Refreshing live preview registry status...', 'refresh')" title="Refresh registry">
+<span class="material-symbols-outlined text-[17px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Quick Filter Pills Bar -->
+<div class="px-4 py-2 bg-surface-container flex flex-wrap items-center justify-between gap-3 text-label-sm font-label-sm">
+<div class="flex items-center gap-1.5">
+<span class="text-outline uppercase">Filter:</span>
+<button class="px-2 py-0.5 rounded bg-primary-container text-on-primary-container">All (18)</button>
+<button class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant hover:text-on-surface">Frontend Only (14)</button>
+<button class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant hover:text-on-surface">Fullstack + CoW DB (4)</button>
+<button class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant hover:text-on-surface">Building (1)</button>
+</div>
+<div class="flex items-center gap-3 text-outline font-mono-sm">
+<span>Namespace: <strong class="text-on-surface">preview-sandboxes-us-east-1</strong></span>
+<span>•</span>
+<span>DNS Wildcard: <strong class="text-tertiary">*.preview.norix.dev</strong> (Active)</span>
+</div>
+</div>
+<!-- Main High-Density Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left text-body-sm font-body-sm" id="prTable">
+<thead class="bg-surface-container-low text-label-sm font-label-sm text-outline uppercase tracking-wider">
+<tr>
+<th class="py-2.5 px-4">Pull Request &amp; Repo</th>
+<th class="py-2.5 px-4">Preview URL &amp; Route</th>
+<th class="py-2.5 px-4">Micro-VM Runtime &amp; Build</th>
+<th class="py-2.5 px-4">Disposable DB</th>
+<th class="py-2.5 px-4">Status &amp; Auto-TTL</th>
+<th class="py-2.5 px-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-on-surface">
+<!-- Row 1: Active Fullstack PR 418 -->
+<tr class="hover:bg-surface-container/60 transition-colors bg-surface-container-low/40">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded bg-surface-container-highest flex items-center justify-center text-primary font-mono text-xs font-bold shrink-0">
+                    418
+                  </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-mono-sm font-semibold text-on-surface truncate">PR #418: feature/checkout-v2</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-outline font-mono-sm text-[10px]">acme/web-app</span>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-outline">
+<span class="flex items-center gap-1 font-mono-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-outline">commit</span> 8f9b2a1
+                      </span>
+<span>•</span>
+<span>by @mario-dev</span>
+<span>•</span>
+<span class="font-mono-sm text-secondary">feat/checkout-cow</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<a class="text-primary hover:underline font-mono-sm text-[12px] flex items-center gap-1 truncate max-w-xs" href="https://pr-418.web-app.preview.norix.dev" target="_blank">
+                      pr-418.web-app.preview.norix.dev
+                      <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="text-label-sm font-label-sm text-tertiary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">lock</span> TLS Let's Encrypt (DNS-01)
+                    </span>
+<button class="text-outline hover:text-on-surface text-label-sm font-label-sm" onclick="navigator.clipboard?.writeText('https://pr-418.web-app.preview.norix.dev'); triggerToast('Preview URL copied to clipboard!', 'content_copy')">
+                      Copy
+                    </button>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col font-mono-sm">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Cloud Hypervisor µVM</span>
+<span class="text-outline text-[10px]">(CID 5012)</span>
+</div>
+<div class="text-label-sm font-label-sm text-outline mt-0.5">
+                    BuildKit: <span class="text-on-surface font-semibold">1m 12s</span> (Rootless runc)
+                  </div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col font-mono-sm">
+<span class="text-secondary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">database</span>
+                    postgres-clean:v16
+                  </span>
+<span class="text-label-sm font-label-sm text-outline mt-0.5">
+                    CoW Diff: <strong class="text-on-surface">+18.4 MB</strong> / 412ms clone
+                  </span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="inline-flex items-center gap-1.5 text-tertiary font-mono-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-status-running animate-pulse"></span>
+                    Live (Healthy)
+                  </span>
+<span class="text-label-sm font-label-sm text-outline mt-0.5">
+                    TTL: <strong class="text-on-surface">36h left</strong> (Auto-GC on close)
+                  </span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right">
+<div class="inline-flex items-center gap-1">
+<a class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-primary hover:text-primary-fixed" href="https://pr-418.web-app.preview.norix.dev" target="_blank" title="Open in browser">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</a>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" onclick="triggerToast('Streaming live Cloud Hypervisor logs for PR #418', 'terminal')" title="View µVM Logs">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+</button>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" onclick="triggerToast('Re-spinning disposable Postgres copy-on-write snapshot...', 'sync')" title="Re-spin ephemeral DB">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+</button>
+<button class="p-1 rounded bg-surface-container hover:bg-error-container text-error" onclick="triggerToast('PR #418 Sandbox scheduled for immediate micro-VM destruction', 'delete_forever')" title="Destroy Sandbox">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Active API Core PR 419 -->
+<tr class="hover:bg-surface-container/60 transition-colors bg-surface-container">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded bg-surface-container-highest flex items-center justify-center text-primary font-mono text-xs font-bold shrink-0">
+                    419
+                  </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-mono-sm font-semibold text-on-surface truncate">PR #419: refactor/auth-middleware</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-outline font-mono-sm text-[10px]">acme/api-core</span>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-outline">
+<span class="flex items-center gap-1 font-mono-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-outline">commit</span> 3e17ac9
+                      </span>
+<span>•</span>
+<span>by @elena-sec</span>
+<span>•</span>
+<span class="font-mono-sm text-secondary">feat/jwt-v2</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<a class="text-primary hover:underline font-mono-sm text-[12px] flex items-center gap-1 truncate max-w-xs" href="https://pr-419.api-core.preview.norix.dev" target="_blank">
+                      pr-419.api-core.preview.norix.dev
+                      <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="text-label-sm font-label-sm text-tertiary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">lock</span> TLS Let's Encrypt (DNS-01)
+                    </span>
+<button class="text-outline hover:text-on-surface text-label-sm font-label-sm" onclick="navigator.clipboard?.writeText('https://pr-419.api-core.preview.norix.dev'); triggerToast('Preview URL copied to clipboard!', 'content_copy')">
+                      Copy
+                    </button>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col font-mono-sm">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Cloud Hypervisor µVM</span>
+<span class="text-outline text-[10px]">(CID 5028)</span>
+</div>
+<div class="text-label-sm font-label-sm text-outline mt-0.5">
+                    BuildKit: <span class="text-on-surface font-semibold">58s</span> (Layer Cache Hit)
+                  </div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col font-mono-sm">
+<span class="text-secondary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+                    Redis 7.2 + Postgres
+                  </span>
+<span class="text-label-sm font-label-sm text-outline mt-0.5">
+                    CoW Diff: <strong class="text-on-surface">+4.2 MB</strong> / 280ms clone
+                  </span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="inline-flex items-center gap-1.5 text-tertiary font-mono-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-status-running animate-pulse"></span>
+                    Live (Healthy)
+                  </span>
+<span class="text-label-sm font-label-sm text-outline mt-0.5">
+                    TTL: <strong class="text-on-surface">12h left</strong> (Auto-GC on close)
+                  </span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right">
+<div class="inline-flex items-center gap-1">
+<a class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-primary hover:text-primary-fixed" href="https://pr-419.api-core.preview.norix.dev" target="_blank" title="Open in browser">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</a>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" onclick="triggerToast('Streaming live Cloud Hypervisor logs for PR #419', 'terminal')" title="View µVM Logs">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+</button>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" onclick="triggerToast('Re-spinning ephemeral DB stack...', 'sync')" title="Re-spin ephemeral DB">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+</button>
+<button class="p-1 rounded bg-surface-container hover:bg-error-container text-error" onclick="triggerToast('PR #419 Sandbox scheduled for immediate destruction', 'delete_forever')" title="Destroy Sandbox">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: In-Progress Building PR 421 -->
+<tr class="hover:bg-surface-container/60 transition-colors bg-surface-container-low/40">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded bg-surface-container-highest flex items-center justify-center text-status-degraded font-mono text-xs font-bold shrink-0">
+                    421
+                  </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-mono-sm font-semibold text-on-surface truncate">PR #421: fix/memory-leak-worker</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-outline font-mono-sm text-[10px]">acme/data-pipeline</span>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-outline">
+<span class="flex items-center gap-1 font-mono-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-outline">commit</span> 90a1bc7
+                      </span>
+<span>•</span>
+<span>by @chen-rust</span>
+<span>•</span>
+<span class="font-mono-sm text-secondary">fix/worker-gc</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="text-on-surface-variant font-mono-sm text-[12px] italic">
+                    Provisioning ingress endpoint...
+                  </span>
+<span class="text-label-sm font-label-sm text-outline mt-0.5">
+                    pr-421.data-pipeline.preview.norix.dev
+                  </span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col font-mono-sm">
+<div class="flex items-center gap-1.5 text-status-degraded font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-degraded animate-spin"></span>
+<span>Micro-VM Building (78%)</span>
+</div>
+<div class="text-label-sm font-label-sm text-outline mt-0.5">
+                    Step 7/9: compiling rust binary (42s elapsed)
+                  </div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col font-mono-sm">
+<span class="text-outline font-medium">None (Mocked Pipeline)</span>
+<span class="text-label-sm font-label-sm text-outline mt-0.5">Synthetic Test Payloads</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="inline-flex items-center gap-1.5 text-status-degraded font-mono-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-status-degraded animate-ping"></span>
+                    Spinning Up...
+                  </span>
+<span class="text-label-sm font-label-sm text-outline mt-0.5">
+                    Est. completion: 18s
+                  </span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 rounded bg-surface-container text-outline cursor-not-allowed" title="URL not live yet">
+<span class="material-symbols-outlined text-[16px]">visibility_off</span>
+</button>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-status-degraded" onclick="triggerToast('Connecting to interactive BuildKit stream for PR #421', 'terminal')" title="View Live Build Terminal">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+</button>
+<button class="p-1 rounded bg-surface-container hover:bg-error-container text-error" onclick="triggerToast('Cancelling active build run PR #421', 'cancel')" title="Abort Build">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Active Frontend PR 415 -->
+<tr class="hover:bg-surface-container/60 transition-colors bg-surface-container">
+<td class="py-2.5 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded bg-surface-container-highest flex items-center justify-center text-primary font-mono text-xs font-bold shrink-0">
+                    415
+                  </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-mono-sm font-semibold text-on-surface truncate">PR #415: feat/ai-copilot-panel</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-outline font-mono-sm text-[10px]">acme/dashboard</span>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-outline">
+<span class="flex items-center gap-1 font-mono-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-outline">commit</span> 61b47df
+                      </span>
+<span>•</span>
+<span>by @sara-frontend</span>
+<span>•</span>
+<span class="font-mono-sm text-secondary">feat/copilot-ui</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<a class="text-primary hover:underline font-mono-sm text-[12px] flex items-center gap-1 truncate max-w-xs" href="https://pr-415.dashboard.preview.norix.dev" target="_blank">
+                      pr-415.dashboard.preview.norix.dev
+                      <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="text-label-sm font-label-sm text-tertiary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">lock</span> TLS Let's Encrypt (DNS-01)
+                    </span>
+<button class="text-outline hover:text-on-surface text-label-sm font-label-sm" onclick="navigator.clipboard?.writeText('https://pr-415.dashboard.preview.norix.dev'); triggerToast('Preview URL copied to clipboard!', 'content_copy')">
+                      Copy
+                    </button>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col font-mono-sm">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Cloud Hypervisor µVM</span>
+<span class="text-outline text-[10px]">(CID 5009)</span>
+</div>
+<div class="text-label-sm font-label-sm text-outline mt-0.5">
+                    BuildKit: <span class="text-on-surface font-semibold">1m 45s</span> (Next.js 14 SSG)
+                  </div>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col font-mono-sm">
+<span class="text-outline font-medium">None (Mocked API)</span>
+<span class="text-label-sm font-label-sm text-outline mt-0.5">Frontend Client Isolated</span>
+</div>
+</td>
+<td class="py-2.5 px-4">
+<div class="flex flex-col">
+<span class="inline-flex items-center gap-1.5 text-tertiary font-mono-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-status-running animate-pulse"></span>
+                    Live (Healthy)
+                  </span>
+<span class="text-label-sm font-label-sm text-outline mt-0.5">
+                    TTL: <strong class="text-status-degraded">4h left</strong> (Expiring soon)
+                  </span>
+</div>
+</td>
+<td class="py-2.5 px-4 text-right">
+<div class="inline-flex items-center gap-1">
+<a class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-primary hover:text-primary-fixed" href="https://pr-415.dashboard.preview.norix.dev" target="_blank" title="Open in browser">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</a>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" onclick="triggerToast('Streaming live Cloud Hypervisor logs for PR #415', 'terminal')" title="View µVM Logs">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+</button>
+<button class="p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" onclick="triggerToast('Extending PR #415 TTL by 24 hours...', 'more_time')" title="Extend TTL +24h">
+<span class="material-symbols-outlined text-[16px]">timer</span>
+</button>
+<button class="p-1 rounded bg-surface-container hover:bg-error-container text-error" onclick="triggerToast('PR #415 Sandbox scheduled for immediate destruction', 'delete_forever')" title="Destroy Sandbox">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Status Summary -->
+<div class="px-4 py-2.5 bg-surface-container-lowest flex flex-wrap items-center justify-between text-body-sm font-body-sm text-outline gap-2">
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1.5 font-mono-sm">
+<span class="w-2 h-2 rounded-full bg-status-running"></span> 17 Healthy
+          </span>
+<span class="flex items-center gap-1.5 font-mono-sm">
+<span class="w-2 h-2 rounded-full bg-status-degraded"></span> 1 Building
+          </span>
+<span class="flex items-center gap-1.5 font-mono-sm">
+<span class="w-2 h-2 rounded-full bg-status-stopped"></span> 0 Failed
+          </span>
+</div>
+<div class="flex items-center gap-2 font-mono-sm">
+<span>Total Micro-VM memory in use: <strong class="text-on-surface">36.8 GB / 64 GB Pool</strong></span>
+</div>
+</div>
+</div>
+</section>
+<!-- Split Operational Command Panel (60% / 40%) -->
+<section class="px-6 py-5">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+<!-- 60% Left: Automated GitHub PR Comment & Lifecycle Simulation -->
+<div class="lg:col-span-7 flex flex-col gap-4">
+<!-- Panel Header -->
+<div class="p-4 rounded-lg bg-surface-container-low shadow-sm">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">smart_toy</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Automated GitHub PR Comment &amp; Lifecycle Flow</h2>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-secondary text-label-sm font-label-sm font-mono">
+              GitHub App Bot • 100% Automated
+            </span>
+</div>
+<!-- Interactive Lifecycle Pipeline Diagram -->
+<div class="p-3 rounded bg-surface-container-lowest mb-4">
+<div class="text-label-sm font-label-sm text-outline uppercase tracking-wider mb-2">Automated Orchestration Pipeline</div>
+<div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-label-sm font-label-sm">
+<div class="p-2 rounded bg-surface-container flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-primary text-[18px]">webhook</span>
+<span class="font-mono-sm text-on-surface font-semibold">1. PR Webhook</span>
+<span class="text-outline text-[10px]">GitHub App Event</span>
+</div>
+<div class="p-2 rounded bg-surface-container flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-secondary text-[18px]">memory</span>
+<span class="font-mono-sm text-on-surface font-semibold">2. BuildKit µVM</span>
+<span class="text-outline text-[10px]">KVM Level 2</span>
+</div>
+<div class="p-2 rounded bg-surface-container flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-tertiary text-[18px]">difference</span>
+<span class="font-mono-sm text-on-surface font-semibold">3. CoW DB Clone</span>
+<span class="text-outline text-[10px]">&lt;800ms Subvolume</span>
+</div>
+<div class="p-2 rounded bg-surface-container flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-primary text-[18px]">dns</span>
+<span class="font-mono-sm text-on-surface font-semibold">4. Caddy Route</span>
+<span class="text-outline text-[10px]">Wildcard SSL</span>
+</div>
+<div class="p-2 rounded bg-surface-container flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-status-running text-[18px]">mark_chat_read</span>
+<span class="font-mono-sm text-on-surface font-semibold">5. Bot Comment</span>
+<span class="text-outline text-[10px]">PR Feedback Ready</span>
+</div>
+</div>
+</div>
+<!-- Exact Bot Comment Mockup (Simulates GitHub Markdown Card) -->
+<div class="rounded-lg bg-surface-container p-4 shadow-sm">
+<!-- GitHub Bot Header -->
+<div class="flex items-center justify-between pb-3 bg-surface-container">
+<div class="flex items-center gap-2.5">
+<div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-xs font-bold font-mono">
+                  NB
+                </div>
+<div class="flex items-center gap-1.5">
+<span class="text-body-sm font-body-sm font-semibold text-on-surface">norix-bot</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-outline text-[10px] font-mono">bot</span>
+<span class="text-outline text-body-sm font-body-sm">commented 4 minutes ago</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[16px]">more_horiz</span>
+</div>
+<!-- Bot Body Content -->
+<div class="pt-3 space-y-3">
+<div class="flex items-center gap-2 text-headline-sm font-headline-sm text-on-surface">
+<span>🚀 Norix PaaS — PR Preview Environment is Ready!</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+                An isolated Micro-VM container runtime and dedicated disposable Postgres database have been successfully provisioned for this Pull Request.
+              </p>
+<!-- URL & Deployment Details Table inside bot comment -->
+<div class="rounded bg-surface-container-lowest overflow-hidden text-mono-sm font-mono-sm">
+<div class="p-2.5 bg-surface-container-high flex items-center justify-between">
+<span class="text-outline uppercase text-label-sm font-label-sm">Preview Routing Details</span>
+<span class="text-tertiary flex items-center gap-1 text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-status-running animate-ping"></span> Live &amp; Accessible
+                  </span>
+</div>
+<div class="p-3 space-y-2">
+<div class="flex items-center justify-between">
+<span class="text-outline">Preview Endpoint:</span>
+<a class="text-primary hover:underline font-semibold flex items-center gap-1" href="https://pr-418.storefront.preview.norix.dev" target="_blank">
+                      https://pr-418.storefront.preview.norix.dev
+                      <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+</a>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-outline">Disposable DB Host:</span>
+<span class="text-on-surface font-mono">ephemeral-db-pr418.internal:5432 (Sanitized)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-outline">Micro-VM Specs:</span>
+<span class="text-on-surface">2 vCPU • 4 GB RAM • Cloud Hypervisor KVM</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-outline">Cold Boot Latency:</span>
+<span class="text-tertiary">182ms to HTTP OK</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-outline">Auto-Destruction:</span>
+<span class="text-secondary">On merge / PR close (Zero residue guarantee)</span>
+</div>
+</div>
+</div>
+<!-- Quick Bot Action Controls -->
+<div class="flex flex-wrap items-center gap-2 pt-1">
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-label-sm font-label-sm flex items-center gap-1 transition-colors" onclick="triggerToast('Snapshot diff re-seeded from staging clean snapshot', 'schema')">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+<span>Refresh DB Snapshot</span>
+</button>
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-label-sm font-label-sm flex items-center gap-1 transition-colors" onclick="triggerToast('Logs exported for PR #418 to artifact storage', 'download')">
+<span class="material-symbols-outlined text-[14px]">file_download</span>
+<span>Download Build Logs</span>
+</button>
+<button class="px-2.5 py-1 rounded bg-surface-container-high hover:bg-error-container text-error text-label-sm font-label-sm flex items-center gap-1 transition-colors ml-auto" onclick="triggerToast('Triggered emergency purge on PR #418 sandbox', 'delete')">
+<span class="material-symbols-outlined text-[14px]">delete</span>
+<span>Purge Environment Now</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 40% Right: Isolated Micro-VM Builder Stream & Security Sandbox -->
+<div class="lg:col-span-5 flex flex-col gap-4">
+<div class="p-4 rounded-lg bg-surface-container-lowest shadow-sm flex flex-col h-full justify-between">
+<div>
+<!-- Terminal Header -->
+<div class="flex items-center justify-between pb-3 bg-surface-container-lowest">
+<div class="flex items-center gap-2">
+<div class="flex gap-1.5">
+<div class="w-2.5 h-2.5 rounded-full bg-error"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-status-degraded"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-status-running"></div>
+</div>
+<span class="text-mono-sm font-mono-sm font-semibold text-on-surface ml-1">Builder µVM Stream #902</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.2 rounded bg-tertiary-container/30 text-tertiary text-mono-sm font-mono-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span> KVM HARDWARE ISOLATED
+                </span>
+</div>
+</div>
+<!-- Monospace Terminal Log Viewer -->
+<div class="mt-3 p-3 rounded bg-surface-container-lowest font-mono-sm text-on-surface space-y-1.5 overflow-x-auto text-[11px] leading-relaxed max-h-[380px] overflow-y-auto selection:bg-primary-container selection:text-white" id="terminalLogs">
+<div class="text-outline">[14:38:01.002] <span class="text-primary font-semibold">[builder-vm-902]</span> Spawning ephemeral micro-VM (CID 5012, Cloud Hypervisor)</div>
+<div class="text-outline">[14:38:01.184] <span class="text-secondary font-semibold">[isolation]</span> Stripping host environment: 18 prod secrets redacted</div>
+<div class="text-outline">[14:38:01.192] <span class="text-secondary font-semibold">[isolation]</span> Injected mock cryptographic test keys for PR #418</div>
+<div class="text-outline">[14:38:01.320] <span class="text-primary font-semibold">[buildkit]</span> Initializing rootless runc container runtime in VM guest</div>
+<div class="text-outline">[14:38:01.812] <span class="text-primary font-semibold">[buildkit]</span> =&gt; [stage-0 1/5] FROM node:20-alpine</div>
+<div class="text-outline">[14:38:02.102] <span class="text-primary font-semibold">[buildkit]</span> =&gt; CACHED [stage-0 2/5] WORKDIR /app</div>
+<div class="text-outline">[14:38:03.450] <span class="text-primary font-semibold">[buildkit]</span> =&gt; [stage-0 3/5] RUN pnpm install --frozen-lockfile (3.4s)</div>
+<!-- Hostile Security Trap Alert in Terminal -->
+<div class="p-2 rounded bg-surface-container my-1">
+<div class="text-error font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">security</span>
+                  [security-audit] nftables: outbound probe to internal 10.0.0.0/8 DROPPED
+                </div>
+<div class="text-outline text-[10px] mt-0.5">
+                  Hostile build containment confirmed: npm postinstall tried to reach private metadata endpoint. Blocked by hypervisor sandbox.
+                </div>
+</div>
+<div class="text-outline">[14:38:07.120] <span class="text-tertiary font-semibold">[cow-db]</span> Forking postgres-staging-golden-snap -&gt; ephemeral-pr418-db</div>
+<div class="text-outline">[14:38:07.532] <span class="text-tertiary font-semibold">[cow-db]</span> Btrfs subvolume snapshot created in 412ms (+18 MB diff)</div>
+<div class="text-outline">[14:38:08.010] <span class="text-secondary font-semibold">[caddy-edge]</span> Publishing route: pr-418.storefront.preview.norix.dev -&gt; 172.24.12.9:3000</div>
+<div class="text-outline">[14:38:08.240] <span class="text-secondary font-semibold">[tls]</span> Let's Encrypt Wildcard certificate already active for *.preview.norix.dev</div>
+<div class="text-outline">[14:38:08.512] <span class="text-primary font-semibold">[github-bot]</span> Posting Check Run comment to PR #418 via GitHub App API (201 Created)</div>
+<div class="text-status-running font-semibold">[14:38:08.601] [norix-daemon] All healthchecks PASSED (HTTP 200). Ready for team preview.</div>
+</div>
+</div>
+<!-- Bottom Action Security Testing Playground -->
+<div class="mt-4 pt-3 bg-surface-container-lowest flex flex-col gap-2">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Security Sandbox Verification Tools:</span>
+<div class="grid grid-cols-2 gap-2">
+<button class="px-3 py-2 rounded bg-surface-container hover:bg-surface-container-high text-error text-label-md font-label-md flex items-center justify-center gap-1.5 transition-colors" onclick="simulateHostileScan()">
+<span class="material-symbols-outlined text-[16px]">bug_report</span>
+<span>Simulate Hostile Probe</span>
+</button>
+<button class="px-3 py-2 rounded bg-surface-container hover:bg-surface-container-high text-tertiary text-label-md font-label-md flex items-center justify-center gap-1.5 transition-colors" onclick="simulateMergeHook()">
+<span class="material-symbols-outlined text-[16px]">merge_type</span>
+<span>Trigger Merge Auto-GC</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Inline JavaScript for Micro-Interactions & Simulations -->
+<script>
+  // Toast Notification Controller
+  function triggerToast(message, iconName) {
+    const toast = document.getElementById('toastNotification');
+    const toastMsg = document.getElementById('toastMessage');
+    const toastIcon = document.getElementById('toastIcon');
+
+    if (!toast || !toastMsg || !toastIcon) return;
+
+    toastMsg.textContent = message;
+    toastIcon.textContent = iconName || 'info';
+
+    toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+    toast.classList.add('translate-y-0', 'opacity-100');
+
+    setTimeout(() => {
+      toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3800);
+  }
+
+  // Interactive Table Search Filter
+  function filterTable() {
+    const input = document.getElementById('tableSearch');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('prTable');
+    if (!table) return;
+    const trs = table.getElementsByTagName('tr');
+
+    for (let i = 1; i < trs.length; i++) {
+      const text = trs[i].textContent || trs[i].innerText;
+      if (text.toLowerCase().indexOf(filter) > -1) {
+        trs[i].style.display = "";
+      } else {
+        trs[i].style.display = "none";
+      }
+    }
+  }
+
+  // Interactive Hostile Build Attack Simulation
+  function simulateHostileScan() {
+    const terminal = document.getElementById('terminalLogs');
+    if (!terminal) return;
+
+    const timeStr = new Date().toTimeString().split(' ')[0] + '.042';
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'p-2 rounded bg-surface-container my-1';
+    alertDiv.innerHTML = `
+      <div class="text-error font-semibold flex items-center gap-1">
+        <span class="material-symbols-outlined text-[14px]">warning</span>
+        [security-audit] [${timeStr}] Injected attack payload: Malicious curl to http://169.254.169.254 (Cloud Metadata)
+      </div>
+      <div class="text-outline text-[10px] mt-0.5">
+        TRAP ENGAGED: Hypervisor sandbox intercepted non-routable CIDR. Process killed (SIGKILL). Host credentials 100% intact.
+      </div>
+    `;
+    terminal.appendChild(alertDiv);
+    terminal.scrollTop = terminal.scrollHeight;
+    triggerToast('Hostile network scan caught and blocked in KVM sandbox!', 'security');
+  }
+
+  // Simulate PR Merge & Garbage Collection Hook
+  function simulateMergeHook() {
+    const terminal = document.getElementById('terminalLogs');
+    if (!terminal) return;
+
+    const timeStr = new Date().toTimeString().split(' ')[0] + '.891';
+    const logLine = document.createElement('div');
+    logLine.className = 'text-secondary font-mono text-[11px]';
+    logLine.innerHTML = `[${timeStr}] <strong class="text-tertiary">[github-webhook]</strong> PR #418 merged into main -> Triggering instantaneous Garbage Collection: Micro-VM (CID 5012) killed; Btrfs CoW subvolume destroyed; Caddy edge route de-registered.`;
+    terminal.appendChild(logLine);
+    terminal.scrollTop = terminal.scrollHeight;
+
+    triggerToast('PR #418 merged: Sandbox micro-VM & ephemeral DB 100% destroyed without residue!', 'auto_delete');
+  }
+</script></main>
+</div>
+</body></html>

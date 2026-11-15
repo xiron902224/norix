@@ -2,7 +2,18 @@ syntax = "proto3";
 
 package v1;
 
-option go_package = "github.com/d2le2/paas/control-plane/internal/gen/v1;paasv1";
+option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
+
+message NodeCapabilities {
+  int32 cpu_cores = 1;
+  int64 memory_total_mb = 2;
+  bool docker_socket = 3;
+  bool containerd_socket = 4;
+  uint32 kvm_level = 5;
+  string hostname = 6;
+  string agent_version = 7;
+}
+
 message NodeHeartbeat {
   string node_id = 1;
   double cpu_usage_percent = 2;
@@ -10,17 +21,365 @@ message NodeHeartbeat {
   uint32 kvm_level = 4;
 }
 
+message Node {
+  string id = 1;
+  string organization_id = 2;
+  string name = 3;
+  string status = 4;
+  string last_seen_at = 5;
+  NodeCapabilities capabilities = 6;
+  bool is_local = 7;
+  double cpu_usage_percent = 8;
+  int64 memory_free_mb = 9;
+  int64 disk_free_mb = 10;
+  // worker | edge
+  string role = 11;
+  bool cordoned = 12;
+  bool draining = 13;
+  string zone = 14;
+  map<string, string> labels = 15;
+  // Workload IDs last reported by the agent (container labels).
+  repeated string reported_workload_ids = 16;
+}
+
+message CordonNodeRequest {
+  string node_id = 1;
+  bool cordoned = 2;
+}
+
+message CordonNodeResponse {
+  Node node = 1;
+}
+
+message DrainNodeRequest {
+  string node_id = 1;
+  bool draining = 2;
+}
+
+message DrainNodeResponse {
+  Node node = 1;
+}
+
+message UpdateNodeScheduleRequest {
+  string node_id = 1;
+  string role = 2;
+  string zone = 3;
+  map<string, string> labels = 4;
+}
+
+message UpdateNodeScheduleResponse {
+  Node node = 1;
+}
+
+message CreateJoinTokenRequest {
+  string node_name = 1;
+  int64 ttl_seconds = 2;
+}
+
+message CreateJoinTokenResponse {
+  string token = 1;
+  string expires_at = 2;
+}
+
+message EnrollNodeRequest {
+  string join_token = 1;
+  string node_name = 2;
+  NodeCapabilities capabilities = 3;
+}
+
+message EnrollNodeResponse {
+  string node_id = 1;
+  string node_token = 2;
+  string organization_id = 3;
+}
+
+message DesiredWorkload {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string image = 4;
+  map<string, string> env_vars = 5;
+  int32 cpu_shares = 6;
+  int64 memory_limit_mb = 7;
+  int32 host_port = 8;
+  int32 container_port = 9;
+  int64 desired_generation = 10;
+  string action = 11;
+  // container | docker-compose | microvm | wasm | static-site
+  string runtime = 12;
+  // Optional docker network for compose stacks (norix-stack-<id>).
+  string network_name = 13;
+  string network_alias = 14;
+}
+
+message DesiredWasmFunction {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string image_ref = 4;
+  int64 fuel_limit = 5;
+  int32 memory_limit_mb = 6;
+}
+
+message DesiredWasmPlan {
+  int64 generation = 1;
+  repeated DesiredWasmFunction functions = 2;
+}
+
+message ObservedWasmFunction {
+  string id = 1;
+  string status = 2;
+  string message = 3;
+  string artifact_path = 4;
+}
+
+message ObservedWasm {
+  int64 generation = 1;
+  string status = 2;
+  string message = 3;
+  repeated string log_lines = 4;
+  repeated ObservedWasmFunction functions = 5;
+}
+
+message ReportWasmRequest {
+  string node_id = 1;
+  ObservedWasm wasm = 2;
+}
+
+message ReportWasmResponse {}
+
+message ObservedWorkload {
+  string id = 1;
+  string status = 2;
+  string container_id = 3;
+  int64 observed_generation = 4;
+  string message = 5;
+  int32 host_port = 6;
+  repeated string log_lines = 7;
+}
+
+message HeartbeatRequest {
+  string node_id = 1;
+  double cpu_usage_percent = 2;
+  int64 memory_free_mb = 3;
+  string status = 4;
+  repeated string running_workload_ids = 5;
+  NodeCapabilities capabilities = 6;
+}
+
+message DesiredBuild {
+  string id = 1;
+  string workload_id = 2;
+  string git_url = 3;
+  string git_ref = 4;
+  string dockerfile_path = 5;
+  string image_tag = 6;
+  map<string, string> build_args = 7;
+  string registry = 8;
+}
+
+message ObservedBuild {
+  string id = 1;
+  string status = 2;
+  string image = 3;
+  string message = 4;
+  repeated string log_lines = 5;
+}
+
+message DesiredEdgeRoute {
+  string domain_id = 1;
+  string hostname = 2;
+  string upstream = 3;
+  string tls_mode = 4;
+  int64 edge_generation = 5;
+  string action = 6; // upsert | delete
+}
+
+message DesiredEdgePlan {
+  int64 generation = 1;
+  repeated DesiredEdgeRoute routes = 2;
+  string acme_ca = 3;
+  string caddy_admin_url = 4;
+}
+
+message ObservedEdge {
+  int64 generation = 1;
+  string status = 2;
+  string message = 3;
+  repeated string log_lines = 4;
+  map<string, string> route_statuses = 5;
+}
+
+message DesiredNetworkPeer {
+  string node_id = 1;
+  string node_name = 2;
+  string public_key = 3;
+  string address = 4;
+  string endpoint = 5;
+  string allowed_ips = 6;
+}
+
+message DesiredNetworkDNSRecord {
+  string name = 1;
+  string type = 2;
+  string value = 3;
+  int32 ttl_seconds = 4;
+}
+
+message DesiredNetworkCertificate {
+  string hostname = 1;
+  string cert_pem = 2;
+  string key_pem = 3;
+  string not_after = 4;
+  string issuer = 5;
+}
+
+message DesiredNetworkPlan {
+  int64 generation = 1;
+  string interface = 2;
+  string address = 3;
+  int32 listen_port = 4;
+  string private_key = 5;
+  string public_key = 6;
+  repeated DesiredNetworkPeer peers = 7;
+  repeated DesiredNetworkDNSRecord dns_records = 8;
+  string nftables = 9;
+  string wg_config = 10;
+  repeated DesiredNetworkCertificate certificates = 11;
+  bool apply = 12;
+}
+
+message ObservedNetwork {
+  int64 generation = 1;
+  string status = 2;
+  string message = 3;
+  repeated string log_lines = 4;
+}
+
+message HeartbeatResponse {
+  string node_id = 1;
+  repeated DesiredWorkload desired_workloads = 2;
+  repeated DesiredBuild desired_builds = 3;
+  DesiredEdgePlan desired_edge = 4;
+  DesiredNetworkPlan desired_network = 5;
+  DesiredWasmPlan desired_wasm = 6;
+}
+
+message ReportObservedRequest {
+  string node_id = 1;
+  repeated ObservedWorkload workloads = 2;
+}
+
+message ReportObservedResponse {}
+
+message ReportBuildRequest {
+  string node_id = 1;
+  ObservedBuild build = 2;
+}
+
+message ReportBuildResponse {}
+
+message ReportEdgeRequest {
+  string node_id = 1;
+  ObservedEdge edge = 2;
+}
+
+message ReportEdgeResponse {}
+
+message ReportNetworkRequest {
+  string node_id = 1;
+  ObservedNetwork network = 2;
+}
+
+message ReportNetworkResponse {}
+
+message GetNetworkStatusRequest {}
+
+message NodeNetworkStatus {
+  string node_id = 1;
+  string name = 2;
+  string role = 3;
+  string status = 4;
+  string wg_address = 5;
+  string wg_public_key = 6;
+  string network_status = 7;
+  string last_error = 8;
+  int64 generation = 9;
+  int64 observed_generation = 10;
+}
+
+message GetNetworkStatusResponse {
+  int32 nodes_ready = 1;
+  int32 nodes_total = 2;
+  int32 dns_records = 3;
+  int32 certificates = 4;
+  string overlay_cidr = 5;
+  string dns_suffix = 6;
+  bool apply_enabled = 7;
+  repeated NodeNetworkStatus nodes = 8;
+  repeated DesiredNetworkDNSRecord records = 9;
+}
+
+message UpsertEgressPolicyRequest {
+  string workload_id = 1;
+  // allow | deny | allowlist
+  string mode = 2;
+  repeated string allowlist = 3;
+}
+
+message UpsertEgressPolicyResponse {
+  string workload_id = 1;
+  string mode = 2;
+  repeated string allowlist = 3;
+}
+
+message ListEgressPoliciesRequest {}
+
+message EgressPolicy {
+  string id = 1;
+  string workload_id = 2;
+  string mode = 3;
+  repeated string allowlist = 4;
+}
+
+message ListEgressPoliciesResponse {
+  repeated EgressPolicy policies = 1;
+}
+
+message ListNodesRequest {}
+
+message ListNodesResponse {
+  repeated Node nodes = 1;
+}
+
 message ConnectStreamRequest {
   string node_id = 1;
   string status = 2;
   repeated string running_workload_ids = 3;
+  NodeHeartbeat heartbeat = 4;
 }
 
 message ConnectStreamResponse {
   string node_id = 1;
-  repeated string active_workload_ids = 2;
+  repeated DesiredWorkload desired_workloads = 2;
+  string command = 3;
 }
 
 service AgentService {
+  rpc CreateJoinToken(CreateJoinTokenRequest) returns (CreateJoinTokenResponse);
+  rpc EnrollNode(EnrollNodeRequest) returns (EnrollNodeResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ReportObserved(ReportObservedRequest) returns (ReportObservedResponse);
+  rpc ReportBuild(ReportBuildRequest) returns (ReportBuildResponse);
+  rpc ReportEdge(ReportEdgeRequest) returns (ReportEdgeResponse);
+  rpc ReportNetwork(ReportNetworkRequest) returns (ReportNetworkResponse);
+  rpc ReportWasm(ReportWasmRequest) returns (ReportWasmResponse);
+  rpc GetNetworkStatus(GetNetworkStatusRequest) returns (GetNetworkStatusResponse);
+  rpc UpsertEgressPolicy(UpsertEgressPolicyRequest) returns (UpsertEgressPolicyResponse);
+  rpc ListEgressPolicies(ListEgressPoliciesRequest) returns (ListEgressPoliciesResponse);
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+  rpc CordonNode(CordonNodeRequest) returns (CordonNodeResponse);
+  rpc DrainNode(DrainNodeRequest) returns (DrainNodeResponse);
+  rpc UpdateNodeSchedule(UpdateNodeScheduleRequest) returns (UpdateNodeScheduleResponse);
   rpc ConnectStream(stream ConnectStreamRequest) returns (stream ConnectStreamResponse);
 }

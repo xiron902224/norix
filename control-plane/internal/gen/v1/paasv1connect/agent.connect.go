@@ -7,7 +7,7 @@ package paasv1connect
 import (
 	connect "connectrpc.com/connect/v2"
 	context "context"
-	v1 "github.com/d2le2/paas/control-plane/internal/gen/v1"
+	v1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
 	sync "sync"
 )
 
@@ -24,11 +24,152 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// AgentServiceCreateJoinTokenProcedure is the procedure name of the AgentService's CreateJoinToken
+	// RPC.
+	AgentServiceCreateJoinTokenProcedure = "/v1.AgentService/CreateJoinToken"
+	// AgentServiceEnrollNodeProcedure is the procedure name of the AgentService's EnrollNode RPC.
+	AgentServiceEnrollNodeProcedure = "/v1.AgentService/EnrollNode"
+	// AgentServiceHeartbeatProcedure is the procedure name of the AgentService's Heartbeat RPC.
+	AgentServiceHeartbeatProcedure = "/v1.AgentService/Heartbeat"
+	// AgentServiceReportObservedProcedure is the procedure name of the AgentService's ReportObserved
+	// RPC.
+	AgentServiceReportObservedProcedure = "/v1.AgentService/ReportObserved"
+	// AgentServiceReportBuildProcedure is the procedure name of the AgentService's ReportBuild RPC.
+	AgentServiceReportBuildProcedure = "/v1.AgentService/ReportBuild"
+	// AgentServiceReportEdgeProcedure is the procedure name of the AgentService's ReportEdge RPC.
+	AgentServiceReportEdgeProcedure = "/v1.AgentService/ReportEdge"
+	// AgentServiceReportNetworkProcedure is the procedure name of the AgentService's ReportNetwork RPC.
+	AgentServiceReportNetworkProcedure = "/v1.AgentService/ReportNetwork"
+	// AgentServiceReportWasmProcedure is the procedure name of the AgentService's ReportWasm RPC.
+	AgentServiceReportWasmProcedure = "/v1.AgentService/ReportWasm"
+	// AgentServiceGetNetworkStatusProcedure is the procedure name of the AgentService's
+	// GetNetworkStatus RPC.
+	AgentServiceGetNetworkStatusProcedure = "/v1.AgentService/GetNetworkStatus"
+	// AgentServiceUpsertEgressPolicyProcedure is the procedure name of the AgentService's
+	// UpsertEgressPolicy RPC.
+	AgentServiceUpsertEgressPolicyProcedure = "/v1.AgentService/UpsertEgressPolicy"
+	// AgentServiceListEgressPoliciesProcedure is the procedure name of the AgentService's
+	// ListEgressPolicies RPC.
+	AgentServiceListEgressPoliciesProcedure = "/v1.AgentService/ListEgressPolicies"
+	// AgentServiceListNodesProcedure is the procedure name of the AgentService's ListNodes RPC.
+	AgentServiceListNodesProcedure = "/v1.AgentService/ListNodes"
+	// AgentServiceCordonNodeProcedure is the procedure name of the AgentService's CordonNode RPC.
+	AgentServiceCordonNodeProcedure = "/v1.AgentService/CordonNode"
+	// AgentServiceDrainNodeProcedure is the procedure name of the AgentService's DrainNode RPC.
+	AgentServiceDrainNodeProcedure = "/v1.AgentService/DrainNode"
+	// AgentServiceUpdateNodeScheduleProcedure is the procedure name of the AgentService's
+	// UpdateNodeSchedule RPC.
+	AgentServiceUpdateNodeScheduleProcedure = "/v1.AgentService/UpdateNodeSchedule"
 	// AgentServiceConnectStreamProcedure is the procedure name of the AgentService's ConnectStream RPC.
 	AgentServiceConnectStreamProcedure = "/v1.AgentService/ConnectStream"
 )
 
 var (
+	agentServiceCreateJoinTokenSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("CreateJoinToken"),
+			Procedure:  AgentServiceCreateJoinTokenProcedure,
+		}
+	})
+	agentServiceEnrollNodeSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("EnrollNode"),
+			Procedure:  AgentServiceEnrollNodeProcedure,
+		}
+	})
+	agentServiceHeartbeatSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("Heartbeat"),
+			Procedure:  AgentServiceHeartbeatProcedure,
+		}
+	})
+	agentServiceReportObservedSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ReportObserved"),
+			Procedure:  AgentServiceReportObservedProcedure,
+		}
+	})
+	agentServiceReportBuildSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ReportBuild"),
+			Procedure:  AgentServiceReportBuildProcedure,
+		}
+	})
+	agentServiceReportEdgeSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ReportEdge"),
+			Procedure:  AgentServiceReportEdgeProcedure,
+		}
+	})
+	agentServiceReportNetworkSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ReportNetwork"),
+			Procedure:  AgentServiceReportNetworkProcedure,
+		}
+	})
+	agentServiceReportWasmSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ReportWasm"),
+			Procedure:  AgentServiceReportWasmProcedure,
+		}
+	})
+	agentServiceGetNetworkStatusSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("GetNetworkStatus"),
+			Procedure:  AgentServiceGetNetworkStatusProcedure,
+		}
+	})
+	agentServiceUpsertEgressPolicySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("UpsertEgressPolicy"),
+			Procedure:  AgentServiceUpsertEgressPolicyProcedure,
+		}
+	})
+	agentServiceListEgressPoliciesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ListEgressPolicies"),
+			Procedure:  AgentServiceListEgressPoliciesProcedure,
+		}
+	})
+	agentServiceListNodesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ListNodes"),
+			Procedure:  AgentServiceListNodesProcedure,
+		}
+	})
+	agentServiceCordonNodeSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("CordonNode"),
+			Procedure:  AgentServiceCordonNodeProcedure,
+		}
+	})
+	agentServiceDrainNodeSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("DrainNode"),
+			Procedure:  AgentServiceDrainNodeProcedure,
+		}
+	})
+	agentServiceUpdateNodeScheduleSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("UpdateNodeSchedule"),
+			Procedure:  AgentServiceUpdateNodeScheduleProcedure,
+		}
+	})
 	agentServiceConnectStreamSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeBidi,
@@ -40,6 +181,21 @@ var (
 
 // AgentServiceClient is a client for the v1.AgentService service.
 type AgentServiceClient interface {
+	CreateJoinToken(context.Context, *v1.CreateJoinTokenRequest) (*v1.CreateJoinTokenResponse, error)
+	EnrollNode(context.Context, *v1.EnrollNodeRequest) (*v1.EnrollNodeResponse, error)
+	Heartbeat(context.Context, *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error)
+	ReportObserved(context.Context, *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error)
+	ReportBuild(context.Context, *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error)
+	ReportEdge(context.Context, *v1.ReportEdgeRequest) (*v1.ReportEdgeResponse, error)
+	ReportNetwork(context.Context, *v1.ReportNetworkRequest) (*v1.ReportNetworkResponse, error)
+	ReportWasm(context.Context, *v1.ReportWasmRequest) (*v1.ReportWasmResponse, error)
+	GetNetworkStatus(context.Context, *v1.GetNetworkStatusRequest) (*v1.GetNetworkStatusResponse, error)
+	UpsertEgressPolicy(context.Context, *v1.UpsertEgressPolicyRequest) (*v1.UpsertEgressPolicyResponse, error)
+	ListEgressPolicies(context.Context, *v1.ListEgressPoliciesRequest) (*v1.ListEgressPoliciesResponse, error)
+	ListNodes(context.Context, *v1.ListNodesRequest) (*v1.ListNodesResponse, error)
+	CordonNode(context.Context, *v1.CordonNodeRequest) (*v1.CordonNodeResponse, error)
+	DrainNode(context.Context, *v1.DrainNodeRequest) (*v1.DrainNodeResponse, error)
+	UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error)
 	ConnectStream(context.Context) (AgentServiceConnectStreamClientStream, error)
 }
 
@@ -88,6 +244,21 @@ func (s AgentServiceConnectStreamClientStream) Close() error {
 
 // AgentServiceHandler is an implementation of the v1.AgentService service.
 type AgentServiceHandler interface {
+	CreateJoinToken(context.Context, *v1.CreateJoinTokenRequest) (*v1.CreateJoinTokenResponse, error)
+	EnrollNode(context.Context, *v1.EnrollNodeRequest) (*v1.EnrollNodeResponse, error)
+	Heartbeat(context.Context, *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error)
+	ReportObserved(context.Context, *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error)
+	ReportBuild(context.Context, *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error)
+	ReportEdge(context.Context, *v1.ReportEdgeRequest) (*v1.ReportEdgeResponse, error)
+	ReportNetwork(context.Context, *v1.ReportNetworkRequest) (*v1.ReportNetworkResponse, error)
+	ReportWasm(context.Context, *v1.ReportWasmRequest) (*v1.ReportWasmResponse, error)
+	GetNetworkStatus(context.Context, *v1.GetNetworkStatusRequest) (*v1.GetNetworkStatusResponse, error)
+	UpsertEgressPolicy(context.Context, *v1.UpsertEgressPolicyRequest) (*v1.UpsertEgressPolicyResponse, error)
+	ListEgressPolicies(context.Context, *v1.ListEgressPoliciesRequest) (*v1.ListEgressPoliciesResponse, error)
+	ListNodes(context.Context, *v1.ListNodesRequest) (*v1.ListNodesResponse, error)
+	CordonNode(context.Context, *v1.CordonNodeRequest) (*v1.CordonNodeResponse, error)
+	DrainNode(context.Context, *v1.DrainNodeRequest) (*v1.DrainNodeResponse, error)
+	UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error)
 	ConnectStream(context.Context, AgentServiceConnectStreamServerStream) error
 }
 
@@ -95,6 +266,21 @@ type AgentServiceHandler interface {
 func RegisterAgentServiceHandler(server *connect.Server, svc AgentServiceHandler) {
 	adapter := agentServiceHandler{svc: svc}
 	server.Register(
+		connect.Method{Spec: agentServiceCreateJoinTokenSpec(), Handler: adapter.createJoinToken},
+		connect.Method{Spec: agentServiceEnrollNodeSpec(), Handler: adapter.enrollNode},
+		connect.Method{Spec: agentServiceHeartbeatSpec(), Handler: adapter.heartbeat},
+		connect.Method{Spec: agentServiceReportObservedSpec(), Handler: adapter.reportObserved},
+		connect.Method{Spec: agentServiceReportBuildSpec(), Handler: adapter.reportBuild},
+		connect.Method{Spec: agentServiceReportEdgeSpec(), Handler: adapter.reportEdge},
+		connect.Method{Spec: agentServiceReportNetworkSpec(), Handler: adapter.reportNetwork},
+		connect.Method{Spec: agentServiceReportWasmSpec(), Handler: adapter.reportWasm},
+		connect.Method{Spec: agentServiceGetNetworkStatusSpec(), Handler: adapter.getNetworkStatus},
+		connect.Method{Spec: agentServiceUpsertEgressPolicySpec(), Handler: adapter.upsertEgressPolicy},
+		connect.Method{Spec: agentServiceListEgressPoliciesSpec(), Handler: adapter.listEgressPolicies},
+		connect.Method{Spec: agentServiceListNodesSpec(), Handler: adapter.listNodes},
+		connect.Method{Spec: agentServiceCordonNodeSpec(), Handler: adapter.cordonNode},
+		connect.Method{Spec: agentServiceDrainNodeSpec(), Handler: adapter.drainNode},
+		connect.Method{Spec: agentServiceUpdateNodeScheduleSpec(), Handler: adapter.updateNodeSchedule},
 		connect.Method{Spec: agentServiceConnectStreamSpec(), Handler: adapter.connectStream},
 	)
 }
@@ -127,12 +313,192 @@ func (s AgentServiceConnectStreamServerStream) Send(res *v1.ConnectStreamRespons
 // UnimplementedAgentServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAgentServiceHandler struct{}
 
+func (UnimplementedAgentServiceHandler) CreateJoinToken(context.Context, *v1.CreateJoinTokenRequest) (*v1.CreateJoinTokenResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.CreateJoinToken is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) EnrollNode(context.Context, *v1.EnrollNodeRequest) (*v1.EnrollNodeResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.EnrollNode is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) Heartbeat(context.Context, *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.Heartbeat is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) ReportObserved(context.Context, *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ReportObserved is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) ReportBuild(context.Context, *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ReportBuild is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) ReportEdge(context.Context, *v1.ReportEdgeRequest) (*v1.ReportEdgeResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ReportEdge is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) ReportNetwork(context.Context, *v1.ReportNetworkRequest) (*v1.ReportNetworkResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ReportNetwork is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) ReportWasm(context.Context, *v1.ReportWasmRequest) (*v1.ReportWasmResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ReportWasm is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) GetNetworkStatus(context.Context, *v1.GetNetworkStatusRequest) (*v1.GetNetworkStatusResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.GetNetworkStatus is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) UpsertEgressPolicy(context.Context, *v1.UpsertEgressPolicyRequest) (*v1.UpsertEgressPolicyResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.UpsertEgressPolicy is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) ListEgressPolicies(context.Context, *v1.ListEgressPoliciesRequest) (*v1.ListEgressPoliciesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ListEgressPolicies is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) ListNodes(context.Context, *v1.ListNodesRequest) (*v1.ListNodesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ListNodes is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) CordonNode(context.Context, *v1.CordonNodeRequest) (*v1.CordonNodeResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.CordonNode is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) DrainNode(context.Context, *v1.DrainNodeRequest) (*v1.DrainNodeResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.DrainNode is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.UpdateNodeSchedule is not implemented")
+}
+
 func (UnimplementedAgentServiceHandler) ConnectStream(context.Context, AgentServiceConnectStreamServerStream) error {
 	return connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ConnectStream is not implemented")
 }
 
 type agentServiceClient struct {
 	client *connect.Client
+}
+
+func (c *agentServiceClient) CreateJoinToken(ctx context.Context, req *v1.CreateJoinTokenRequest) (*v1.CreateJoinTokenResponse, error) {
+	var res v1.CreateJoinTokenResponse
+	if err := c.client.CallUnary(ctx, agentServiceCreateJoinTokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) EnrollNode(ctx context.Context, req *v1.EnrollNodeRequest) (*v1.EnrollNodeResponse, error) {
+	var res v1.EnrollNodeResponse
+	if err := c.client.CallUnary(ctx, agentServiceEnrollNodeSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) Heartbeat(ctx context.Context, req *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error) {
+	var res v1.HeartbeatResponse
+	if err := c.client.CallUnary(ctx, agentServiceHeartbeatSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) ReportObserved(ctx context.Context, req *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error) {
+	var res v1.ReportObservedResponse
+	if err := c.client.CallUnary(ctx, agentServiceReportObservedSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) ReportBuild(ctx context.Context, req *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error) {
+	var res v1.ReportBuildResponse
+	if err := c.client.CallUnary(ctx, agentServiceReportBuildSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) ReportEdge(ctx context.Context, req *v1.ReportEdgeRequest) (*v1.ReportEdgeResponse, error) {
+	var res v1.ReportEdgeResponse
+	if err := c.client.CallUnary(ctx, agentServiceReportEdgeSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) ReportNetwork(ctx context.Context, req *v1.ReportNetworkRequest) (*v1.ReportNetworkResponse, error) {
+	var res v1.ReportNetworkResponse
+	if err := c.client.CallUnary(ctx, agentServiceReportNetworkSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) ReportWasm(ctx context.Context, req *v1.ReportWasmRequest) (*v1.ReportWasmResponse, error) {
+	var res v1.ReportWasmResponse
+	if err := c.client.CallUnary(ctx, agentServiceReportWasmSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) GetNetworkStatus(ctx context.Context, req *v1.GetNetworkStatusRequest) (*v1.GetNetworkStatusResponse, error) {
+	var res v1.GetNetworkStatusResponse
+	if err := c.client.CallUnary(ctx, agentServiceGetNetworkStatusSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) UpsertEgressPolicy(ctx context.Context, req *v1.UpsertEgressPolicyRequest) (*v1.UpsertEgressPolicyResponse, error) {
+	var res v1.UpsertEgressPolicyResponse
+	if err := c.client.CallUnary(ctx, agentServiceUpsertEgressPolicySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) ListEgressPolicies(ctx context.Context, req *v1.ListEgressPoliciesRequest) (*v1.ListEgressPoliciesResponse, error) {
+	var res v1.ListEgressPoliciesResponse
+	if err := c.client.CallUnary(ctx, agentServiceListEgressPoliciesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) ListNodes(ctx context.Context, req *v1.ListNodesRequest) (*v1.ListNodesResponse, error) {
+	var res v1.ListNodesResponse
+	if err := c.client.CallUnary(ctx, agentServiceListNodesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) CordonNode(ctx context.Context, req *v1.CordonNodeRequest) (*v1.CordonNodeResponse, error) {
+	var res v1.CordonNodeResponse
+	if err := c.client.CallUnary(ctx, agentServiceCordonNodeSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) DrainNode(ctx context.Context, req *v1.DrainNodeRequest) (*v1.DrainNodeResponse, error) {
+	var res v1.DrainNodeResponse
+	if err := c.client.CallUnary(ctx, agentServiceDrainNodeSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) UpdateNodeSchedule(ctx context.Context, req *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error) {
+	var res v1.UpdateNodeScheduleResponse
+	if err := c.client.CallUnary(ctx, agentServiceUpdateNodeScheduleSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 func (c *agentServiceClient) ConnectStream(ctx context.Context) (AgentServiceConnectStreamClientStream, error) {
@@ -144,6 +510,186 @@ func (c *agentServiceClient) ConnectStream(ctx context.Context) (AgentServiceCon
 }
 
 type agentServiceHandler struct{ svc AgentServiceHandler }
+
+func (h agentServiceHandler) createJoinToken(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateJoinTokenRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateJoinToken(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) enrollNode(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.EnrollNodeRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.EnrollNode(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) heartbeat(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.HeartbeatRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.Heartbeat(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) reportObserved(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReportObservedRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReportObserved(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) reportBuild(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReportBuildRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReportBuild(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) reportEdge(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReportEdgeRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReportEdge(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) reportNetwork(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReportNetworkRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReportNetwork(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) reportWasm(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReportWasmRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReportWasm(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) getNetworkStatus(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetNetworkStatusRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetNetworkStatus(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) upsertEgressPolicy(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpsertEgressPolicyRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpsertEgressPolicy(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) listEgressPolicies(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListEgressPoliciesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListEgressPolicies(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) listNodes(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListNodesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListNodes(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) cordonNode(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CordonNodeRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CordonNode(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) drainNode(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DrainNodeRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DrainNode(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) updateNodeSchedule(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateNodeScheduleRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateNodeSchedule(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
 
 func (h agentServiceHandler) connectStream(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
 	return h.svc.ConnectStream(ctx, AgentServiceConnectStreamServerStream{stream: stream})
