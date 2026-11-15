@@ -15,8 +15,8 @@ Instala el **control plane** de Norix como binario + PostgreSQL del sistema. **U
 ## One-click
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare
 ```
 
 Desde `main` (tip sin tag):
@@ -53,7 +53,7 @@ Si PID 1 no es systemd (p. ej. lab Docker `sleep infinity`):
 
 ```bash
 curl -fsSL …/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare --supervise none
+  | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare --supervise none
 ```
 
 - Logs: `/var/lib/norix/norix-control-plane.log`
@@ -93,7 +93,7 @@ DB gestionada (RDS, Neon, etc.): solo necesitas dos URLs con SSL según el prove
 ### 2. Binario del control plane
 
 ```bash
-TAG=v1.0.0-beta.3
+TAG=v1.0.0-beta.4
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/norix-control-plane-linux-${ARCH}"
 curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/SHA256SUMS"

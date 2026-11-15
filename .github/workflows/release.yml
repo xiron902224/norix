@@ -144,7 +144,15 @@ jobs:
           else
             OUT="norix-control-plane-linux-${{ matrix.goarch }}"
           fi
-          go build -trimpath -ldflags="-s -w" \
+          VER="${{ needs.meta.outputs.version }}"
+          printf '%s\n' "$VER" > VERSION
+          if [[ "${{ matrix.component }}" == "control-plane" ]]; then
+            printf '%s\n' "$VER" > internal/version/VERSION
+            LDFLAGS="-s -w -X github.com/xiron902224/norix/control-plane/internal/version.BuildVersion=${VER}"
+          else
+            LDFLAGS="-s -w"
+          fi
+          go build -trimpath -ldflags="${LDFLAGS}" \
             -o "${GITHUB_WORKSPACE}/dist/${OUT}" ${{ matrix.package }}
           chmod +x "${GITHUB_WORKSPACE}/dist/${OUT}"
 
@@ -329,36 +337,65 @@ jobs:
             git push origin "refs/tags/${TAG}"
           fi
 
+      # softprops/action-gh-release@v2 races on many concurrent asset metadata updates
+      # (beta.1–beta.3 drafts left incomplete). Upload sequentially with gh CLI instead.
       - name: Create or update GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.meta.outputs.tag }}
-          name: Norix ${{ needs.meta.outputs.version }}
-          generate_release_notes: true
-          body: |
-            ## Artifacts
-            Multi-arch Linux binaries (`amd64`, `arm64`) for control-plane, agent, and CLI.
-
-            ## Verify
-            ```bash
-            # Checksums
-            sha256sum -c SHA256SUMS --ignore-missing
-
-            # Cosign (keyless OIDC; identity matches this repo's Actions)
-            cosign verify-blob \
-              --bundle norix-control-plane-linux-amd64.cosign.bundle \
-              --certificate-identity-regexp 'https://github.com/.*/\.github/workflows/release\.yml@.*' \
-              --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
-              norix-control-plane-linux-amd64
-            ```
-
-            SBOM: `norix-sbom.tar.gz` (CycloneDX JSON when syft is available; see `scripts/sbom.sh`).
-
-            Permissions used by this workflow: `contents: write`, `id-token: write`.
-          files: |
-            release/norix-*
-            release/SHA256SUMS
-            release/*.cosign.bundle
-          fail_on_unmatched_files: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.meta.outputs.tag }}
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          NOTES="$(mktemp)"
+          {
+            cat <<'EOF'
+          ## Artifacts
+          Multi-arch Linux binaries (`amd64`, `arm64`) for control-plane, agent, and CLI.
+
+          ## Verify
+          ```bash
+          # Checksums
+          sha256sum -c SHA256SUMS --ignore-missing
+
+          # Cosign (keyless OIDC; identity matches this repo's Actions)
+          cosign verify-blob \
+            --bundle norix-control-plane-linux-amd64.cosign.bundle \
+            --certificate-identity-regexp 'https://github.com/.*/\.github/workflows/release\.yml@.*' \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            norix-control-plane-linux-amd64
+          ```
+
+          SBOM: `norix-sbom.tar.gz` (CycloneDX JSON when syft is available; see `scripts/sbom.sh`).
+
+          Permissions used by this workflow: `contents: write`, `id-token: write`.
+          EOF
+            echo
+            echo "## What's Changed"
+            gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+              -f tag_name="${TAG}" \
+              -f target_commitish="${GITHUB_SHA}" \
+              --jq .body 2>/dev/null || true
+          } >"${NOTES}"
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} exists — syncing assets"
+            gh release edit "${TAG}" --title "Norix ${VERSION}" --notes-file "${NOTES}" --prerelease
+          else
+            gh release create "${TAG}" \
+              --title "Norix ${VERSION}" \
+              --notes-file "${NOTES}" \
+              --prerelease \
+              --draft
+          fi
+
+          mapfile -t assets < <(find release -maxdepth 1 -type f | sort)
+          [[ ${#assets[@]} -gt 0 ]] || { echo "no release assets in release/"; exit 1; }
+          for f in "${assets[@]}"; do
+            echo "Uploading ${f}"
+            gh release upload "${TAG}" "${f}" --clobber
+          done
+
+          gh release edit "${TAG}" --draft=false --prerelease
+          echo "Published ${TAG}"
+          gh release view "${TAG}"
+          rm -f "${NOTES}"

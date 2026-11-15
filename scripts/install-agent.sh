@@ -33,7 +33,7 @@ Options:
   --workdir PATH        Agent state directory (default: /var/lib/norix-agent)
   --install-dir PATH    Binary install directory (default: /usr/local/bin)
   --from-source         Build with cargo from this repository
-  --version TAG         Download release binary for TAG (e.g. v1.0.0-beta.3); verifies SHA256SUMS
+  --version TAG         Download release binary for TAG (e.g. v1.0.0-beta.4); verifies SHA256SUMS
   --sums PATH|URL       SHA256SUMS file or URL (default: GitHub release asset for --version)
   --asset-url URL       Direct URL to norix-agent-linux-{amd64,arm64} binary
   --skip-verify         Skip SHA256SUMS verification (not recommended)
@@ -102,7 +102,7 @@ resolve_version_tag() {
   fi
   # When installed via curl|bash there is no local VERSION — pin to published beta.
   if [[ -z "$v" ]]; then
-    v="v1.0.0-beta.3"
+    v="v1.0.0-beta.4"
   fi
   case "$v" in
     v*) echo "$v" ;;
@@ -225,6 +225,13 @@ else
   download_release_agent
 fi
 
+AGENT_VER_LINE=""
+if [[ -n "${NORIX_VERSION:-}" ]]; then
+  AGENT_VER_LINE="NORIX_AGENT_VERSION=${NORIX_VERSION#v}"
+elif [[ -x "$INSTALL_DIR/norix-agent" ]]; then
+  # Best-effort: leave unset → binary reports CARGO_PKG_VERSION.
+  AGENT_VER_LINE=""
+fi
 cat >"$WORKDIR/agent.env" <<EOF
 NORIX_CONTROL_PLANE_URL=$CONTROL_PLANE
 NORIX_JOIN_TOKEN=$JOIN_TOKEN
@@ -232,6 +239,7 @@ NORIX_NODE_NAME=$NODE_NAME
 NORIX_AGENT_WORKDIR=$WORKDIR
 NORIX_HEARTBEAT_SECS=10
 NORIX_AGENT_LOG_LEVEL=info
+${AGENT_VER_LINE}
 EOF
 chmod 600 "$WORKDIR/agent.env"
 

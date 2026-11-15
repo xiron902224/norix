@@ -4,11 +4,11 @@
 # Until get.norix.dev exists, install from GitHub:
 #
 #   # Docker (default): Postgres + control plane via Compose
-#   curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
-#     | NORIX_REF=v1.0.0-beta.3 bash
+#   curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
+#     | NORIX_REF=v1.0.0-beta.4 bash
 #
 #   # Bare (VPS with systemd): system Postgres + binary + systemd
-#   curl -fsSL …/get-norix.sh | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare
+#   curl -fsSL …/get-norix.sh | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare
 #
 #   # Bare without systemd (labs / containers): same stack, nohup supervisor
 #   curl -fsSL …/get-norix.sh | bash -s -- --mode bare --supervise none
@@ -80,7 +80,7 @@ Options:
 
 Examples:
   curl -fsSL …/get-norix.sh | bash
-  curl -fsSL …/get-norix.sh | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare
+  curl -fsSL …/get-norix.sh | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare
   curl -fsSL …/get-norix.sh | bash -s -- --mode bare --supervise none --port 8000
 EOF
 }
@@ -395,7 +395,7 @@ POSTGRES_PASSWORD=${owner_pw}
 POSTGRES_APP_PASSWORD=${app_pw}
 DATABASE_URL=postgres://norix_app:${app_pw}@postgres:5432/norix?sslmode=disable
 MIGRATION_DATABASE_URL=postgres://norix:${owner_pw}@postgres:5432/norix?sslmode=disable
-NORIX_VERSION=1.0.0-beta.3
+NORIX_VERSION=${NORIX_VERSION:-$(tr -d '[:space:]' <"${SOURCE_DIR}/VERSION" 2>/dev/null || echo "${NORIX_REF#v}")}
 NORIX_HTTP_PORT=${NORIX_HTTP_PORT}
 NORIX_PUBLIC_URL=${public_url}
 NORIX_WEB_ORIGIN=${public_url}
@@ -666,6 +666,7 @@ NORIX_BUILD_SECRETS_KEY=${secrets_key}
 NORIX_REGISTRY=none
 NORIX_INSTALL_MODE=bare
 NORIX_SUPERVISE=${SUPERVISE_MODE}
+NORIX_VERSION=${NORIX_VERSION:-$(tr -d '[:space:]' <"${SOURCE_DIR}/VERSION" 2>/dev/null || echo "${NORIX_REF#v}")}
 EOF
   chmod 600 "$BARE_ENV"
   chown norix:norix "$BARE_ENV"

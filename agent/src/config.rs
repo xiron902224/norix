@@ -44,7 +44,11 @@ impl Config {
             node_name,
             workdir,
             heartbeat_secs,
-            agent_version: env!("CARGO_PKG_VERSION").into(),
+            agent_version: env::var("NORIX_AGENT_VERSION")
+                .ok()
+                .map(|v| v.trim().to_string())
+                .filter(|v| !v.is_empty())
+                .unwrap_or_else(|| env!("CARGO_PKG_VERSION").into()),
         })
     }
 

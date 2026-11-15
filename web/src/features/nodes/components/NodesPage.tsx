@@ -29,7 +29,10 @@ export function NodesPage() {
   const [scheduleRole, setScheduleRole] = useState('worker')
   const [scheduleZone, setScheduleZone] = useState('default')
   const [controlPlaneUrl, setControlPlaneUrl] = useState(() => window.location.origin)
-  const agentRelease = 'v1.0.0-beta.3'
+  const [controlPlaneVersion, setControlPlaneVersion] = useState('')
+  const agentRelease = controlPlaneVersion
+    ? (controlPlaneVersion.startsWith('v') ? controlPlaneVersion : `v${controlPlaneVersion}`)
+    : 'v1.0.0-beta.4'
 
   const selected = nodes.find((node) => node.id === selectedId) ?? null
 
@@ -47,6 +50,8 @@ export function NodesPage() {
           setNodes(items)
           const pub = typeof statusRes?.public_url === 'string' ? statusRes.public_url.trim() : ''
           if (pub) setControlPlaneUrl(pub.replace(/\/$/, ''))
+          const ver = typeof statusRes?.version === 'string' ? statusRes.version.trim() : ''
+          if (ver) setControlPlaneVersion(ver)
         }
       } catch (cause) {
         if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not load nodes')
@@ -274,6 +279,10 @@ export function NodesPage() {
                   <div><dt>Role / zone</dt><dd>{selected.role || 'worker'} · {selected.zone || 'default'}</dd></div>
                   <div><dt>Schedule</dt><dd>{selected.cordoned ? 'cordoned' : 'schedulable'}{selected.draining ? ' · draining' : ''}</dd></div>
                   <div><dt>Seen</dt><dd>{relativeAge(selected.lastSeenAt)}</dd></div>
+                  <div><dt>Agent version</dt><dd className="mono">{selected.capabilities?.agentVersion || '—'}</dd></div>
+                  {selected.isLocal && controlPlaneVersion ? (
+                    <div><dt>Control plane</dt><dd className="mono">{controlPlaneVersion}</dd></div>
+                  ) : null}
                   <div><dt>Hostname</dt><dd>{selected.capabilities?.hostname || '—'}</dd></div>
                   <div><dt>CPU / RAM</dt><dd>{selected.capabilities?.cpuCores ?? 0}c · {String(selected.capabilities?.memoryTotalMb ?? 0)} MB</dd></div>
                   <div><dt>CPU uso</dt><dd>{Number(selected.cpuUsagePercent || 0).toFixed(1)}%</dd></div>

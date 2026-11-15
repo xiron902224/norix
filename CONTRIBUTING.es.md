@@ -37,7 +37,7 @@ issue → rama desde main → PR → main → (opcional) tag v*
 Reglas rápidas:
 
 1. **Siempre** PR a `main` (no a `develop`).
-2. Tags solo desde un `main` verde: `v1.0.0-beta.3`, luego `v1.0.0`.
+2. Tags solo desde un `main` verde: `v1.0.0-beta.4`, luego `v1.0.0`.
 3. Empujar un tag `v*` dispara `.github/workflows/release.yml`.
 4. Compatibilidad protobuf en CI vs la base del PR (`main`).
 
@@ -88,9 +88,25 @@ buf breaking --against ".git#ref=origin/main"
 
 1. Rama desde `main`.
 2. Diff enfocado; actualiza `docs/ESTADO_Y_PLAN_V1.md` / `ISSUES.md` solo si el estado cambia de verdad.
-3. Título del PR: qué / por qué.
-4. Destino **`main`**. CI: protos → DB/RLS + web + agent → control-plane.
-5. Enlaza el issue en el cuerpo.
+3. Destino **`main`**. CI: protos → DB/RLS + web + agent → control-plane.
+4. Rellena la plantilla de PR (`.github/PULL_REQUEST_TEMPLATE.md`) — no dejes placeholders vacíos.
+5. Enlaza el issue (`Fixes #N` / `Refs #N`).
+
+### Formato del título (obligatorio para revisar)
+
+```text
+type(#issue): resumen corto en imperativo
+```
+
+| `type` | Cuándo |
+|---|---|
+| `fix` | Bug |
+| `feat` | Feature / mejora visible |
+| `docs` | Solo documentación |
+| `chore` | CI, release, deps |
+| `refactor` | Limpieza interna |
+
+**Ejemplos:** `fix(#71): show real control-plane and agent versions` · `feat(#73): add norix-control-plane update` · `docs: add pull request template`
 
 ## Estilo de código
 

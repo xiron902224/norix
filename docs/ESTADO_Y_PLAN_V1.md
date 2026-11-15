@@ -4,8 +4,8 @@
 **Plan canónico:** [`docs/PLAN_SPRINTS_S0_S22.md`](./PLAN_SPRINTS_S0_S22.md)  
 **Visión / backlog:** [`VISION.md`](../VISION.md) · [`ISSUES.md`](../ISSUES.md)  
 **Colaborar:** [`CONTRIBUTING.md`](../CONTRIBUTING.md) · [`CONTRIBUTING.es.md`](../CONTRIBUTING.es.md) · [`README.es.md`](../README.es.md)  
-**Hito código:** **Beta** (`VERSION` = `1.0.0-beta.3`) — **no GA**  
-**Hito release:** tag `v1.0.0-beta.3` desde `main` ([#62](https://github.com/xiron902224/norix/issues/62))
+**Hito código:** **Beta** (`VERSION` = `1.0.0-beta.4`) — **no GA**  
+**Hito release:** tag `v1.0.0-beta.4` desde `main` ([#62](https://github.com/xiron902224/norix/issues/62))
 
 ---
 
@@ -53,12 +53,12 @@ Flags: `NORIX_APPLY_WIREGUARD`, `NORIX_MICROVM_*`, `NORIX_AUTOSCALER`, `NORIX_AC
 
 ## 4. Checklist operativo
 
-### Al publicar / estabilizar `v1.0.0-beta.3`
+### Al publicar / estabilizar `v1.0.0-beta.4`
 
 - [x] Agent supervise + docs bare/labs
 - [x] `ISSUES.md` / `VISION.md` / ES docs / gitflow `main`
 - [ ] PR verde a **`main`**
-- [ ] Tag `v1.0.0-beta.3` ([#62](https://github.com/xiron902224/norix/issues/62))
+- [ ] Tag `v1.0.0-beta.4` ([#62](https://github.com/xiron902224/norix/issues/62))
 - [ ] Smoke agent + Docker en worker ([#60](https://github.com/xiron902224/norix/issues/60), [#66](https://github.com/xiron902224/norix/issues/66))
 
 ### Stage 0 (antes de rc)

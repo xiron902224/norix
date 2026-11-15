@@ -37,7 +37,7 @@ issue → branch from main → PR → main → (optional) tag v*
 Rules of thumb:
 
 1. **Always** PR to `main` (not `develop`).
-2. Tag releases from a green `main` only: `v1.0.0-beta.3`, later `v1.0.0`.
+2. Tag releases from a green `main` only: `v1.0.0-beta.4`, later `v1.0.0`.
 3. Pushing a `v*` tag runs `.github/workflows/release.yml`.
 4. Protobuf breaking changes are checked in CI against the PR **base** (`main`).
 
@@ -102,9 +102,32 @@ buf breaking --against ".git#ref=origin/main"
 
 1. Branch from latest `main`.
 2. Keep the diff focused; update `docs/ESTADO_Y_PLAN_V1.md` / `ISSUES.md` only when status meaningfully changes.
-3. PR title: what / why, not a dump of file names.
-4. Target **`main`**. Wait for CI (protos → DB/RLS + web + agent → control-plane).
-5. Link the GitHub issue in the body.
+3. Target **`main`**. Wait for CI (protos → DB/RLS + web + agent → control-plane).
+4. Fill the GitHub PR template (`.github/PULL_REQUEST_TEMPLATE.md`) — do not leave placeholders empty.
+5. Link the GitHub issue in the body (`Fixes #N` / `Refs #N`).
+
+### PR title format (required for review)
+
+```text
+type(#issue): short imperative summary
+```
+
+| `type` | Use when |
+|---|---|
+| `fix` | Bug fix |
+| `feat` | New capability or user-visible enhancement |
+| `docs` | Docs / templates only |
+| `chore` | CI, release, deps, repo hygiene |
+| `refactor` | Internal cleanup, no intended behavior change |
+
+**Examples (mergeable titles):**
+- `fix(#71): show real control-plane and agent versions`
+- `feat(#73): add norix-control-plane update command`
+- `docs: add pull request template`
+- `chore(#62): publish v1.0.0-beta.4 release assets`
+- `fix(#59): map DeployFromGit unschedulable to FailedPrecondition`
+
+Avoid: vague titles (`update`, `fixes`, `wip`), file dumps (`edit main.go and NodesPage.tsx`), or missing issue when one exists.
 
 ## Code style
 

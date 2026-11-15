@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License" /></a>
   <a href="https://github.com/xiron902224/norix"><img src="https://img.shields.io/badge/github-xiron902224%2Fnorix-0b7285" alt="GitHub" /></a>
   <a href="docs/ESTADO_Y_PLAN_V1.md"><img src="https://img.shields.io/badge/status-beta-0b7285" alt="Status" /></a>
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-1.0.0--beta.3-0b7285" alt="Version" /></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-1.0.0--beta.4-0b7285" alt="Version" /></a>
 </p>
 
 <p align="center">
@@ -38,22 +38,22 @@ Until `get.norix.dev` exists, the installer is served from this GitHub repo.
 ### Docker mode
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.3 bash
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.4 bash
 ```
 
 ### Bare mode (no Docker)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare
 ```
 
 Labs / containers without systemd:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare --supervise none
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare --supervise none
 ```
 
 Optional: `--port 8000`, `--public-url https://norix.example.com`. Re-runs are idempotent.
@@ -86,7 +86,7 @@ Workers need **Docker or containerd** for Git builds and containers (bare contro
 
 ```bash
 git clone https://github.com/xiron902224/norix.git && cd norix
-git checkout v1.0.0-beta.3
+git checkout v1.0.0-beta.4
 cp deploy/norix/env.production.example .env   # set strong passwords
 docker compose --env-file .env -f deploy/norix/docker-compose.prod.yml up -d --build
 ```
@@ -148,7 +148,7 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 
 ## Status
 
-**Beta** (`1.0.0-beta.3`). Living status: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) · vision: [`VISION.md`](VISION.md) · backlog: [`ISSUES.md`](ISSUES.md).
+**Beta** (`1.0.0-beta.4`). Living status: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) · vision: [`VISION.md`](VISION.md) · backlog: [`ISSUES.md`](ISSUES.md).
 
 **Spanish:** [`README.es.md`](README.es.md) · [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md).
 
