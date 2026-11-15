@@ -202,6 +202,10 @@ Comprueba en UI **Nodes**: tres nodos `online`. Smoke:
 norix-agent --check
 ```
 
+En un nodo que solo aloja el control plane bare no hace falta Docker. En los
+workers, `online` confirma los heartbeats. Antes de intentar un build Git,
+[verifica el runtime del worker](./BARE_INSTALL.md#un-worker-online-no-acepta-builds-git).
+
 ---
 
 ## 3. Validar el cluster (DoD beta multi-nodo)
