@@ -4,11 +4,11 @@
 # Until get.norix.dev exists, install from GitHub:
 #
 #   # Docker (default): Postgres + control plane via Compose
-#   curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
-#     | NORIX_REF=v1.0.0-beta.3 bash
+#   curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
+#     | NORIX_REF=v1.0.0-beta.4 bash
 #
 #   # Bare (VPS with systemd): system Postgres + binary + systemd
-#   curl -fsSL …/get-norix.sh | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare
+#   curl -fsSL …/get-norix.sh | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare
 #
 #   # Bare without systemd (labs / containers): same stack, nohup supervisor
 #   curl -fsSL …/get-norix.sh | bash -s -- --mode bare --supervise none
@@ -80,7 +80,7 @@ Options:
 
 Examples:
   curl -fsSL …/get-norix.sh | bash
-  curl -fsSL …/get-norix.sh | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare
+  curl -fsSL …/get-norix.sh | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare
   curl -fsSL …/get-norix.sh | bash -s -- --mode bare --supervise none --port 8000
 EOF
 }

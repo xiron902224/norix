@@ -2,17 +2,27 @@
 
 ## Unreleased
 
+## 1.0.0-beta.4 — 2026-11-15
+
 ### Fixed
 - Report real control-plane version via embedded `VERSION` / ldflags / `NORIX_VERSION` (no more hardcoded `1.0.0` fallback) (#71)
-- Nodes UI shows agent version; local node reports `version+local`; agent `Cargo.toml` aligned to `1.0.0-beta.3` (#71)
+- Nodes UI shows agent version; local node reports `version+local`; agent crate version aligned to release (#71)
 - Bare installer writes `NORIX_VERSION` into `control-plane.env` (#71)
-- Release workflow: publish assets with sequential `gh release upload` (avoids softprops race that left beta.1–.3 drafts incomplete) (#62)
+- Release workflow: publish assets with sequential `gh release upload` (avoids softprops race that left beta drafts incomplete) (#62 / #70)
+
+### Added
+- GitHub pull request template + `type(#issue): …` title conventions (#74)
+- In-place update tracking issue (#73)
 
 ### Changed
-- Gitflow is **main-only**: branch from `main`, PR to `main` (`develop` retired as integration tip)
+- Gitflow is **main-only**: branch from `main`, PR to `main` (`develop` retired)
 - Default `NORIX_REF=main` in `get-norix.sh`; CI PRs target `main`
 - Spanish collaborator docs: [`README.es.md`](README.es.md), [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md)
-- Backlog: new issues #59–#67 (DeployFromGit errors, runtime clarity, beta.3 release, lab docs, CI check names, UI i18n)
+- Docs / installer / Compose pins → `v1.0.0-beta.4`
+
+### Notes
+- Stage 0 trust/safety issues remain open (`ISSUES.md`)
+- Tag `v1.0.0-beta.4` after merge to run the Release workflow (#75)
 
 ## 1.0.0-beta.3 — 2026-11-15
 

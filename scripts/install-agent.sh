@@ -33,7 +33,7 @@ Options:
   --workdir PATH        Agent state directory (default: /var/lib/norix-agent)
   --install-dir PATH    Binary install directory (default: /usr/local/bin)
   --from-source         Build with cargo from this repository
-  --version TAG         Download release binary for TAG (e.g. v1.0.0-beta.3); verifies SHA256SUMS
+  --version TAG         Download release binary for TAG (e.g. v1.0.0-beta.4); verifies SHA256SUMS
   --sums PATH|URL       SHA256SUMS file or URL (default: GitHub release asset for --version)
   --asset-url URL       Direct URL to norix-agent-linux-{amd64,arm64} binary
   --skip-verify         Skip SHA256SUMS verification (not recommended)
@@ -102,7 +102,7 @@ resolve_version_tag() {
   fi
   # When installed via curl|bash there is no local VERSION — pin to published beta.
   if [[ -z "$v" ]]; then
-    v="v1.0.0-beta.3"
+    v="v1.0.0-beta.4"
   fi
   case "$v" in
     v*) echo "$v" ;;

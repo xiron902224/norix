@@ -37,7 +37,7 @@ issue → rama desde main → PR → main → (opcional) tag v*
 Reglas rápidas:
 
 1. **Siempre** PR a `main` (no a `develop`).
-2. Tags solo desde un `main` verde: `v1.0.0-beta.3`, luego `v1.0.0`.
+2. Tags solo desde un `main` verde: `v1.0.0-beta.4`, luego `v1.0.0`.
 3. Empujar un tag `v*` dispara `.github/workflows/release.yml`.
 4. Compatibilidad protobuf en CI vs la base del PR (`main`).
 

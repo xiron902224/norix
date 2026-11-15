@@ -32,7 +32,7 @@ export function NodesPage() {
   const [controlPlaneVersion, setControlPlaneVersion] = useState('')
   const agentRelease = controlPlaneVersion
     ? (controlPlaneVersion.startsWith('v') ? controlPlaneVersion : `v${controlPlaneVersion}`)
-    : 'v1.0.0-beta.3'
+    : 'v1.0.0-beta.4'
 
   const selected = nodes.find((node) => node.id === selectedId) ?? null
 
