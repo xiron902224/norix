@@ -24,10 +24,12 @@ export function NodesPage() {
   const [creating, setCreating] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [joinToken, setJoinToken] = useState<{ token: string; expiresAt: string } | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<'token' | 'cmd' | ''>('')
   const [actionBusy, setActionBusy] = useState('')
   const [scheduleRole, setScheduleRole] = useState('worker')
   const [scheduleZone, setScheduleZone] = useState('default')
+  const [controlPlaneUrl, setControlPlaneUrl] = useState(() => window.location.origin)
+  const agentRelease = 'v1.0.0-beta.3'
 
   const selected = nodes.find((node) => node.id === selectedId) ?? null
 
@@ -37,8 +39,15 @@ export function NodesPage() {
       setError('')
       setLoading(true)
       try {
-        const items = await listNodes()
-        if (!cancelled) setNodes(items)
+        const [items, statusRes] = await Promise.all([
+          listNodes(),
+          fetch('/status').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        ])
+        if (!cancelled) {
+          setNodes(items)
+          const pub = typeof statusRes?.public_url === 'string' ? statusRes.public_url.trim() : ''
+          if (pub) setControlPlaneUrl(pub.replace(/\/$/, ''))
+        }
       } catch (cause) {
         if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not load nodes')
       } finally {
@@ -72,7 +81,7 @@ export function NodesPage() {
     event.preventDefault()
     setCreating(true)
     setError('')
-    setCopied(false)
+    setCopied('')
     const form = new FormData(event.currentTarget)
     try {
       const created = await createJoinToken({
@@ -89,11 +98,10 @@ export function NodesPage() {
     }
   }
 
-  async function copyToken() {
-    if (!joinToken) return
-    await navigator.clipboard.writeText(joinToken.token)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 2000)
+  async function copyText(kind: 'token' | 'cmd', value: string) {
+    await navigator.clipboard.writeText(value)
+    setCopied(kind)
+    window.setTimeout(() => setCopied(''), 2000)
   }
 
   async function refreshNodes(preferId?: string) {
@@ -158,7 +166,7 @@ export function NodesPage() {
 
   const online = nodes.filter((node) => node.status === 'online').length
   const installCommand = joinToken
-    ? `cd agent && NORIX_JOIN_TOKEN='${joinToken.token}' NORIX_CONTROL_PLANE_URL=http://127.0.0.1:8080 ./target/release/norix-agent`
+    ? `curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/${agentRelease}/scripts/install-agent.sh \\\n  | bash -s -- --version ${agentRelease} \\\n      --control-plane '${controlPlaneUrl}' \\\n      --token '${joinToken.token}'`
     : ''
 
   const rows: ResourceRow[] = useMemo(() => nodes.map((node) => ({
@@ -207,12 +215,21 @@ export function NodesPage() {
           <div>
             <strong>Join token</strong>
             <span className="muted"> · expires {formatWhen(joinToken.expiresAt)}</span>
+            <p className="muted" style={{ marginTop: 8 }}>
+              Run on each worker (needs curl; Docker for container workloads). Control plane URL must be
+              reachable from the worker — not <code>127.0.0.1</code> unless the agent is on the same host.
+            </p>
             <code className="token-value" style={{ display: 'block', marginTop: 8 }}>{joinToken.token}</code>
-            <code className="install-command" style={{ display: 'block', marginTop: 8 }}>{installCommand}</code>
+            <pre className="install-command" style={{ display: 'block', marginTop: 8, whiteSpace: 'pre-wrap' }}>{installCommand}</pre>
           </div>
-          <Button type="button" variant="secondary" onClick={() => void copyToken()}>
-            {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
-          </Button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Button type="button" variant="secondary" onClick={() => void copyText('token', joinToken.token)}>
+              {copied === 'token' ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy token</>}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => void copyText('cmd', installCommand)}>
+              {copied === 'cmd' ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy install</>}
+            </Button>
+          </div>
         </div>
       ) : null}
 

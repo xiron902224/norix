@@ -80,3 +80,6 @@ docs/**/*.docx
 docs/progress/
 
 .cursor
+
+# Local multi-VPS lab (generated / machine-specific; see CONTRIBUTING tip)
+/local-test/

@@ -1,43 +1,80 @@
 # Bare / VPS install (sin Docker)
 
-Instala el **control plane** de Norix como binario + systemd, con PostgreSQL del sistema (o uno externo). **No requiere Docker** para levantar el panel.
+Instala el **control plane** de Norix como binario + PostgreSQL del sistema. **Un solo comando** (estilo OpenShip): no hace falta crear DB, bajar el binario ni escribir el unit a mano.
 
 > Container workloads (`nginx:alpine`, git builds, etc.) sí necesitan Docker (u otro runtime) en **algún** nodo — este u otro VPS con el agent. Bare solo evita Docker para el propio Norix.
 
-## Requisitos
+## Requisitos (VPS real)
 
-- Linux amd64 o arm64, root/sudo  
-- Puerto libre (default `8000`)  
-- Salida HTTPS (descarga de release / git)  
-- PostgreSQL 16+ (el installer puede instalarlo vía `apt`/`dnf`)
+- Linux amd64 o arm64, **root**
+- **systemd** como PID 1 (Ubuntu/Debian VPS normal)
+- Puerto libre (default `8000`)
+- Salida HTTPS (GitHub Releases + git)
+- ~1 GiB RAM recomendada
 
-## One-liner
+## One-click
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.2/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.2 bash -s -- --mode bare
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare
 ```
 
-O desde `develop`:
+Desde `main` (tip sin tag):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/develop/scripts/get-norix.sh \
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/main/scripts/get-norix.sh \
   | bash -s -- --mode bare
 ```
 
-### Qué hace
+Flags útiles:
 
-1. Clona el repo en `/data/norix/source`  
-2. Instala PostgreSQL si no está  
-3. Crea DB `norix` + roles `norix` / `norix_app`  
-4. Descarga `norix-control-plane-linux-{amd64,arm64}` del release (o `make build` si no hay asset)  
-5. Escribe `/etc/norix/control-plane.env`  
-6. Activa `norix-control-plane.service`  
-7. Espera `http://127.0.0.1:8000/healthz`
+```bash
+bash -s -- --mode bare --port 8000 --public-url https://norix.example.com
+```
+
+### Qué hace (automático)
+
+1. Preflight (arch, systemd, puerto, RAM cgroup)
+2. Clona/sync del repo en `/data/norix/source`
+3. Instala/arranca PostgreSQL
+4. Crea DB `norix` + roles `norix` / `norix_app` (idempotente, sin depender de `sudo`)
+5. Descarga el binario del release y verifica **SHA256SUMS** (no compila)
+6. Escribe `/etc/norix/control-plane.env` (se conserva en re-runs)
+7. Activa `norix-control-plane.service` **o** nohup si `--supervise none`
+8. Espera `http://127.0.0.1:8000/healthz` y escribe `/var/lib/norix/install-state.json`
 
 Abre la URL impresa → bootstrap del primer admin.
 
+Re-ejecutar el mismo comando es **seguro** (upgrade / resume).
+
+## Labs / contenedores sin systemd
+
+Si PID 1 no es systemd (p. ej. lab Docker `sleep infinity`):
+
+```bash
+curl -fsSL …/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare --supervise none
+```
+
+- Logs: `/var/lib/norix/norix-control-plane.log`
+- PID: `/var/lib/norix/norix-control-plane.pid`
+- Stop: `kill $(cat /var/lib/norix/norix-control-plane.pid)`
+
+Sin `--supervise none`, el installer **aborta** con un mensaje claro (no deja Postgres a medias sin panel).
+
+Offline / red lenta a GitHub Releases:
+
+```bash
+NORIX_BINARY_FILE=/path/to/norix-control-plane-linux-amd64 \
+NORIX_SKIP_CHECKSUM=1 \
+  bash get-norix.sh --mode bare --supervise none
+```
+
+(En VPS normal el one-liner descarga el asset y verifica SHA256SUMS; no uses `NORIX_SKIP_CHECKSUM` en producción.)
+
 ## Proceso manual (sin el script)
+
+Solo si necesitas depurar. Preferir el one-liner.
 
 ### 1. PostgreSQL
 
@@ -56,21 +93,12 @@ DB gestionada (RDS, Neon, etc.): solo necesitas dos URLs con SSL según el prove
 ### 2. Binario del control plane
 
 ```bash
-TAG=v1.0.0-beta.2
+TAG=v1.0.0-beta.3
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/norix-control-plane-linux-${ARCH}"
 curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/SHA256SUMS"
 sha256sum -c SHA256SUMS --ignore-missing
 sudo install -m 755 "norix-control-plane-linux-${ARCH}" /usr/local/bin/norix-control-plane
-```
-
-Desde source (si no hay release):
-
-```bash
-git clone https://github.com/xiron902224/norix.git && cd norix
-git checkout "$TAG"
-make build
-sudo install -m 755 control-plane/bin/norix-control-plane /usr/local/bin/norix-control-plane
 ```
 
 ### 3. Env + usuario
@@ -97,8 +125,7 @@ sudo chown norix:norix /etc/norix/control-plane.env /var/lib/norix
 ### 4. systemd
 
 ```bash
-sudo cp deploy/systemd/norix-control-plane.service /etc/systemd/system/
-# Opcional: After=postgresql.service (sin depender de docker.service)
+sudo cp deploy/systemd/norix-control-plane.bare.service /etc/systemd/system/norix-control-plane.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now norix-control-plane
 curl -sf http://127.0.0.1:8000/healthz
@@ -111,24 +138,28 @@ curl -sf http://127.0.0.1:8000/healthz
 | Solo UI / API / auth | Ya listo en bare |
 | Desplegar contenedores en **este** VPS | Instalar Docker + agent (`install-agent.sh`) o usar modo `docker` del installer |
 | Desplegar en **otros** VPS | Join tokens + agent en cada worker ([BETA1_3NODE_INSTALL.md](./BETA1_3NODE_INSTALL.md)) |
+| Agent en lab sin systemd | `install-agent.sh` con `--supervise none` (o `auto`: nohup + `WORKDIR/norix-agent.log`) |
+| Builds Git / contenedores | Docker o containerd en **workers** (el CP bare solo no basta) |
 | TLS público | Reverse proxy (Caddy/nginx) → `127.0.0.1:8000` o `HTTP_ADDR=127.0.0.1:8000` |
 
 ## Upgrade bare
 
+Re-ejecutar el one-liner (conserva `/etc/norix/control-plane.env`, reemplaza binario tras SHA256).
+
+O manual:
+
 ```bash
-# Nuevo binario del tag
 sudo systemctl stop norix-control-plane
 # install -m 755 norix-control-plane-linux-… /usr/local/bin/norix-control-plane
 sudo systemctl start norix-control-plane
 ```
-
-O re-ejecutar el one-liner con `--mode bare` (conserva `/etc/norix/control-plane.env`).
 
 ## Diff vs modo Docker
 
 | | `--mode bare` | `--mode docker` (default) |
 |---|---|---|
 | Postgres | Paquete del OS / externo | Contenedor Compose |
-| Control plane | Binario + systemd | Contenedor + `docker.sock` |
+| Control plane | Binario + systemd (o `--supervise none`) | Contenedor + `docker.sock` |
 | Primer worker embebido | No (hasta instalar Docker/agent) | Sí (`localruntime` vía sock) |
 | Requiere Docker | No | Sí |
+| Integridad binario | SHA256SUMS obligatorio | Imagen build/pull |

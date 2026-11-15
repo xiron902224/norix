@@ -2,9 +2,10 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, nightly, release]
+    # Integration tip is main only (develop retired). nightly/release kept for legacy branches.
+    branches: [main, nightly, release, develop]
   pull_request:
-    branches: [main, develop, release]
+    branches: [main]
 
 jobs:
   validate-protos:

@@ -1,31 +1,45 @@
 # Contributing to Norix
 
-Thanks for helping. Norix is Apache-2.0 open source. Small, reviewable changes against `develop` are preferred.
+Thanks for helping. Norix is Apache-2.0 open source. Small, reviewable changes are preferred.
+
+**Español:** [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md) · [`README.es.md`](README.es.md)
 
 Production install (VPS): see the [README Install](README.md#install) section (`--mode docker` or `--mode bare`). This file is for **developers** working on the monorepo.
 
-## Gitflow
+**What to work on:** [`ISSUES.md`](ISSUES.md) (triage) or [open GitHub issues](https://github.com/xiron902224/norix/issues) — prefer **P0** / **good first issue** unless you already own a larger slice.
+
+## Gitflow (main only)
 
 | Branch | Role |
 |---|---|
-| `develop` | Integration / default target for PRs |
-| `feature/*` | Short-lived work; open PR → `develop` |
-| `release` | Stabilization cut when preparing a tagged release |
-| `nightly` | Optional experimental / CI playground |
-| `main` | Production tip **after** a release is signed off (still an early stub — do not treat as current API) |
+| `main` | Default branch · integration tip · **only** PR target |
+| `feature/*`, `fix/*`, `docs/*`, `chore/*` | Short-lived work branched **from `main`** |
+| `v*` tags | Releases (binaries + SHA256SUMS + cosign) |
+
+`develop` is **retired** as an integration branch (historical only; do not open new PRs to it).
+
+### Workflow
+
+1. Pick a [GitHub issue](https://github.com/xiron902224/norix/issues) (comment that you are taking it).
+2. Branch from latest `main`:
+   ```bash
+   git fetch origin && git checkout main && git pull
+   git checkout -b feature/123-short-slug   # or fix/… docs/… chore/…
+   ```
+3. Implement, test, commit.
+4. Open a PR **to `main`**. Link the issue (`Fixes #123` / `Refs #123`).
+5. Wait for CI. Maintainers merge when green (+ required review).
+
+```text
+issue → branch from main → PR → main → (optional) tag v*
+```
 
 Rules of thumb:
 
-1. **Never** open feature PRs straight to `main`.
-2. Tag releases from a green `develop` (or `release`) only: `v1.0.0-beta.1`, later `v1.0.0`.
-3. Pushing a `v*` tag runs `.github/workflows/release.yml` (binaries + SHA256SUMS + cosign).
-4. Protobuf breaking changes are checked in CI against the PR **base** branch.
-
-```text
-feature/* ──PR──► develop ──(stabilize)──► release ──tag v*──► GitHub Release
-                                              │
-                                              └──► main (fast-forward when a release is cut)
-```
+1. **Always** PR to `main` (not `develop`).
+2. Tag releases from a green `main` only: `v1.0.0-beta.3`, later `v1.0.0`.
+3. Pushing a `v*` tag runs `.github/workflows/release.yml`.
+4. Protobuf breaking changes are checked in CI against the PR **base** (`main`).
 
 ## Local development
 
@@ -33,7 +47,7 @@ For day-to-day coding on a laptop (not the production installer):
 
 ```bash
 git clone https://github.com/xiron902224/norix.git && cd norix
-git checkout develop
+git checkout main
 
 cp .env.example .env
 cp control-plane/.env.example control-plane/.env
@@ -81,16 +95,16 @@ cd agent && cargo fmt --check && cargo clippy --all-targets -- -D warnings && ca
 
 # Protos (requires buf)
 make proto-lint
-buf breaking --against ".git#ref=origin/develop"
+buf breaking --against ".git#ref=origin/main"
 ```
 
 ## Pull requests
 
-1. Branch from latest `develop`.
-2. Keep the diff focused; update `docs/ESTADO_Y_PLAN_V1.md` only when status meaningfully changes.
+1. Branch from latest `main`.
+2. Keep the diff focused; update `docs/ESTADO_Y_PLAN_V1.md` / `ISSUES.md` only when status meaningfully changes.
 3. PR title: what / why, not a dump of file names.
-4. Target **`develop`**. Wait for CI (protos → DB/RLS + web + agent → control-plane).
-5. Link any sprint / issue context in the body.
+4. Target **`main`**. Wait for CI (protos → DB/RLS + web + agent → control-plane).
+5. Link the GitHub issue in the body.
 
 ## Code style
 
@@ -103,9 +117,11 @@ buf breaking --against ".git#ref=origin/develop"
 ## Docs
 
 - Living status: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md)
-- Roadmap: [`docs/PLAN_SPRINTS_S0_S22.md`](docs/PLAN_SPRINTS_S0_S22.md)
+- Vision / maturity: [`VISION.md`](VISION.md)
+- Backlog triage: [`ISSUES.md`](ISSUES.md)
 - Bare install: [`docs/runbooks/BARE_INSTALL.md`](docs/runbooks/BARE_INSTALL.md)
 - Security reports: [`SECURITY.md`](SECURITY.md) (private, not public issues)
+- Spanish: [`README.es.md`](README.es.md), [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md)
 
 ## License
 
