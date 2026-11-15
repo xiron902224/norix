@@ -18,7 +18,7 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
     }
 
     if desired.action == "stop" {
-        let _ = stop_guest(&dir);
+        stop_guest(&dir);
         let _ = fs::remove_dir_all(&dir);
         return ObservedWorkload {
             id: desired.id.clone(),
@@ -112,7 +112,7 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
     if desired.host_port > 0 {
         args.extend([
             "--net".into(),
-            format!("tap=,mac=,ip=,mask=,host_mac=,num_queues=1,queue_size=256"),
+            "tap=,mac=,ip=,mask=,host_mac=,num_queues=1,queue_size=256".into(),
         ]);
     }
 

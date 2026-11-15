@@ -92,6 +92,9 @@ func seedTenant(t *testing.T, ctx context.Context, pool *pgxpool.Pool, orgName, 
 		RETURNING id::text`, organizationID, email, orgName+" Owner", passwordHash).Scan(&userID); err != nil {
 		t.Fatalf("create user: %v", err)
 	}
+	if _, err := db.EnsureDefaultTeam(ctx, tx, organizationID, userID); err != nil {
+		t.Fatalf("ensure default team: %v", err)
+	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatalf("commit: %v", err)
 	}

@@ -517,6 +517,17 @@ fn image_matches(running: &str, desired: &str) -> bool {
     running.ends_with(&format!("/{desired}"))
 }
 
+async fn command_ok(bin: &str, args: &[&str]) -> bool {
+    Command::new(bin)
+        .args(args)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .await
+        .map(|status| status.success())
+        .unwrap_or(false)
+}
+
 #[cfg(test)]
 mod tests {
     use super::image_matches;
@@ -547,15 +558,4 @@ mod tests {
             "nginx:latest"
         ));
     }
-}
-
-async fn command_ok(bin: &str, args: &[&str]) -> bool {
-    Command::new(bin)
-        .args(args)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .await
-        .map(|status| status.success())
-        .unwrap_or(false)
 }
