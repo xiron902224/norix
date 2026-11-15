@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Fixed
+- Report real control-plane version via embedded `VERSION` / ldflags / `NORIX_VERSION` (no more hardcoded `1.0.0` fallback) (#71)
+- Nodes UI shows agent version; local node reports `version+local`; agent `Cargo.toml` aligned to `1.0.0-beta.3` (#71)
+- Bare installer writes `NORIX_VERSION` into `control-plane.env` (#71)
 - Release workflow: publish assets with sequential `gh release upload` (avoids softprops race that left beta.1–.3 drafts incomplete) (#62)
 
 ### Changed

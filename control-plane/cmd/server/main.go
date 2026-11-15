@@ -25,6 +25,7 @@ import (
 	"github.com/xiron902224/norix/control-plane/internal/ops"
 	"github.com/xiron902224/norix/control-plane/internal/statuspage"
 	"github.com/xiron902224/norix/control-plane/internal/telemetry"
+	"github.com/xiron902224/norix/control-plane/internal/version"
 	"github.com/xiron902224/norix/control-plane/internal/webui"
 )
 
@@ -60,8 +61,8 @@ func newHandler(authService api.AuthService) http.Handler {
 		response.WriteHeader(http.StatusOK)
 		_, _ = response.Write([]byte("ok\n"))
 	})
-	mux.HandleFunc("GET /status", statuspage.Handler(authService.BootstrapPool(), os.Getenv("NORIX_VERSION")))
-	mux.HandleFunc("GET /api/status", statuspage.Handler(authService.BootstrapPool(), os.Getenv("NORIX_VERSION")))
+	mux.HandleFunc("GET /status", statuspage.Handler(authService.BootstrapPool(), version.Current()))
+	mux.HandleFunc("GET /api/status", statuspage.Handler(authService.BootstrapPool(), version.Current()))
 	if authService.BootstrapPool() != nil {
 		pool := authService.BootstrapPool()
 		mux.HandleFunc("POST /hooks/github/{token}", api.GitHubWebhook(pool))
@@ -152,7 +153,8 @@ func main() {
 		backgroundCtx, cancelBackground := context.WithCancel(context.Background())
 		defer cancelBackground()
 
-		telemetry.Start(backgroundCtx, logger, os.Getenv("NORIX_VERSION"))
+		telemetry.Start(backgroundCtx, logger, version.Current())
+		logger.Info("norix version", "version", version.Current())
 
 		// HTTP always serves; background reconcile/cleanup/autoscaler are leader-only (S17).
 		holderID := haHolderID()

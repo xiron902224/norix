@@ -21,7 +21,11 @@ build: embed-web control-plane agent
 
 control-plane:
 	@echo "Compilando Control Plane (Go)..."
-	cd control-plane && go mod download && CGO_ENABLED=0 go build -o bin/norix-control-plane ./cmd/server/main.go
+	cd control-plane && go mod download && \
+	  cp -f ../VERSION internal/version/VERSION && \
+	  VER=$$(tr -d '[:space:]' < ../VERSION) && \
+	  CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/xiron902224/norix/control-plane/internal/version.BuildVersion=$${VER}" \
+	    -o bin/norix-control-plane ./cmd/server/main.go
 
 agent:
 	@echo "Compilando agente Rust..."

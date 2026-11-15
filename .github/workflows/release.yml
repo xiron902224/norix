@@ -144,7 +144,15 @@ jobs:
           else
             OUT="norix-control-plane-linux-${{ matrix.goarch }}"
           fi
-          go build -trimpath -ldflags="-s -w" \
+          VER="${{ needs.meta.outputs.version }}"
+          printf '%s\n' "$VER" > VERSION
+          if [[ "${{ matrix.component }}" == "control-plane" ]]; then
+            printf '%s\n' "$VER" > internal/version/VERSION
+            LDFLAGS="-s -w -X github.com/xiron902224/norix/control-plane/internal/version.BuildVersion=${VER}"
+          else
+            LDFLAGS="-s -w"
+          fi
+          go build -trimpath -ldflags="${LDFLAGS}" \
             -o "${GITHUB_WORKSPACE}/dist/${OUT}" ${{ matrix.package }}
           chmod +x "${GITHUB_WORKSPACE}/dist/${OUT}"
 
