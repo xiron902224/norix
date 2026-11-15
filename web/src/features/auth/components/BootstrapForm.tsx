@@ -26,7 +26,7 @@ export function BootstrapForm({ onConfigured }: BootstrapFormProps) {
       return
     }
     if (password.length < 12) {
-      setError('Password must contain at least 12 characters')
+      setError('Password must be at least 12 characters')
       return
     }
 
@@ -47,7 +47,7 @@ export function BootstrapForm({ onConfigured }: BootstrapFormProps) {
       if (response.token && user) sessionStore.save(response.token, user)
       onConfigured(user)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Administrator setup failed')
+      setError(cause instanceof Error ? cause.message : 'Could not create administrator')
     } finally {
       setLoading(false)
     }
@@ -61,7 +61,7 @@ export function BootstrapForm({ onConfigured }: BootstrapFormProps) {
       <FormField id="setup-email" name="email" label="Email" type="email" required autoComplete="email" />
       <FormField id="setup-password" name="password" label="Password" type="password" required minLength={12} autoComplete="new-password" />
       <FormField id="setup-confirmation" name="confirmation" label="Confirm password" type="password" required minLength={12} autoComplete="new-password" />
-      <Button type="submit" disabled={loading}>{loading ? 'Creating administrator…' : 'Create administrator'}</Button>
+      <Button type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create administrator'}</Button>
     </form>
   )
 }

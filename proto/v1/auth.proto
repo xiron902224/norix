@@ -21,11 +21,19 @@ message User {
 message LoginRequest {
   string email = 1;
   string password = 2;
+  // Required when the user has TOTP enabled or the organization mandates 2FA.
+  string totp_code = 3;
 }
 
 message LoginResponse {
   string token = 1;
   User user = 2;
+}
+
+message GetCurrentUserRequest {}
+
+message GetCurrentUserResponse {
+  User user = 1;
 }
 
 message GetBootstrapStatusRequest {}
@@ -67,4 +75,5 @@ service AuthService {
   rpc CreateInitialAdmin(CreateInitialAdminRequest) returns (CreateInitialAdminResponse);
   rpc Logout(LogoutRequest) returns (LogoutResponse);
   rpc RenewSession(RenewSessionRequest) returns (RenewSessionResponse);
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
 }

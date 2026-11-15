@@ -1,95 +1,167 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Activity,
-  ArrowUpRight,
-  Boxes,
-  Cpu,
-  FolderKanban,
-  HardDrive,
-  Radio,
+  Gauge,
+  GitBranch,
+  MemoryStick,
+  Search,
   Server,
-  Sparkles,
+  Terminal,
 } from 'lucide-react'
+import {
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import type { SessionUser } from '../auth/services/session'
-import type { Project } from '../../gen/v1/workload_pb'
+import type { Project, Workload } from '../../gen/v1/workload_pb'
 import type { Node } from '../../gen/v1/agent_pb'
+import type { MetricSample, ObservabilityAlertEvent } from '../../gen/v1/metrics_pb'
 import { listProjects, listWorkloads } from '../projects/services/projects-api'
 import { listNodes } from '../nodes/services/nodes-api'
-import { relativeAge } from '../../shared/lib/format'
+import { getClusterMetrics, listAlerts } from '../observability/services/observability-api'
+import { relativeAge, shortId } from '../../shared/lib/format'
+import { statusLabel } from '../../shared/ui/StatusPill'
 
 interface OverviewPageProps {
   user: SessionUser
 }
 
-const ACTIVITY = [
-  { title: 'Multi-node scheduler', detail: 'Replicas, spread/binpack, cordon/drain, orphan reschedule (S7)', time: 'Just now', tone: 'success' },
-  { title: 'Edge HTTPS on :8443', detail: 'Open domains as https://host:8443 (Caddy)', time: '2m ago', tone: 'info' },
-  { title: 'Git builds & deploys', detail: 'Build from git or public images in Projects', time: '12m ago', tone: 'success' },
-  { title: 'Node live metrics', detail: 'CPU / memory / disk on the Nodes detail pane', time: '1h ago', tone: 'success' },
-  { title: 'S9–S15 foundations', detail: 'Observability, DBs, sandboxes, previews, Wasm in progress', time: '3h ago', tone: 'muted' },
-] as const
-
-function greeting() {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
+interface AppRow {
+  id: string
+  name: string
+  projectId: string
+  projectName: string
+  status: string
+  zone: string
+  replicas: number
+  runtime: string
+  image: string
+  error: string
+  cpu: number | null
+  memory: number | null
+  commit: string
+  ago: string
 }
 
-function Sparkline({ values, className = '' }: { values: number[]; className?: string }) {
-  const max = Math.max(...values, 1)
-  const min = Math.min(...values)
-  const range = Math.max(max - min, 1)
-  const points = values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * 100
-      const y = 100 - ((value - min) / range) * 100
-      return `${x},${y}`
-    })
-    .join(' ')
+interface ChartPoint {
+  h: string
+  cpu: number
+  memFreeGb: number
+}
 
-  return (
-    <svg className={`sparkline ${className}`} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
-      <polyline fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={points} />
-    </svg>
-  )
+const STATUS_META: Record<string, { label: string; tone: string }> = {
+  running: { label: 'Active', tone: 'ok' },
+  building: { label: 'Building', tone: 'info' },
+  deploying: { label: 'Deploying', tone: 'info' },
+  failed: { label: 'Failed', tone: 'danger' },
+  stopped: { label: 'Idle', tone: 'muted' },
+  pending: { label: 'Pending', tone: 'warn' },
+}
+
+function mbToGb(mb: number) {
+  return mb / 1024
+}
+
+function formatGb(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return '0'
+  return value >= 10 ? value.toFixed(0) : value.toFixed(1)
+}
+
+function nodeMem(node: Node) {
+  const totalMb = Number(node.capabilities?.memoryTotalMb ?? 0)
+  const freeMb = Number(node.memoryFreeMb ?? 0)
+  return { totalMb, freeMb, usedMb: totalMb > 0 ? Math.max(0, totalMb - freeMb) : 0 }
+}
+
+function buildAgentSeries(samples: MetricSample[]): ChartPoint[] {
+  const cpuByTs = new Map<number, number[]>()
+  const memByTs = new Map<number, number[]>()
+
+  for (const sample of samples) {
+    const ts = Number(sample.timestamp || 0)
+    if (!ts) continue
+    const bucket = Math.floor(ts / 60) * 60
+    if (sample.name === 'node_cpu_usage_percent') {
+      const list = cpuByTs.get(bucket) ?? []
+      list.push(sample.value)
+      cpuByTs.set(bucket, list)
+    }
+    if (sample.name === 'node_memory_free_mb') {
+      const list = memByTs.get(bucket) ?? []
+      list.push(sample.value)
+      memByTs.set(bucket, list)
+    }
+  }
+
+  const buckets = [...new Set([...cpuByTs.keys(), ...memByTs.keys()])].sort((a, b) => a - b).slice(-24)
+  return buckets.map((bucket) => {
+    const cpuVals = cpuByTs.get(bucket) ?? []
+    const memVals = memByTs.get(bucket) ?? []
+    const cpu = cpuVals.length ? cpuVals.reduce((a, b) => a + b, 0) / cpuVals.length : 0
+    const memFree = memVals.length ? memVals.reduce((a, b) => a + b, 0) / memVals.length : 0
+    const date = new Date(bucket * (bucket > 1e12 ? 1 : 1000))
+    return {
+      h: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      cpu: Math.round(cpu * 10) / 10,
+      memFreeGb: Math.round(mbToGb(memFree) * 10) / 10,
+    }
+  })
 }
 
 export function OverviewPage({ user }: OverviewPageProps) {
   const navigate = useNavigate()
   const [projects, setProjects] = useState<Project[]>([])
   const [nodes, setNodes] = useState<Node[]>([])
-  const [workloadCount, setWorkloadCount] = useState(0)
+  const [apps, setApps] = useState<AppRow[]>([])
+  const [alerts, setAlerts] = useState<ObservabilityAlertEvent[]>([])
+  const [chart, setChart] = useState<ChartPoint[]>([])
+  const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
-  const [onlineHistory, setOnlineHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0])
 
   useEffect(() => {
     let cancelled = false
 
     async function refresh() {
       try {
-        const [projectItems, nodeItems] = await Promise.all([listProjects(), listNodes()])
+        const [projectItems, nodeItems, metrics, alertResp] = await Promise.all([
+          listProjects(),
+          listNodes(),
+          getClusterMetrics().catch(() => null),
+          listAlerts().catch(() => null),
+        ])
         if (cancelled) return
         setProjects(projectItems)
         setNodes(nodeItems)
-        const online = nodeItems.filter((node) => node.status === 'online').length
-        setOnlineHistory((prev) => [...prev.slice(1), online])
+        if (alertResp?.events) setAlerts(alertResp.events.slice(0, 12))
+        setChart(buildAgentSeries(metrics?.samples ?? []))
 
-        let total = 0
+        const rows: AppRow[] = []
         await Promise.all(projectItems.map(async (project) => {
           try {
             const workloads = await listWorkloads(project.id)
-            total += workloads.length
+            for (const workload of workloads) {
+              if (workload.status === 'deleting') continue
+              rows.push(toAppRow(workload, project, nodeItems))
+            }
           } catch {
-            /* keep partial count */
+            /* keep partial */
           }
         }))
-        if (!cancelled) setWorkloadCount(total)
+        if (!cancelled) {
+          rows.sort((a, b) => a.name.localeCompare(b.name))
+          setApps(rows)
+        }
       } catch {
         if (!cancelled) {
           setProjects([])
           setNodes([])
+          setApps([])
+          setChart([])
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -97,240 +169,403 @@ export function OverviewPage({ user }: OverviewPageProps) {
     }
 
     void refresh()
-    const timer = window.setInterval(() => { void refresh() }, 3000)
+    const timer = window.setInterval(() => { void refresh() }, 5000)
     return () => {
       cancelled = true
       window.clearInterval(timer)
     }
   }, [])
 
-  const firstName = (user.name || user.email).split(/[\s@]/)[0]
-  const online = nodes.filter((node) => node.status === 'online').length
-  const localNode = nodes.find((node) => node.isLocal) ?? null
-  const host = localNode?.capabilities
-  const runtimeHealthy = online > 0
+  const onlineNodes = nodes.filter((node) => node.status === 'online')
+  const online = onlineNodes.length
+  const avgCpu = onlineNodes.length
+    ? onlineNodes.reduce((sum, node) => sum + (node.cpuUsagePercent || 0), 0) / onlineNodes.length
+    : 0
+
+  const memTotals = onlineNodes.reduce((acc, node) => {
+    const { totalMb, freeMb, usedMb } = nodeMem(node)
+    return {
+      totalMb: acc.totalMb + totalMb,
+      freeMb: acc.freeMb + freeMb,
+      usedMb: acc.usedMb + usedMb,
+    }
+  }, { totalMb: 0, freeMb: 0, usedMb: 0 })
+
+  const memLabel = (() => {
+    if (loading) return '—'
+    if (memTotals.totalMb > 0) {
+      return `${formatGb(mbToGb(memTotals.usedMb))} / ${formatGb(mbToGb(memTotals.totalMb))} GB`
+    }
+    if (memTotals.freeMb > 0) {
+      return `${formatGb(mbToGb(memTotals.freeMb))} GB free`
+    }
+    return '—'
+  })()
+
+  const memHint = memTotals.totalMb > 0
+    ? 'used / total from agent'
+    : memTotals.freeMb > 0
+      ? 'MemAvailable from agent'
+      : 'waiting for agent'
+
+  const runningApps = apps.filter((app) => app.status === 'running').length
+  const failedApps = apps.filter((app) => app.status === 'failed')
+  const filteredApps = apps.filter((app) => app.name.toLowerCase().includes(query.toLowerCase()))
+
+  const zones = useMemo(() => {
+    const counts = new Map<string, { label: string; count: number }>()
+    for (const node of nodes) {
+      const key = node.zone || (node.isLocal ? 'local' : 'default')
+      const current = counts.get(key) ?? { label: key, count: 0 }
+      current.count += 1
+      counts.set(key, current)
+    }
+    const total = Math.max(nodes.length, 1)
+    return [...counts.entries()]
+      .map(([name, meta]) => ({
+        name,
+        label: meta.label,
+        pct: Math.round((meta.count / total) * 100),
+      }))
+      .sort((a, b) => b.pct - a.pct)
+      .slice(0, 3)
+  }, [nodes])
+
+  const displayZones = zones.length ? zones : [{ name: 'local', label: 'local', pct: 100 }]
+  const liveEvents = useMemo(() => buildEvents(apps, alerts, nodes), [apps, alerts, nodes])
+  const incident = failedApps[0] ?? null
+  const hasChart = chart.length > 0
 
   return (
-    <section className="page">
-      <header className="page-header hero-header">
+    <section className="compass-overview-exact">
+      <header className="compass-ov-hero">
         <div>
-          <p className="eyebrow soft">{greeting()}, {firstName}</p>
-          <p className="muted">Workload reconciler · Connect RPC · containerd / micro-VM / Wasm engines</p>
+          <div className="compass-ov-pulse">
+            <span className="compass-ov-pulse-dot" aria-hidden />
+            Multi-node cluster · {displayZones.length} region{displayZones.length === 1 ? '' : 's'}
+          </div>
+          <h1>Norix · Overview</h1>
+          <p>Live metrics from node agents · Docker · KVM · WASM</p>
         </div>
-        <div className="page-actions">
-          <Link to="/projects" className="secondary-button">
-            Last 1 hour
-          </Link>
-          <Link to="/projects" className="primary-button flux-glow">
-            Deploy image / Git
-            <ArrowUpRight size={16} aria-hidden />
-          </Link>
+        <div className="compass-ov-cli">
+          <span><Terminal size={14} aria-hidden /> norix deploy</span>
+          <span><GitBranch size={14} aria-hidden /> main</span>
         </div>
       </header>
 
-      <div className="stats-grid stats-grid-4">
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><FolderKanban /> Projects</div>
-          <strong>{loading ? '—' : projects.length}</strong>
-          <span className="stat-delta up">Organization scope</span>
-          <Sparkline values={[2, 3, 3, 4, 5, 5, projects.length || 1]} className="spark-accent" />
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><Boxes /> Workloads</div>
-          <strong>{loading ? '—' : workloadCount}</strong>
-          <span className="stat-delta">Across all projects</span>
-          <Sparkline values={[1, 2, 2, 3, 3, 4, workloadCount || 1]} className="spark-primary" />
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><Server /> Nodes online</div>
-          <strong>{loading ? '—' : online}</strong>
-          <span className="stat-delta">{nodes.length} enrolled · live poll 3s</span>
-          <div className="mini-bars" aria-hidden>
-            {onlineHistory.map((h, i) => (
-              <span key={i} style={{ height: `${Math.max(12, (h / Math.max(online, 1)) * 100)}%` }} />
-            ))}
-          </div>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><Radio /> Heartbeat</div>
-          <strong>{runtimeHealthy ? 'Live' : 'Idle'}</strong>
-          <span className="stat-delta">{runtimeHealthy ? 'At least one node online' : 'Waiting for node / local host'}</span>
-          <div className="pulse-row" aria-hidden>
-            <span className="pulse-dot" />
-            <span className="pulse-dot delay-1" />
-            <span className="pulse-dot delay-2" />
-          </div>
-        </article>
+      <label className="compass-ov-search">
+        <Search size={16} aria-hidden />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          aria-label="Search apps"
+          placeholder="Search apps…"
+        />
+      </label>
+
+      <div className="compass-ov-metrics">
+        {[
+          {
+            icon: Server,
+            label: 'Nodes online',
+            value: loading ? '—' : `${online}/${nodes.length}`,
+            hint: 'agent heartbeats',
+          },
+          {
+            icon: Activity,
+            label: 'Avg CPU',
+            value: loading || !online ? '—' : `${Math.round(avgCpu)}%`,
+            hint: 'cpu_usage_percent',
+          },
+          {
+            icon: MemoryStick,
+            label: 'Memory',
+            value: memLabel,
+            hint: memHint,
+          },
+          {
+            icon: Gauge,
+            label: 'Apps running',
+            value: loading ? '—' : String(runningApps),
+            hint: `${apps.length} total workloads`,
+          },
+        ].map((item) => (
+          <article key={item.label} className="compass-ov-metric-card">
+            <div className="compass-ov-metric-head">
+              <span>{item.label}</span>
+              <item.icon size={16} aria-hidden />
+            </div>
+            <div className="compass-ov-metric-value">{item.value}</div>
+            <div className="compass-ov-metric-delta muted">{item.hint}</div>
+          </article>
+        ))}
       </div>
 
-      <section className="panel flux-shadow lift-card">
-        <header className="panel-header">
-          <div>
-            <h3>Control-plane host</h3>
-            <p className="muted">
-              {localNode
-                ? 'Embedded local node on this VPS — available for deploys when no remote agents are enrolled.'
-                : 'Host inventory appears once the local node is registered.'}
-            </p>
+      <div className="compass-ov-mid">
+        <article className="compass-ov-card compass-ov-traffic">
+          <div className="compass-ov-card-head">
+            <h2>Agent metrics</h2>
+            <div className="compass-ov-legend">
+              <span><i className="swatch swatch-req" /> CPU %</span>
+              <span><i className="swatch swatch-err" /> Free RAM (GB)</span>
+            </div>
           </div>
-          {localNode ? (
-            <span className={`status-badge ${localNode.status === 'online' ? 'status-running' : 'status-stopped'}`}>
-              {localNode.status}
-            </span>
-          ) : null}
-        </header>
-        <dl className="detail-grid">
-          <div><dt>Hostname</dt><dd>{host?.hostname || '—'}</dd></div>
-          <div><dt>Node</dt><dd>{localNode?.name || '—'}</dd></div>
-          <div><dt><Cpu size={12} /> CPU</dt><dd>{host?.cpuCores ?? 0} cores</dd></div>
-          <div><dt><HardDrive size={12} /> Memory</dt><dd>{host?.memoryTotalMb ? `${host.memoryTotalMb} MB` : '—'}</dd></div>
-          <div><dt>Docker</dt><dd>{host?.dockerSocket ? 'socket present' : 'missing'}</dd></div>
-          <div><dt>Containerd</dt><dd>{host?.containerdSocket ? 'socket present' : 'missing'}</dd></div>
-          <div><dt>Last seen</dt><dd>{localNode?.lastSeenAt ? relativeAge(localNode.lastSeenAt) : '—'}</dd></div>
-          <div><dt>Runtime</dt><dd>{host?.agentVersion || '—'}</dd></div>
-        </dl>
-      </section>
-
-      <div className="dashboard-grid">
-        <section className="panel flux-shadow lift-card">
-          <header className="panel-header">
-            <div>
-              <h3>Fleet snapshot</h3>
-              <p className="muted">Remote agents + the control-plane host.</p>
-            </div>
-            <span className="chip chip-info"><Sparkles size={12} /> Live</span>
-          </header>
-          {loading ? (
-            <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading nodes…</span></div>
-          ) : null}
-          {!loading && nodes.length === 0 ? (
-            <div className="empty-state compact">
-              <Server />
-              <strong>No nodes yet</strong>
-              <p className="muted">The local host node should appear automatically.</p>
-            </div>
-          ) : (
-            <ul className="resource-list">
-              {nodes.slice(0, 6).map((node) => (
-                <li key={node.id}>
-                  <div className="resource-link" style={{ cursor: 'default' }}>
-                    <strong>{node.name}{node.isLocal ? ' (local)' : ''}</strong>
-                    <div className="resource-meta">
-                      <span className={`status-badge ${node.status === 'online' ? 'status-running' : 'status-stopped'}`}>
-                        {node.status}
-                      </span>
-                      <span className="mono">{node.capabilities?.hostname || 'host?'}</span>
-                    </div>
-                  </div>
-                  <span className="chip">{relativeAge(node.lastSeenAt)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="panel flux-shadow lift-card">
-          <header className="panel-header">
-            <div>
-              <h3>Platform health</h3>
-              <p className="muted">Control plane readiness checklist.</p>
-            </div>
-          </header>
-          <ul className="health-list">
-            <li>
-              <div>
-                <strong>API /healthz</strong>
-                <span className="muted">Connect control plane</span>
+          <div className="compass-ov-chart">
+            {hasChart ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chart} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="ovCpuFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="h" stroke="var(--muted-fg)" fontSize={11} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                  <YAxis stroke="var(--muted-fg)" fontSize={11} tickLine={false} axisLine={false} width={40} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 6,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Area type="monotone" dataKey="cpu" name="CPU %" stroke="var(--chart-1)" strokeWidth={2} fill="url(#ovCpuFill)" />
+                  <Area type="monotone" dataKey="memFreeGb" name="Free RAM GB" stroke="var(--chart-4)" strokeWidth={1.5} fill="transparent" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="compass-empty" style={{ border: 0, height: '100%', display: 'grid', placeItems: 'center' }}>
+                {loading ? 'Loading agent samples…' : 'No metric samples yet. Keep an agent online — heartbeats write CPU/RAM samples.'}
               </div>
-              <span className="status-badge status-running">up</span>
-            </li>
-            <li>
-              <div>
-                <strong>Auth sessions</strong>
-                <span className="muted">Opaque tokens + renew</span>
-              </div>
-              <span className="status-badge status-running">healthy</span>
-            </li>
-            <li>
-              <div>
-                <strong>Postgres + RLS</strong>
-                <span className="muted">Tenant isolation</span>
-              </div>
-              <span className="status-badge status-running">ok</span>
-            </li>
-            <li>
-              <div>
-                <strong>Runtime</strong>
-                <span className="muted">{localNode ? 'Local host + remote agents' : 'Enrollment stream'}</span>
-              </div>
-              <span className={`status-badge ${runtimeHealthy ? 'status-running' : 'status-pending'}`}>
-                {runtimeHealthy ? 'ready' : 'pending'}
-              </span>
-            </li>
-          </ul>
-        </section>
-      </div>
+            )}
+          </div>
+        </article>
 
-      <div className="dashboard-grid">
-        <section className="panel flux-shadow lift-card">
-          <header className="panel-header">
-            <div>
-              <h3>Recent projects</h3>
-              <p className="muted">Jump back into your workspace.</p>
-            </div>
-            <Link to="/projects" className="ghost-button">View all</Link>
-          </header>
-          {loading ? (
-            <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading projects…</span></div>
-          ) : null}
-          {!loading && projects.length === 0 ? (
-            <div className="empty-state compact">
-              <FolderKanban />
-              <strong>No projects yet</strong>
-              <p className="muted">Create one to populate this feed.</p>
-              <Link to="/projects" className="primary-button">Create project</Link>
-            </div>
-          ) : (
-            <ul className="resource-list">
-              {projects.slice(0, 5).map((project) => (
-                <li key={project.id}>
-                  <button
-                    type="button"
-                    className="resource-link"
-                    onClick={() => navigate(`/projects/${project.id}`)}
-                  >
-                    <strong>{project.name}</strong>
-                    <span className="mono">{project.id}</span>
-                  </button>
-                  <span className="chip">Open</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="panel flux-shadow lift-card">
-          <header className="panel-header">
-            <div>
-              <h3>Activity</h3>
-              <p className="muted">Latest signals across the control plane.</p>
-            </div>
-            <Activity size={16} className="muted-icon" aria-hidden />
-          </header>
-          <ul className="activity-list">
-            {ACTIVITY.map((item) => (
-              <li key={item.title} className={`tone-${item.tone}`}>
-                <span className="activity-dot" aria-hidden />
-                <div>
-                  <strong>{item.title}</strong>
-                  <p className="muted">{item.detail}</p>
+        <article className="compass-ov-card">
+          <h2 className="compass-ov-card-title">Regions</h2>
+          <ul className="compass-ov-regions">
+            {displayZones.map((zone) => (
+              <li key={zone.name}>
+                <div className="compass-ov-region-row">
+                  <span><span className="mono muted">{zone.name}</span> · {zone.label}</span>
+                  <span className="mono">{zone.pct}%</span>
                 </div>
-                <time>{item.time}</time>
+                <div className="compass-ov-region-track">
+                  <span style={{ width: `${zone.pct}%` }} />
+                </div>
               </li>
             ))}
           </ul>
-        </section>
+          {incident ? (
+            <div className="compass-ov-incident" role="status">
+              <strong>Active incident</strong>
+              <p>
+                <button type="button" className="linkish" onClick={() => navigate(`/projects/${incident.projectId}`)}>
+                  {incident.name}
+                </button>
+                {' '}
+                {incident.error || `is failing health checks in ${incident.zone}.`}
+              </p>
+            </div>
+          ) : (
+            <div className="compass-ov-incident is-ok" role="status">
+              <strong>No active incidents</strong>
+              <p>{online}/{nodes.length || 0} nodes online · {projects.length} projects · signed in as {user.name || user.email}</p>
+            </div>
+          )}
+        </article>
       </div>
+
+      <article className="compass-ov-card compass-ov-apps">
+        <div className="compass-ov-apps-head">
+          <h2>Applications</h2>
+          <span className="muted">{loading ? 'Loading…' : `${filteredApps.length} result${filteredApps.length === 1 ? '' : 's'}`}</span>
+        </div>
+        {filteredApps.length === 0 ? (
+          <div className="compass-empty" style={{ border: 0 }}>
+            {loading ? 'Loading applications…' : 'No applications yet. Create a project and deploy a workload.'}
+            {!loading ? <div style={{ marginTop: 12 }}><Link to="/projects" className="primary-button">New project</Link></div> : null}
+          </div>
+        ) : (
+          <div className="table-scroll">
+            <table className="compass-data-table">
+              <thead>
+                <tr>
+                  {['Name', 'Status', 'Region', 'Instances', 'Node CPU', 'Node RAM', 'Last deploy'].map((header) => (
+                    <th key={header}>{header}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredApps.slice(0, 8).map((app) => {
+                  const meta = STATUS_META[app.status] || STATUS_META.pending
+                  return (
+                    <tr key={app.id} onClick={() => navigate(`/projects/${app.projectId}/workloads/${app.id}`)}>
+                      <td>
+                        <button type="button" className="compass-table-link" onClick={(event) => { event.stopPropagation(); navigate(`/projects/${app.projectId}/workloads/${app.id}`) }}>
+                          {app.name}
+                        </button>
+                        <div className="table-sub">{app.projectName} · {app.runtime}</div>
+                      </td>
+                      <td>
+                        <span className={`compass-status-inline tone-${meta.tone}`}>
+                          <span className={`status-dot ${app.status === 'building' || app.status === 'deploying' ? 'pulse-dot' : ''}`} aria-hidden />
+                          {meta.label}
+                        </span>
+                      </td>
+                      <td className="mono">{app.zone}</td>
+                      <td className="mono">{app.replicas}</td>
+                      <td>{app.cpu == null ? <span className="muted">—</span> : <UsageBar value={app.cpu} />}</td>
+                      <td>{app.memory == null ? <span className="muted">—</span> : <UsageBar value={app.memory} />}</td>
+                      <td className="mono muted">{app.commit} · {app.ago}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </article>
+
+      <article className="compass-ov-events">
+        <div className="compass-ov-events-head">
+          <Terminal size={16} aria-hidden />
+          Live events
+        </div>
+        <div className="compass-ov-events-body">
+          {liveEvents.length === 0 ? (
+            <p className="muted">No events yet — deploy an app to populate this feed.</p>
+          ) : (
+            liveEvents.map((event) => (
+              <div key={event.id} className="compass-ov-event-row">
+                <span className="muted">{event.time}</span>
+                <span className={`event-level-text tone-${event.tone}`}>{event.level}</span>
+                <span className="event-subject">{event.subject}</span>
+                <span>{event.detail}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </article>
     </section>
   )
+}
+
+function UsageBar({ value }: { value: number }) {
+  return (
+    <div className="compass-usage">
+      <div className="compass-usage-track">
+        <span className={value > 70 ? 'is-warn' : ''} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+      </div>
+      <span className="mono muted">{value}%</span>
+    </div>
+  )
+}
+
+function runtimeLabel(workload: Workload) {
+  if (workload.sourceKind === 'git') return 'git'
+  if (workload.requireKvm) return 'Cloud Hypervisor'
+  const value = Number(workload.runtime)
+  if (value === 3) return 'Cloud Hypervisor'
+  if (value === 4) return 'WASM'
+  if (value === 2) return 'Compose'
+  return 'Docker'
+}
+
+function toAppRow(workload: Workload, project: Project, nodes: Node[]): AppRow {
+  const node = nodes.find((item) => item.id === workload.assignedNodeId)
+  const running = workload.status === 'running'
+  let cpu: number | null = null
+  let memory: number | null = null
+  if (running && node) {
+    cpu = Math.round(Number(node.cpuUsagePercent || 0))
+    const { totalMb, usedMb } = nodeMem(node)
+    if (totalMb > 0) memory = Math.round((usedMb / totalMb) * 100)
+  }
+  const gen = String(workload.observedGeneration || workload.desiredGeneration || workload.id)
+  return {
+    id: workload.id,
+    name: workload.name,
+    projectId: project.id,
+    projectName: project.name,
+    status: workload.status || 'pending',
+    zone: workload.preferredZone || node?.zone || 'default',
+    replicas: running || workload.status === 'building' || workload.status === 'deploying' ? (workload.replicaCount || 1) : 0,
+    runtime: runtimeLabel(workload),
+    image: workload.imageOrSource || '',
+    error: workload.lastError || '',
+    cpu,
+    memory,
+    commit: shortId(gen, 7),
+    ago: workload.status === 'building' || workload.status === 'deploying' ? 'now' : 'live',
+  }
+}
+
+function buildEvents(
+  apps: AppRow[],
+  alerts: ObservabilityAlertEvent[],
+  nodes: Node[],
+) {
+  const events: Array<{ id: string; time: string; level: string; tone: string; subject: string; detail: string }> = []
+
+  for (const alert of alerts.slice(0, 5)) {
+    const created = alert.createdAt ? new Date(Number(alert.createdAt) * (Number(alert.createdAt) > 1e12 ? 1 : 1000)) : null
+    events.push({
+      id: `alert-${alert.id}`,
+      time: created ? created.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—',
+      level: 'info',
+      tone: (alert.status || '').toLowerCase().includes('fail') || (alert.status || '').toLowerCase().includes('error') ? 'danger' : 'info',
+      subject: 'alert',
+      detail: alert.message || 'Observability alert',
+    })
+  }
+
+  for (const app of apps.filter((item) => item.status === 'failed').slice(0, 4)) {
+    events.push({
+      id: `app-fail-${app.id}`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      level: 'error',
+      tone: 'danger',
+      subject: app.name,
+      detail: app.error || 'Health check failed',
+    })
+  }
+
+  for (const app of apps.filter((item) => item.status === 'building' || item.status === 'deploying').slice(0, 3)) {
+    events.push({
+      id: `app-busy-${app.id}`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      level: 'info',
+      tone: 'info',
+      subject: app.name,
+      detail: `${statusLabel(app.status)} · project ${app.projectName}`,
+    })
+  }
+
+  for (const node of nodes.filter((item) => item.status !== 'online').slice(0, 3)) {
+    events.push({
+      id: `node-${node.id}`,
+      time: relativeAge(node.lastSeenAt),
+      level: 'warn',
+      tone: 'warn',
+      subject: node.name,
+      detail: `Node ${node.status || 'offline'}`,
+    })
+  }
+
+  if (events.length === 0) {
+    for (const app of apps.filter((item) => item.status === 'running').slice(0, 4)) {
+      events.push({
+        id: `app-ok-${app.id}`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        level: 'info',
+        tone: 'info',
+        subject: app.name,
+        detail: `Active · ${app.zone} · ${app.replicas} instance${app.replicas === 1 ? '' : 's'}`,
+      })
+    }
+  }
+
+  return events.slice(0, 8)
 }

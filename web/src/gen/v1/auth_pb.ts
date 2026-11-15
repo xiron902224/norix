@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/auth.proto.
  */
 export const file_v1_auth: GenFile = /*@__PURE__*/
-  fileDesc("Cg12MS9hdXRoLnByb3RvEgJ2MSJHCgRVc2VyEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEgwKBG5hbWUYAyABKAkSFgoEcm9sZRgEIAEoDjIILnYxLlJvbGUiLwoMTG9naW5SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJIjYKDUxvZ2luUmVzcG9uc2USDQoFdG9rZW4YASABKAkSFgoEdXNlchgCIAEoCzIILnYxLlVzZXIiGwoZR2V0Qm9vdHN0cmFwU3RhdHVzUmVxdWVzdCIwChpHZXRCb290c3RyYXBTdGF0dXNSZXNwb25zZRISCgpjb25maWd1cmVkGAEgASgIIncKGUNyZWF0ZUluaXRpYWxBZG1pblJlcXVlc3QSGQoRb3JnYW5pemF0aW9uX25hbWUYASABKAkSEgoKYWRtaW5fbmFtZRgCIAEoCRITCgthZG1pbl9lbWFpbBgDIAEoCRIWCg5hZG1pbl9wYXNzd29yZBgEIAEoCSJDChpDcmVhdGVJbml0aWFsQWRtaW5SZXNwb25zZRINCgV0b2tlbhgBIAEoCRIWCgR1c2VyGAIgASgLMggudjEuVXNlciIeCg1Mb2dvdXRSZXF1ZXN0Eg0KBXRva2VuGAEgASgJIhAKDkxvZ291dFJlc3BvbnNlIiQKE1JlbmV3U2Vzc2lvblJlcXVlc3QSDQoFdG9rZW4YASABKAkiPgoUUmVuZXdTZXNzaW9uUmVzcG9uc2USDQoFdG9rZW4YASABKAkSFwoPZXhwaXJlc19hdF91bml4GAIgASgDKk0KBFJvbGUSFAoQUk9MRV9VTlNQRUNJRklFRBAAEg4KClJPTEVfT1dORVIQARIOCgpST0xFX0FETUlOEAISDwoLUk9MRV9NRU1CRVIQAzLZAgoLQXV0aFNlcnZpY2USLAoFTG9naW4SEC52MS5Mb2dpblJlcXVlc3QaES52MS5Mb2dpblJlc3BvbnNlElMKEkdldEJvb3RzdHJhcFN0YXR1cxIdLnYxLkdldEJvb3RzdHJhcFN0YXR1c1JlcXVlc3QaHi52MS5HZXRCb290c3RyYXBTdGF0dXNSZXNwb25zZRJTChJDcmVhdGVJbml0aWFsQWRtaW4SHS52MS5DcmVhdGVJbml0aWFsQWRtaW5SZXF1ZXN0Gh4udjEuQ3JlYXRlSW5pdGlhbEFkbWluUmVzcG9uc2USLwoGTG9nb3V0EhEudjEuTG9nb3V0UmVxdWVzdBoSLnYxLkxvZ291dFJlc3BvbnNlEkEKDFJlbmV3U2Vzc2lvbhIXLnYxLlJlbmV3U2Vzc2lvblJlcXVlc3QaGC52MS5SZW5ld1Nlc3Npb25SZXNwb25zZUJ+CgZjb20udjFCCUF1dGhQcm90b1ABWkFnaXRodWIuY29tL3hpcm9uOTAyMjI0L25vcml4L2NvbnRyb2wtcGxhbmUvaW50ZXJuYWwvZ2VuL3YxO3BhYXN2MaICA1ZYWKoCAlYxygICVjHiAg5WMVxHUEJNZXRhZGF0YeoCAlYxYgZwcm90bzM");
+  fileDesc("Cg12MS9hdXRoLnByb3RvEgJ2MSJHCgRVc2VyEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEgwKBG5hbWUYAyABKAkSFgoEcm9sZRgEIAEoDjIILnYxLlJvbGUiQgoMTG9naW5SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJEhEKCXRvdHBfY29kZRgDIAEoCSI2Cg1Mb2dpblJlc3BvbnNlEg0KBXRva2VuGAEgASgJEhYKBHVzZXIYAiABKAsyCC52MS5Vc2VyIhcKFUdldEN1cnJlbnRVc2VyUmVxdWVzdCIwChZHZXRDdXJyZW50VXNlclJlc3BvbnNlEhYKBHVzZXIYASABKAsyCC52MS5Vc2VyIhsKGUdldEJvb3RzdHJhcFN0YXR1c1JlcXVlc3QiMAoaR2V0Qm9vdHN0cmFwU3RhdHVzUmVzcG9uc2USEgoKY29uZmlndXJlZBgBIAEoCCJ3ChlDcmVhdGVJbml0aWFsQWRtaW5SZXF1ZXN0EhkKEW9yZ2FuaXphdGlvbl9uYW1lGAEgASgJEhIKCmFkbWluX25hbWUYAiABKAkSEwoLYWRtaW5fZW1haWwYAyABKAkSFgoOYWRtaW5fcGFzc3dvcmQYBCABKAkiQwoaQ3JlYXRlSW5pdGlhbEFkbWluUmVzcG9uc2USDQoFdG9rZW4YASABKAkSFgoEdXNlchgCIAEoCzIILnYxLlVzZXIiHgoNTG9nb3V0UmVxdWVzdBINCgV0b2tlbhgBIAEoCSIQCg5Mb2dvdXRSZXNwb25zZSIkChNSZW5ld1Nlc3Npb25SZXF1ZXN0Eg0KBXRva2VuGAEgASgJIj4KFFJlbmV3U2Vzc2lvblJlc3BvbnNlEg0KBXRva2VuGAEgASgJEhcKD2V4cGlyZXNfYXRfdW5peBgCIAEoAypNCgRSb2xlEhQKEFJPTEVfVU5TUEVDSUZJRUQQABIOCgpST0xFX09XTkVSEAESDgoKUk9MRV9BRE1JThACEg8KC1JPTEVfTUVNQkVSEAMyogMKC0F1dGhTZXJ2aWNlEiwKBUxvZ2luEhAudjEuTG9naW5SZXF1ZXN0GhEudjEuTG9naW5SZXNwb25zZRJTChJHZXRCb290c3RyYXBTdGF0dXMSHS52MS5HZXRCb290c3RyYXBTdGF0dXNSZXF1ZXN0Gh4udjEuR2V0Qm9vdHN0cmFwU3RhdHVzUmVzcG9uc2USUwoSQ3JlYXRlSW5pdGlhbEFkbWluEh0udjEuQ3JlYXRlSW5pdGlhbEFkbWluUmVxdWVzdBoeLnYxLkNyZWF0ZUluaXRpYWxBZG1pblJlc3BvbnNlEi8KBkxvZ291dBIRLnYxLkxvZ291dFJlcXVlc3QaEi52MS5Mb2dvdXRSZXNwb25zZRJBCgxSZW5ld1Nlc3Npb24SFy52MS5SZW5ld1Nlc3Npb25SZXF1ZXN0GhgudjEuUmVuZXdTZXNzaW9uUmVzcG9uc2USRwoOR2V0Q3VycmVudFVzZXISGS52MS5HZXRDdXJyZW50VXNlclJlcXVlc3QaGi52MS5HZXRDdXJyZW50VXNlclJlc3BvbnNlQn4KBmNvbS52MUIJQXV0aFByb3RvUAFaQWdpdGh1Yi5jb20veGlyb245MDIyMjQvbm9yaXgvY29udHJvbC1wbGFuZS9pbnRlcm5hbC9nZW4vdjE7cGFhc3YxogIDVlhYqgICVjHKAgJWMeICDlYxXEdQQk1ldGFkYXRh6gICVjFiBnByb3RvMw");
 
 /**
  * @generated from message v1.User
@@ -57,6 +57,13 @@ export type LoginRequest = Message<"v1.LoginRequest"> & {
    * @generated from field: string password = 2;
    */
   password: string;
+
+  /**
+   * Required when the user has TOTP enabled or the organization mandates 2FA.
+   *
+   * @generated from field: string totp_code = 3;
+   */
+  totpCode: string;
 };
 
 /**
@@ -89,6 +96,36 @@ export const LoginResponseSchema: GenMessage<LoginResponse> = /*@__PURE__*/
   messageDesc(file_v1_auth, 2);
 
 /**
+ * @generated from message v1.GetCurrentUserRequest
+ */
+export type GetCurrentUserRequest = Message<"v1.GetCurrentUserRequest"> & {
+};
+
+/**
+ * Describes the message v1.GetCurrentUserRequest.
+ * Use `create(GetCurrentUserRequestSchema)` to create a new message.
+ */
+export const GetCurrentUserRequestSchema: GenMessage<GetCurrentUserRequest> = /*@__PURE__*/
+  messageDesc(file_v1_auth, 3);
+
+/**
+ * @generated from message v1.GetCurrentUserResponse
+ */
+export type GetCurrentUserResponse = Message<"v1.GetCurrentUserResponse"> & {
+  /**
+   * @generated from field: v1.User user = 1;
+   */
+  user?: User | undefined;
+};
+
+/**
+ * Describes the message v1.GetCurrentUserResponse.
+ * Use `create(GetCurrentUserResponseSchema)` to create a new message.
+ */
+export const GetCurrentUserResponseSchema: GenMessage<GetCurrentUserResponse> = /*@__PURE__*/
+  messageDesc(file_v1_auth, 4);
+
+/**
  * @generated from message v1.GetBootstrapStatusRequest
  */
 export type GetBootstrapStatusRequest = Message<"v1.GetBootstrapStatusRequest"> & {
@@ -99,7 +136,7 @@ export type GetBootstrapStatusRequest = Message<"v1.GetBootstrapStatusRequest"> 
  * Use `create(GetBootstrapStatusRequestSchema)` to create a new message.
  */
 export const GetBootstrapStatusRequestSchema: GenMessage<GetBootstrapStatusRequest> = /*@__PURE__*/
-  messageDesc(file_v1_auth, 3);
+  messageDesc(file_v1_auth, 5);
 
 /**
  * @generated from message v1.GetBootstrapStatusResponse
@@ -116,7 +153,7 @@ export type GetBootstrapStatusResponse = Message<"v1.GetBootstrapStatusResponse"
  * Use `create(GetBootstrapStatusResponseSchema)` to create a new message.
  */
 export const GetBootstrapStatusResponseSchema: GenMessage<GetBootstrapStatusResponse> = /*@__PURE__*/
-  messageDesc(file_v1_auth, 4);
+  messageDesc(file_v1_auth, 6);
 
 /**
  * @generated from message v1.CreateInitialAdminRequest
@@ -148,7 +185,7 @@ export type CreateInitialAdminRequest = Message<"v1.CreateInitialAdminRequest"> 
  * Use `create(CreateInitialAdminRequestSchema)` to create a new message.
  */
 export const CreateInitialAdminRequestSchema: GenMessage<CreateInitialAdminRequest> = /*@__PURE__*/
-  messageDesc(file_v1_auth, 5);
+  messageDesc(file_v1_auth, 7);
 
 /**
  * @generated from message v1.CreateInitialAdminResponse
@@ -170,7 +207,7 @@ export type CreateInitialAdminResponse = Message<"v1.CreateInitialAdminResponse"
  * Use `create(CreateInitialAdminResponseSchema)` to create a new message.
  */
 export const CreateInitialAdminResponseSchema: GenMessage<CreateInitialAdminResponse> = /*@__PURE__*/
-  messageDesc(file_v1_auth, 6);
+  messageDesc(file_v1_auth, 8);
 
 /**
  * @generated from message v1.LogoutRequest
@@ -187,7 +224,7 @@ export type LogoutRequest = Message<"v1.LogoutRequest"> & {
  * Use `create(LogoutRequestSchema)` to create a new message.
  */
 export const LogoutRequestSchema: GenMessage<LogoutRequest> = /*@__PURE__*/
-  messageDesc(file_v1_auth, 7);
+  messageDesc(file_v1_auth, 9);
 
 /**
  * @generated from message v1.LogoutResponse
@@ -200,7 +237,7 @@ export type LogoutResponse = Message<"v1.LogoutResponse"> & {
  * Use `create(LogoutResponseSchema)` to create a new message.
  */
 export const LogoutResponseSchema: GenMessage<LogoutResponse> = /*@__PURE__*/
-  messageDesc(file_v1_auth, 8);
+  messageDesc(file_v1_auth, 10);
 
 /**
  * @generated from message v1.RenewSessionRequest
@@ -217,7 +254,7 @@ export type RenewSessionRequest = Message<"v1.RenewSessionRequest"> & {
  * Use `create(RenewSessionRequestSchema)` to create a new message.
  */
 export const RenewSessionRequestSchema: GenMessage<RenewSessionRequest> = /*@__PURE__*/
-  messageDesc(file_v1_auth, 9);
+  messageDesc(file_v1_auth, 11);
 
 /**
  * @generated from message v1.RenewSessionResponse
@@ -239,7 +276,7 @@ export type RenewSessionResponse = Message<"v1.RenewSessionResponse"> & {
  * Use `create(RenewSessionResponseSchema)` to create a new message.
  */
 export const RenewSessionResponseSchema: GenMessage<RenewSessionResponse> = /*@__PURE__*/
-  messageDesc(file_v1_auth, 10);
+  messageDesc(file_v1_auth, 12);
 
 /**
  * @generated from enum v1.Role
@@ -315,6 +352,14 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof RenewSessionRequestSchema;
     output: typeof RenewSessionResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AuthService.GetCurrentUser
+   */
+  getCurrentUser: {
+    methodKind: "unary";
+    input: typeof GetCurrentUserRequestSchema;
+    output: typeof GetCurrentUserResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_v1_auth, 0);

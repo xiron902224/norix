@@ -63,14 +63,20 @@ func (service PreviewService) UpsertPreview(ctx context.Context, request *paasv1
 	}); err != nil {
 		return nil, err
 	}
+	previewURL := preview.GetPreviewUrl()
+	if previewURL == "" && preview.GetStatus() != "destroyed" {
+		// Best-effort public URL when callers omit it.
+		previewURL = db.PreviewPublicURL(db.PreviewHostname(preview.GetRepo(), preview.GetPrNumber()))
+	}
 	stored, err := db.UpsertPRPreview(ctx, service.pool, identity.OrganizationID, db.PRPreview{
 		ID:              preview.GetId(),
 		ProjectID:       preview.GetProjectId(),
 		Repo:            preview.GetRepo(),
 		PRNumber:        preview.GetPrNumber(),
 		Status:          preview.GetStatus(),
-		PreviewURL:      preview.GetPreviewUrl(),
+		PreviewURL:      previewURL,
 		GithubCommentID: preview.GetGithubCommentId(),
+		TTLSeconds:      86400,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "required") {

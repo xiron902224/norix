@@ -83,6 +83,12 @@ pub async fn apply_network(plan: &DesiredNetworkPlan, workdir: &Path) -> Observe
         };
     }
     logs.push("nftables applied".into());
+    match apply_hosts_file(&dns_path) {
+        Ok(msg) => logs.push(msg),
+        Err(error) => {
+            logs.push(format!("dns hosts apply skipped: {error}"));
+        }
+    }
     info!(generation = plan.generation, "network mesh applied");
     ObservedNetwork {
         generation: plan.generation,
@@ -90,6 +96,46 @@ pub async fn apply_network(plan: &DesiredNetworkPlan, workdir: &Path) -> Observe
         message: "mesh applied".into(),
         log_lines: logs,
     }
+}
+
+/// Merge Norix DNS A/AAAA records into /etc/hosts between markers when writable.
+fn apply_hosts_file(snapshot: &Path) -> Result<String, String> {
+    let target = PathBuf::from("/etc/hosts");
+    let block = fs::read_to_string(snapshot).map_err(|e| e.to_string())?;
+    let existing = fs::read_to_string(&target).unwrap_or_default();
+    let begin = "# BEGIN NORIX DNS";
+    let end = "# END NORIX DNS";
+    let mut out = String::new();
+    let mut skipping = false;
+    for line in existing.lines() {
+        if line.trim() == begin {
+            skipping = true;
+            continue;
+        }
+        if line.trim() == end {
+            skipping = false;
+            continue;
+        }
+        if !skipping {
+            out.push_str(line);
+            out.push('\n');
+        }
+    }
+    out.push_str(begin);
+    out.push('\n');
+    for line in block.lines() {
+        if line.starts_with('#') || line.trim().is_empty() {
+            continue;
+        }
+        out.push_str(line);
+        out.push('\n');
+    }
+    out.push_str(end);
+    out.push('\n');
+    fs::write(&target, out).map_err(|e| {
+        format!("{e} (run agent as root or bind-mount writable /etc/hosts for live DNS)")
+    })?;
+    Ok("merged DNS into /etc/hosts".into())
 }
 
 fn fail(plan: &DesiredNetworkPlan, mut logs: Vec<String>, message: String) -> ObservedNetwork {

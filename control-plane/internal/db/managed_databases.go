@@ -191,15 +191,8 @@ func EnsureProvisioningDatabases(ctx context.Context, pool *pgxpool.Pool, tenant
 	return tag.RowsAffected(), tx.Commit(ctx)
 }
 
-func BackupManagedDatabase(ctx context.Context, pool *pgxpool.Pool, tenantID, databaseID string) (ManagedDatabase, error) {
-	return finishManagedDatabaseOperation(ctx, pool, tenantID, databaseID, "backing_up", true)
-}
-
-func RestoreManagedDatabase(ctx context.Context, pool *pgxpool.Pool, tenantID, databaseID string) (ManagedDatabase, error) {
-	return finishManagedDatabaseOperation(ctx, pool, tenantID, databaseID, "restoring", false)
-}
-
-func finishManagedDatabaseOperation(ctx context.Context, pool *pgxpool.Pool, tenantID, databaseID, transientStatus string, touchBackup bool) (ManagedDatabase, error) {
+// finishManagedDatabaseOperation marks a managed DB ready after backup/restore I/O.
+func finishManagedDatabaseOperation(ctx context.Context, pool *pgxpool.Pool, tenantID, databaseID string, touchBackup bool) (ManagedDatabase, error) {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return ManagedDatabase{}, err
@@ -208,38 +201,18 @@ func finishManagedDatabaseOperation(ctx context.Context, pool *pgxpool.Pool, ten
 	if err := WithTenant(ctx, tx, tenantID); err != nil {
 		return ManagedDatabase{}, err
 	}
+	query := `
+		UPDATE managed_databases SET status = 'ready', updated_at = NOW()`
 	if touchBackup {
-		tag, err := tx.Exec(ctx, `
-			UPDATE managed_databases SET status = $3, updated_at = NOW(), last_backup_at = NOW()
-			WHERE id = $1::uuid AND organization_id = $2::uuid`,
-			databaseID, tenantID, transientStatus)
-		if err != nil {
-			return ManagedDatabase{}, fmt.Errorf("backup managed database: %w", err)
-		}
-		if tag.RowsAffected() == 0 {
-			return ManagedDatabase{}, fmt.Errorf("managed database not found")
-		}
-	} else {
-		tag, err := tx.Exec(ctx, `
-			UPDATE managed_databases SET status = $3, updated_at = NOW()
-			WHERE id = $1::uuid AND organization_id = $2::uuid`,
-			databaseID, tenantID, transientStatus)
-		if err != nil {
-			return ManagedDatabase{}, fmt.Errorf("restore managed database: %w", err)
-		}
-		if tag.RowsAffected() == 0 {
-			return ManagedDatabase{}, fmt.Errorf("managed database not found")
-		}
+		query += `, last_backup_at = NOW()`
 	}
-	var item ManagedDatabase
-	var lastBackup *time.Time
-	err = tx.QueryRow(ctx, `
-		UPDATE managed_databases SET status = 'ready', updated_at = NOW()
+	query += `
 		WHERE id = $1::uuid AND organization_id = $2::uuid
 		RETURNING id::text, organization_id::text, project_id::text, engine, name, status,
-		          COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at`,
-		databaseID, tenantID,
-	).Scan(
+		          COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at`
+	var item ManagedDatabase
+	var lastBackup *time.Time
+	err = tx.QueryRow(ctx, query, databaseID, tenantID).Scan(
 		&item.ID, &item.OrganizationID, &item.ProjectID, &item.Engine, &item.Name, &item.Status,
 		&item.NodeID, &item.VolumePath, &item.BackupSchedule, &lastBackup,
 	)

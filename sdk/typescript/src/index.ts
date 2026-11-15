@@ -12,6 +12,26 @@ export class NorixClient {
     this.token = options.token;
   }
 
+  async health(): Promise<string> {
+    const response = await fetch(`${this.baseUrl}/healthz`, {
+      headers: this.headers(),
+    });
+    if (!response.ok) {
+      throw new Error(`Norix health failed: ${response.status}`);
+    }
+    return await response.text();
+  }
+
+  async status(): Promise<unknown> {
+    const response = await fetch(`${this.baseUrl}/status`, {
+      headers: this.headers(),
+    });
+    if (!response.ok) {
+      throw new Error(`Norix status failed: ${response.status}`);
+    }
+    return await response.json();
+  }
+
   async listProjects(): Promise<unknown> {
     return this.connect("v1.ProjectService/ListProjects", {});
   }
@@ -42,18 +62,22 @@ export class NorixClient {
     return this.connect("v1.MetricsService/QueryLogs", { query, limit });
   }
 
-  private async connect<T>(procedure: string, body: Record<string, unknown>): Promise<T> {
-    const url = `${this.baseUrl}/api/${procedure}`;
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "Connect-Protocol-Version": "1",
-    };
+  private headers(extra: Record<string, string> = {}): Record<string, string> {
+    const headers: Record<string, string> = { ...extra };
     if (this.token) {
       headers.Authorization = `Bearer ${this.token}`;
     }
+    return headers;
+  }
+
+  private async connect<T>(procedure: string, body: Record<string, unknown>): Promise<T> {
+    const url = `${this.baseUrl}/api/${procedure}`;
     const response = await fetch(url, {
       method: "POST",
-      headers,
+      headers: this.headers({
+        "Content-Type": "application/json",
+        "Connect-Protocol-Version": "1",
+      }),
       body: JSON.stringify(body),
     });
     if (!response.ok) {

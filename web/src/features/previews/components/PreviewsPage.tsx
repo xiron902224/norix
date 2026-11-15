@@ -1,30 +1,28 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { ExternalLink, GitPullRequest } from 'lucide-react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { ExternalLink, Plus } from 'lucide-react'
 import { Button } from '../../../shared/ui/Button'
 import { FormField } from '../../../shared/ui/FormField'
 import { SelectField } from '../../../shared/ui/SelectField'
-import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
+import { PageHero } from '../../../shared/ui/PageHero'
+import { MetricStrip } from '../../../shared/ui/MetricStrip'
+import { ResourceTable, type ResourceRow } from '../../../shared/ui/ResourceTable'
+import { CreateModal } from '../../../shared/ui/Modal'
 import type { PRPreview } from '../../../gen/v1/preview_pb'
 import type { Project } from '../../../gen/v1/workload_pb'
 import { listProjects } from '../../projects/services/projects-api'
 import { destroyPreview, listPreviews, upsertPreview } from '../services/previews-api'
 
-function statusClass(status: string) {
-  if (status === 'running' || status === 'ready') return 'status-running'
-  if (status === 'destroyed' || status === 'stopped') return 'status-stopped'
-  if (status === 'building' || status === 'pending') return 'status-building'
-  if (status === 'failed') return 'status-failed'
-  return 'status-stopped'
-}
-
 export function PreviewsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [items, setItems] = useState<PRPreview[]>([])
   const [projectId, setProjectId] = useState('')
+  const [selectedId, setSelectedId] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
-  const [destroyingId, setDestroyingId] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [actionBusy, setActionBusy] = useState('')
 
   async function refresh(selectedProject = projectId) {
     const [projectItems, previews] = await Promise.all([
@@ -34,16 +32,40 @@ export function PreviewsPage() {
     setProjects(projectItems)
     setItems(previews)
     if (!selectedProject && projectItems[0]) setProjectId(projectItems[0].id)
+    if (selectedId && !previews.some((item) => item.id === selectedId)) setSelectedId('')
+    setLoading(false)
   }
 
   useEffect(() => {
-    void refresh().catch((cause) => setError(cause instanceof Error ? cause.message : 'Could not load previews'))
+    void refresh().catch((cause) => {
+      setError(cause instanceof Error ? cause.message : 'Could not load previews')
+      setLoading(false)
+    })
   }, [])
 
   useEffect(() => {
     if (!projectId) return
-    void listPreviews(projectId).then(setItems).catch(() => { /* keep */ })
+    void listPreviews(projectId).then((previews) => {
+      setItems(previews)
+      if (selectedId && !previews.some((item) => item.id === selectedId)) setSelectedId('')
+    }).catch(() => { /* keep */ })
   }, [projectId])
+
+  const selected = items.find((item) => item.id === selectedId) ?? null
+  const active = items.filter((item) => item.status !== 'destroyed').length
+  const building = items.filter((item) => item.status === 'building' || item.status === 'pending').length
+  const destroyed = items.filter((item) => item.status === 'destroyed').length
+
+  const rows: ResourceRow[] = useMemo(() => items.map((item) => ({
+    id: item.id,
+    name: item.repo,
+    subtitle: `PR #${item.prNumber}`,
+    status: item.status || 'pending',
+    values: [
+      `#${item.prNumber}`,
+      item.previewUrl ? item.previewUrl.replace(/^https?:\/\//, '') : '—',
+    ],
+  })), [items])
 
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -52,153 +74,134 @@ export function PreviewsPage() {
     setNotice('')
     const form = new FormData(event.currentTarget)
     try {
-      await upsertPreview({
+      const created = await upsertPreview({
         projectId: String(form.get('projectId') ?? projectId),
         repo: String(form.get('repo') ?? ''),
         prNumber: Number(form.get('prNumber') ?? 0),
         previewUrl: String(form.get('previewUrl') ?? ''),
         status: 'pending',
       })
-      setNotice('Preview row upserted')
-      event.currentTarget.reset()
+      setNotice('Preview registered')
+      setModalOpen(false)
       await refresh(projectId)
+      if (created?.id) setSelectedId(created.id)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not upsert preview')
+      setError(cause instanceof Error ? cause.message : 'Could not register preview')
     } finally {
       setBusy(false)
     }
   }
 
   async function onDestroy(item: PRPreview) {
-    setDestroyingId(item.id)
+    setActionBusy(item.id)
     setError('')
     try {
       await destroyPreview(item)
-      setNotice('Preview marked destroyed')
+      setNotice('Preview marked as destroyed')
       await refresh(projectId)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not destroy preview')
     } finally {
-      setDestroyingId('')
+      setActionBusy('')
     }
   }
 
-  const active = items.filter((item) => item.status !== 'destroyed').length
-
   return (
-    <section className="page">
-      <header className="page-header">
-        <div>
-          <h2>PR Previews</h2>
-          <p>Ephemeral environments per pull request with auto-destroy on merge (S14).</p>
-        </div>
-      </header>
-
-      {error ? <div className="error" role="alert">{error}</div> : null}
-      {notice ? <div className="notice" role="status">{notice}</div> : null}
-
-      <ActivityBanner
-        title="GitHub webhook endpoint"
-        detail="POST /hooks/github/{token} · destroy uses UpsertPreview status=destroyed (no Delete RPC yet)."
+    <section className="compass-page">
+      <PageHero
+        title="Previews PR"
+        subtitle="Ephemeral environments per pull request with auto-destroy on merge"
+        actions={(
+          <Button type="button" onClick={() => setModalOpen(true)}>
+            <Plus size={14} /> Register preview
+          </Button>
+        )}
       />
 
-      <div className="stats-grid stats-grid-4">
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label"><GitPullRequest /> Active previews</div>
-          <strong>{active}</strong>
-        </article>
-        <article className="stat-card flux-shadow lift-card">
-          <div className="stat-label">Total rows</div>
-          <strong className="mono">{items.length}</strong>
-        </article>
+      {error ? <div className="error" role="alert">{error}</div> : null}
+      {notice ? <div className="compass-notice" role="status">{notice}</div> : null}
+
+      <MetricStrip
+        items={[
+          { label: 'Total', value: loading ? '—' : items.length },
+          { label: 'Active', value: loading ? '—' : active },
+          { label: 'Building', value: loading ? '—' : building },
+          { label: 'Destroyed', value: loading ? '—' : destroyed },
+        ]}
+      />
+
+      <div className="compass-panel">
+        <div className="compass-toolbar">
+          <SelectField id="pv-project-filter" label="Project" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+            <option value="" disabled>Select project</option>
+            {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+          </SelectField>
+        </div>
+        <div className="compass-split">
+          <ResourceTable
+            leadingHeader="Repository"
+            headers={['PR', 'URL']}
+            rows={rows}
+            selectedId={selectedId}
+            onSelect={(row) => setSelectedId(row.id)}
+            empty="No previews in this project."
+          />
+          <aside className="compass-side-panel">
+            {!selected ? (
+              <>
+                <h3>Detail</h3>
+                <p className="muted">Select a preview to view URL and actions.</p>
+              </>
+            ) : (
+              <>
+                <h3>{selected.repo}</h3>
+                <p className="muted">PR #{selected.prNumber} · {selected.status}</p>
+                <dl className="compass-detail-grid" style={{ marginTop: 12 }}>
+                  <div><dt>Status</dt><dd>{selected.status || '—'}</dd></div>
+                  <div><dt>PR</dt><dd>#{selected.prNumber}</dd></div>
+                  <div><dt>URL</dt><dd>{selected.previewUrl || '—'}</dd></div>
+                  <div><dt>ID</dt><dd>{selected.id}</dd></div>
+                </dl>
+                <div className="page-actions" style={{ marginTop: 16 }}>
+                  {selected.previewUrl ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => window.open(selected.previewUrl, '_blank', 'noopener,noreferrer')}
+                    >
+                      <ExternalLink size={14} /> Open URL
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="danger"
+                    disabled={actionBusy === selected.id || selected.status === 'destroyed'}
+                    onClick={() => void onDestroy(selected)}
+                  >
+                    {actionBusy === selected.id ? '…' : 'Destroy'}
+                  </Button>
+                </div>
+              </>
+            )}
+          </aside>
+        </div>
       </div>
 
-      <section className="panel flux-shadow lift-card">
-        <header className="panel-header">
-          <div>
-            <h3>Register preview</h3>
-            <p className="muted">Manual UpsertPreview for webhook-less testing.</p>
-          </div>
-        </header>
-        <form className="form-grid-domains" onSubmit={(event) => void onCreate(event)}>
-          <SelectField
-            id="pv-project"
-            name="projectId"
-            label="Project"
-            value={projectId}
-            onChange={(event) => setProjectId(event.target.value)}
-          >
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>{project.name}</option>
-            ))}
-          </SelectField>
-          <FormField id="pv-repo" name="repo" label="Repository" required placeholder="org/app" />
-          <FormField id="pv-pr" name="prNumber" label="PR #" type="number" required defaultValue="1" />
-          <FormField id="pv-url" name="previewUrl" label="Preview URL" placeholder="https://pr-42.preview.local" />
-          <Button type="submit" disabled={busy || !projectId}>{busy ? 'Saving…' : 'Upsert preview'}</Button>
-        </form>
-      </section>
-
-      <section className="panel flux-shadow lift-card panel-table">
-        <header className="panel-header">
-          <div>
-            <h3>Preview instances</h3>
-            <p className="muted">{items.length} rows</p>
-          </div>
-        </header>
-        {items.length === 0 ? (
-          <div className="empty-state compact">
-            <GitPullRequest />
-            <strong>No active previews</strong>
-            <p className="muted">Open a PR against a linked repo or register one above.</p>
-          </div>
-        ) : (
-          <div className="table-scroll">
-            <table className="dense-table">
-              <thead>
-                <tr>
-                  <th>Repository</th>
-                  <th>PR</th>
-                  <th>Status</th>
-                  <th>URL</th>
-                  <th className="align-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id}>
-                    <td className="mono">{item.repo}</td>
-                    <td className="mono">#{item.prNumber}</td>
-                    <td>
-                      <span className={`status-chip ${statusClass(item.status)}`}>{item.status}</span>
-                    </td>
-                    <td>
-                      {item.previewUrl ? (
-                        <a className="endpoint-link" href={item.previewUrl} target="_blank" rel="noreferrer">
-                          {item.previewUrl}
-                          <ExternalLink aria-hidden />
-                        </a>
-                      ) : (
-                        <span className="muted">—</span>
-                      )}
-                    </td>
-                    <td className="align-right">
-                      <Button
-                        type="button"
-                        variant="danger"
-                        disabled={destroyingId === item.id || item.status === 'destroyed'}
-                        onClick={() => void onDestroy(item)}
-                      >
-                        {destroyingId === item.id ? 'Destroying…' : 'Destroy'}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      <CreateModal
+        open={modalOpen}
+        title="Register preview"
+        submitLabel="Save preview"
+        busy={busy}
+        onClose={() => setModalOpen(false)}
+        onSubmit={(event) => void onCreate(event)}
+      >
+        <SelectField id="pv-project" name="projectId" label="Project" value={projectId} onChange={(e) => setProjectId(e.target.value)} required>
+          {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+        </SelectField>
+        <FormField id="pv-repo" name="repo" label="Repository" required placeholder="org/app" />
+        <FormField id="pv-pr" name="prNumber" label="PR #" type="number" required defaultValue="1" />
+        <FormField id="pv-url" name="previewUrl" label="Preview URL" placeholder="https://pr-42.preview.local" />
+      </CreateModal>
     </section>
   )
 }

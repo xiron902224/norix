@@ -19,18 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WorkloadService_CreateWorkload_FullMethodName  = "/v1.WorkloadService/CreateWorkload"
-	WorkloadService_Deploy_FullMethodName          = "/v1.WorkloadService/Deploy"
-	WorkloadService_DeployFromGit_FullMethodName   = "/v1.WorkloadService/DeployFromGit"
-	WorkloadService_ListWorkloads_FullMethodName   = "/v1.WorkloadService/ListWorkloads"
-	WorkloadService_UpdateWorkload_FullMethodName  = "/v1.WorkloadService/UpdateWorkload"
-	WorkloadService_DeleteWorkload_FullMethodName  = "/v1.WorkloadService/DeleteWorkload"
-	WorkloadService_GetWorkloadLogs_FullMethodName = "/v1.WorkloadService/GetWorkloadLogs"
-	WorkloadService_ListBuilds_FullMethodName      = "/v1.WorkloadService/ListBuilds"
-	WorkloadService_GetBuildLogs_FullMethodName    = "/v1.WorkloadService/GetBuildLogs"
-	WorkloadService_AssignDomain_FullMethodName    = "/v1.WorkloadService/AssignDomain"
-	WorkloadService_ListDomains_FullMethodName     = "/v1.WorkloadService/ListDomains"
-	WorkloadService_UnassignDomain_FullMethodName  = "/v1.WorkloadService/UnassignDomain"
+	WorkloadService_CreateWorkload_FullMethodName        = "/v1.WorkloadService/CreateWorkload"
+	WorkloadService_Deploy_FullMethodName                = "/v1.WorkloadService/Deploy"
+	WorkloadService_DeployFromGit_FullMethodName         = "/v1.WorkloadService/DeployFromGit"
+	WorkloadService_AnalyzeComposeFromGit_FullMethodName = "/v1.WorkloadService/AnalyzeComposeFromGit"
+	WorkloadService_DeployComposeStack_FullMethodName    = "/v1.WorkloadService/DeployComposeStack"
+	WorkloadService_ListWorkloads_FullMethodName         = "/v1.WorkloadService/ListWorkloads"
+	WorkloadService_UpdateWorkload_FullMethodName        = "/v1.WorkloadService/UpdateWorkload"
+	WorkloadService_DeleteWorkload_FullMethodName        = "/v1.WorkloadService/DeleteWorkload"
+	WorkloadService_GetWorkloadLogs_FullMethodName       = "/v1.WorkloadService/GetWorkloadLogs"
+	WorkloadService_ListBuilds_FullMethodName            = "/v1.WorkloadService/ListBuilds"
+	WorkloadService_GetBuildLogs_FullMethodName          = "/v1.WorkloadService/GetBuildLogs"
+	WorkloadService_AssignDomain_FullMethodName          = "/v1.WorkloadService/AssignDomain"
+	WorkloadService_ListDomains_FullMethodName           = "/v1.WorkloadService/ListDomains"
+	WorkloadService_UnassignDomain_FullMethodName        = "/v1.WorkloadService/UnassignDomain"
 )
 
 // WorkloadServiceClient is the client API for WorkloadService service.
@@ -40,6 +42,8 @@ type WorkloadServiceClient interface {
 	CreateWorkload(ctx context.Context, in *CreateWorkloadRequest, opts ...grpc.CallOption) (*CreateWorkloadResponse, error)
 	Deploy(ctx context.Context, in *DeployRequest, opts ...grpc.CallOption) (*DeployResponse, error)
 	DeployFromGit(ctx context.Context, in *DeployFromGitRequest, opts ...grpc.CallOption) (*DeployFromGitResponse, error)
+	AnalyzeComposeFromGit(ctx context.Context, in *AnalyzeComposeFromGitRequest, opts ...grpc.CallOption) (*AnalyzeComposeFromGitResponse, error)
+	DeployComposeStack(ctx context.Context, in *DeployComposeStackRequest, opts ...grpc.CallOption) (*DeployComposeStackResponse, error)
 	ListWorkloads(ctx context.Context, in *ListWorkloadsRequest, opts ...grpc.CallOption) (*ListWorkloadsResponse, error)
 	UpdateWorkload(ctx context.Context, in *UpdateWorkloadRequest, opts ...grpc.CallOption) (*UpdateWorkloadResponse, error)
 	DeleteWorkload(ctx context.Context, in *DeleteWorkloadRequest, opts ...grpc.CallOption) (*DeleteWorkloadResponse, error)
@@ -83,6 +87,26 @@ func (c *workloadServiceClient) DeployFromGit(ctx context.Context, in *DeployFro
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeployFromGitResponse)
 	err := c.cc.Invoke(ctx, WorkloadService_DeployFromGit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) AnalyzeComposeFromGit(ctx context.Context, in *AnalyzeComposeFromGitRequest, opts ...grpc.CallOption) (*AnalyzeComposeFromGitResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AnalyzeComposeFromGitResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_AnalyzeComposeFromGit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) DeployComposeStack(ctx context.Context, in *DeployComposeStackRequest, opts ...grpc.CallOption) (*DeployComposeStackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeployComposeStackResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_DeployComposeStack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -186,6 +210,8 @@ type WorkloadServiceServer interface {
 	CreateWorkload(context.Context, *CreateWorkloadRequest) (*CreateWorkloadResponse, error)
 	Deploy(context.Context, *DeployRequest) (*DeployResponse, error)
 	DeployFromGit(context.Context, *DeployFromGitRequest) (*DeployFromGitResponse, error)
+	AnalyzeComposeFromGit(context.Context, *AnalyzeComposeFromGitRequest) (*AnalyzeComposeFromGitResponse, error)
+	DeployComposeStack(context.Context, *DeployComposeStackRequest) (*DeployComposeStackResponse, error)
 	ListWorkloads(context.Context, *ListWorkloadsRequest) (*ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *UpdateWorkloadRequest) (*UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *DeleteWorkloadRequest) (*DeleteWorkloadResponse, error)
@@ -213,6 +239,12 @@ func (UnimplementedWorkloadServiceServer) Deploy(context.Context, *DeployRequest
 }
 func (UnimplementedWorkloadServiceServer) DeployFromGit(context.Context, *DeployFromGitRequest) (*DeployFromGitResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeployFromGit not implemented")
+}
+func (UnimplementedWorkloadServiceServer) AnalyzeComposeFromGit(context.Context, *AnalyzeComposeFromGitRequest) (*AnalyzeComposeFromGitResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AnalyzeComposeFromGit not implemented")
+}
+func (UnimplementedWorkloadServiceServer) DeployComposeStack(context.Context, *DeployComposeStackRequest) (*DeployComposeStackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeployComposeStack not implemented")
 }
 func (UnimplementedWorkloadServiceServer) ListWorkloads(context.Context, *ListWorkloadsRequest) (*ListWorkloadsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListWorkloads not implemented")
@@ -312,6 +344,42 @@ func _WorkloadService_DeployFromGit_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WorkloadServiceServer).DeployFromGit(ctx, req.(*DeployFromGitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_AnalyzeComposeFromGit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AnalyzeComposeFromGitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).AnalyzeComposeFromGit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_AnalyzeComposeFromGit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).AnalyzeComposeFromGit(ctx, req.(*AnalyzeComposeFromGitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_DeployComposeStack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeployComposeStackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).DeployComposeStack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_DeployComposeStack_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).DeployComposeStack(ctx, req.(*DeployComposeStackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -496,6 +564,14 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeployFromGit",
 			Handler:    _WorkloadService_DeployFromGit_Handler,
+		},
+		{
+			MethodName: "AnalyzeComposeFromGit",
+			Handler:    _WorkloadService_AnalyzeComposeFromGit_Handler,
+		},
+		{
+			MethodName: "DeployComposeStack",
+			Handler:    _WorkloadService_DeployComposeStack_Handler,
 		},
 		{
 			MethodName: "ListWorkloads",

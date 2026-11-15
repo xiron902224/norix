@@ -22,6 +22,15 @@ func startSandboxGC(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger
 				} else if count > 0 {
 					logger.Info("expired sandboxes", "org", orgID, "count", count)
 				}
+				previews, previewErr := db.GCExpiredPRPreviews(ctx, pool, orgID)
+				if previewErr != nil {
+					logger.Warn("preview gc", "org", orgID, "error", previewErr)
+				} else if previews > 0 {
+					logger.Info("expired pr previews", "org", orgID, "count", previews)
+				}
+				if warmErr := db.EnsureSandboxWarmPool(ctx, pool, orgID); warmErr != nil {
+					logger.Warn("sandbox warm pool", "org", orgID, "error", warmErr)
+				}
 			}
 		}
 		select {

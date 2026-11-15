@@ -9,6 +9,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -21,7 +23,26 @@ type CertificateBundle struct {
 	Issuer    string
 }
 
-// IssueSelfSignedWildcard issues a platform wildcard cert (DNS-01 path lands later with lego).
+// IssuePlatformCertificate prefers DNS-01 ACME (lego) when configured; otherwise self-signed.
+func IssuePlatformCertificate(hostname string, validFor time.Duration) (CertificateBundle, error) {
+	if DNS01Configured() {
+		bundle, err := IssueACMEDNS01(hostname)
+		if err == nil {
+			return bundle, nil
+		}
+		// Fall through to self-signed so edge keeps working when ACME/DNS is misconfigured.
+	}
+	return IssueSelfSignedWildcard(hostname, validFor)
+}
+
+// DNS01Configured reports whether DNS-01 ACME env is present.
+func DNS01Configured() bool {
+	provider := strings.TrimSpace(os.Getenv("NORIX_ACME_DNS_PROVIDER"))
+	email := strings.TrimSpace(firstNonEmpty(os.Getenv("NORIX_ACME_EMAIL"), os.Getenv("LEGO_EMAIL")))
+	return provider != "" && email != ""
+}
+
+// IssueSelfSignedWildcard issues a platform wildcard cert (fallback when DNS-01 is off).
 func IssueSelfSignedWildcard(hostname string, validFor time.Duration) (CertificateBundle, error) {
 	if hostname == "" {
 		hostname = "*." + DNSSuffix
@@ -72,5 +93,20 @@ func IssueSelfSignedWildcard(hostname string, validFor time.Duration) (Certifica
 }
 
 func WildcardHostname() string {
+	if host := strings.TrimSpace(os.Getenv("NORIX_PLATFORM_HOSTNAME")); host != "" {
+		if strings.HasPrefix(host, "*.") {
+			return host
+		}
+		return "*." + host
+	}
 	return fmt.Sprintf("*.%s", DNSSuffix)
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }

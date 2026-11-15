@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
-import { Bell, DatabaseBackup, Download, HardDriveDownload, RefreshCw } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { DatabaseBackup, Download, RefreshCw } from 'lucide-react'
 import { Button } from '../../../shared/ui/Button'
-import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
+import { PageHero } from '../../../shared/ui/PageHero'
+import { MetricStrip } from '../../../shared/ui/MetricStrip'
+import { ResourceTable, type ResourceRow } from '../../../shared/ui/ResourceTable'
 import {
   createBackup,
   downloadBackup,
@@ -27,6 +29,7 @@ function formatBytes(value: number) {
 export function OpsPage() {
   const [backups, setBackups] = useState<BackupItem[]>([])
   const [alerts, setAlerts] = useState<AlertItem[]>([])
+  const [selectedId, setSelectedId] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
@@ -37,9 +40,10 @@ export function OpsPage() {
       const [backupItems, alertItems] = await Promise.all([listBackups(), listAlerts()])
       setBackups(backupItems)
       setAlerts(alertItems)
+      if (selectedId && !backupItems.some((item) => item.ID === selectedId)) setSelectedId('')
       setError('')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load ops data')
+      setError(cause instanceof Error ? cause.message : 'Could not load operations')
     } finally {
       setLoading(false)
     }
@@ -57,8 +61,11 @@ export function OpsPage() {
     setError('')
     try {
       const result = await createBackup()
-      setNotice(result.error ? `Backup finished with issues: ${result.error}` : `Backup created: ${result.backup.Filename}`)
+      setNotice(result.error
+        ? `Backup with issues: ${result.error}`
+        : `Backup created: ${result.backup.Filename}`)
       await refresh()
+      if (result.backup?.ID) setSelectedId(result.backup.ID)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Backup failed')
     } finally {
@@ -67,7 +74,7 @@ export function OpsPage() {
   }
 
   async function onRestore(backup: BackupItem) {
-    if (!window.confirm(`Restore ${backup.Filename}? This applies SQL onto the current database.`)) return
+    if (!window.confirm(`Restore ${backup.Filename}? SQL will be applied to the current database.`)) return
     setBusy(backup.ID)
     setNotice('')
     setError('')
@@ -97,153 +104,156 @@ export function OpsPage() {
 
   const completed = backups.filter((item) => item.Status === 'completed' || item.Status === 'restored')
   const lastBackup = completed[0]
+  const selected = backups.find((item) => item.ID === selectedId) ?? null
+  const canDownloadSelected = selected
+    ? selected.Status === 'completed' || selected.Status === 'restored'
+    : false
+
+  const rows: ResourceRow[] = useMemo(() => backups.map((backup) => {
+    const raw = backup.Status || 'pending'
+    const status = raw === 'completed' || raw === 'restored' ? 'active' : raw === 'failed' ? 'failed' : 'pending'
+    return {
+      id: backup.ID,
+      name: backup.Filename,
+      subtitle: backup.ID,
+      status,
+      values: [
+        formatBytes(backup.SizeBytes),
+        new Date(backup.CreatedAt).toLocaleString(),
+      ],
+    }
+  }), [backups])
 
   return (
-    <section className="page">
-      <header className="page-header">
-        <div>
-          <h2>Operations</h2>
-          <p>PostgreSQL snapshots, alert dispatch, and Alpha restore path (Stitch Domains &amp; Ops).</p>
-        </div>
-        <div className="page-actions">
-          <Button variant="secondary" type="button" onClick={() => void refresh()}>
-            <RefreshCw size={14} /> Refresh
-          </Button>
-          <Button type="button" disabled={busy === 'backup'} onClick={() => void onBackup()}>
-            <DatabaseBackup size={14} /> {busy === 'backup' ? 'Backing up…' : 'Trigger Backup'}
-          </Button>
-        </div>
-      </header>
+    <section className="compass-page">
+      <PageHero
+        title="Operations"
+        subtitle="PostgreSQL snapshots, alerts, and restore path"
+        actions={(
+          <>
+            <Button variant="secondary" type="button" onClick={() => void refresh()}>
+              <RefreshCw size={14} /> Refresh
+            </Button>
+            <Button type="button" disabled={busy === 'backup'} onClick={() => void onBackup()}>
+              <DatabaseBackup size={14} /> {busy === 'backup' ? 'Creating…' : 'Create backup'}
+            </Button>
+          </>
+        )}
+      />
 
       {error ? <div className="error" role="alert">{error}</div> : null}
-      {notice ? <div className="notice" role="status">{notice}</div> : null}
+      {notice ? <div className="compass-notice" role="status">{notice}</div> : null}
+
       {busy === 'backup' ? (
-        <ActivityBanner title="Creating Postgres backup" detail="Running pg_dump into NORIX_BACKUP_DIR." />
+        <div className="callout callout-warn" role="status">
+          <div>
+            <strong>Creating Postgres backup</strong>
+            <p>Running pg_dump in NORIX_BACKUP_DIR.</p>
+          </div>
+        </div>
       ) : null}
 
-      <div className="metric-grid">
-        <article className="metric-card">
-          <span className="label-sm">PostgreSQL backups</span>
-          <strong className="mono">{completed.length}</strong>
-          <p className="muted">completed archives</p>
-        </article>
-        <article className="metric-card">
-          <span className="label-sm">Last snapshot</span>
-          <strong className="mono">{lastBackup ? formatBytes(lastBackup.SizeBytes) : '—'}</strong>
-          <p className="muted">{lastBackup ? new Date(lastBackup.CreatedAt).toLocaleString() : 'none yet'}</p>
-        </article>
-        <article className="metric-card">
-          <span className="label-sm">Open alerts</span>
-          <strong className="mono">{alerts.length}</strong>
-          <p className="muted">node / deploy events</p>
-        </article>
-      </div>
+      <MetricStrip
+        items={[
+          { label: 'Backups', value: loading ? '—' : completed.length },
+          { label: 'Last size', value: lastBackup ? formatBytes(lastBackup.SizeBytes) : '—' },
+          { label: 'Open alerts', value: loading ? '—' : alerts.length },
+          { label: 'Total files', value: loading ? '—' : backups.length },
+        ]}
+      />
 
-      <div className="ops-grid">
-        <section className="panel flux-shadow lift-card">
-          <header className="panel-header">
-            <div>
-              <h3>PostgreSQL automated snapshots</h3>
-              <p className="muted">Download SQL dumps or restore into the current database.</p>
-            </div>
-            <HardDriveDownload size={16} className="muted-icon" aria-hidden />
-          </header>
-          {loading ? <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading backups…</span></div> : null}
-          {!loading && backups.length === 0 ? (
-            <div className="empty-state compact">
-              <DatabaseBackup />
-              <strong>No backups yet</strong>
-              <p className="muted">Trigger a backup to verify the Alpha restore path.</p>
-            </div>
-          ) : null}
-          <div className="table-wrap">
-            <table className="dense-table">
-              <thead>
-                <tr>
-                  <th>Archive</th>
-                  <th>Status</th>
-                  <th>Size</th>
-                  <th>Created</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {backups.map((backup) => {
-                  const canDownload = backup.Status === 'completed' || backup.Status === 'restored'
-                  return (
-                    <tr key={backup.ID}>
-                      <td className="mono">{backup.Filename}</td>
-                      <td>
-                        <span className={`status-badge status-${canDownload ? 'running' : backup.Status === 'failed' ? 'failed' : 'pending'}`}>
-                          {backup.Status}
-                        </span>
-                      </td>
-                      <td className="mono">{formatBytes(backup.SizeBytes)}</td>
-                      <td className="muted">{new Date(backup.CreatedAt).toLocaleString()}</td>
-                      <td>
-                        <div className="row-actions">
-                          {canDownload ? (
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              disabled={busy === `dl-${backup.ID}`}
-                              onClick={() => void onDownload(backup)}
-                            >
-                              <Download size={14} /> {busy === `dl-${backup.ID}` ? '…' : 'Download'}
-                            </Button>
-                          ) : (
-                            <span className="muted">—</span>
-                          )}
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            disabled={busy === backup.ID || backup.Status === 'failed'}
-                            onClick={() => void onRestore(backup)}
-                          >
-                            {busy === backup.ID ? 'Restoring…' : 'Restore'}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="panel flux-shadow lift-card">
-          <header className="panel-header">
-            <div>
-              <h3>Emergency alert webhooks</h3>
-              <p className="muted">Node down and deploy failed. Optional: <code>NORIX_ALERT_WEBHOOK_URL</code>.</p>
-            </div>
-            <Bell size={16} className="muted-icon" aria-hidden />
-          </header>
-          {loading ? <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading alerts…</span></div> : null}
-          {!loading && alerts.length === 0 ? (
-            <div className="empty-state compact">
-              <Bell />
-              <strong>No alerts</strong>
-              <p className="muted">Stop an agent for ~45s to generate a node.down alert.</p>
-            </div>
-          ) : null}
-          <ul className="resource-list">
-            {alerts.map((alert) => (
-              <li key={alert.ID}>
-                <div className="resource-link">
-                  <strong>{alert.Kind}</strong>
-                  <div className="resource-meta">
-                    <span className={`status-badge status-${alert.Severity === 'critical' ? 'failed' : 'pending'}`}>{alert.Severity}</span>
-                    <span className="chip">{alert.ResourceType || 'system'}</span>
-                  </div>
-                  <p className="hint-line">{alert.Message} · {new Date(alert.CreatedAt).toLocaleString()}</p>
+      <div className="compass-panel">
+        <div className="compass-toolbar">
+          <strong>{loading ? 'Loading…' : `${backups.length} result${backups.length === 1 ? '' : 's'}`}</strong>
+          <span className="muted">Poll every 8s</span>
+        </div>
+        <div className="compass-split">
+          <ResourceTable
+            leadingHeader="File"
+            headers={['Size', 'Created']}
+            rows={rows}
+            selectedId={selectedId}
+            onSelect={(row) => setSelectedId(row.id)}
+            empty="No backups. Create one to verify the restore path."
+          />
+          <aside className="compass-side-panel">
+            {selected ? (
+              <>
+                <h3>{selected.Filename}</h3>
+                <p className="muted">{selected.Status}</p>
+                <dl className="compass-detail-grid" style={{ marginTop: 12 }}>
+                  <div><dt>ID</dt><dd className="mono">{selected.ID}</dd></div>
+                  <div><dt>Size</dt><dd>{formatBytes(selected.SizeBytes)}</dd></div>
+                  <div><dt>Created</dt><dd>{new Date(selected.CreatedAt).toLocaleString()}</dd></div>
+                  <div><dt>Message</dt><dd>{selected.Message || '—'}</dd></div>
+                </dl>
+                <div className="page-actions" style={{ marginTop: 16, flexWrap: 'wrap' }}>
+                  {canDownloadSelected ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy === `dl-${selected.ID}`}
+                      onClick={() => void onDownload(selected)}
+                    >
+                      <Download size={14} /> {busy === `dl-${selected.ID}` ? '…' : 'Download'}
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={busy === selected.ID || selected.Status === 'failed'}
+                    onClick={() => void onRestore(selected)}
+                  >
+                    {busy === selected.ID ? 'Restoring…' : 'Restore'}
+                  </Button>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+              </>
+            ) : (
+              <>
+                <h3>Alerts</h3>
+                <p className="muted">Node down and failed deploy. Optional: NORIX_ALERT_WEBHOOK_URL.</p>
+                {alerts.length === 0 ? (
+                  <p className="muted" style={{ marginTop: 12 }}>No alerts. For a node.down, stop an agent ~45s.</p>
+                ) : (
+                  <ul className="resource-list" style={{ marginTop: 12 }}>
+                    {alerts.map((alert) => (
+                      <AlertRow key={alert.ID} alert={alert} />
+                    ))}
+                  </ul>
+                )}
+                <p className="muted" style={{ marginTop: 16 }}>Select a backup to download or restore.</p>
+              </>
+            )}
+            {selected && alerts.length > 0 ? (
+              <>
+                <h4 style={{ marginTop: 20 }}>Recent alerts</h4>
+                <ul className="resource-list" style={{ marginTop: 8 }}>
+                  {alerts.slice(0, 5).map((alert) => (
+                    <AlertRow key={alert.ID} alert={alert} />
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </aside>
+        </div>
       </div>
     </section>
+  )
+}
+
+function AlertRow({ alert }: { alert: AlertItem }) {
+  return (
+    <li>
+      <div className="resource-link">
+        <strong>{alert.Kind}</strong>
+        <div className="resource-meta">
+          <span className={`status-badge status-${alert.Severity === 'critical' ? 'failed' : 'pending'}`}>
+            {alert.Severity}
+          </span>
+          <span className="chip">{alert.ResourceType || 'system'}</span>
+        </div>
+        <p className="hint-line">{alert.Message} · {new Date(alert.CreatedAt).toLocaleString()}</p>
+      </div>
+    </li>
   )
 }

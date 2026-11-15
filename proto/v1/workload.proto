@@ -45,6 +45,10 @@ message Workload {
   string preferred_zone = 27;
   map<string, string> affinity_labels = 28;
   map<string, string> anti_affinity_labels = 29;
+  // Compose stack (Coolify-style multi-service)
+  string stack_id = 30;
+  string compose_service = 31;
+  string compose_spec_json = 32;
 }
 
 message ListWorkloadsRequest {
@@ -125,6 +129,54 @@ message DeployFromGitResponse {
   string status = 3;
 }
 
+message ComposePortMap {
+  int32 host = 1;
+  int32 container = 2;
+  string protocol = 3;
+}
+
+message ComposeServiceSpec {
+  string name = 1;
+  string image = 2;
+  string build_context = 3;
+  string dockerfile = 4;
+  repeated int32 container_ports = 5;
+  repeated ComposePortMap published_ports = 6;
+  repeated string depends_on = 7;
+  map<string, string> environment = 8;
+  bool enabled = 9;
+  bool expose_public = 10;
+  int32 host_port = 11;
+  int32 container_port = 12;
+  bool has_build = 13;
+  bool has_image = 14;
+}
+
+message AnalyzeComposeFromGitRequest {
+  string git_url = 1;
+  string git_ref = 2;
+  string compose_path = 3;
+}
+
+message AnalyzeComposeFromGitResponse {
+  string compose_file = 1;
+  repeated ComposeServiceSpec services = 2;
+}
+
+message DeployComposeStackRequest {
+  string project_id = 1;
+  string stack_name = 2;
+  string git_url = 3;
+  string git_ref = 4;
+  string compose_path = 5;
+  repeated ComposeServiceSpec services = 6;
+}
+
+message DeployComposeStackResponse {
+  string stack_id = 1;
+  repeated Workload workloads = 2;
+}
+
 message ListBuildsRequest {
   string workload_id = 1;
 }
@@ -183,6 +235,8 @@ service WorkloadService {
   rpc CreateWorkload(CreateWorkloadRequest) returns (CreateWorkloadResponse);
   rpc Deploy(DeployRequest) returns (DeployResponse);
   rpc DeployFromGit(DeployFromGitRequest) returns (DeployFromGitResponse);
+  rpc AnalyzeComposeFromGit(AnalyzeComposeFromGitRequest) returns (AnalyzeComposeFromGitResponse);
+  rpc DeployComposeStack(DeployComposeStackRequest) returns (DeployComposeStackResponse);
   rpc ListWorkloads(ListWorkloadsRequest) returns (ListWorkloadsResponse);
   rpc UpdateWorkload(UpdateWorkloadRequest) returns (UpdateWorkloadResponse);
   rpc DeleteWorkload(DeleteWorkloadRequest) returns (DeleteWorkloadResponse);

@@ -36,6 +36,8 @@ const (
 	AuthServiceLogoutProcedure = "/v1.AuthService/Logout"
 	// AuthServiceRenewSessionProcedure is the procedure name of the AuthService's RenewSession RPC.
 	AuthServiceRenewSessionProcedure = "/v1.AuthService/RenewSession"
+	// AuthServiceGetCurrentUserProcedure is the procedure name of the AuthService's GetCurrentUser RPC.
+	AuthServiceGetCurrentUserProcedure = "/v1.AuthService/GetCurrentUser"
 )
 
 var (
@@ -74,6 +76,13 @@ var (
 			Procedure:  AuthServiceRenewSessionProcedure,
 		}
 	})
+	authServiceGetCurrentUserSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_auth_proto.Services().ByName("AuthService").Methods().ByName("GetCurrentUser"),
+			Procedure:  AuthServiceGetCurrentUserProcedure,
+		}
+	})
 )
 
 // AuthServiceClient is a client for the v1.AuthService service.
@@ -83,6 +92,7 @@ type AuthServiceClient interface {
 	CreateInitialAdmin(context.Context, *v1.CreateInitialAdminRequest) (*v1.CreateInitialAdminResponse, error)
 	Logout(context.Context, *v1.LogoutRequest) (*v1.LogoutResponse, error)
 	RenewSession(context.Context, *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error)
+	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
 }
 
 // NewAuthServiceClient constructs a client for the v1.AuthService service. Multiple service clients
@@ -98,6 +108,7 @@ type AuthServiceHandler interface {
 	CreateInitialAdmin(context.Context, *v1.CreateInitialAdminRequest) (*v1.CreateInitialAdminResponse, error)
 	Logout(context.Context, *v1.LogoutRequest) (*v1.LogoutResponse, error)
 	RenewSession(context.Context, *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error)
+	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
 }
 
 // RegisterAuthServiceHandler registers svc as the v1.AuthService implementation on server.
@@ -109,6 +120,7 @@ func RegisterAuthServiceHandler(server *connect.Server, svc AuthServiceHandler) 
 		connect.Method{Spec: authServiceCreateInitialAdminSpec(), Handler: adapter.createInitialAdmin},
 		connect.Method{Spec: authServiceLogoutSpec(), Handler: adapter.logout},
 		connect.Method{Spec: authServiceRenewSessionSpec(), Handler: adapter.renewSession},
+		connect.Method{Spec: authServiceGetCurrentUserSpec(), Handler: adapter.getCurrentUser},
 	)
 }
 
@@ -133,6 +145,10 @@ func (UnimplementedAuthServiceHandler) Logout(context.Context, *v1.LogoutRequest
 
 func (UnimplementedAuthServiceHandler) RenewSession(context.Context, *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.RenewSession is not implemented")
+}
+
+func (UnimplementedAuthServiceHandler) GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.GetCurrentUser is not implemented")
 }
 
 type authServiceClient struct {
@@ -174,6 +190,14 @@ func (c *authServiceClient) Logout(ctx context.Context, req *v1.LogoutRequest) (
 func (c *authServiceClient) RenewSession(ctx context.Context, req *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error) {
 	var res v1.RenewSessionResponse
 	if err := c.client.CallUnary(ctx, authServiceRenewSessionSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authServiceClient) GetCurrentUser(ctx context.Context, req *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error) {
+	var res v1.GetCurrentUserResponse
+	if err := c.client.CallUnary(ctx, authServiceGetCurrentUserSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -235,6 +259,18 @@ func (h authServiceHandler) renewSession(ctx context.Context, _ connect.Spec, st
 		return err
 	}
 	res, err := h.svc.RenewSession(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authServiceHandler) getCurrentUser(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetCurrentUserRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetCurrentUser(ctx, &req)
 	if err != nil {
 		return err
 	}

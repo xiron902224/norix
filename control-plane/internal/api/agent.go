@@ -112,6 +112,7 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 		request.GetCpuUsagePercent(),
 		request.GetMemoryFreeMb(),
 		0,
+		request.GetRunningWorkloadIds(),
 	); err != nil {
 		if strings.Contains(err.Error(), "node not found") {
 			return nil, connect.NewError(connect.CodeNotFound, "node not found")
@@ -130,12 +131,7 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 	}
 	items := make([]*paasv1.DesiredWorkload, 0, len(desired))
 	for _, item := range desired {
-		items = append(items, &paasv1.DesiredWorkload{
-			Id: item.ID, ProjectId: item.ProjectID, Name: item.Name, Image: item.Image,
-			EnvVars: item.Environment, CpuShares: item.CPUShares, MemoryLimitMb: item.MemoryLimitMB,
-			HostPort: item.HostPort, ContainerPort: item.ContainerPort,
-			DesiredGeneration: item.DesiredGeneration, Action: item.Action,
-		})
+		items = append(items, desiredWorkloadToProto(item))
 	}
 	builds, err := db.ListDesiredBuildsForNode(ctx, service.pool, node.OrganizationID, node.ID)
 	if err != nil {
@@ -175,11 +171,56 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 	if networkPlan.Generation > 0 {
 		desiredNetwork = desiredNetworkToProto(networkPlan)
 	}
-	// S15: wasm desired state is not in HeartbeatResponse yet; agents write dry-run wasm/functions.json locally.
+	var desiredWasm *paasv1.DesiredWasmPlan
+	wasmFns, err := db.ListWasmFunctions(ctx, service.pool, node.OrganizationID, "")
+	if err != nil {
+		return nil, internalError("list wasm functions", err)
+	}
+	if len(wasmFns) > 0 {
+		fns := make([]*paasv1.DesiredWasmFunction, 0, len(wasmFns))
+		for _, fn := range wasmFns {
+			fns = append(fns, &paasv1.DesiredWasmFunction{
+				Id: fn.ID, ProjectId: fn.ProjectID, Name: fn.Name, ImageRef: fn.ImageRef,
+				FuelLimit: fn.FuelLimit, MemoryLimitMb: fn.MemoryLimitMB,
+			})
+		}
+		desiredWasm = &paasv1.DesiredWasmPlan{
+			Generation: time.Now().UTC().Unix(),
+			Functions:  fns,
+		}
+	}
 	return &paasv1.HeartbeatResponse{
 		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds,
-		DesiredEdge: desiredEdge, DesiredNetwork: desiredNetwork,
+		DesiredEdge: desiredEdge, DesiredNetwork: desiredNetwork, DesiredWasm: desiredWasm,
 	}, nil
+}
+
+func (service AgentService) ReportWasm(ctx context.Context, request *paasv1.ReportWasmRequest) (*paasv1.ReportWasmResponse, error) {
+	node, ok := NodeFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "node credential required")
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		nodeID = node.ID
+	}
+	if nodeID != node.ID {
+		return nil, connect.NewError(connect.CodePermissionDenied, "node_id does not match credential")
+	}
+	wasm := request.GetWasm()
+	if wasm == nil {
+		return nil, invalidArgument("wasm is required")
+	}
+	observed := make([]db.ObservedWasmFunction, 0, len(wasm.GetFunctions()))
+	for _, item := range wasm.GetFunctions() {
+		observed = append(observed, db.ObservedWasmFunction{
+			ID: item.GetId(), Status: item.GetStatus(),
+		})
+	}
+	if err := db.ApplyObservedWasm(ctx, service.pool, node.OrganizationID, observed); err != nil {
+		return nil, internalError("report wasm", err)
+	}
+	return &paasv1.ReportWasmResponse{}, nil
 }
 
 func (service AgentService) ReportEdge(ctx context.Context, request *paasv1.ReportEdgeRequest) (*paasv1.ReportEdgeResponse, error) {
@@ -458,7 +499,7 @@ func (service AgentService) ConnectStream(ctx context.Context, stream paasv1conn
 			cpuUsage = hb.GetCpuUsagePercent()
 			memoryFree = hb.GetMemoryFreeMb()
 		}
-		if err := db.RecordHeartbeat(ctx, service.pool, node.OrganizationID, node.ID, status, caps, cpuUsage, memoryFree, 0); err != nil {
+		if err := db.RecordHeartbeat(ctx, service.pool, node.OrganizationID, node.ID, status, caps, cpuUsage, memoryFree, 0, request.GetRunningWorkloadIds()); err != nil {
 			agentLogger.Error("stream heartbeat failed", "error", err, "node_id", node.ID)
 			return internalError("connect stream", err)
 		}
@@ -468,12 +509,7 @@ func (service AgentService) ConnectStream(ctx context.Context, stream paasv1conn
 		}
 		items := make([]*paasv1.DesiredWorkload, 0, len(desired))
 		for _, item := range desired {
-			items = append(items, &paasv1.DesiredWorkload{
-				Id: item.ID, ProjectId: item.ProjectID, Name: item.Name, Image: item.Image,
-				EnvVars: item.Environment, CpuShares: item.CPUShares, MemoryLimitMb: item.MemoryLimitMB,
-				HostPort: item.HostPort, ContainerPort: item.ContainerPort,
-				DesiredGeneration: item.DesiredGeneration, Action: item.Action,
-			})
+			items = append(items, desiredWorkloadToProto(item))
 		}
 		if err := stream.Send(&paasv1.ConnectStreamResponse{
 			NodeId:            node.ID,
@@ -532,6 +568,7 @@ func nodeToProto(node db.Node) *paasv1.Node {
 		Draining:        node.Draining,
 		Zone:            zone,
 		Labels:          node.Labels,
+		ReportedWorkloadIds: node.ReportedWorkloadIDs,
 		Capabilities: &paasv1.NodeCapabilities{
 			CpuCores:         node.Capabilities.CPUCores,
 			MemoryTotalMb:    node.Capabilities.MemoryTotalMB,
@@ -584,6 +621,20 @@ func (service AgentService) DrainNode(ctx context.Context, request *paasv1.Drain
 		return nil, invalidArgument(err.Error())
 	}
 	return &paasv1.DrainNodeResponse{Node: nodeToProto(node)}, nil
+}
+
+func desiredWorkloadToProto(item db.DesiredWorkload) *paasv1.DesiredWorkload {
+	runtime := strings.TrimSpace(item.Runtime)
+	if runtime == "" {
+		runtime = "container"
+	}
+	return &paasv1.DesiredWorkload{
+		Id: item.ID, ProjectId: item.ProjectID, Name: item.Name, Image: item.Image,
+		EnvVars: item.Environment, CpuShares: item.CPUShares, MemoryLimitMb: item.MemoryLimitMB,
+		HostPort: item.HostPort, ContainerPort: item.ContainerPort,
+		DesiredGeneration: item.DesiredGeneration, Action: item.Action, Runtime: runtime,
+		NetworkName: item.NetworkName, NetworkAlias: item.NetworkAlias,
+	}
 }
 
 func (service AgentService) UpdateNodeSchedule(ctx context.Context, request *paasv1.UpdateNodeScheduleRequest) (*paasv1.UpdateNodeScheduleResponse, error) {

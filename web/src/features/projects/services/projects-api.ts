@@ -1,10 +1,13 @@
 import { create } from '@bufbuild/protobuf'
 import { projectClient, workloadClient } from '../../../api/clients'
 import {
+  AnalyzeComposeFromGitRequestSchema,
+  ComposeServiceSpecSchema,
   CreateProjectRequestSchema,
   CreateWorkloadRequestSchema,
   DeleteProjectRequestSchema,
   DeleteWorkloadRequestSchema,
+  DeployComposeStackRequestSchema,
   DeployFromGitRequestSchema,
   DeployRequestSchema,
   GetBuildLogsRequestSchema,
@@ -16,6 +19,7 @@ import {
   UpdateWorkloadRequestSchema,
   WorkloadSchema,
   type Build,
+  type ComposeServiceSpec,
   type Project,
   type Workload,
 } from '../../../gen/v1/workload_pb'
@@ -152,6 +156,51 @@ export async function deployFromGit(input: {
     gitRef: input.gitRef ?? 'main',
     dockerfilePath: input.dockerfilePath ?? 'Dockerfile',
     containerPort: input.containerPort ?? 80,
+  }))
+}
+
+export async function analyzeComposeFromGit(input: {
+  gitUrl: string
+  gitRef?: string
+  composePath?: string
+}) {
+  return workloadClient.analyzeComposeFromGit(create(AnalyzeComposeFromGitRequestSchema, {
+    gitUrl: input.gitUrl,
+    gitRef: input.gitRef ?? 'main',
+    composePath: input.composePath ?? 'docker-compose.yml',
+  }))
+}
+
+export async function deployComposeStack(input: {
+  projectId: string
+  stackName: string
+  gitUrl: string
+  gitRef?: string
+  composePath?: string
+  services: ComposeServiceSpec[]
+}) {
+  return workloadClient.deployComposeStack(create(DeployComposeStackRequestSchema, {
+    projectId: input.projectId,
+    stackName: input.stackName,
+    gitUrl: input.gitUrl,
+    gitRef: input.gitRef ?? 'main',
+    composePath: input.composePath ?? 'docker-compose.yml',
+    services: input.services.map((svc) => create(ComposeServiceSpecSchema, {
+      name: svc.name,
+      image: svc.image,
+      buildContext: svc.buildContext,
+      dockerfile: svc.dockerfile,
+      containerPorts: svc.containerPorts,
+      publishedPorts: svc.publishedPorts,
+      dependsOn: svc.dependsOn,
+      environment: svc.environment,
+      enabled: svc.enabled,
+      exposePublic: svc.exposePublic,
+      hostPort: svc.hostPort,
+      containerPort: svc.containerPort,
+      hasBuild: svc.hasBuild,
+      hasImage: svc.hasImage,
+    })),
   }))
 }
 

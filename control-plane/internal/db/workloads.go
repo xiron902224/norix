@@ -42,6 +42,9 @@ type Workload struct {
 	AntiAffinityLabels map[string]string
 	IsolationMode      string
 	ExecutionRuntime   string
+	StackID            string
+	ComposeService     string
+	ComposeSpecJSON    string
 }
 
 func CreateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, workload Workload, actor AuditActor) (Workload, error) {
@@ -168,7 +171,8 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
 		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
-		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker')
+		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker'),
+		       COALESCE(stack_id::text, ''), COALESCE(compose_service, ''), COALESCE(compose_spec::text, '{}')
 		FROM workloads WHERE project_id = $1::uuid AND status <> 'deleting' ORDER BY created_at, name`, projectID)
 	if err != nil {
 		return nil, err
@@ -188,6 +192,7 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 			&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 			&workload.ReplicaCount, &workload.ScheduleStrategy, &workload.RequireKVM, &workload.PreferredZone,
 			&affinityText, &antiText, &workload.IsolationMode, &workload.ExecutionRuntime,
+			&workload.StackID, &workload.ComposeService, &workload.ComposeSpecJSON,
 		); err != nil {
 			return nil, err
 		}

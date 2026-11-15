@@ -215,7 +215,7 @@ func ensurePlatformCertTx(ctx context.Context, tx pgx.Tx, tenantID string) error
 	if count > 0 {
 		return nil
 	}
-	bundle, err := network.IssueSelfSignedWildcard(network.WildcardHostname(), 0)
+	bundle, err := network.IssuePlatformCertificate(network.WildcardHostname(), 0)
 	if err != nil {
 		return err
 	}

@@ -38,6 +38,8 @@ message Node {
   bool draining = 13;
   string zone = 14;
   map<string, string> labels = 15;
+  // Workload IDs last reported by the agent (container labels).
+  repeated string reported_workload_ids = 16;
 }
 
 message CordonNodeRequest {
@@ -103,7 +105,48 @@ message DesiredWorkload {
   int32 container_port = 9;
   int64 desired_generation = 10;
   string action = 11;
+  // container | docker-compose | microvm | wasm | static-site
+  string runtime = 12;
+  // Optional docker network for compose stacks (norix-stack-<id>).
+  string network_name = 13;
+  string network_alias = 14;
 }
+
+message DesiredWasmFunction {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string image_ref = 4;
+  int64 fuel_limit = 5;
+  int32 memory_limit_mb = 6;
+}
+
+message DesiredWasmPlan {
+  int64 generation = 1;
+  repeated DesiredWasmFunction functions = 2;
+}
+
+message ObservedWasmFunction {
+  string id = 1;
+  string status = 2;
+  string message = 3;
+  string artifact_path = 4;
+}
+
+message ObservedWasm {
+  int64 generation = 1;
+  string status = 2;
+  string message = 3;
+  repeated string log_lines = 4;
+  repeated ObservedWasmFunction functions = 5;
+}
+
+message ReportWasmRequest {
+  string node_id = 1;
+  ObservedWasm wasm = 2;
+}
+
+message ReportWasmResponse {}
 
 message ObservedWorkload {
   string id = 1;
@@ -219,6 +262,7 @@ message HeartbeatResponse {
   repeated DesiredBuild desired_builds = 3;
   DesiredEdgePlan desired_edge = 4;
   DesiredNetworkPlan desired_network = 5;
+  DesiredWasmPlan desired_wasm = 6;
 }
 
 message ReportObservedRequest {
@@ -329,6 +373,7 @@ service AgentService {
   rpc ReportBuild(ReportBuildRequest) returns (ReportBuildResponse);
   rpc ReportEdge(ReportEdgeRequest) returns (ReportEdgeResponse);
   rpc ReportNetwork(ReportNetworkRequest) returns (ReportNetworkResponse);
+  rpc ReportWasm(ReportWasmRequest) returns (ReportWasmResponse);
   rpc GetNetworkStatus(GetNetworkStatusRequest) returns (GetNetworkStatusResponse);
   rpc UpsertEgressPolicy(UpsertEgressPolicyRequest) returns (UpsertEgressPolicyResponse);
   rpc ListEgressPolicies(ListEgressPoliciesRequest) returns (ListEgressPoliciesResponse);

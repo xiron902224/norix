@@ -4,20 +4,27 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-  _ "github.com/joho/godotenv/autoload"
+
+	_ "github.com/joho/godotenv/autoload"
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/xiron902224/norix/control-plane/internal/api"
+	"github.com/xiron902224/norix/control-plane/internal/autoscaler"
 	norixdb "github.com/xiron902224/norix/control-plane/internal/db"
 	"github.com/xiron902224/norix/control-plane/internal/gen/v1/paasv1connect"
+	"github.com/xiron902224/norix/control-plane/internal/ha"
 	"github.com/xiron902224/norix/control-plane/internal/localruntime"
 	"github.com/xiron902224/norix/control-plane/internal/ops"
+	"github.com/xiron902224/norix/control-plane/internal/statuspage"
+	"github.com/xiron902224/norix/control-plane/internal/telemetry"
 	"github.com/xiron902224/norix/control-plane/internal/webui"
 )
 
@@ -53,6 +60,8 @@ func newHandler(authService api.AuthService) http.Handler {
 		response.WriteHeader(http.StatusOK)
 		_, _ = response.Write([]byte("ok\n"))
 	})
+	mux.HandleFunc("GET /status", statuspage.Handler(authService.BootstrapPool(), os.Getenv("NORIX_VERSION")))
+	mux.HandleFunc("GET /api/status", statuspage.Handler(authService.BootstrapPool(), os.Getenv("NORIX_VERSION")))
 	if authService.BootstrapPool() != nil {
 		pool := authService.BootstrapPool()
 		mux.HandleFunc("POST /hooks/github/{token}", api.GitHubWebhook(pool))
@@ -67,6 +76,9 @@ func newHandler(authService api.AuthService) http.Handler {
 		mux.HandleFunc("GET /metrics", api.PrometheusMetricsHandler(pool))
 		mux.HandleFunc("GET /api/ops/audit/export", api.OpsAuditExportHandler(pool))
 		mux.HandleFunc("GET /api/ops/usage/export", api.OpsUsageExportHandler(pool))
+		mux.HandleFunc("GET /auth/oidc/providers", api.OIDCProvidersHandler(pool))
+		mux.HandleFunc("GET /auth/oidc/start", api.OIDCStartHandler(pool))
+		mux.HandleFunc("GET /auth/oidc/callback", api.OIDCCallbackHandler(pool))
 	}
 	mux.Handle("/", webui.Handler())
 
@@ -139,60 +151,26 @@ func main() {
 
 		backgroundCtx, cancelBackground := context.WithCancel(context.Background())
 		defer cancelBackground()
-		go localruntime.Start(backgroundCtx, bootstrapPool, logger)
-		go ops.Start(backgroundCtx, bootstrapPool, logger)
 
-		go func() {
-			sessionTicker := time.NewTicker(time.Hour)
-			// 15s tick + 30s stale ⇒ orphan reschedule typically < 60s (S7 DoD).
-			nodeTicker := time.NewTicker(15 * time.Second)
-			defer sessionTicker.Stop()
-			defer nodeTicker.Stop()
-			cleanupSessions := func() {
-				removed, err := norixdb.CleanupExpiredSessions(context.Background(), appPool)
-				if err != nil {
-					logger.Error("session cleanup failed", "error", err)
-					return
-				}
-				logger.Info("session cleanup completed", "removed", removed)
+		telemetry.Start(backgroundCtx, logger, os.Getenv("NORIX_VERSION"))
+
+		// HTTP always serves; background reconcile/cleanup/autoscaler are leader-only (S17).
+		holderID := haHolderID()
+		go ha.RunElection(backgroundCtx, bootstrapPool, ha.ElectionConfig{
+			Name:       "control-plane",
+			HolderID:   holderID,
+			TTL:        ha.DefaultLeaseTTL(),
+			RenewEvery: 5 * time.Second,
+			RetryEvery: 5 * time.Second,
+		}, logger, func(leaderCtx context.Context) {
+			go localruntime.Start(leaderCtx, bootstrapPool, logger)
+			go ops.Start(leaderCtx, bootstrapPool, logger)
+			go runLeaderCleanup(leaderCtx, appPool, bootstrapPool, logger)
+			if autoscaler.Enabled() {
+				logger.Info("autoscaler enabled", "env", "NORIX_AUTOSCALER")
+				go autoscaler.Start(leaderCtx, bootstrapPool, logger)
 			}
-			cleanupNodes := func() {
-				marked, err := norixdb.MarkStaleNodesOffline(context.Background(), bootstrapPool, 30*time.Second)
-				if err != nil {
-					logger.Error("stale node cleanup failed", "error", err)
-					return
-				}
-				if marked > 0 {
-					logger.Info("marked stale nodes offline", "count", marked)
-				}
-				moved, rescheduleErr := norixdb.RescheduleAllOrphans(context.Background(), bootstrapPool)
-				if rescheduleErr != nil {
-					logger.Error("replica reschedule failed", "error", rescheduleErr)
-					return
-				}
-				if moved > 0 {
-					logger.Info("rescheduled orphan replicas", "count", moved)
-				}
-				purged, purgeErr := norixdb.PurgeAllDeletingWorkloads(context.Background(), bootstrapPool)
-				if purgeErr != nil {
-					logger.Error("purge deleting workloads failed", "error", purgeErr)
-					return
-				}
-				if purged > 0 {
-					logger.Info("purged deleted workloads", "count", purged)
-				}
-			}
-			cleanupSessions()
-			cleanupNodes()
-			for {
-				select {
-				case <-sessionTicker.C:
-					cleanupSessions()
-				case <-nodeTicker.C:
-					cleanupNodes()
-				}
-			}
-		}()
+		})
 	}
 
 	server := &http.Server{
@@ -217,5 +195,75 @@ func main() {
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Error("control plane stopped", "error", err)
 		os.Exit(1)
+	}
+}
+
+func haHolderID() string {
+	hostname, err := os.Hostname()
+	if err != nil || hostname == "" {
+		hostname = "unknown"
+	}
+	return fmt.Sprintf("%s-%d", hostname, os.Getpid())
+}
+
+// runLeaderCleanup owns session expiry, stale nodes, orphan reschedule, and purge.
+func runLeaderCleanup(ctx context.Context, appPool, bootstrapPool *pgxpool.Pool, logger *slog.Logger) {
+	sessionTicker := time.NewTicker(time.Hour)
+	// 15s tick + 30s stale ⇒ orphan reschedule typically < 60s (S7 DoD).
+	nodeTicker := time.NewTicker(15 * time.Second)
+	defer sessionTicker.Stop()
+	defer nodeTicker.Stop()
+
+	cleanupSessions := func() {
+		removed, err := norixdb.CleanupExpiredSessions(context.Background(), appPool)
+		if err != nil {
+			logger.Error("session cleanup failed", "error", err)
+			return
+		}
+		if oidcRemoved, oidcErr := norixdb.CleanupExpiredOIDCLoginStates(context.Background(), bootstrapPool); oidcErr != nil {
+			logger.Error("oidc state cleanup failed", "error", oidcErr)
+		} else if oidcRemoved > 0 {
+			logger.Info("oidc state cleanup completed", "removed", oidcRemoved)
+		}
+		logger.Info("session cleanup completed", "removed", removed)
+	}
+	cleanupNodes := func() {
+		marked, err := norixdb.MarkStaleNodesOffline(context.Background(), bootstrapPool, 30*time.Second)
+		if err != nil {
+			logger.Error("stale node cleanup failed", "error", err)
+			return
+		}
+		if marked > 0 {
+			logger.Info("marked stale nodes offline", "count", marked)
+		}
+		moved, rescheduleErr := norixdb.RescheduleAllOrphans(context.Background(), bootstrapPool)
+		if rescheduleErr != nil {
+			logger.Error("replica reschedule failed", "error", rescheduleErr)
+			return
+		}
+		if moved > 0 {
+			logger.Info("rescheduled orphan replicas", "count", moved)
+		}
+		purged, purgeErr := norixdb.PurgeAllDeletingWorkloads(context.Background(), bootstrapPool)
+		if purgeErr != nil {
+			logger.Error("purge deleting workloads failed", "error", purgeErr)
+			return
+		}
+		if purged > 0 {
+			logger.Info("purged deleted workloads", "count", purged)
+		}
+	}
+
+	cleanupSessions()
+	cleanupNodes()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-sessionTicker.C:
+			cleanupSessions()
+		case <-nodeTicker.C:
+			cleanupNodes()
+		}
 	}
 }

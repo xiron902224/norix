@@ -524,7 +524,8 @@ func FindWorkloadByGitURL(ctx context.Context, pool *pgxpool.Pool, tenantID, git
 		       COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
 		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
-		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker')
+		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker'),
+		       COALESCE(stack_id::text, ''), COALESCE(compose_service, ''), COALESCE(compose_spec::text, '{}')
 		FROM workloads
 		WHERE source_kind = 'git' AND git_url = $1 AND status <> 'deleting'
 		ORDER BY updated_at DESC

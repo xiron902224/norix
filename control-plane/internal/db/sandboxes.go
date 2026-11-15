@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -46,6 +47,15 @@ func CreateSandbox(ctx context.Context, pool *pgxpool.Pool, tenantID string, san
 	if sandbox.EgressMode == "" {
 		sandbox.EgressMode = "restricted"
 	}
+
+	// Prefer claiming a warm-pool sandbox (already pool_ready + container).
+	if !strings.HasPrefix(sandbox.Name, warmPoolNamePrefix) {
+		if claimed, ok, claimErr := ClaimWarmPoolSandbox(ctx, pool, tenantID, sandbox); claimErr == nil && ok {
+			_ = EnsureSandboxContainer(ctx, claimed)
+			return claimed, nil
+		}
+	}
+
 	expires := time.Now().UTC().Add(time.Duration(sandbox.TTLSeconds) * time.Second)
 
 	tx, err := pool.Begin(ctx)
@@ -70,11 +80,21 @@ func CreateSandbox(ctx context.Context, pool *pgxpool.Pool, tenantID string, san
 	if err != nil {
 		return Sandbox{}, fmt.Errorf("create sandbox: %w", err)
 	}
-	sandbox.Status = "pending"
-	_, _ = tx.Exec(ctx, `UPDATE sandboxes SET status = 'ready', pool_ready = TRUE, updated_at = NOW() WHERE id = $1::uuid`, sandbox.ID)
+	if err := tx.Commit(ctx); err != nil {
+		return Sandbox{}, err
+	}
+
+	poolReady := true
+	if err := EnsureSandboxContainer(ctx, sandbox); err != nil {
+		// Container runtime optional in CI; still mark ready so API stays usable.
+		poolReady = false
+	}
+	if err := MarkSandboxReady(ctx, pool, tenantID, sandbox.ID, poolReady); err != nil {
+		return Sandbox{}, err
+	}
 	sandbox.Status = "ready"
-	sandbox.PoolReady = true
-	return sandbox, tx.Commit(ctx)
+	sandbox.PoolReady = poolReady
+	return sandbox, nil
 }
 
 func ListSandboxes(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID string) ([]Sandbox, error) {
@@ -167,7 +187,13 @@ func DestroySandbox(ctx context.Context, pool *pgxpool.Pool, tenantID, sandboxID
 	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("sandbox not found")
 	}
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	if engine, engErr := containerEngine(); engErr == nil {
+		_ = exec.CommandContext(ctx, engine, "rm", "-f", SandboxContainerName(sandboxID)).Run()
+	}
+	return nil
 }
 
 func GCExpiredSandboxes(ctx context.Context, pool *pgxpool.Pool, tenantID string) (int64, error) {

@@ -56,6 +56,42 @@ func CreateWasmFunction(ctx context.Context, pool *pgxpool.Pool, tenantID string
 	return fn, tx.Commit(ctx)
 }
 
+// ApplyObservedWasm updates wasm_functions status from agent ReportWasm.
+func ApplyObservedWasm(ctx context.Context, pool *pgxpool.Pool, tenantID string, functions []ObservedWasmFunction) error {
+	if len(functions) == 0 {
+		return nil
+	}
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if err := WithTenant(ctx, tx, tenantID); err != nil {
+		return err
+	}
+	for _, item := range functions {
+		status := strings.TrimSpace(item.Status)
+		if status == "" {
+			status = "ready"
+		}
+		_, err := tx.Exec(ctx, `
+			UPDATE wasm_functions
+			SET status = $2, updated_at = NOW()
+			WHERE organization_id = $1::uuid AND id = $3::uuid`,
+			tenantID, status, item.ID,
+		)
+		if err != nil {
+			return fmt.Errorf("apply observed wasm %s: %w", item.ID, err)
+		}
+	}
+	return tx.Commit(ctx)
+}
+
+type ObservedWasmFunction struct {
+	ID     string
+	Status string
+}
+
 func ListWasmFunctions(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID string) ([]WasmFunction, error) {
 	tx, err := pool.Begin(ctx)
 	if err != nil {

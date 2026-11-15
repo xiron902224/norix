@@ -153,10 +153,11 @@ Deleting a workload marks it **deleting**, sends `stop` to the node that owns th
 
 ## Status
 
-**Alpha v0.1 (S6 reached).** One-node path works: auth, projects/workloads, local runtime and/or Rust agent, git→build, Caddy domains/TLS (Pebble), basic ops.
+**GA 1.0 código** (`VERSION` 1.0.0): PaaS un/multi-nodo (auth/OIDC/TOTP, deploy git/imagen/compose, edge, mesh, ops, HA leases, HPA, sandboxes/previews/wasm, SDKs TS/Python/Go).  
+**Release git:** tag `v1.0.0` y publish aún pendientes — ver checklist en [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md).
 
-**Canonical roadmap:** **S0–S22** through GA 1.0 — see [`docs/PLAN_SPRINTS_S0_S22.md`](docs/PLAN_SPRINTS_S0_S22.md).  
-**Where we are:** [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) — **S0–S22 closed for GA 1.0** (`VERSION` 1.0.0). Follow-ups: cosign multi-arch releases and KVM-backed micro-VM boot validation.
+**Canonical roadmap:** [`docs/PLAN_SPRINTS_S0_S22.md`](docs/PLAN_SPRINTS_S0_S22.md).  
+**Living status:** [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md). Multi-arch + cosign: `.github/workflows/release.yml` (se dispara con tag `v*`).
 
 ---
 
