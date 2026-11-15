@@ -1,79 +1,98 @@
 # Norix — contribution backlog
 
-Canonical tracker: **[GitHub Issues](https://github.com/xiron902224/norix/issues)** (55 open as of 2026-11-15).  
-This file is a **snapshot + triage** so newcomers see priorities without scrolling the board. Prefer linking/closing GitHub issues over editing this file for day-to-day work.
+Canonical tracker: **[GitHub Issues](https://github.com/xiron902224/norix/issues)** (snapshot 2026-11-15).  
+Prefer linking/closing GitHub issues over editing this file day-to-day.
 
-Vision / stages: [`VISION.md`](VISION.md) · Sprint detail: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md)
+Vision / stages: [`VISION.md`](VISION.md) · Sprint detail: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md)  
+**Cómo contribuir (ES):** [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md) · **EN:** [`CONTRIBUTING.md`](CONTRIBUTING.md)
+
+**Gitflow:** take an issue → branch from **`main`** → PR to **`main`**.
 
 ---
 
-## Snapshot (2026-11-15)
+## Project state (honest)
 
-| Priority | Count | Role |
-|---|---:|---|
-| **P0** | 10 | Trust, safety, first impressions — block confident public beta ops |
-| **P1** | 14 | Table stakes for rc / production walkthrough |
-| **P2** | 19 | Confidence, UX polish, CI depth |
-| **P3** | 12 | Differentiation + ecosystem (1.x → 2.0) |
-| **good first issue** | 17 | Docs, small security defaults, coverage |
+| | |
+|---|---|
+| Version | `1.0.0-beta.3` |
+| Default branch | `main` (integration tip) |
+| `develop` | Retired for new work |
+| Stage 0 (trust/safety) | **Still open** — P0 security/docs |
+| Recent gap (labs) | Agents `online` without Docker → DeployFromGit fails |
 
-**Stages** (labels `stage/0`…`stage/4`): 11 / 14 / 9 / 7 / 5 — plus 9 unstaged (mostly docs/CI P2).
+---
 
-### What beta.3 does *not* close
+## Snapshot counts
 
-Stage 0 (trust & safety) is **still open**. Beta.3 ships installer/agent supervise + docs refresh; the P0 security issues below remain the next focus before calling Stage 0 done.
+| Priority | Role |
+|---|---|
+| **P0** | Trust, safety, first impressions |
+| **P1** | Table stakes for rc / production walkthrough |
+| **P2** | Confidence, UX, CI depth |
+| **P3** | Differentiation + ecosystem |
+
+Plus **good first issue** labels for docs and small defaults.
+
+---
+
+## New issues (2026-11-15 triage)
+
+| # | Title | Why |
+|---|---|---|
+| [#59](https://github.com/xiron902224/norix/issues/59) | DeployFromGit opaque `internal` on unschedulable | Same mapping as `Deploy` |
+| [#60](https://github.com/xiron902224/norix/issues/60) | Clear error when no node has Docker/containerd | Lab failure mode |
+| [#62](https://github.com/xiron902224/norix/issues/62) | Publish `v1.0.0-beta.3` GitHub Release | Pins/assets |
+| [#63](https://github.com/xiron902224/norix/issues/63) | install-agent warn if no runtime socket | Early feedback |
+| [#64](https://github.com/xiron902224/norix/issues/64) | Retire develop / main-only gitflow | Process |
+| [#65](https://github.com/xiron902224/norix/issues/65) | Dashboard i18n (Spanish) | After docs.es |
+| [#66](https://github.com/xiron902224/norix/issues/66) | Docs: Docker required on workers for git builds | Lab runbooks |
+| [#67](https://github.com/xiron902224/norix/issues/67) | Align CI check names with branch protection | Unblock merges |
 
 ---
 
 ## Stage 0 — Trust & safety (P0 / early P1)
 
-| # | Title | Notes |
-|---|---|---|
-| [#3](https://github.com/xiron902224/norix/issues/3) | Verify GitHub webhook signatures | HMAC |
-| [#4](https://github.com/xiron902224/norix/issues/4) | Block SSRF in Git-based builds | |
-| [#5](https://github.com/xiron902224/norix/issues/5) | Verify integrity of the installer and bare binary | Partial: release SHA256 in get-norix / install-agent |
-| [#6](https://github.com/xiron902224/norix/issues/6) | Require TLS (or localhost) before first-admin bootstrap | |
-| [#7](https://github.com/xiron902224/norix/issues/7) | Fail closed when the secrets key is missing | GFI |
-| [#8](https://github.com/xiron902224/norix/issues/8) | Encrypt workload environment variables at rest | P1 |
-| [#9](https://github.com/xiron902224/norix/issues/9) | Safe CORS defaults in the installer | GFI · P0 |
-| [#10](https://github.com/xiron902224/norix/issues/10) | Harden and document Docker-socket exposure | |
-| [#11](https://github.com/xiron902224/norix/issues/11) | Always require the preview-webhook secret | GFI · P1 |
-| [#12](https://github.com/xiron902224/norix/issues/12) | Add vulnerability scanning to CI | GFI |
-| [#30](https://github.com/xiron902224/norix/issues/30) | Refresh status doc + maturity matrix | GFI · addressed in VISION / this release |
-| [#33](https://github.com/xiron902224/norix/issues/33) | Repository metadata and first impressions | GFI |
+| # | Title |
+|---|---|
+| [#3](https://github.com/xiron902224/norix/issues/3) | Verify GitHub webhook signatures |
+| [#4](https://github.com/xiron902224/norix/issues/4) | Block SSRF in Git-based builds |
+| [#5](https://github.com/xiron902224/norix/issues/5) | Verify integrity of the installer and bare binary |
+| [#6](https://github.com/xiron902224/norix/issues/6) | Require TLS (or localhost) before first-admin bootstrap |
+| [#7](https://github.com/xiron902224/norix/issues/7) | Fail closed when the secrets key is missing |
+| [#8](https://github.com/xiron902224/norix/issues/8) | Encrypt workload environment variables at rest |
+| [#9](https://github.com/xiron902224/norix/issues/9) | Safe CORS defaults in the installer |
+| [#10](https://github.com/xiron902224/norix/issues/10) | Harden and document Docker-socket exposure |
+| [#11](https://github.com/xiron902224/norix/issues/11) | Always require the preview-webhook secret |
+| [#12](https://github.com/xiron902224/norix/issues/12) | Add vulnerability scanning to CI |
+| [#30](https://github.com/xiron902224/norix/issues/30) | Refresh the status doc and publish a maturity matrix |
+| [#33](https://github.com/xiron902224/norix/issues/33) | Repository metadata and first impressions |
 
-**Suggested next P0 slice:** #9 CORS · #7 secrets fail-closed · #12 vuln scan · #3 webhook HMAC.
+**Suggested next P0/P1 slice:** #9 · #7 · #12 · #3 · #59 · #60 · #62.
 
 ---
 
 ## Stage 1 — Table stakes (→ rc.1)
 
-Rollbacks [#14], rolling updates [#15], volumes [#16], probes [#17], buildpacks [#18], managed DBs for real [#20], env/secret UX [#23], HTTPS OOTB [#26], PAT [#22], CLI [#28], typed SDKs [#29], TLS guide [#31], onboarding [#19], previews E2E [#21].
+[#14](https://github.com/xiron902224/norix/issues/14) rollback · [#15](https://github.com/xiron902224/norix/issues/15) rolling · [#16](https://github.com/xiron902224/norix/issues/16) volumes · [#17](https://github.com/xiron902224/norix/issues/17) probes · [#18](https://github.com/xiron902224/norix/issues/18) buildpacks · [#20](https://github.com/xiron902224/norix/issues/20) managed DBs · [#22](https://github.com/xiron902224/norix/issues/22) PAT · [#23](https://github.com/xiron902224/norix/issues/23) env UX · [#26](https://github.com/xiron902224/norix/issues/26) HTTPS OOTB · [#28](https://github.com/xiron902224/norix/issues/28) CLI · [#29](https://github.com/xiron902224/norix/issues/29) SDKs · [#31](https://github.com/xiron902224/norix/issues/31) TLS guide.
 
 ---
 
 ## Stage 2 — Production confidence (→ GA)
 
-Multi-node E2E [#37], upgrade tests [#38], agent coverage [#39], load [#40], chaos [#41], Playwright [#42], footprint [#43], scale limits [#45], faster reconcile [#44], log retention [#25], notifications [#27], doctor/preflight [#34], examples [#35], troubleshooting [#32], build progress UX [#36], agent auth beyond bearer [#13], parallel builds [#24].
+[#37](https://github.com/xiron902224/norix/issues/37) multi-node E2E · [#38](https://github.com/xiron902224/norix/issues/38) upgrades · [#39](https://github.com/xiron902224/norix/issues/39)–[#42](https://github.com/xiron902224/norix/issues/42) coverage/load/chaos/Playwright · [#43](https://github.com/xiron902224/norix/issues/43)/[#45](https://github.com/xiron902224/norix/issues/45) footprint/limits · [#44](https://github.com/xiron902224/norix/issues/44) faster reconcile · plus onboarding/previews/notifications/doctor/examples.
 
 ---
 
-## Stage 3 — Differentiation (1.x)
+## Stage 3–4 — Differentiation & ecosystem
 
-Micro-VM GA [#46], Wasm GA [#47], WireGuard default [#48], autoscaler GA [#49], Sandboxes API [#50], Firecracker [#51], Postgres HA runbook [#52].
-
----
-
-## Stage 4 — Ecosystem
-
-MCP [#53], app catalog [#54], SAML [#55], quotas [#56], Terraform [#57].
+[#46](https://github.com/xiron902224/norix/issues/46)–[#52](https://github.com/xiron902224/norix/issues/52) runtimes/mesh/HA · [#53](https://github.com/xiron902224/norix/issues/53)–[#57](https://github.com/xiron902224/norix/issues/57) MCP/catalog/SAML/quotas/Terraform · [#65](https://github.com/xiron902224/norix/issues/65) UI i18n ES.
 
 ---
 
 ## How to pick work
 
-1. **Security / P0** if you know Go control-plane or installer shells.
-2. **good first issue** for docs and small defaults (`#9`, `#7`, `#31`, `#32`, `#35`).
-3. **P1 product gaps** (`#14` rollback, `#16` volumes, `#18` buildpacks) if you want user-visible impact.
+1. **P0 / security** if you know Go control-plane or installer shells.
+2. **good first issue** for docs and small defaults.
+3. **P1 product gaps** (rollback, volumes, buildpacks) for user-visible impact.
 
-Comment on the GitHub issue before large work; open PRs against `develop`.
+Comment on the GitHub issue before large work; open PRs against **`main`**.

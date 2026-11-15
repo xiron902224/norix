@@ -16,7 +16,7 @@
 # Env:
 #   NORIX_MODE            docker|bare (overridden by --mode)
 #   NORIX_SUPERVISE       auto|systemd|none (overridden by --supervise; bare only)
-#   NORIX_REF             git ref to clone (default: develop)
+#   NORIX_REF             git ref to clone (default: main)
 #   NORIX_REPO            git URL
 #   NORIX_DATA            data root (default: /data/norix)
 #   NORIX_HTTP_PORT       panel port (default: 8000; also --port)
@@ -31,7 +31,7 @@
 set -euo pipefail
 
 NORIX_REPO="${NORIX_REPO:-https://github.com/xiron902224/norix.git}"
-NORIX_REF="${NORIX_REF:-develop}"
+NORIX_REF="${NORIX_REF:-main}"
 NORIX_DATA="${NORIX_DATA:-/data/norix}"
 NORIX_HTTP_PORT="${NORIX_HTTP_PORT:-8000}"
 NORIX_SKIP_DOCKER="${NORIX_SKIP_DOCKER:-0}"

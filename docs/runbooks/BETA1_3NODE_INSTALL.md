@@ -45,7 +45,7 @@ Alternativa: CP-only en node-1 (sin agent ahí) y solo node-2/3 como workers —
 
 ### Antes de empezar (beta)
 
-1. Tag/release `v1.0.0-beta.3` publicado **o** build from source desde `develop`.
+1. Tag/release `v1.0.0-beta.3` publicado **o** build from source desde `main`.
 2. Dominio apuntando a node-1, p.ej. `norix.example.com`.
 3. Tres join tokens (uno por agent) — se crean en la UI tras el bootstrap.
 
@@ -66,7 +66,7 @@ sudo chown -R norix:norix /var/lib/norix
 ```bash
 git clone https://github.com/xiron902224/norix.git /opt/norix
 cd /opt/norix
-git checkout v1.0.0-beta.3   # o develop hasta que exista el tag
+git checkout v1.0.0-beta.3   # o main hasta que exista el tag
 
 sudo mkdir -p /root/.norix
 # Genera ~/.norix/.env con passwords aleatorios y levanta postgres (+ pebble/caddy de lab)
@@ -235,10 +235,11 @@ Reinicia CP. Los agents escriben `wg-norix.conf` / `norix.nft` y aplican si el p
 
 ---
 
-## 5. Límites honestos de Beta 1
+## 5. Límites honestos de Beta
 
-- Sin tag/release aún → instalar from source (`make build` / `cargo build --release`).
-- `main` no es el tip; usa tag o `develop`.
+- Sin tag/release aún → instalar from source desde `main` (`make build` / `cargo build --release`).
+- Tip de integración: **`main`** (rama `develop` retirada). Preferir tag `v1.0.0-beta.3` cuando exista ([#62](https://github.com/xiron902224/norix/issues/62)).
+- Workers necesitan **Docker/containerd** para builds Git ([#60](https://github.com/xiron902224/norix/issues/60), [#66](https://github.com/xiron902224/norix/issues/66)).
 - Mesh / micro-VM / DNS-01 / Patroni / autoscaler: código listo, **opt-in** y sin smoke GA.
 - El `local` node embebido del CP puede aparecer en inventory si Docker está en node-1; el scheduler prioriza agents remotos. Puedes cordonar el local en UI si no quieres workloads ahí.
 - No hay installer “one-click” multi-nodo: este runbook + systemd es el camino soportado en beta.

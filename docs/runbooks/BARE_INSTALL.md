@@ -19,10 +19,10 @@ curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.3/scr
   | NORIX_REF=v1.0.0-beta.3 bash -s -- --mode bare
 ```
 
-Desde `develop`:
+Desde `main` (tip sin tag):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/develop/scripts/get-norix.sh \
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/main/scripts/get-norix.sh \
   | bash -s -- --mode bare
 ```
 
@@ -139,6 +139,7 @@ curl -sf http://127.0.0.1:8000/healthz
 | Desplegar contenedores en **este** VPS | Instalar Docker + agent (`install-agent.sh`) o usar modo `docker` del installer |
 | Desplegar en **otros** VPS | Join tokens + agent en cada worker ([BETA1_3NODE_INSTALL.md](./BETA1_3NODE_INSTALL.md)) |
 | Agent en lab sin systemd | `install-agent.sh` con `--supervise none` (o `auto`: nohup + `WORKDIR/norix-agent.log`) |
+| Builds Git / contenedores | Docker o containerd en **workers** (el CP bare solo no basta) |
 | TLS público | Reverse proxy (Caddy/nginx) → `127.0.0.1:8000` o `HTTP_ADDR=127.0.0.1:8000` |
 
 ## Upgrade bare

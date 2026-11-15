@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+- Gitflow is **main-only**: branch from `main`, PR to `main` (`develop` retired as integration tip)
+- Default `NORIX_REF=main` in `get-norix.sh`; CI PRs target `main`
+- Spanish collaborator docs: [`README.es.md`](README.es.md), [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md)
+- Backlog: new issues #59–#67 (DeployFromGit errors, runtime clarity, beta.3 release, lab docs, CI check names, UI i18n)
+
 ## 1.0.0-beta.3 — 2026-11-15
 
 ### Added

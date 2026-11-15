@@ -18,7 +18,8 @@
   <a href="#how-it-works">How It Works</a> ·
   <a href="#interfaces">Interfaces</a> ·
   <a href="#features">Features</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="README.es.md">Español</a>
 </p>
 
 ---
@@ -65,18 +66,20 @@ Both modes print a URL like `http://YOUR_IP:8000`. Open it, create the first adm
 curl -sf http://127.0.0.1:8000/healthz
 ```
 
-Pin any branch/tag with `NORIX_REF=`. Integration tip: `develop`.
+Pin any branch/tag with `NORIX_REF=`. Integration tip (untagged tip): `main`.
 
 ### Add worker nodes
 
 Create a join token under **Nodes**, then on each worker:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/develop/scripts/install-agent.sh \
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/main/scripts/install-agent.sh \
   | bash -s -- --control-plane https://norix.example.com --token '…'
 # auto: systemd on a real VPS; nohup in labs/containers without systemd
 # (--supervise none|systemd, --no-start, --foreground also supported)
 ```
+
+Workers need **Docker or containerd** for Git builds and containers (bare control plane alone is not enough).
 
 <details>
 <summary>Docker Compose without the curl installer</summary>
@@ -147,6 +150,8 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 
 **Beta** (`1.0.0-beta.3`). Living status: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md) · vision: [`VISION.md`](VISION.md) · backlog: [`ISSUES.md`](ISSUES.md).
 
+**Spanish:** [`README.es.md`](README.es.md) · [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md).
+
 ---
 
 ## Repository layout
@@ -161,12 +166,15 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 | `scripts/install-agent.sh` | Worker join (systemd or nohup) |
 | `docs/` | Plans and runbooks |
 | `VISION.md` / `ISSUES.md` | Product vision + GitHub issue triage |
+| `README.es.md` / `CONTRIBUTING.es.md` | Spanish collaborator docs |
 
 ---
 
 ## Contributing
 
-See **[`CONTRIBUTING.md`](CONTRIBUTING.md)** for gitflow, local development, tests, and PR rules. Pick work from [`ISSUES.md`](ISSUES.md) / [GitHub Issues](https://github.com/xiron902224/norix/issues).
+**Gitflow:** pick an issue → branch from **`main`** → PR to **`main`** (`develop` is retired).
+
+See **[`CONTRIBUTING.md`](CONTRIBUTING.md)** (EN) or **[`CONTRIBUTING.es.md`](CONTRIBUTING.es.md)** (ES). Pick work from [`ISSUES.md`](ISSUES.md) / [GitHub Issues](https://github.com/xiron902224/norix/issues).
 
 ---
 

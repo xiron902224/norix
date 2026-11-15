@@ -8,7 +8,7 @@ Motivo: CI/gitflow/`main`/smoke ops incompletos para anunciar GA; ver `docs/ESTA
 ## Entregables
 - `VERSION` = `1.0.0-beta.1`
 - `CHANGELOG.md`, `SECURITY.md`, `LICENSE` (Apache-2.0), `CONTRIBUTING.md`
-- API freeze relativo a `develop` vía `buf breaking` en CI
+- API freeze relativo a la base del PR (`main`) vía `buf breaking` en CI
 - Binarios multi-arch + `SHA256SUMS` + cosign keyless: `.github/workflows/release.yml`
 - HA leases cableados, autoscaler apply, OIDC+TOTP real, DNS-01 lego, managed DB dumps/S3
 - SDKs TS/Python/Go, status page, telemetría opt-in, Patroni compose, compose stacks, Wasm WASI HTTP
@@ -27,11 +27,11 @@ Motivo: CI/gitflow/`main`/smoke ops incompletos para anunciar GA; ver `docs/ESTA
 - [x] HA leader leases en server
 - [x] Autoscaler aplica réplicas
 - [x] Status `/status` + telemetría opt-in
-- [ ] CI verde en PR → `develop`
+- [x] CI verde en PR → tip (histórico `develop`; ahora **`main`**)
 
 ### Release / ops (abierto)
-- [ ] Merge → `develop` + CI verde
-- [ ] Tag `v1.0.0-beta.1` + assets en GitHub Releases
+- [x] Tip en `main` (gitflow main-only)
+- [ ] Tag `v1.0.0-beta.3` + assets en GitHub Releases (#62)
 - [ ] Smoke E2E estable (deploy running + agent enroll)
 - [ ] Validación host: WG apply / KVM micro-VM / DNS-01 provider / Patroni (según necesidad)
 - [ ] GA `v1.0.0` solo tras checklist de `ESTADO` §4 “Must antes de GA”

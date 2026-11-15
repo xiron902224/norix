@@ -150,7 +150,7 @@ Stages are ordered by dependency and impact. Each stage has an **exit criterion*
 ## 8. Contributing
 
 - Pick an issue from `ISSUES.md` (labels: `good first issue`, `help wanted`, area labels such as `area/agent`, `area/control-plane`, `area/web`, `area/security`).
-- Read `CONTRIBUTING.md` for gitflow, local development and tests.
+- Read `CONTRIBUTING.md` / `CONTRIBUTING.es.md`: branch from **`main`**, PR to **`main`**.
 - Security problems: report privately per `SECURITY.md`.
 
 *We keep this file short on purpose. If a claim here is wrong, open an issue — correcting it is a contribution.*
