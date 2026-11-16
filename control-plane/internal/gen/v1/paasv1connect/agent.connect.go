@@ -60,6 +60,9 @@ const (
 	// AgentServiceUpdateNodeScheduleProcedure is the procedure name of the AgentService's
 	// UpdateNodeSchedule RPC.
 	AgentServiceUpdateNodeScheduleProcedure = "/v1.AgentService/UpdateNodeSchedule"
+	// AgentServiceUpdateNodeAgentProcedure is the procedure name of the AgentService's UpdateNodeAgent
+	// RPC.
+	AgentServiceUpdateNodeAgentProcedure = "/v1.AgentService/UpdateNodeAgent"
 	// AgentServiceConnectStreamProcedure is the procedure name of the AgentService's ConnectStream RPC.
 	AgentServiceConnectStreamProcedure = "/v1.AgentService/ConnectStream"
 )
@@ -170,6 +173,13 @@ var (
 			Procedure:  AgentServiceUpdateNodeScheduleProcedure,
 		}
 	})
+	agentServiceUpdateNodeAgentSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("UpdateNodeAgent"),
+			Procedure:  AgentServiceUpdateNodeAgentProcedure,
+		}
+	})
 	agentServiceConnectStreamSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeBidi,
@@ -196,6 +206,7 @@ type AgentServiceClient interface {
 	CordonNode(context.Context, *v1.CordonNodeRequest) (*v1.CordonNodeResponse, error)
 	DrainNode(context.Context, *v1.DrainNodeRequest) (*v1.DrainNodeResponse, error)
 	UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error)
+	UpdateNodeAgent(context.Context, *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error)
 	ConnectStream(context.Context) (AgentServiceConnectStreamClientStream, error)
 }
 
@@ -259,6 +270,7 @@ type AgentServiceHandler interface {
 	CordonNode(context.Context, *v1.CordonNodeRequest) (*v1.CordonNodeResponse, error)
 	DrainNode(context.Context, *v1.DrainNodeRequest) (*v1.DrainNodeResponse, error)
 	UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error)
+	UpdateNodeAgent(context.Context, *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error)
 	ConnectStream(context.Context, AgentServiceConnectStreamServerStream) error
 }
 
@@ -281,6 +293,7 @@ func RegisterAgentServiceHandler(server *connect.Server, svc AgentServiceHandler
 		connect.Method{Spec: agentServiceCordonNodeSpec(), Handler: adapter.cordonNode},
 		connect.Method{Spec: agentServiceDrainNodeSpec(), Handler: adapter.drainNode},
 		connect.Method{Spec: agentServiceUpdateNodeScheduleSpec(), Handler: adapter.updateNodeSchedule},
+		connect.Method{Spec: agentServiceUpdateNodeAgentSpec(), Handler: adapter.updateNodeAgent},
 		connect.Method{Spec: agentServiceConnectStreamSpec(), Handler: adapter.connectStream},
 	)
 }
@@ -371,6 +384,10 @@ func (UnimplementedAgentServiceHandler) DrainNode(context.Context, *v1.DrainNode
 
 func (UnimplementedAgentServiceHandler) UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.UpdateNodeSchedule is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) UpdateNodeAgent(context.Context, *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.UpdateNodeAgent is not implemented")
 }
 
 func (UnimplementedAgentServiceHandler) ConnectStream(context.Context, AgentServiceConnectStreamServerStream) error {
@@ -496,6 +513,14 @@ func (c *agentServiceClient) DrainNode(ctx context.Context, req *v1.DrainNodeReq
 func (c *agentServiceClient) UpdateNodeSchedule(ctx context.Context, req *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error) {
 	var res v1.UpdateNodeScheduleResponse
 	if err := c.client.CallUnary(ctx, agentServiceUpdateNodeScheduleSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) UpdateNodeAgent(ctx context.Context, req *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error) {
+	var res v1.UpdateNodeAgentResponse
+	if err := c.client.CallUnary(ctx, agentServiceUpdateNodeAgentSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -685,6 +710,18 @@ func (h agentServiceHandler) updateNodeSchedule(ctx context.Context, _ connect.S
 		return err
 	}
 	res, err := h.svc.UpdateNodeSchedule(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) updateNodeAgent(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateNodeAgentRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateNodeAgent(ctx, &req)
 	if err != nil {
 		return err
 	}

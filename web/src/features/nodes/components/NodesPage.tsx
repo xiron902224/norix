@@ -14,7 +14,7 @@ import { CreateModal } from '../../../shared/ui/Modal'
 import { StatusPill } from '../../../shared/ui/StatusPill'
 import { formatWhen, relativeAge, shortId } from '../../../shared/lib/format'
 import type { Node } from '../../../gen/v1/agent_pb'
-import { cordonNode, createJoinToken, drainNode, listNodes, updateNodeSchedule } from '../services/nodes-api'
+import { cordonNode, createJoinToken, drainNode, listNodes, updateNodeAgent, updateNodeSchedule } from '../services/nodes-api'
 
 export function NodesPage() {
   const [nodes, setNodes] = useState<Node[]>([])
@@ -169,6 +169,23 @@ export function NodesPage() {
     }
   }
 
+  async function onUpdateAgent() {
+    if (!selected || selected.isLocal) return
+    setActionBusy('update-agent')
+    setError('')
+    try {
+      await updateNodeAgent({
+        nodeId: selected.id,
+        version: controlPlaneVersion || undefined,
+      })
+      await refreshNodes(selected.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not request agent update')
+    } finally {
+      setActionBusy('')
+    }
+  }
+
   const online = nodes.filter((node) => node.status === 'online').length
   const installCommand = joinToken
     ? `curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/${agentRelease}/scripts/install-agent.sh \\\n  | bash -s -- --version ${agentRelease} \\\n      --control-plane '${controlPlaneUrl}' \\\n      --token '${joinToken.token}'`
@@ -280,6 +297,9 @@ export function NodesPage() {
                   <div><dt>Schedule</dt><dd>{selected.cordoned ? 'cordoned' : 'schedulable'}{selected.draining ? ' · draining' : ''}</dd></div>
                   <div><dt>Seen</dt><dd>{relativeAge(selected.lastSeenAt)}</dd></div>
                   <div><dt>Agent version</dt><dd className="mono">{selected.capabilities?.agentVersion || '—'}</dd></div>
+                  {selected.desiredAgentVersion ? (
+                    <div><dt>Desired agent</dt><dd className="mono">{selected.desiredAgentVersion}</dd></div>
+                  ) : null}
                   {selected.isLocal && controlPlaneVersion ? (
                     <div><dt>Control plane</dt><dd className="mono">{controlPlaneVersion}</dd></div>
                   ) : null}
@@ -303,6 +323,17 @@ export function NodesPage() {
                   <Button type="button" variant="secondary" disabled={!!actionBusy || !selected.draining} onClick={() => void onDrain(false)}>
                     Stop drain
                   </Button>
+                  {!selected.isLocal ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={!!actionBusy || selected.status !== 'online'}
+                      onClick={() => void onUpdateAgent()}
+                      title={controlPlaneVersion ? `Pin agent to ${controlPlaneVersion}` : 'Pin agent to control-plane version'}
+                    >
+                      {actionBusy === 'update-agent' ? '…' : 'Update agent'}
+                    </Button>
+                  ) : null}
                 </div>
                 <form className="compass-create-form" style={{ marginTop: 16 }} onSubmit={(event) => void onSaveSchedule(event)}>
                   <label>

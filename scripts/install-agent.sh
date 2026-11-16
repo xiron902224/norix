@@ -10,6 +10,7 @@ BUILD_FROM_SOURCE=0
 SKIP_VERIFY=0
 NO_START=0
 FOREGROUND=0
+UPDATE_ONLY=0
 NORIX_SUPERVISE="${NORIX_SUPERVISE:-auto}"
 NORIX_VERSION="${NORIX_VERSION:-}"
 NORIX_GITHUB_REPO="${NORIX_GITHUB_REPO:-xiron902224/norix}"
@@ -34,6 +35,7 @@ Options:
   --install-dir PATH    Binary install directory (default: /usr/local/bin)
   --from-source         Build with cargo from this repository
   --version TAG         Download release binary for TAG (e.g. v1.0.0-beta.4); verifies SHA256SUMS
+  --update              In-place upgrade: reuse agent.env / node-state (join token optional)
   --sums PATH|URL       SHA256SUMS file or URL (default: GitHub release asset for --version)
   --asset-url URL       Direct URL to norix-agent-linux-{amd64,arm64} binary
   --skip-verify         Skip SHA256SUMS verification (not recommended)
@@ -48,7 +50,11 @@ Options:
 Env:
   NORIX_VERSION, NORIX_GITHUB_REPO, NORIX_SHA256SUMS, NORIX_AGENT_ASSET_URL, NORIX_SUPERVISE
 
+Update (same host, keep enrollment):
+  install-agent.sh --update --version v1.0.0-beta.4
+
 Production (3 nodes): see docs/runbooks/BETA1_3NODE_INSTALL.md and deploy/systemd/.
+Uninstall: scripts/uninstall-agent.sh
 EOF
 }
 
@@ -170,6 +176,7 @@ while [[ $# -gt 0 ]]; do
     --install-dir) INSTALL_DIR="$2"; shift 2 ;;
     --from-source) BUILD_FROM_SOURCE=1; shift ;;
     --version) NORIX_VERSION="$2"; shift 2 ;;
+    --update) UPDATE_ONLY=1; shift ;;
     --sums) NORIX_SHA256SUMS="$2"; shift 2 ;;
     --asset-url) NORIX_AGENT_ASSET_URL="$2"; shift 2 ;;
     --skip-verify) SKIP_VERIFY=1; shift ;;
@@ -194,7 +201,34 @@ case "$NORIX_SUPERVISE" in
   *) die "invalid --supervise / NORIX_SUPERVISE: $NORIX_SUPERVISE (use auto|systemd|none)" ;;
 esac
 
-if [[ -z "$JOIN_TOKEN" ]]; then
+mkdir -p "$WORKDIR"
+mkdir -p "$INSTALL_DIR"
+
+# --update: reuse existing enrollment/env; join token optional.
+if [[ "$UPDATE_ONLY" -eq 1 ]]; then
+  cli_version="${NORIX_VERSION}"
+  cli_cp="${CONTROL_PLANE}"
+  cli_token="${JOIN_TOKEN}"
+  cli_name="${NODE_NAME}"
+  if [[ -f "$WORKDIR/agent.env" ]]; then
+    # shellcheck disable=SC1090
+    set -a
+    source "$WORKDIR/agent.env"
+    set +a
+  fi
+  # CLI / outer env wins over agent.env for pin + overrides.
+  NORIX_VERSION="${cli_version:-${NORIX_VERSION:-}}"
+  CONTROL_PLANE="${cli_cp:-${NORIX_CONTROL_PLANE_URL:-$CONTROL_PLANE}}"
+  JOIN_TOKEN="${cli_token:-${NORIX_JOIN_TOKEN:-$JOIN_TOKEN}}"
+  NODE_NAME="${cli_name:-${NORIX_NODE_NAME:-$NODE_NAME}}"
+  [[ -f "$WORKDIR/node-state.json" ]] || die "--update requires $WORKDIR/node-state.json (enrolled agent)"
+  if [[ -z "${NORIX_VERSION}" && -z "${NORIX_AGENT_ASSET_URL}" ]]; then
+    die "--update requires --version TAG (or NORIX_VERSION / --asset-url)"
+  fi
+  echo "in-place agent update → ${NORIX_VERSION:-asset-url}"
+fi
+
+if [[ -z "$JOIN_TOKEN" && "$UPDATE_ONLY" -eq 0 ]]; then
   echo "join token required (--token or NORIX_JOIN_TOKEN)" >&2
   exit 1
 fi
@@ -203,8 +237,10 @@ if [[ -z "$NODE_NAME" ]]; then
   NODE_NAME="$(hostname -s 2>/dev/null || hostname)"
 fi
 
-mkdir -p "$WORKDIR"
-mkdir -p "$INSTALL_DIR"
+# Placeholder token for env file rewrite on update when token was one-time consumed.
+if [[ -z "$JOIN_TOKEN" && "$UPDATE_ONLY" -eq 1 ]]; then
+  JOIN_TOKEN="already-enrolled"
+fi
 
 if [[ "$BUILD_FROM_SOURCE" -eq 1 ]]; then
   if ! command -v cargo >/dev/null 2>&1; then

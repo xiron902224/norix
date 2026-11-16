@@ -7,6 +7,7 @@ mod microvm;
 mod network;
 mod proto_num;
 mod runtime;
+mod update;
 mod wasm;
 
 use std::path::Path;
@@ -26,6 +27,19 @@ use crate::runtime::{is_container_runtime, is_microvm_runtime, Runtime};
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if args.first().map(String::as_str) == Some("update") {
+        let version = args
+            .iter()
+            .position(|a| a == "--version")
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+            .or_else(|| args.get(1).filter(|a| !a.starts_with('-')).cloned());
+        return update::run_cli_update(version).await;
+    }
+    if args.first().map(String::as_str) == Some("uninstall") {
+        let purge = args.iter().any(|a| a == "--purge");
+        return update::run_cli_uninstall(purge);
+    }
     let check_only = args.iter().any(|arg| arg == "--check" || arg == "check");
 
     let filter = std::env::var("NORIX_AGENT_LOG_LEVEL")
@@ -102,6 +116,21 @@ async fn main() -> Result<()> {
                             info!("heartbeat restored");
                         }
                         backoff = Duration::from_secs(1);
+                        if let Some(target) = desired
+                            .desired_agent_version
+                            .as_deref()
+                            .map(str::trim)
+                            .filter(|v| !v.is_empty())
+                        {
+                            let current = config.agent_version.trim().trim_start_matches('v');
+                            let want = target.trim_start_matches('v');
+                            if !want.is_empty() && want != current {
+                                info!(from = %current, to = %want, "control plane requested agent update");
+                                if let Err(error) = update::apply_desired_version(&config, target).await {
+                                    warn!(%error, "agent self-update failed");
+                                }
+                            }
+                        }
                         if let Some(runtime) = runtime.as_ref() {
                             if !desired.desired_builds.is_empty() {
                                 info!(count = desired.desired_builds.len(), "running desired builds");

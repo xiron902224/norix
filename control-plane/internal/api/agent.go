@@ -15,6 +15,7 @@ import (
 	"github.com/xiron902224/norix/control-plane/internal/db"
 	paasv1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
 	"github.com/xiron902224/norix/control-plane/internal/gen/v1/paasv1connect"
+	versionpkg "github.com/xiron902224/norix/control-plane/internal/version"
 )
 
 var agentLogger = slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -189,9 +190,15 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 			Functions:  fns,
 		}
 	}
+	desiredAgentVersion := strings.TrimSpace(node.DesiredAgentVersion)
+	// Prefer fresh DB value after heartbeat cleared a match.
+	if refreshed, err := db.GetNode(ctx, service.pool, node.OrganizationID, node.ID); err == nil {
+		desiredAgentVersion = strings.TrimSpace(refreshed.DesiredAgentVersion)
+	}
 	return &paasv1.HeartbeatResponse{
 		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds,
 		DesiredEdge: desiredEdge, DesiredNetwork: desiredNetwork, DesiredWasm: desiredWasm,
+		DesiredAgentVersion: desiredAgentVersion,
 	}, nil
 }
 
@@ -568,7 +575,8 @@ func nodeToProto(node db.Node) *paasv1.Node {
 		Draining:        node.Draining,
 		Zone:            zone,
 		Labels:          node.Labels,
-		ReportedWorkloadIds: node.ReportedWorkloadIDs,
+		ReportedWorkloadIds:   node.ReportedWorkloadIDs,
+		DesiredAgentVersion:   node.DesiredAgentVersion,
 		Capabilities: &paasv1.NodeCapabilities{
 			CpuCores:         node.Capabilities.CPUCores,
 			MemoryTotalMb:    node.Capabilities.MemoryTotalMB,
@@ -579,6 +587,34 @@ func nodeToProto(node db.Node) *paasv1.Node {
 			AgentVersion:     node.Capabilities.AgentVersion,
 		},
 	}
+}
+
+func (service AgentService) UpdateNodeAgent(ctx context.Context, request *paasv1.UpdateNodeAgentRequest) (*paasv1.UpdateNodeAgentResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		return nil, invalidArgument("node_id is required")
+	}
+	version := strings.TrimSpace(request.GetVersion())
+	if version == "" {
+		version = versionpkg.Current()
+	}
+	if version == "" {
+		return nil, invalidArgument("version is required (or set NORIX_VERSION on the control plane)")
+	}
+	node, err := db.SetDesiredAgentVersion(ctx, service.pool, identity.OrganizationID, nodeID, version, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.UpdateNodeAgentResponse{Node: nodeToProto(node)}, nil
 }
 
 func (service AgentService) CordonNode(ctx context.Context, request *paasv1.CordonNodeRequest) (*paasv1.CordonNodeResponse, error) {

@@ -40,6 +40,8 @@ message Node {
   map<string, string> labels = 15;
   // Workload IDs last reported by the agent (container labels).
   repeated string reported_workload_ids = 16;
+  // Target agent release (e.g. 1.0.0-beta.4). Empty = no pending update.
+  string desired_agent_version = 17;
 }
 
 message CordonNodeRequest {
@@ -263,6 +265,18 @@ message HeartbeatResponse {
   DesiredEdgePlan desired_edge = 4;
   DesiredNetworkPlan desired_network = 5;
   DesiredWasmPlan desired_wasm = 6;
+  // When set and different from the running agent, the agent should self-update.
+  string desired_agent_version = 7;
+}
+
+message UpdateNodeAgentRequest {
+  string node_id = 1;
+  // Release tag or semver (v optional), e.g. v1.0.0-beta.4. Empty = match control-plane version.
+  string version = 2;
+}
+
+message UpdateNodeAgentResponse {
+  Node node = 1;
 }
 
 message ReportObservedRequest {
@@ -381,5 +395,6 @@ service AgentService {
   rpc CordonNode(CordonNodeRequest) returns (CordonNodeResponse);
   rpc DrainNode(DrainNodeRequest) returns (DrainNodeResponse);
   rpc UpdateNodeSchedule(UpdateNodeScheduleRequest) returns (UpdateNodeScheduleResponse);
+  rpc UpdateNodeAgent(UpdateNodeAgentRequest) returns (UpdateNodeAgentResponse);
   rpc ConnectStream(stream ConnectStreamRequest) returns (stream ConnectStreamResponse);
 }

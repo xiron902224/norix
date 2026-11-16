@@ -309,6 +309,7 @@ pub struct HeartbeatResult {
     pub desired_edge: Option<DesiredEdgePlan>,
     pub desired_network: Option<DesiredNetworkPlan>,
     pub desired_wasm: Option<DesiredWasmPlan>,
+    pub desired_agent_version: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -327,6 +328,8 @@ struct HeartbeatResponse {
     desired_network: Option<DesiredNetworkPlan>,
     #[serde(default)]
     desired_wasm: Option<DesiredWasmPlan>,
+    #[serde(default)]
+    desired_agent_version: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -403,6 +406,10 @@ impl AgentClient {
                 desired_wasm: parsed
                     .desired_wasm
                     .filter(|plan| !plan.functions.is_empty()),
+                desired_agent_version: parsed
+                    .desired_agent_version
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty()),
             }),
             Err(error) => {
                 let mut result = HeartbeatResult::default();

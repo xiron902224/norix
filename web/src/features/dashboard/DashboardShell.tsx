@@ -102,6 +102,8 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
     return () => window.clearInterval(timer)
   }, [onSignOut])
 
+  const [cpVersion, setCpVersion] = useState('')
+
   useEffect(() => {
     async function fleetPulse() {
       try {
@@ -114,6 +116,21 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
     void fleetPulse()
     const timer = window.setInterval(() => { void fleetPulse() }, 8000)
     return () => window.clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    void fetch('/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body: { version?: string } | null) => {
+        if (cancelled) return
+        const ver = typeof body?.version === 'string' ? body.version.trim() : ''
+        if (ver) setCpVersion(ver.startsWith('v') ? ver : `v${ver}`)
+      })
+      .catch(() => { /* keep empty */ })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const capacityPct = nodesTotal > 0 ? Math.round((nodesOnline / nodesTotal) * 100) : 0
@@ -132,7 +149,7 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
           <div className="sidebar-brand-copy">
             <div className="brand-title-row">
               <strong>norix</strong>
-              <span className="brand-beta">v1.0</span>
+              {cpVersion ? <span className="brand-beta" title="Control plane version from /status">{cpVersion}</span> : null}
             </div>
           </div>
         </div>

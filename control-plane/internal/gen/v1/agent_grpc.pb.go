@@ -34,6 +34,7 @@ const (
 	AgentService_CordonNode_FullMethodName         = "/v1.AgentService/CordonNode"
 	AgentService_DrainNode_FullMethodName          = "/v1.AgentService/DrainNode"
 	AgentService_UpdateNodeSchedule_FullMethodName = "/v1.AgentService/UpdateNodeSchedule"
+	AgentService_UpdateNodeAgent_FullMethodName    = "/v1.AgentService/UpdateNodeAgent"
 	AgentService_ConnectStream_FullMethodName      = "/v1.AgentService/ConnectStream"
 )
 
@@ -56,6 +57,7 @@ type AgentServiceClient interface {
 	CordonNode(ctx context.Context, in *CordonNodeRequest, opts ...grpc.CallOption) (*CordonNodeResponse, error)
 	DrainNode(ctx context.Context, in *DrainNodeRequest, opts ...grpc.CallOption) (*DrainNodeResponse, error)
 	UpdateNodeSchedule(ctx context.Context, in *UpdateNodeScheduleRequest, opts ...grpc.CallOption) (*UpdateNodeScheduleResponse, error)
+	UpdateNodeAgent(ctx context.Context, in *UpdateNodeAgentRequest, opts ...grpc.CallOption) (*UpdateNodeAgentResponse, error)
 	ConnectStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ConnectStreamRequest, ConnectStreamResponse], error)
 }
 
@@ -217,6 +219,16 @@ func (c *agentServiceClient) UpdateNodeSchedule(ctx context.Context, in *UpdateN
 	return out, nil
 }
 
+func (c *agentServiceClient) UpdateNodeAgent(ctx context.Context, in *UpdateNodeAgentRequest, opts ...grpc.CallOption) (*UpdateNodeAgentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateNodeAgentResponse)
+	err := c.cc.Invoke(ctx, AgentService_UpdateNodeAgent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *agentServiceClient) ConnectStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ConnectStreamRequest, ConnectStreamResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &AgentService_ServiceDesc.Streams[0], AgentService_ConnectStream_FullMethodName, cOpts...)
@@ -249,6 +261,7 @@ type AgentServiceServer interface {
 	CordonNode(context.Context, *CordonNodeRequest) (*CordonNodeResponse, error)
 	DrainNode(context.Context, *DrainNodeRequest) (*DrainNodeResponse, error)
 	UpdateNodeSchedule(context.Context, *UpdateNodeScheduleRequest) (*UpdateNodeScheduleResponse, error)
+	UpdateNodeAgent(context.Context, *UpdateNodeAgentRequest) (*UpdateNodeAgentResponse, error)
 	ConnectStream(grpc.BidiStreamingServer[ConnectStreamRequest, ConnectStreamResponse]) error
 	mustEmbedUnimplementedAgentServiceServer()
 }
@@ -304,6 +317,9 @@ func (UnimplementedAgentServiceServer) DrainNode(context.Context, *DrainNodeRequ
 }
 func (UnimplementedAgentServiceServer) UpdateNodeSchedule(context.Context, *UpdateNodeScheduleRequest) (*UpdateNodeScheduleResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateNodeSchedule not implemented")
+}
+func (UnimplementedAgentServiceServer) UpdateNodeAgent(context.Context, *UpdateNodeAgentRequest) (*UpdateNodeAgentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateNodeAgent not implemented")
 }
 func (UnimplementedAgentServiceServer) ConnectStream(grpc.BidiStreamingServer[ConnectStreamRequest, ConnectStreamResponse]) error {
 	return status.Error(codes.Unimplemented, "method ConnectStream not implemented")
@@ -599,6 +615,24 @@ func _AgentService_UpdateNodeSchedule_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AgentService_UpdateNodeAgent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateNodeAgentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).UpdateNodeAgent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_UpdateNodeAgent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).UpdateNodeAgent(ctx, req.(*UpdateNodeAgentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AgentService_ConnectStream_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(AgentServiceServer).ConnectStream(&grpc.GenericServerStream[ConnectStreamRequest, ConnectStreamResponse]{ServerStream: stream})
 }
@@ -672,6 +706,10 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateNodeSchedule",
 			Handler:    _AgentService_UpdateNodeSchedule_Handler,
+		},
+		{
+			MethodName: "UpdateNodeAgent",
+			Handler:    _AgentService_UpdateNodeAgent_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

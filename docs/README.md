@@ -9,7 +9,7 @@ Where to read / write docs in this repo. Collaborators: start at [`CONTRIBUTING.
 | **Product status / roadmap** | [`VISION.md`](../VISION.md) · [`ESTADO_Y_PLAN_V1.md`](./ESTADO_Y_PLAN_V1.md) · [`ISSUES.md`](../ISSUES.md) |
 | **Multi-node ops** | [`runbooks/BETA1_3NODE_INSTALL.md`](./runbooks/BETA1_3NODE_INSTALL.md) |
 | **Security** | [`SECURITY.md`](../SECURITY.md) · [`threat-model-s19.md`](./threat-model-s19.md) |
-| **Upgrade** | [`UPGRADE.md`](./UPGRADE.md) |
+| **Upgrade / uninstall** | [`UPDATE_AND_UNINSTALL.md`](./UPDATE_AND_UNINSTALL.md) · [`UPGRADE.md`](./UPGRADE.md) |
 | **Component READMEs** | [`agent/`](../agent/README.md) · [`control-plane/`](../control-plane/README.md) · [`web/`](../web/README.md) |
 | **Sprint history** | `SPRINT_*_CIERRE.md` (archive; prefer VISION / ESTADO) |
 | **ADRs** | [`adr/`](./adr/) |

@@ -113,11 +113,11 @@ jobs:
           PGPASSWORD: ci-postgres-password
         run: |
           psql -h 127.0.0.1 -U norix -d norix -v ON_ERROR_STOP=1 <<'SQL'
-          -- Migrations through 000022 (000020 compose columns; 000021 preview TTL; 000022 oidc states).
+          -- Migrations through 000023 (000022 oidc states; 000023 desired_agent_version).
           DO $$
           BEGIN
-            IF NOT (SELECT version = 22 AND NOT dirty FROM schema_migrations) THEN
-              RAISE EXCEPTION 'expected schema_migrations version=22 dirty=false';
+            IF NOT (SELECT version = 23 AND NOT dirty FROM schema_migrations) THEN
+              RAISE EXCEPTION 'expected schema_migrations version=23 dirty=false';
             END IF;
             IF (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename IN (
               'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
@@ -153,6 +153,14 @@ jobs:
             -- 000022: short-lived OIDC login states (no FORCE RLS; org FK + grants only).
             IF to_regclass('public.oidc_login_states') IS NULL THEN
               RAISE EXCEPTION 'oidc_login_states missing';
+            END IF;
+            -- 000023: pending agent update pin on nodes.
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_schema = 'public' AND table_name = 'nodes'
+                AND column_name = 'desired_agent_version'
+            ) THEN
+              RAISE EXCEPTION 'nodes.desired_agent_version missing';
             END IF;
             IF to_regclass('public.audit_events') IS NULL THEN
               RAISE EXCEPTION 'audit_events missing';
