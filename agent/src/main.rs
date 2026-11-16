@@ -80,7 +80,9 @@ async fn main() -> Result<()> {
         };
         match Runtime::detect().await {
             Ok(_) => info!("container runtime detected"),
-            Err(error) => warn!(%error, "container runtime unavailable (heartbeats-only until docker/nerdctl)"),
+            Err(error) => {
+                warn!(%error, "container runtime unavailable (heartbeats-only until docker/nerdctl)")
+            }
         }
         info!(
             version = %config.agent_version,
