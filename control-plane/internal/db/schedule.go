@@ -198,7 +198,8 @@ func GetNode(ctx context.Context, pool *pgxpool.Pool, tenantID, nodeID string) (
 		       cpu_cores, memory_total_mb, docker_socket, containerd_socket,
 		       kvm_level, hostname, agent_version,
 		       cpu_usage_percent, memory_free_mb, disk_free_mb,
-		       role, cordoned, draining, zone, labels::text
+		       role, cordoned, draining, zone, labels::text,
+		       COALESCE(desired_agent_version, '')
 		FROM nodes WHERE id = $1::uuid`, nodeID).Scan(
 		&node.ID, &node.OrganizationID, &node.Name, &node.Status, &node.LastSeenAt, &node.IsLocal,
 		&node.Capabilities.CPUCores, &node.Capabilities.MemoryTotalMB,
@@ -206,12 +207,44 @@ func GetNode(ctx context.Context, pool *pgxpool.Pool, tenantID, nodeID string) (
 		&node.Capabilities.KVMLevel, &node.Capabilities.Hostname, &node.Capabilities.AgentVersion,
 		&node.CPUUsagePercent, &node.MemoryFreeMB, &node.DiskFreeMB,
 		&node.Role, &node.Cordoned, &node.Draining, &node.Zone, &labelsText,
+		&node.DesiredAgentVersion,
 	)
 	if err != nil {
 		return Node{}, fmt.Errorf("get node: %w", err)
 	}
 	node.Labels = decodeLabels([]byte(labelsText))
 	return node, tx.Commit(ctx)
+}
+
+func SetDesiredAgentVersion(ctx context.Context, pool *pgxpool.Pool, tenantID, nodeID, version string, actor AuditActor) (Node, error) {
+	version = strings.TrimSpace(version)
+	version = strings.TrimPrefix(version, "v")
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return Node{}, err
+	}
+	defer tx.Rollback(ctx)
+	if err := WithTenant(ctx, tx, tenantID); err != nil {
+		return Node{}, err
+	}
+	tag, err := tx.Exec(ctx, `
+		UPDATE nodes SET desired_agent_version = $2, updated_at = NOW()
+		WHERE id = $1::uuid`, nodeID, version)
+	if err != nil {
+		return Node{}, err
+	}
+	if tag.RowsAffected() != 1 {
+		return Node{}, fmt.Errorf("node not found")
+	}
+	if err := writeAudit(ctx, tx, tenantID, "node.agent_update_requested", "node", nodeID, actor, map[string]string{
+		"desired_agent_version": version,
+	}); err != nil {
+		return Node{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return Node{}, err
+	}
+	return GetNode(ctx, pool, tenantID, nodeID)
 }
 
 func SetNodeCordon(ctx context.Context, pool *pgxpool.Pool, tenantID, nodeID string, cordoned bool, actor AuditActor) (Node, error) {

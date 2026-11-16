@@ -36,8 +36,9 @@ type Node struct {
 	Cordoned         bool
 	Draining         bool
 	Zone             string
-	Labels           map[string]string
-	ReportedWorkloadIDs []string
+	Labels                map[string]string
+	ReportedWorkloadIDs   []string
+	DesiredAgentVersion   string
 }
 
 type JoinToken struct {
@@ -194,14 +195,15 @@ func FindNodeByTokenHash(ctx context.Context, pool *pgxpool.Pool, tokenHash []by
 	err := pool.QueryRow(ctx, `
 		SELECT id::text, organization_id::text, name, status, last_seen_at,
 		       cpu_cores, memory_total_mb, docker_socket, containerd_socket,
-		       kvm_level, hostname, agent_version, is_local
+		       kvm_level, hostname, agent_version, is_local,
+		       COALESCE(desired_agent_version, '')
 		FROM nodes
 		WHERE token_hash = $1`, tokenHash).Scan(
 		&node.ID, &node.OrganizationID, &node.Name, &node.Status, &lastSeen,
 		&node.Capabilities.CPUCores, &node.Capabilities.MemoryTotalMB,
 		&node.Capabilities.DockerSocket, &node.Capabilities.ContainerdSocket,
 		&node.Capabilities.KVMLevel, &node.Capabilities.Hostname, &node.Capabilities.AgentVersion,
-		&node.IsLocal,
+		&node.IsLocal, &node.DesiredAgentVersion,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -229,7 +231,8 @@ func ListNodes(ctx context.Context, pool *pgxpool.Pool, organizationID string) (
 		       kvm_level, hostname, agent_version, is_local,
 		       cpu_usage_percent, memory_free_mb, disk_free_mb,
 		       role, cordoned, draining, zone, labels::text,
-		       COALESCE(reported_workload_ids, '{}')
+		       COALESCE(reported_workload_ids, '{}'),
+		       COALESCE(desired_agent_version, '')
 		FROM nodes
 		ORDER BY is_local DESC, COALESCE(last_seen_at, created_at) DESC, name`)
 	if err != nil {
@@ -249,7 +252,7 @@ func ListNodes(ctx context.Context, pool *pgxpool.Pool, organizationID string) (
 			&node.Capabilities.KVMLevel, &node.Capabilities.Hostname, &node.Capabilities.AgentVersion,
 			&node.IsLocal, &node.CPUUsagePercent, &node.MemoryFreeMB, &node.DiskFreeMB,
 			&node.Role, &node.Cordoned, &node.Draining, &node.Zone, &labelsText,
-			&node.ReportedWorkloadIDs,
+			&node.ReportedWorkloadIDs, &node.DesiredAgentVersion,
 		); err != nil {
 			return nil, fmt.Errorf("scan node: %w", err)
 		}
@@ -325,7 +328,13 @@ func RecordHeartbeat(ctx context.Context, pool *pgxpool.Pool, organizationID, no
 				cpu_usage_percent = $12,
 				memory_free_mb = $13,
 				disk_free_mb = $14,
-				reported_workload_ids = $15
+				reported_workload_ids = $15,
+				desired_agent_version = CASE
+					WHEN $11 <> '' AND desired_agent_version <> ''
+						AND regexp_replace(lower($11), '^v', '') = regexp_replace(lower(desired_agent_version), '^v', '')
+					THEN ''
+					ELSE desired_agent_version
+				END
 			WHERE id = $1::uuid AND organization_id = $2::uuid`,
 			nodeID, organizationID, status, now,
 			caps.CPUCores, caps.MemoryTotalMB, caps.DockerSocket, caps.ContainerdSocket,

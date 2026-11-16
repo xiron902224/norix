@@ -5,6 +5,7 @@ import {
   CreateJoinTokenRequestSchema,
   DrainNodeRequestSchema,
   ListNodesRequestSchema,
+  UpdateNodeAgentRequestSchema,
   UpdateNodeScheduleRequestSchema,
   type Node,
 } from '../../../gen/v1/agent_pb'
@@ -51,6 +52,18 @@ export async function updateNodeSchedule(input: {
     role: input.role ?? '',
     zone: input.zone ?? '',
     labels: input.labels ?? {},
+  }))
+  if (!response.node) throw new Error('Node was not returned')
+  return response.node
+}
+
+export async function updateNodeAgent(input: {
+  nodeId: string
+  version?: string
+}): Promise<Node> {
+  const response = await agentClient.updateNodeAgent(create(UpdateNodeAgentRequestSchema, {
+    nodeId: input.nodeId,
+    version: input.version ?? '',
   }))
   if (!response.node) throw new Error('Node was not returned')
   return response.node
