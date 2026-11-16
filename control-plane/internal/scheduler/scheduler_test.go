@@ -89,6 +89,34 @@ func TestCordonedNotSchedulable(t *testing.T) {
 	}
 }
 
+func TestSelectNoContainerRuntimeDistinctError(t *testing.T) {
+	nodes := []Node{
+		{ID: "a", Name: "a", Status: "online", Role: "worker", MemoryFreeMB: 4096},
+		{ID: "b", Name: "b", Status: "online", Role: "worker", MemoryFreeMB: 2048},
+	}
+	_, err := Select(nodes, Request{MemoryLimitMB: 256})
+	if err == nil {
+		t.Fatal("expected unschedulable")
+	}
+	if err.Error() != ErrNoContainerRuntime {
+		t.Fatalf("got %q, want %q", err.Error(), ErrNoContainerRuntime)
+	}
+}
+
+func TestSelectMixedFailuresKeepGenericUnschedulable(t *testing.T) {
+	nodes := []Node{
+		{ID: "a", Name: "a", Status: "online", Role: "worker", MemoryFreeMB: 4096},
+		{ID: "b", Name: "b", Status: "online", Role: "worker", DockerSocket: true, MemoryFreeMB: 64},
+	}
+	_, err := Select(nodes, Request{MemoryLimitMB: 512})
+	if err == nil {
+		t.Fatal("expected unschedulable")
+	}
+	if err.Error() == ErrNoContainerRuntime {
+		t.Fatalf("mixed failures should stay generic, got %q", err.Error())
+	}
+}
+
 func TestDrainingNotSchedulable(t *testing.T) {
 	nodes := []Node{
 		{ID: "a", Name: "a", Status: "online", Role: "worker", DockerSocket: true, Draining: true, MemoryFreeMB: 4096},
