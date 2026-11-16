@@ -111,9 +111,10 @@ DATABASE_URL=postgres://norix_app:CHANGE_APP@127.0.0.1:5432/norix?sslmode=disabl
 MIGRATION_DATABASE_URL=postgres://norix:CHANGE_OWNER@127.0.0.1:5432/norix?sslmode=disable
 HTTP_ADDR=0.0.0.0:8000
 LOG_LEVEL=info
-CORS_ALLOWED_ORIGINS=*
+CORS_ALLOWED_ORIGINS=http://YOUR_IP:8000
 NORIX_PUBLIC_URL=http://YOUR_IP:8000
 NORIX_WEB_ORIGIN=http://YOUR_IP:8000
+# Wildcard CORS requires explicit opt-in: CORS_ALLOWED_ORIGINS=* and NORIX_CORS_ALLOW_WILDCARD=1
 NORIX_BACKUP_DIR=/var/lib/norix/backups
 NORIX_BUILD_SECRETS_KEY=   # openssl rand -hex 32
 NORIX_REGISTRY=none

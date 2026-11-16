@@ -12,7 +12,7 @@ Enforcement:
 - User has TOTP enabled → `Login` requires `totp_code`.
 - Organization `mandatory_2fa = true` → same, and the user must already have verified TOTP.
 
-Secrets are AES-GCM encrypted with `NORIX_BUILD_SECRETS_KEY` (64 hex chars). If unset, local/dev stores plaintext with a `dev-nonce` marker (same pattern as WireGuard keys).
+Secrets are AES-GCM encrypted with `NORIX_BUILD_SECRETS_KEY` (64 hex chars). The control plane **fails closed** at startup if the key is missing. Local/dev plaintext (`dev-nonce`) is only allowed when `NORIX_ALLOW_INSECURE_DEV_SECRETS=1` is set explicitly.
 
 ## OIDC SSO
 
