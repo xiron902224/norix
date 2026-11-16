@@ -35,11 +35,14 @@ func GitHubPreviewWebhook(pool *pgxpool.Pool) http.HandlerFunc {
 			http.Error(response, "read body", http.StatusBadRequest)
 			return
 		}
-		if secret := strings.TrimSpace(os.Getenv("NORIX_GITHUB_WEBHOOK_SECRET")); secret != "" {
-			if !verifyGitHubSignature(secret, request.Header.Get("X-Hub-Signature-256"), body) {
-				http.Error(response, "invalid signature", http.StatusUnauthorized)
-				return
-			}
+		secret := strings.TrimSpace(os.Getenv("NORIX_GITHUB_WEBHOOK_SECRET"))
+		if secret == "" {
+			http.Error(response, "NORIX_GITHUB_WEBHOOK_SECRET is required", http.StatusServiceUnavailable)
+			return
+		}
+		if !verifyGitHubSignature(secret, request.Header.Get("X-Hub-Signature-256"), body) {
+			http.Error(response, "invalid signature", http.StatusUnauthorized)
+			return
 		}
 		event := strings.TrimSpace(request.Header.Get("X-GitHub-Event"))
 		slog.Info("github webhook", "event", event, "bytes", len(body))
