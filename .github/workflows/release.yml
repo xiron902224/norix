@@ -113,7 +113,7 @@ jobs:
 
       - name: Set up Node (embed web)
         if: matrix.embed_web
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
