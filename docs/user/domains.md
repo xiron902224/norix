@@ -10,6 +10,8 @@
 
 When Caddy / ACME is configured on the install, certificates are requested automatically for assigned hostnames. Local labs may use Pebble or HTTP-only — check your operator’s install notes ([`BARE_INSTALL`](../runbooks/BARE_INSTALL.md), compose edge profile).
 
+**Production (panel + apps):** follow the full walkthrough in [Production TLS](./production-tls.md).
+
 ## Tips
 
 - Use the public URL printed at install (`NORIX_PUBLIC_URL`) as the browser origin for the dashboard when behind TLS
