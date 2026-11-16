@@ -4,6 +4,7 @@ Where to read / write docs in this repo. Collaborators: start at [`CONTRIBUTING.
 
 | Audience | Start here |
 |---|---|
+| **Platform users** (dashboard) | **[`user/`](./user/README.md)** · [Español](./user/es/README.md) — official product guide |
 | **Operators** (install on a VPS) | [`README.md`](../README.md) · [`README.es.md`](../README.es.md) · [`runbooks/BARE_INSTALL.md`](./runbooks/BARE_INSTALL.md) |
 | **Collaborators / developers** | [`CONTRIBUTING.md`](../CONTRIBUTING.md) · [`CONTRIBUTING.es.md`](../CONTRIBUTING.es.md) — local: Postgres + CP `:8080` + Vite `:5173` (+ agent) |
 | **Product status / roadmap** | [`VISION.md`](../VISION.md) · [`ESTADO_Y_PLAN_V1.md`](./ESTADO_Y_PLAN_V1.md) · [`ISSUES.md`](../ISSUES.md) |

@@ -14,6 +14,7 @@ import { CreateModal } from '../../../shared/ui/Modal'
 import { StatusPill } from '../../../shared/ui/StatusPill'
 import { formatWhen, relativeAge, shortId } from '../../../shared/lib/format'
 import type { Node } from '../../../gen/v1/agent_pb'
+import { fetchControlPlaneStatus } from '../../../shared/lib/status'
 import { cordonNode, createJoinToken, drainNode, listNodes, updateNodeAgent, updateNodeSchedule } from '../services/nodes-api'
 
 export function NodesPage() {
@@ -44,7 +45,7 @@ export function NodesPage() {
       try {
         const [items, statusRes] = await Promise.all([
           listNodes(),
-          fetch('/status').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+          fetchControlPlaneStatus(),
         ])
         if (!cancelled) {
           setNodes(items)

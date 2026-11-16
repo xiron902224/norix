@@ -25,7 +25,7 @@ control-plane:
 	  cp -f ../VERSION internal/version/VERSION && \
 	  VER=$$(tr -d '[:space:]' < ../VERSION) && \
 	  CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/xiron902224/norix/control-plane/internal/version.BuildVersion=$${VER}" \
-	    -o bin/norix-control-plane ./cmd/server/main.go
+	    -o bin/norix-control-plane ./cmd/server
 
 agent:
 	@echo "Compilando agente Rust..."

@@ -94,6 +94,11 @@ func httpAddress() string {
 }
 
 func main() {
+	// Subcommands mirror norix-agent: check | update | uninstall
+	if code := runCLI(os.Args[1:]); code >= 0 {
+		os.Exit(code)
+	}
+
 	migrateOnly := flag.Bool("migrate-only", false, "apply migrations and exit")
 	flag.Parse()
 

@@ -77,13 +77,13 @@ jobs:
         include:
           - component: control-plane
             goarch: amd64
-            package: ./cmd/server/main.go
+            package: ./cmd/server
             workdir: control-plane
             binary: norix-control-plane
             embed_web: true
           - component: control-plane
             goarch: arm64
-            package: ./cmd/server/main.go
+            package: ./cmd/server
             workdir: control-plane
             binary: norix-control-plane
             embed_web: true

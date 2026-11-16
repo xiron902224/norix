@@ -32,7 +32,15 @@ sudo -u postgres pg_dump norix > "/var/lib/norix/backups/norix-$(date +%F).sql"
 
 ### 2. Control plane
 
-**Bare** (idempotent re-install / update):
+**From the binary** (same shape as the agent):
+
+```bash
+norix-control-plane check
+norix-control-plane update --version v1.0.0-beta.4
+norix-control-plane uninstall [--purge] [--purge-db]
+```
+
+**Bare** (idempotent re-install / update via installer):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
@@ -49,6 +57,7 @@ curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scr
 Verify:
 
 ```bash
+norix-control-plane check
 curl -sf http://127.0.0.1:8000/status   # or your public URL
 # → "version": "1.0.0-beta.4"
 ```
@@ -65,11 +74,13 @@ Nodes → select worker → **Update agent** (sets `desired_agent_version`; agen
 curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/install-agent.sh \
   | bash -s -- --update --version v1.0.0-beta.4 --supervise auto
 
-# Or if the binary already supports subcommands:
+# Or binary subcommands (no enroll required for check):
+norix-agent check
 norix-agent update --version v1.0.0-beta.4
+norix-agent uninstall [--purge]
 ```
 
-Both paths: download release → SHA256SUMS → replace `/usr/local/bin/norix-agent` → set `NORIX_AGENT_VERSION` → restart (systemd or nohup).
+Both update paths: download release → SHA256SUMS → replace binary → set `NORIX_*_VERSION` → restart (systemd or nohup).
 
 ### 4. Verify
 

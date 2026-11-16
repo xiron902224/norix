@@ -49,24 +49,54 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt().with_env_filter(filter).init();
 
     let config = Config::from_env()?;
-    config.ensure_workdir()?;
-    config.validate_for_startup()?;
 
     if check_only {
-        match Runtime::detect().await {
-            Ok(_) => {
-                info!(
-                    control_plane = %config.control_plane_url,
-                    workdir = %config.workdir.display(),
-                    "agent configuration and runtime validation passed"
-                );
-                return Ok(());
-            }
+        // check does not require join token / node-state — only config + optional probes.
+        if config.control_plane_url.trim().is_empty() {
+            bail!("NORIX_CONTROL_PLANE_URL cannot be empty");
+        }
+        let _ = config.ensure_workdir();
+        let enrolled = config.state_path().exists() || config.join_token.is_some();
+        let health_url = format!("{}/healthz", config.control_plane_url);
+        let cp_reachable = match reqwest::Client::builder()
+            .timeout(Duration::from_secs(3))
+            .build()
+        {
+            Ok(client) => match client.get(&health_url).send().await {
+                Ok(response) if response.status().is_success() => true,
+                Ok(response) => {
+                    warn!(status = %response.status(), url = %health_url, "control plane healthz not ok");
+                    false
+                }
+                Err(error) => {
+                    warn!(%error, url = %health_url, "control plane unreachable");
+                    false
+                }
+            },
             Err(error) => {
-                bail!("agent validation failed: {error}");
+                warn!(%error, "could not build http client for healthz probe");
+                false
+            }
+        };
+        match Runtime::detect().await {
+            Ok(_) => info!("container runtime detected"),
+            Err(error) => {
+                warn!(%error, "container runtime unavailable (heartbeats-only until docker/nerdctl)")
             }
         }
+        info!(
+            version = %config.agent_version,
+            control_plane = %config.control_plane_url,
+            workdir = %config.workdir.display(),
+            enrolled,
+            cp_reachable,
+            "agent check passed"
+        );
+        return Ok(());
     }
+
+    config.ensure_workdir()?;
+    config.validate_for_startup()?;
 
     let client = AgentClient::new(config.api_base())?;
     let caps = detect(&config.agent_version);
