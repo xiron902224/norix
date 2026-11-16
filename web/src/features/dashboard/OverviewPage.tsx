@@ -236,6 +236,8 @@ export function OverviewPage({ user }: OverviewPageProps) {
   const incident = failedApps[0] ?? null
   const hasChart = chart.length > 0
 
+  const needsOnboarding = !loading && (online === 0 || projects.length === 0 || apps.length === 0)
+
   return (
     <section className="compass-overview-exact">
       <header className="compass-ov-hero">
@@ -252,6 +254,50 @@ export function OverviewPage({ user }: OverviewPageProps) {
           <span><GitBranch size={14} aria-hidden /> main</span>
         </div>
       </header>
+
+      {needsOnboarding ? (
+        <div className="onboarding-card" role="region" aria-label="First-run setup">
+          <div>
+            <h2>Get started</h2>
+            <p className="muted">
+              Finish these steps once after bootstrap. Docs:{' '}
+              <a href="https://github.com/xiron902224/norix/blob/main/docs/user/getting-started.md" target="_blank" rel="noreferrer">
+                Getting started
+              </a>
+              .
+            </p>
+          </div>
+          <ol className="onboarding-steps">
+            <li className={online > 0 ? 'is-done' : 'is-todo'}>
+              <strong>1. Add a node</strong>
+              <p className="muted">Create a join token and enroll an agent with Docker.</p>
+              <Link to="/nodes">Regions & nodes →</Link>
+              {' · '}
+              <a href="https://github.com/xiron902224/norix/blob/main/docs/user/nodes-agents.md" target="_blank" rel="noreferrer">
+                Nodes guide
+              </a>
+            </li>
+            <li className={apps.length > 0 ? 'is-done' : 'is-todo'}>
+              <strong>2. Deploy a sample app</strong>
+              <p className="muted">Create a project, then deploy an image (e.g. <code>nginx:alpine</code>) or Git.</p>
+              <Link to="/projects">Projects →</Link>
+              {' · '}
+              <a href="https://github.com/xiron902224/norix/blob/main/docs/user/deploying.md" target="_blank" rel="noreferrer">
+                Deploying
+              </a>
+            </li>
+            <li className={apps.some((app) => !!app.image) ? undefined : undefined}>
+              <strong>3. Attach a domain</strong>
+              <p className="muted">Publish a hostname once the app is running.</p>
+              <Link to="/domains">Domains →</Link>
+              {' · '}
+              <a href="https://github.com/xiron902224/norix/blob/main/docs/user/production-tls.md" target="_blank" rel="noreferrer">
+                Production TLS
+              </a>
+            </li>
+          </ol>
+        </div>
+      ) : null}
 
       <label className="compass-ov-search">
         <Search size={16} aria-hidden />
