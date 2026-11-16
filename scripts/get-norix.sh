@@ -358,6 +358,26 @@ sync_source() {
   ok "Source ready"
 }
 
+# Ensure NORIX_BUILD_SECRETS_KEY exists (CP fails closed without it unless
+# NORIX_ALLOW_INSECURE_DEV_SECRETS=1).
+ensure_build_secrets_key() {
+  local env_file="$1"
+  [[ -f "$env_file" ]] || return 0
+  local existing
+  existing="$(grep -E '^NORIX_BUILD_SECRETS_KEY=' "$env_file" 2>/dev/null | head -n1 | cut -d= -f2- || true)"
+  if [[ -n "$existing" ]]; then
+    return 0
+  fi
+  local secrets_key
+  secrets_key="$(openssl rand -hex 32)"
+  if grep -q '^NORIX_BUILD_SECRETS_KEY=' "$env_file" 2>/dev/null; then
+    sed -i "s|^NORIX_BUILD_SECRETS_KEY=.*|NORIX_BUILD_SECRETS_KEY=${secrets_key}|" "$env_file"
+  else
+    echo "NORIX_BUILD_SECRETS_KEY=${secrets_key}" >>"$env_file"
+  fi
+  log "Generated NORIX_BUILD_SECRETS_KEY in $env_file"
+}
+
 # ── docker mode ────────────────────────────────────────────────────────────
 
 install_docker() {
@@ -381,6 +401,7 @@ write_env_docker() {
   if [[ -f "$ENV_FILE" ]]; then
     log "Keeping existing $ENV_FILE (upgrade-safe)"
     grep -q '^NORIX_HTTP_PORT=' "$ENV_FILE" || echo "NORIX_HTTP_PORT=$NORIX_HTTP_PORT" >>"$ENV_FILE"
+    ensure_build_secrets_key "$ENV_FILE"
     return
   fi
 
@@ -635,6 +656,7 @@ write_env_bare() {
     if grep -q '^HTTP_ADDR=' "$BARE_ENV"; then
       sed -i "s|^HTTP_ADDR=.*|HTTP_ADDR=0.0.0.0:${NORIX_HTTP_PORT}|" "$BARE_ENV" || true
     fi
+    ensure_build_secrets_key "$BARE_ENV"
     mkdir -p "$SOURCE_DIR"
     cp -a "$BARE_ENV" "$ENV_FILE" 2>/dev/null || true
     # Ensure DB roles still match passwords in env on resume (no-op if already OK).
