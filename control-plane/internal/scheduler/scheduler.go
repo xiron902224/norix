@@ -64,6 +64,10 @@ type Request struct {
 	PreferRemote        bool
 }
 
+// ErrNoContainerRuntime is returned when every otherwise-eligible online node
+// lacks Docker and containerd sockets.
+const ErrNoContainerRuntime = "unschedulable: no online node with Docker or containerd"
+
 // Select picks the best feasible node or returns an error explaining unschedulable.
 func Select(nodes []Node, req Request) (Node, error) {
 	feasible := make([]Node, 0, len(nodes))
@@ -73,7 +77,7 @@ func Select(nodes []Node, req Request) (Node, error) {
 		}
 	}
 	if len(feasible) == 0 {
-		return Node{}, fmt.Errorf("unschedulable: no feasible node for workload constraints")
+		return Node{}, fmt.Errorf("%s", unschedulableReason(nodes, req))
 	}
 	sort.SliceStable(feasible, func(i, j int) bool {
 		si := Score(feasible[i], req)
@@ -84,6 +88,32 @@ func Select(nodes []Node, req Request) (Node, error) {
 		return si > sj
 	})
 	return feasible[0], nil
+}
+
+// unschedulableReason returns a distinct message when every eligible online
+// node is rejected solely for missing a container runtime.
+func unschedulableReason(nodes []Node, req Request) string {
+	eligible := 0
+	noRuntime := 0
+	for _, node := range nodes {
+		ok, reason := Feasible(node, req)
+		if ok {
+			continue
+		}
+		switch reason {
+		case "node offline", "cordoned", "draining", "invalid role", "excluded":
+			continue
+		case "no container runtime":
+			eligible++
+			noRuntime++
+		default:
+			eligible++
+		}
+	}
+	if eligible > 0 && noRuntime == eligible {
+		return ErrNoContainerRuntime
+	}
+	return "unschedulable: no feasible node for workload constraints"
 }
 
 // Feasible applies hard filters.
