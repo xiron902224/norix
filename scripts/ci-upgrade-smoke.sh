@@ -4,7 +4,7 @@
 # then migrates with the current tree binary and asserts data + schema survive.
 set -euo pipefail
 
-PREV_TAG="${NORIX_UPGRADE_FROM:-v1.0.0-beta.3}"
+PREV_TAG="${NORIX_UPGRADE_FROM:-v1.0.0-beta.4}"
 REPO="${NORIX_GITHUB_REPO:-xiron902224/norix}"
 ARCH="$(uname -m)"
 case "$ARCH" in

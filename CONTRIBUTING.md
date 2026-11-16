@@ -50,7 +50,7 @@ git checkout main
 cp .env.example .env
 cp control-plane/.env.example control-plane/.env
 cp web/.env.example web/.env
-# Optional: echo 'NORIX_VERSION=1.0.0-beta.4' >> control-plane/.env
+# Optional: echo 'NORIX_VERSION=1.0.0-beta.5' >> control-plane/.env
 ```
 
 ### 2. Postgres

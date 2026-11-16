@@ -7,7 +7,7 @@
 **Guía de usuario:** [`docs/user/`](./user/)  
 **Colaborar:** [`CONTRIBUTING.md`](../CONTRIBUTING.md) · [`CONTRIBUTING.es.md`](../CONTRIBUTING.es.md) · [`README.es.md`](../README.es.md)  
 **Hito código:** **Beta** — **no GA**  
-**Hito release:** pre-release `v1.0.0-beta.4` desde `main`; siguiente hito de producto [`v1.0.0-beta.5`](https://github.com/xiron902224/norix/milestone/1) ([#82](https://github.com/xiron902224/norix/issues/82))
+**Hito release:** pre-release `v1.0.0-beta.5` desde `main`; tracking [#82](https://github.com/xiron902224/norix/issues/82)
 
 ---
 
@@ -17,13 +17,13 @@
 |---|---|
 | **Fase plan** | S0–S22 en código; GA aplazado |
 | **Gitflow** | **Solo `main`**: issue → rama desde `main` → PR a `main`. `develop` retirada |
-| **Remoto** | Default branch = `main`; tags pre-release `v1.0.0-beta.1`…`beta.4` |
-| **CI** | Protecciones en `main`; alinear nombres de checks ([#67](https://github.com/xiron902224/norix/issues/67)); vuln scans en curso ([#12](https://github.com/xiron902224/norix/issues/12)) |
-| **Backlog** | Stage 0 + lab honesty en milestone beta.5; Stage 1+ diferido |
+| **Remoto** | Default branch = `main`; tags pre-release `v1.0.0-beta.1`…`beta.5` |
+| **CI** | Protecciones en `main`; alinear nombres de checks ([#67](https://github.com/xiron902224/norix/issues/67)); vuln scans + upgrade smoke en CI |
+| **Backlog** | beta.5 shipped; Stage 1+ diferido |
 
 ### Por qué Beta y no GA
 
-- Superficie S0–S22 amplia, pero Stage 0 de seguridad aún cerrándose (beta.5).
+- Superficie S0–S22 amplia, Stage 0 mínimo para beta.5 cerrado; residual Stage 0 sigue abierto.
 - E2E multi-nodo aún no está en CI; features ops gated / Experimental.
 - Beta comunica “usable en happy path, aún endureciendo”.
 
@@ -33,9 +33,11 @@
 - Update / uninstall CLI para CP + agent; docs oficiales `docs/user/`.
 - Gitflow main-only; pins de installer/docs a `v1.0.0-beta.4`.
 
-### En curso: beta.5
+### Qué aporta beta.5 (ver `CHANGELOG`)
 
-Errores de deploy honestos (#59/#60/#63), slice de trust (#7/#9/#12/#3/#11), higiene de docs/repo (#30/#33/#31/#32/#67). Criterio de salida en [#82](https://github.com/xiron902224/norix/issues/82).
+- Deploy honesty (#59/#60/#63), Stage 0 trust slice (#7/#9/#12/#3/#11).
+- Docs/status/TLS/troubleshooting/repo metadata (#30/#33/#31/#32/#67).
+- Upgrade smoke N-1→N, deploy progress UI, first-run onboarding (#38/#36/#19).
 
 ---
 
@@ -98,10 +100,10 @@ Flags útiles: `NORIX_APPLY_WIREGUARD`, `NORIX_MICROVM_*`, `NORIX_AUTOSCALER`, `
 - [x] Docs usuario `docs/user/`
 - [x] Tag / release assets según workflow de release
 
-### Antes de cerrar `v1.0.0-beta.5`
+### `v1.0.0-beta.5`
 
-- [ ] Waves A–C del milestone (ver [#82](https://github.com/xiron902224/norix/issues/82))
-- [ ] Smoke: install → agent con Docker → deploy imagen → DeployFromGit error claro sin runtime → check/update CLI → `/status` = UI
+- [x] Waves A–D del milestone (#82)
+- [ ] Smoke post-tag: install → agent con Docker → deploy → check/update CLI → `/status` = UI
 
 ### Stage 0 residual (rc)
 

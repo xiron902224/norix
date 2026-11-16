@@ -8,7 +8,7 @@
   <rect width="960" height="540" fill="url(#bg)"/>
   <rect x="0" y="0" width="200" height="540" fill="#0a171b"/>
   <text x="28" y="48" fill="#7dd3c7" font-family="ui-sans-serif,system-ui,sans-serif" font-size="22" font-weight="700">Norix</text>
-  <text x="28" y="78" fill="#6b8a90" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">1.0.0-beta.4</text>
+  <text x="28" y="78" fill="#6b8a90" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">1.0.0-beta.5</text>
   <g fill="#9eb6bc" font-family="ui-sans-serif,system-ui,sans-serif" font-size="14">
     <text x="28" y="130">Projects</text>
     <text x="28" y="168">Nodes</text>
@@ -26,7 +26,7 @@
   <text x="608" y="148" fill="#7dd3c7" font-family="ui-sans-serif,system-ui,sans-serif" font-size="16">web · building</text>
   <text x="608" y="178" fill="#9eb6bc" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13">git · main · Dockerfile</text>
   <text x="248" y="352" fill="#e7f3f5" font-family="ui-sans-serif,system-ui,sans-serif" font-size="16">Nodes</text>
-  <text x="248" y="390" fill="#9eb6bc" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13">vps-1 · online · Docker yes · agent 1.0.0-beta.4</text>
-  <text x="248" y="420" fill="#9eb6bc" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13">vps-2 · online · Docker yes · agent 1.0.0-beta.4</text>
+  <text x="248" y="390" fill="#9eb6bc" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13">vps-1 · online · Docker yes · agent 1.0.0-beta.5</text>
+  <text x="248" y="420" fill="#9eb6bc" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13">vps-2 · online · Docker yes · agent 1.0.0-beta.5</text>
   <text x="720" y="520" fill="#56767c" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11">Illustration — replace with live screenshot when available</text>
 </svg>

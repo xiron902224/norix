@@ -132,7 +132,7 @@ func runUpdate(args []string) int {
 		switch args[i] {
 		case "--version":
 			if i+1 >= len(args) {
-				fmt.Fprintln(os.Stderr, "--version requires a tag (e.g. v1.0.0-beta.4)")
+				fmt.Fprintln(os.Stderr, "--version requires a tag (e.g. v1.0.0-beta.5)")
 				return 2
 			}
 			i++

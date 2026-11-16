@@ -35,4 +35,4 @@ Norix is a **self-hosted PaaS control plane**. You (or your admin) install it on
 - run **agents** on one or more machines that execute containers
 - manage **databases**, **sandboxes**, **previews**, and **ops** (backups / alerts)
 
-Beta status: see [`ESTADO_Y_PLAN_V1.md`](../ESTADO_Y_PLAN_V1.md). Version pin today: **1.0.0-beta.4** (check the badge under the logo in the UI, or `GET /status`).
+Beta status: see [`ESTADO_Y_PLAN_V1.md`](../ESTADO_Y_PLAN_V1.md). Version pin today: **1.0.0-beta.5** (check the badge under the logo in the UI, or `GET /status`).

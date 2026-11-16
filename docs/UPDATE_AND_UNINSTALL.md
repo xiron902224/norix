@@ -2,7 +2,7 @@
 
 Operator runbook for in-place upgrades and clean removal. Tracks [#78](https://github.com/xiron902224/norix/issues/78) / [#73](https://github.com/xiron902224/norix/issues/73).
 
-Target release examples use **`v1.0.0-beta.4`** — pin whatever tag you want.
+Target release examples use **`v1.0.0-beta.5`** — pin whatever tag you want.
 
 ## Version truth
 
@@ -36,22 +36,22 @@ sudo -u postgres pg_dump norix > "/var/lib/norix/backups/norix-$(date +%F).sql"
 
 ```bash
 norix-control-plane check
-norix-control-plane update --version v1.0.0-beta.4
+norix-control-plane update --version v1.0.0-beta.5
 norix-control-plane uninstall [--purge] [--purge-db]
 ```
 
 **Bare** (idempotent re-install / update via installer):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare --supervise none   # lab
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.5/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.5 bash -s -- --mode bare --supervise none   # lab
 # VPS with systemd: omit --supervise none (auto → systemd)
 ```
 
 **Docker compose:**
 
 ```bash
-./scripts/install.sh upgrade --version v1.0.0-beta.4
+./scripts/install.sh upgrade --version v1.0.0-beta.5
 ```
 
 Verify:
@@ -59,7 +59,7 @@ Verify:
 ```bash
 norix-control-plane check
 curl -sf http://127.0.0.1:8000/status   # or your public URL
-# → "version": "1.0.0-beta.4"
+# → "version": "1.0.0-beta.5"
 ```
 
 ### 3. Agents — same path from CP or the node
@@ -71,12 +71,12 @@ Nodes → select worker → **Update agent** (sets `desired_agent_version`; agen
 
 ```bash
 # Prefer reusing existing agent.env / node-state (no new join token):
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/install-agent.sh \
-  | bash -s -- --update --version v1.0.0-beta.4 --supervise auto
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.5/scripts/install-agent.sh \
+  | bash -s -- --update --version v1.0.0-beta.5 --supervise auto
 
 # Or binary subcommands (no enroll required for check):
 norix-agent check
-norix-agent update --version v1.0.0-beta.4
+norix-agent update --version v1.0.0-beta.5
 norix-agent uninstall [--purge]
 ```
 

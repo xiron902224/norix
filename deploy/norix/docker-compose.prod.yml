@@ -32,7 +32,7 @@ services:
     build:
       context: ../..
       dockerfile: control-plane/Dockerfile.prod
-    image: ${NORIX_IMAGE_CONTROL_PLANE:-ghcr.io/xiron902224/norix-control-plane:${NORIX_VERSION:-1.0.0-beta.4}}
+    image: ${NORIX_IMAGE_CONTROL_PLANE:-ghcr.io/xiron902224/norix-control-plane:${NORIX_VERSION:-1.0.0-beta.5}}
     pull_policy: ${NORIX_PULL_POLICY:-build}
     restart: unless-stopped
     depends_on:
@@ -65,7 +65,7 @@ services:
     build:
       context: ../..
       dockerfile: agent/Dockerfile
-    image: ${NORIX_IMAGE_AGENT:-ghcr.io/xiron902224/norix-agent:${NORIX_VERSION:-1.0.0-beta.4}}
+    image: ${NORIX_IMAGE_AGENT:-ghcr.io/xiron902224/norix-agent:${NORIX_VERSION:-1.0.0-beta.5}}
     pull_policy: ${NORIX_PULL_POLICY:-build}
     restart: unless-stopped
     depends_on:
