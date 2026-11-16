@@ -2709,6 +2709,68 @@ a.ghost-button {
   margin-bottom: 0.5rem;
 }
 
+.deploy-progress {
+  margin: 0.35rem 0 0.85rem;
+}
+
+.deploy-progress-steps {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  padding: 0;
+}
+
+.deploy-progress-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted-fg);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.deploy-progress-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--muted-fg) 45%, transparent);
+}
+
+.deploy-progress-step.is-done {
+  color: var(--fg);
+}
+
+.deploy-progress-step.is-done .deploy-progress-dot {
+  background: #2f9e44;
+}
+
+.deploy-progress-step.is-current {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.deploy-progress-step.is-current .deploy-progress-dot {
+  background: #0b7285;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #0b7285 25%, transparent);
+}
+
+.deploy-progress-step.is-fail {
+  color: #c92a2a;
+  font-weight: 600;
+}
+
+.deploy-progress-step.is-fail .deploy-progress-dot {
+  background: #c92a2a;
+}
+
+.deploy-progress-fail {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+
 .compass-tabs {
   display: flex;
   gap: 0.15rem;
