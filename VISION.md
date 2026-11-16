@@ -55,7 +55,7 @@ We label every capability so nobody has to guess. Source: repository audit of 20
 | Multi-tenancy (RLS), RBAC, OIDC, TOTP, audit log | Stable | RLS isolation test in CI |
 | Dashboard (projects, nodes, domains, ops, teams…) | Beta | One Playwright smoke test |
 | Installer (docker / bare), join tokens | Beta | Release **SHA256** verified; agent `--supervise` systemd/nohup |
-| Git webhooks → build | Beta | No HMAC signature check yet ([#3](https://github.com/xiron902224/norix/issues/3)) |
+| Git webhooks → build | Beta | HMAC `X-Hub-Signature-256` required (path token = GitHub Secret; see #3) |
 | Domains + Caddy edge | Beta | Route health + rollback of edge upstreams |
 | TLS / ACME | Experimental | DNS-01 path exists; control plane itself serves plain HTTP |
 | Preview environments | Experimental | DB rows + TTL; deploy pipeline is a stub |
