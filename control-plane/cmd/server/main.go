@@ -23,6 +23,7 @@ import (
 	"github.com/xiron902224/norix/control-plane/internal/ha"
 	"github.com/xiron902224/norix/control-plane/internal/localruntime"
 	"github.com/xiron902224/norix/control-plane/internal/ops"
+	"github.com/xiron902224/norix/control-plane/internal/secrets"
 	"github.com/xiron902224/norix/control-plane/internal/statuspage"
 	"github.com/xiron902224/norix/control-plane/internal/telemetry"
 	"github.com/xiron902224/norix/control-plane/internal/version"
@@ -124,6 +125,16 @@ func main() {
 		}
 		logger.Info("database migrations completed")
 		return
+	}
+
+	if err := secrets.RequireConfigured(); err != nil {
+		logger.Error("secrets key required", "error", err)
+		os.Exit(1)
+	}
+	if secrets.InsecureDevAllowed() {
+		if _, err := secrets.KeyFromEnv(); err != nil {
+			logger.Warn("NORIX_ALLOW_INSECURE_DEV_SECRETS=1: storing TOTP/WireGuard secrets in plaintext")
+		}
 	}
 
 	if databaseURL != "" {

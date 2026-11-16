@@ -2,7 +2,7 @@
 
 ## Requisitos
 
-≥1 nodo online con Docker/containerd. Si no, el deploy queda pending / unschedulable.
+≥1 nodo online con Docker/containerd. Si no, el error es `no online node with Docker or containerd`.
 
 ## Imagen
 
