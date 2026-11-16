@@ -157,7 +157,10 @@ fn patch_agent_env(workdir: &Path, version: &str) -> Result<()> {
 fn restart_self(config: &Config, bin: &Path) -> Result<()> {
     // Prefer systemd when available; otherwise re-exec under nohup using agent.env.
     let has_systemd = Path::new("/run/systemd/system").exists()
-        || fs::read_to_string("/proc/1/comm").unwrap_or_default().trim() == "systemd";
+        || fs::read_to_string("/proc/1/comm")
+            .unwrap_or_default()
+            .trim()
+            == "systemd";
     if has_systemd {
         let status = Command::new("systemctl")
             .args(["restart", "norix-agent"])
@@ -167,7 +170,9 @@ fn restart_self(config: &Config, bin: &Path) -> Result<()> {
                 // Current process will be killed by systemd; exit cleanly if not.
                 std::process::exit(0);
             }
-            Ok(s) => warn!(code = ?s.code(), "systemctl restart norix-agent failed; falling back to nohup"),
+            Ok(s) => {
+                warn!(code = ?s.code(), "systemctl restart norix-agent failed; falling back to nohup")
+            }
             Err(error) => warn!(%error, "systemctl unavailable; falling back to nohup"),
         }
     }
@@ -209,7 +214,8 @@ pub async fn run_cli_update(version: Option<String>) -> Result<()> {
 
 pub fn run_cli_uninstall(purge: bool) -> Result<()> {
     let workdir = env::var("NORIX_AGENT_WORKDIR").unwrap_or_else(|_| "/var/lib/norix-agent".into());
-    let install_dir = env::var("NORIX_AGENT_INSTALL_DIR").unwrap_or_else(|_| "/usr/local/bin".into());
+    let install_dir =
+        env::var("NORIX_AGENT_INSTALL_DIR").unwrap_or_else(|_| "/usr/local/bin".into());
     let mut args = vec![
         "bash".to_string(),
         "-c".to_string(),
