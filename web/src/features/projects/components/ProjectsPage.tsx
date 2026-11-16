@@ -157,7 +157,7 @@ export function ProjectsPage() {
           headers={['Applications', 'Running', 'Failed']}
           rows={rows}
           onSelect={(row) => navigate(`/projects/${row.id}`)}
-          empty={loading ? 'Loading projects…' : 'No projects yet. Create one to deploy applications.'}
+          empty={loading ? 'Loading projects…' : 'No projects yet. Create one to deploy applications. See docs/user/getting-started.md'}
           leadingHeader="Project"
         />
       </section>

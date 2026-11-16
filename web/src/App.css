@@ -3434,3 +3434,43 @@ a.ghost-button {
   box-shadow: none !important;
   transform: none !important;
 }
+
+.onboarding-card {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel, #12262c) 88%, #0b7285 12%);
+}
+
+.onboarding-card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.onboarding-steps {
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.onboarding-steps li {
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg, #0b1f24) 70%, transparent);
+}
+
+.onboarding-steps li.is-done {
+  opacity: 0.72;
+}
+
+.onboarding-steps li.is-done strong::after {
+  content: " ✓";
+  color: #2f9e44;
+}
+
+.onboarding-steps p {
+  margin: 0.25rem 0 0.45rem;
+}
