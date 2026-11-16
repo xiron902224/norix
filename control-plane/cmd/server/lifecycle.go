@@ -15,6 +15,7 @@ import (
 	"time"
 
 	norixdb "github.com/xiron902224/norix/control-plane/internal/db"
+	"github.com/xiron902224/norix/control-plane/internal/secrets"
 	"github.com/xiron902224/norix/control-plane/internal/version"
 )
 
@@ -55,6 +56,19 @@ func runCLI(args []string) int {
 func runCheck() int {
 	fmt.Printf("version=%s\n", version.Current())
 	fmt.Printf("http_addr=%s\n", httpAddress())
+	if err := secrets.RequireConfigured(); err != nil {
+		fmt.Fprintf(os.Stderr, "secrets_key=FAIL %v\n", err)
+		return 1
+	}
+	if secrets.InsecureDevAllowed() {
+		if _, err := secrets.KeyFromEnv(); err != nil {
+			fmt.Println("secrets_key=insecure-dev (plaintext allowed)")
+		} else {
+			fmt.Println("secrets_key=ok")
+		}
+	} else {
+		fmt.Println("secrets_key=ok")
+	}
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	migrationURL := os.Getenv("MIGRATION_DATABASE_URL")

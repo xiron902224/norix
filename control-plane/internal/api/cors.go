@@ -15,29 +15,55 @@ func defaultAllowedOrigins() []string {
 	}
 }
 
-func allowedOrigins() map[string]struct{} {
+func corsWildcardAllowed() bool {
+	v := strings.TrimSpace(strings.ToLower(os.Getenv("NORIX_CORS_ALLOW_WILDCARD")))
+	return v == "1" || v == "true" || v == "yes"
+}
+
+func appendOrigin(list []string, origin string) []string {
+	origin = strings.TrimRight(strings.TrimSpace(origin), "/")
+	if origin == "" {
+		return list
+	}
+	return append(list, origin)
+}
+
+func allowedOrigins() (map[string]struct{}, bool) {
 	origins := defaultAllowedOrigins()
+	origins = appendOrigin(origins, os.Getenv("NORIX_WEB_ORIGIN"))
+	origins = appendOrigin(origins, os.Getenv("NORIX_PUBLIC_URL"))
+	allowAny := false
 	if extra := strings.TrimSpace(os.Getenv("CORS_ALLOWED_ORIGINS")); extra != "" {
 		for _, origin := range strings.Split(extra, ",") {
 			origin = strings.TrimSpace(origin)
-			if origin != "" {
-				origins = append(origins, origin)
+			if origin == "" {
+				continue
 			}
+			if origin == "*" {
+				if corsWildcardAllowed() {
+					allowAny = true
+				}
+				continue
+			}
+			origins = appendOrigin(origins, origin)
 		}
 	}
 	set := make(map[string]struct{}, len(origins))
 	for _, origin := range origins {
 		set[origin] = struct{}{}
 	}
-	return set
+	return set, allowAny
 }
 
-// WithCORS allows browser calls from the Vite dev server (and optional extras).
+// WithCORS allows browser calls from the Vite dev server, the panel origin,
+// and optional extras. A CORS_ALLOWED_ORIGINS=* wildcard only takes effect
+// when NORIX_CORS_ALLOW_WILDCARD=1.
 func WithCORS(next http.Handler) http.Handler {
-	allowed := allowedOrigins()
+	allowed, allowAny := allowedOrigins()
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		origin := request.Header.Get("Origin")
-		if _, ok := allowed[origin]; ok {
+		_, listed := allowed[origin]
+		if origin != "" && (allowAny || listed) {
 			response.Header().Set("Access-Control-Allow-Origin", origin)
 			response.Header().Set("Vary", "Origin")
 			response.Header().Set("Access-Control-Allow-Credentials", "true")
