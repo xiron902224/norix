@@ -157,7 +157,7 @@ jobs:
           chmod +x "${GITHUB_WORKSPACE}/dist/${OUT}"
 
       - name: Upload Go artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: go-${{ matrix.component }}-linux-${{ matrix.goarch }}
           path: dist/
@@ -206,7 +206,7 @@ jobs:
           chmod +x "${GITHUB_WORKSPACE}/dist/${OUT}"
 
       - name: Upload agent artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: agent-linux-${{ matrix.goarch }}
           path: dist/norix-agent-linux-${{ matrix.goarch }}
@@ -250,7 +250,7 @@ jobs:
           ls -la dist/sbom
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: dist/sbom/
