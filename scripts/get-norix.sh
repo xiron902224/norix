@@ -399,7 +399,7 @@ NORIX_VERSION=${NORIX_VERSION:-$(tr -d '[:space:]' <"${SOURCE_DIR}/VERSION" 2>/d
 NORIX_HTTP_PORT=${NORIX_HTTP_PORT}
 NORIX_PUBLIC_URL=${public_url}
 NORIX_WEB_ORIGIN=${public_url}
-CORS_ALLOWED_ORIGINS=*
+CORS_ALLOWED_ORIGINS=${public_url}
 NORIX_REGISTRY=none
 NORIX_PULL_POLICY=${NORIX_PULL_POLICY}
 NORIX_BUILD_SECRETS_KEY=${secrets_key}
@@ -658,7 +658,7 @@ DATABASE_URL=postgres://norix_app:${app_pw}@127.0.0.1:5432/norix?sslmode=disable
 MIGRATION_DATABASE_URL=postgres://norix:${owner_pw}@127.0.0.1:5432/norix?sslmode=disable
 HTTP_ADDR=0.0.0.0:${NORIX_HTTP_PORT}
 LOG_LEVEL=info
-CORS_ALLOWED_ORIGINS=*
+CORS_ALLOWED_ORIGINS=${public_url}
 NORIX_PUBLIC_URL=${public_url}
 NORIX_WEB_ORIGIN=${public_url}
 NORIX_BACKUP_DIR=/var/lib/norix/backups
