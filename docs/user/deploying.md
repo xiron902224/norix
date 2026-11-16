@@ -22,6 +22,19 @@ If no online node has Docker or containerd, deploys fail with `no online node wi
 
 Build nodes need Docker. Progress and logs appear under builds / workload logs in the UI.
 
+## GitHub push webhook
+
+Mint a token (`POST /api/webhooks/workloads/{workloadID}` with a session Bearer). Response includes `webhook_url` and `secret` (same value as the path token).
+
+In GitHub → repo → **Settings → Webhooks → Add webhook**:
+
+1. **Payload URL** — `https://YOUR_CP/hooks/github/<token>`
+2. **Content type** — `application/json`
+3. **Secret** — paste the same `<token>` (Norix verifies `X-Hub-Signature-256`)
+4. Event — just the `push` event
+
+Requests without a valid signature receive **401**.
+
 ## Compose stacks
 
 Where supported, analyze/deploy Compose from Git creates multiple services under a stack. Prefer the UI flow under the project/workload for Compose when available.
