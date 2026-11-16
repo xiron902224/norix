@@ -256,8 +256,8 @@ func (service WorkloadService) Deploy(ctx context.Context, request *paasv1.Deplo
 		if strings.Contains(err.Error(), "workload not found") {
 			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
 		}
-		if strings.Contains(err.Error(), "unschedulable") || strings.Contains(err.Error(), "no feasible") || strings.Contains(err.Error(), "no online") {
-			return nil, connect.NewError(connect.CodeFailedPrecondition, err.Error())
+		if mapped := placementFailedPrecondition(err); mapped != nil {
+			return nil, mapped
 		}
 		return nil, internalError("deploy workload", err)
 	}
@@ -320,8 +320,8 @@ func (service WorkloadService) DeployFromGit(ctx context.Context, request *paasv
 		db.AuditActor{UserID: identity.UserID, Email: identity.Email},
 	)
 	if err != nil {
-		if strings.Contains(err.Error(), "no online agent") || strings.Contains(err.Error(), "no runtime") {
-			return nil, connect.NewError(connect.CodeFailedPrecondition, err.Error())
+		if mapped := placementFailedPrecondition(err); mapped != nil {
+			return nil, mapped
 		}
 		if strings.Contains(err.Error(), "workload not found") {
 			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
