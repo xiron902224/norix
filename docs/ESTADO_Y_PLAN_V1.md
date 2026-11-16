@@ -1,11 +1,13 @@
 # Norix — Estado vs plan S0–S22
 
-**Fecha:** 2026-11-15  
+**Fecha:** 2026-11-16  
 **Plan canónico:** [`docs/PLAN_SPRINTS_S0_S22.md`](./PLAN_SPRINTS_S0_S22.md)  
 **Visión / backlog:** [`VISION.md`](../VISION.md) · [`ISSUES.md`](../ISSUES.md)  
+**Changelog:** [`CHANGELOG.md`](../CHANGELOG.md) · **versión en árbol:** [`VERSION`](../VERSION) = `1.0.0-beta.4`  
+**Guía de usuario:** [`docs/user/`](./user/)  
 **Colaborar:** [`CONTRIBUTING.md`](../CONTRIBUTING.md) · [`CONTRIBUTING.es.md`](../CONTRIBUTING.es.md) · [`README.es.md`](../README.es.md)  
-**Hito código:** **Beta** (`VERSION` = `1.0.0-beta.4`) — **no GA**  
-**Hito release:** tag `v1.0.0-beta.4` desde `main` ([#62](https://github.com/xiron902224/norix/issues/62))
+**Hito código:** **Beta** — **no GA**  
+**Hito release:** pre-release `v1.0.0-beta.4` desde `main`; siguiente hito de producto [`v1.0.0-beta.5`](https://github.com/xiron902224/norix/milestone/1) ([#82](https://github.com/xiron902224/norix/issues/82))
 
 ---
 
@@ -15,55 +17,95 @@
 |---|---|
 | **Fase plan** | S0–S22 en código; GA aplazado |
 | **Gitflow** | **Solo `main`**: issue → rama desde `main` → PR a `main`. `develop` retirada |
-| **Remoto** | Default branch = `main`; pre-releases `v1.0.0-beta.1` / `.2`; falta publicar `.3` |
-| **CI** | Protecciones en `main`; alinear nombres de checks ([#67](https://github.com/xiron902224/norix/issues/67)) |
-| **Backlog** | ~60+ issues; Stage 0 abierto; gaps de lab: [#59](https://github.com/xiron902224/norix/issues/59)–[#60](https://github.com/xiron902224/norix/issues/60) |
+| **Remoto** | Default branch = `main`; tags pre-release `v1.0.0-beta.1`…`beta.4` |
+| **CI** | Protecciones en `main`; alinear nombres de checks ([#67](https://github.com/xiron902224/norix/issues/67)); vuln scans en curso ([#12](https://github.com/xiron902224/norix/issues/12)) |
+| **Backlog** | Stage 0 + lab honesty en milestone beta.5; Stage 1+ diferido |
 
 ### Por qué Beta y no GA
 
-- Superficie S0–S22 amplia, pero Stage 0 de seguridad incompleto.
-- E2E multi-nodo aún no está en CI; features ops gated.
-- Beta comunica “usable, aún endureciendo”.
+- Superficie S0–S22 amplia, pero Stage 0 de seguridad aún cerrándose (beta.5).
+- E2E multi-nodo aún no está en CI; features ops gated / Experimental.
+- Beta comunica “usable en happy path, aún endureciendo”.
 
-### Qué aporta beta.3 (+ docs main)
+### Qué aporta beta.4 (ver `CHANGELOG`)
 
-- Agent `--supervise` systemd/nohup; bare installer SHA256/supervise.
-- Docs + triage GitHub; README/CONTRIBUTING en español.
-- Gitflow simplificado a `main`.
+- Versión real en CP / UI / agent (`/status`, badge bajo el logo).
+- Update / uninstall CLI para CP + agent; docs oficiales `docs/user/`.
+- Gitflow main-only; pins de installer/docs a `v1.0.0-beta.4`.
+
+### En curso: beta.5
+
+Errores de deploy honestos (#59/#60/#63), slice de trust (#7/#9/#12/#3/#11), higiene de docs/repo (#30/#33/#31/#32/#67). Criterio de salida en [#82](https://github.com/xiron902224/norix/issues/82).
 
 ---
 
-## 2. Tablero S0–S22
+## 2. Maturity matrix (canónica)
+
+Misma taxonomía que [`VISION.md` §3](../VISION.md):
+
+| Maturity | Meaning |
+|---|---|
+| **Stable** | Implemented, tested, documented |
+| **Beta** | Works on the happy path; gaps or limited tests |
+| **Experimental** | Behind a flag / partially wired; do not rely on it |
+| **Planned** | Not in code yet |
+
+| Capability | Maturity | Notes |
+|---|---|---|
+| Deploy from image | Stable | Docker / nerdctl via agent |
+| Deploy from Git (Dockerfile / Containerfile) | Beta | Needs worker with Docker/containerd; clearer unschedulable errors in beta.5 |
+| Compose stack deploy | Beta | Parsed into N workloads |
+| Scheduler, cordon / drain, desired / observed | Stable | Unit tests; multi-node E2E not in CI |
+| Multi-tenancy (RLS), RBAC, OIDC, TOTP, audit | Stable | RLS isolation test in CI |
+| Dashboard | Beta | Limited E2E |
+| Installer (docker / bare), join tokens | Beta | SHA256 verified; agent `--supervise` |
+| CP / agent check · update · uninstall | Beta | Documented in `docs/user/` + `UPDATE_AND_UNINSTALL.md` |
+| Git webhooks → build | Beta | HMAC signature hardening in beta.5 (#3) |
+| Domains + Caddy edge | Beta | Route health + rollback |
+| TLS / ACME | Experimental | DNS-01 exists; CP serves plain HTTP by default |
+| Preview environments | Experimental | Stub pipeline; webhook secret required (#11) |
+| Managed databases | Experimental | Records/backups; engine not provisioned |
+| Autoscaler | Experimental | `NORIX_AUTOSCALER=1` |
+| WireGuard mesh | Experimental | Dry-run by default |
+| Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; not production-ready |
+| Micro-VM (Cloud Hypervisor) | Experimental | Needs KVM + artifacts — **not** “ready” |
+| Micro-VM (Firecracker) | Planned | Enum only |
+| App rollbacks / rolling updates / volumes / buildpacks / catalog | Planned | |
+| CLI / SDKs | Experimental | Minimal |
+| User API tokens (PAT) | Planned | |
+
+> **No etiquetar Experimental como “listo”.** Wasm y micro-VM están cableados detrás de flags; no son GA.
+
+---
+
+## 3. Tablero S0–S22
 
 | Sprint | Estado doc | Notas |
 |---|---|---|
 | S0 | Parcial | Spikes KVM |
-| S1–S21 | Cerrado (código) | Ver cierres en `docs/SPRINT_*` |
+| S1–S21 | Cerrado (código) | Ver `docs/SPRINT_*` |
 | S22 | Release abierto | Tags beta en curso |
 
----
-
-## 3. Implementado (resumen)
-
-Auth/RLS, TOTP, OIDC, deploy imagen/git/compose, edge/ACME DNS-01 (env), WG apply (env), HA leases, autoscaler (env), managed DB backup, sandboxes, previews TTL, Wasm/micro-VM (gated), SDKs, `/status`, Patroni compose, installer docker/bare, agent join con supervise.
-
-Flags: `NORIX_APPLY_WIREGUARD`, `NORIX_MICROVM_*`, `NORIX_AUTOSCALER`, `NORIX_ACME_*`, `NORIX_BACKUP_S3_*`, `NORIX_TELEMETRY`, `NORIX_WASM_SERVE`.
+Flags útiles: `NORIX_APPLY_WIREGUARD`, `NORIX_MICROVM_*`, `NORIX_AUTOSCALER`, `NORIX_ACME_*`, `NORIX_BACKUP_S3_*`, `NORIX_TELEMETRY`, `NORIX_WASM_SERVE`, `NORIX_ALLOW_INSECURE_DEV_SECRETS`, `NORIX_CORS_ALLOW_WILDCARD`.
 
 ---
 
 ## 4. Checklist operativo
 
-### Al publicar / estabilizar `v1.0.0-beta.4`
+### `v1.0.0-beta.4`
 
-- [x] Agent supervise + docs bare/labs
-- [x] `ISSUES.md` / `VISION.md` / ES docs / gitflow `main`
-- [ ] PR verde a **`main`**
-- [ ] Tag `v1.0.0-beta.4` ([#62](https://github.com/xiron902224/norix/issues/62))
-- [ ] Smoke agent + Docker en worker ([#60](https://github.com/xiron902224/norix/issues/60), [#66](https://github.com/xiron902224/norix/issues/66))
+- [x] Versión real CP/UI/agent + update/uninstall path
+- [x] Docs usuario `docs/user/`
+- [x] Tag / release assets según workflow de release
 
-### Stage 0 (antes de rc)
+### Antes de cerrar `v1.0.0-beta.5`
 
-Ver [`ISSUES.md`](../ISSUES.md): #3–#12, #30, #33, más #59/#60.
+- [ ] Waves A–C del milestone (ver [#82](https://github.com/xiron902224/norix/issues/82))
+- [ ] Smoke: install → agent con Docker → deploy imagen → DeployFromGit error claro sin runtime → check/update CLI → `/status` = UI
+
+### Stage 0 residual (rc)
+
+Ver [`ISSUES.md`](../ISSUES.md): #4–#6, #8, #10, #13 y vecinos — **no** bloquean beta.5.
 
 ### Antes de GA `v1.0.0`
 
