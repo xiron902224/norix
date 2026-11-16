@@ -14,6 +14,8 @@ curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scr
 
 Sin systemd: `--supervise none`.
 
+Si no hay socket de Docker/containerd, `install-agent.sh` imprime un **WARNING** (el enroll sigue); sin runtime este nodo no recibe builds/deploys.
+
 ## Controles
 
 Cordon · Drain · role/zone.

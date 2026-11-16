@@ -60,6 +60,27 @@ EOF
 
 die() { echo "$*" >&2; exit 1; }
 
+warn_missing_container_runtime() {
+  local has_docker=0 has_containerd=0
+  if [[ -S /var/run/docker.sock || -S /run/docker.sock ]]; then
+    has_docker=1
+  fi
+  if [[ -S /run/containerd/containerd.sock || -S /var/run/containerd/containerd.sock ]]; then
+    has_containerd=1
+  fi
+  if [[ "$has_docker" -eq 1 || "$has_containerd" -eq 1 ]]; then
+    return 0
+  fi
+  cat >&2 <<'EOF'
+WARNING: no Docker or containerd socket found on this host.
+  The agent will still enroll and heartbeat, but builds/deploys will not
+  schedule here until a container runtime is installed.
+  Install Docker on this worker, then restart the agent.
+  Docs: https://github.com/xiron902224/norix/blob/main/docs/user/nodes-agents.md
+        https://github.com/xiron902224/norix/blob/main/docs/runbooks/BARE_INSTALL.md
+EOF
+}
+
 has_working_systemd() {
   command -v systemctl >/dev/null 2>&1 || return 1
   local comm
@@ -288,6 +309,7 @@ UNIT_PATH="/etc/systemd/system/norix-agent.service"
 echo "installed $AGENT_BIN"
 echo "state dir: $WORKDIR"
 echo "env file: $AGENT_ENV"
+warn_missing_container_runtime
 
 install_agent_unit() {
   local unit_src=""
