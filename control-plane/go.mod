@@ -4,7 +4,7 @@ go 1.27.4
 
 require (
 	connectrpc.com/connect/v2 v2.0.2
-	github.com/coreos/go-oidc/v3 v3.14.1
+	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-acme/lego/v4 v4.25.2
 	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/jackc/pgx/v5 v5.12.0
