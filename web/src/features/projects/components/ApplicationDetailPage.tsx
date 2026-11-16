@@ -14,6 +14,7 @@ import { MetricStrip } from '../../../shared/ui/MetricStrip'
 import { StatusPill } from '../../../shared/ui/StatusPill'
 import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
 import { shortId, workloadHint } from '../../../shared/lib/format'
+import { DeployProgressSteps } from './DeployProgressSteps'
 import type { Project, Workload } from '../../../gen/v1/workload_pb'
 import { listNodes } from '../../nodes/services/nodes-api'
 import {
@@ -123,6 +124,13 @@ export function ApplicationDetailPage() {
       window.clearInterval(timer)
     }
   }, [projectId, workloadId])
+
+  useEffect(() => {
+    if (!workload) return
+    if (workload.status === 'building' && tab !== 'build') {
+      setTab('build')
+    }
+  }, [workload?.status, workload?.id])
 
   useEffect(() => {
     if (!workload || (tab !== 'summary' && tab !== 'build')) return
@@ -320,11 +328,18 @@ export function ApplicationDetailPage() {
         <StatusPill status={workload.status || 'pending'} />
       </div>
 
+      <DeployProgressSteps
+        status={workload.status || 'pending'}
+        sourceKind={workload.sourceKind || (workload.gitUrl ? 'git' : 'image')}
+        endpoint={workload.endpoint || ''}
+        lastError={workload.lastError || ''}
+      />
+
       {selectedBusy ? (
         <ActivityBanner
           title={
             workload.status === 'building'
-              ? 'Build in progress'
+              ? 'Build in progress — logs stream below'
               : workload.status === 'deploying' || busy
                 ? 'Deploy in progress'
                 : 'Action in progress'
