@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+## 1.0.0-beta.5 — 2026-11-16
+
+### Fixed
+- DeployFromGit maps unschedulable / placement errors to `FailedPrecondition` (#59)
+- Distinct scheduler error when no online node has Docker/containerd (#60)
+- Control plane fails closed without `NORIX_BUILD_SECRETS_KEY` (opt-in `NORIX_ALLOW_INSECURE_DEV_SECRETS`) (#7)
+- Installer CORS defaults to panel origin; wildcard needs `NORIX_CORS_ALLOW_WILDCARD=1` (#9)
+- GitHub deploy webhooks require `X-Hub-Signature-256` (#3)
+- Preview webhook requires `NORIX_GITHUB_WEBHOOK_SECRET` (#11)
+
+### Added
+- `install-agent` warning when Docker/containerd sockets are missing (#63)
+- CI: `govulncheck` / `npm audit` / `cargo audit` + Dependabot (#12)
+- CI upgrade smoke N-1 → N (`scripts/ci-upgrade-smoke.sh`) (#38)
+- Dashboard deploy progress stepper + first-run onboarding (#36, #19)
+- Production TLS guide + expanded troubleshooting (#31, #32)
+- Status/maturity refresh + repo About topics + README preview (#30, #33)
+
+### Changed
+- Go CI/release pin → 1.27.4; `lego` → v4.25.2 (#12)
+- Required branch-protection checks documented and aligned (#67)
+- Docs / installer pins → `v1.0.0-beta.5`
+
+### Notes
+- Stage 0 deeper items (#4–#6, #8, #10, #13…) remain open and do not block this beta
+- Tag `v1.0.0-beta.5` to run the Release workflow
+
 ## 1.0.0-beta.4 — 2026-11-15
 
 ### Fixed

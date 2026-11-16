@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License" /></a>
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-1.0.0--beta.4-0b7285" alt="Version" /></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-1.0.0--beta.5-0b7285" alt="Version" /></a>
   <a href="README.md"><img src="https://img.shields.io/badge/lang-English-0b7285" alt="English README" /></a>
 </p>
 
@@ -39,22 +39,22 @@ Hasta que exista `get.norix.dev`, el installer se sirve desde este repo de GitHu
 ### Modo Docker
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.4 bash
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.5/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.5 bash
 ```
 
 ### Modo bare (sin Docker en el panel)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.5/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.5 bash -s -- --mode bare
 ```
 
 Labs / contenedores sin systemd:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scripts/get-norix.sh \
-  | NORIX_REF=v1.0.0-beta.4 bash -s -- --mode bare --supervise none
+curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.5/scripts/get-norix.sh \
+  | NORIX_REF=v1.0.0-beta.5 bash -s -- --mode bare --supervise none
 ```
 
 Opcional: `--port 8000`, `--public-url https://norix.example.com`. Re-ejecutar es idempotente.
@@ -130,7 +130,7 @@ Para aparecer: mergear un PR a `main` y/o aceptar invitación en **Settings → 
 
 ## Estado
 
-**Beta** (`1.0.0-beta.4`). No es GA. Detalle: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md).
+**Beta** (`1.0.0-beta.5`). No es GA. Detalle: [`docs/ESTADO_Y_PLAN_V1.md`](docs/ESTADO_Y_PLAN_V1.md).
 
 ---
 

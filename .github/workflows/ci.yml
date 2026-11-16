@@ -242,7 +242,7 @@ jobs:
         env:
           DATABASE_URL: postgres://norix:ci-postgres-password@127.0.0.1:5432/norix?sslmode=disable
           MIGRATION_DATABASE_URL: postgres://norix:ci-postgres-password@127.0.0.1:5432/norix?sslmode=disable
-          NORIX_UPGRADE_FROM: v1.0.0-beta.3
+          NORIX_UPGRADE_FROM: v1.0.0-beta.4
         run: |
           chmod +x scripts/ci-upgrade-smoke.sh
           ./scripts/ci-upgrade-smoke.sh

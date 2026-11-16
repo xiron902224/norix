@@ -14,7 +14,7 @@ Vision / stages: [`VISION.md`](VISION.md) · Sprint detail: [`docs/ESTADO_Y_PLAN
 
 | | |
 |---|---|
-| Version | `1.0.0-beta.4` |
+| Version | `1.0.0-beta.5` |
 | Default branch | `main` (integration tip) |
 | `develop` | Retired for new work |
 | Stage 0 (trust/safety) | **Still open** — P0 security/docs |
