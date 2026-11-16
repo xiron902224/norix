@@ -81,7 +81,10 @@ async fn main() -> Result<()> {
         match Runtime::detect().await {
             Ok(_) => info!("container runtime detected"),
             Err(error) => {
-                warn!(%error, "container runtime unavailable (heartbeats-only until docker/nerdctl)")
+                warn!(
+                    %error,
+                    "container runtime unavailable (heartbeats-only until docker/nerdctl); see docs/user/nodes-agents.md"
+                )
             }
         }
         info!(
@@ -112,7 +115,10 @@ async fn main() -> Result<()> {
     let runtime = match Runtime::detect().await {
         Ok(value) => Some(value),
         Err(error) => {
-            warn!(%error, "container runtime unavailable; heartbeats only until docker/nerdctl is installed");
+            warn!(
+                %error,
+                "container runtime unavailable; heartbeats only until docker/nerdctl is installed (docs/user/nodes-agents.md)"
+            );
             None
         }
     };

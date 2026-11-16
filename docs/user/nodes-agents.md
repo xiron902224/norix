@@ -16,6 +16,8 @@ curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.4/scr
 
 Labs without systemd: add `--supervise none`.
 
+If the host has no `/var/run/docker.sock` (and no containerd socket), `install-agent.sh` prints a **WARNING** and the agent logs the same — enroll still succeeds so you can add Docker later. Without a runtime this node will not receive builds/deploys.
+
 3. Confirm **online**, hostname, **Agent version**, **Docker = yes**
 
 ## Schedule controls

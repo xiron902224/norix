@@ -24,6 +24,10 @@
   <a href="README.es.md">Español</a>
 </p>
 
+<p align="center">
+  <img src="docs/images/dashboard-preview.svg" alt="Norix dashboard preview" width="720" />
+</p>
+
 ---
 
 ## Install
