@@ -18,11 +18,12 @@ Official documentation for **people who run apps on Norix** — after the contro
 4. [Deploying](./deploying.md) — image, Git, Compose
 5. [Nodes & agents](./nodes-agents.md) — workers, join tokens, updates
 6. [Domains & TLS](./domains.md)
-7. [Databases](./databases.md)
-8. [Network & edge](./network.md)
-9. [Ops & backups](./ops.md)
-10. [Access & teams](./access.md)
-11. [Troubleshooting](./troubleshooting.md)
+7. [Production TLS](./production-tls.md) — domain → DNS → certs → HTTPS panel + apps
+8. [Databases](./databases.md)
+9. [Network & edge](./network.md)
+10. [Ops & backups](./ops.md)
+11. [Access & teams](./access.md)
+12. [Troubleshooting](./troubleshooting.md)
 
 ## What Norix is
 

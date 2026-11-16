@@ -46,6 +46,11 @@ func GitHubWebhook(pool *pgxpool.Pool) http.HandlerFunc {
 			http.Error(response, "read body", http.StatusBadRequest)
 			return
 		}
+		// Per-webhook secret = path token (configure the same value as GitHub "Secret").
+		if !verifyGitHubSignature(token, request.Header.Get("X-Hub-Signature-256"), body) {
+			http.Error(response, "invalid signature", http.StatusUnauthorized)
+			return
+		}
 		var payload githubPushPayload
 		if err := json.Unmarshal(body, &payload); err != nil {
 			http.Error(response, "invalid json", http.StatusBadRequest)
@@ -126,6 +131,8 @@ func CreateWebhookTokenHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		_ = json.NewEncoder(response).Encode(map[string]string{
 			"token":       plain,
 			"webhook_url": "/hooks/github/" + plain,
+			"secret":      plain,
+			"hint":        "Set GitHub webhook Secret to this token; Norix verifies X-Hub-Signature-256",
 		})
 	}
 }
