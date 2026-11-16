@@ -14,6 +14,7 @@
 
 <p align="center">
   <a href="#instalar">Instalar</a> ·
+  <a href="docs/user/es/README.md">Guía de usuario</a> ·
   <a href="#cómo-funciona">Cómo funciona</a> ·
   <a href="#para-colaboradores">Colaboradores</a> ·
   <a href="#contribuidores">Contribuidores</a> ·
@@ -97,6 +98,7 @@ curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/main/scripts/inst
 
 | Recurso | Uso |
 |---|---|
+| [`docs/user/es/`](docs/user/es/README.md) | **Documentación oficial** para usuarios de la plataforma |
 | [`CONTRIBUTING.es.md`](CONTRIBUTING.es.md) | Gitflow (`main`), setup local, PRs |
 | [`docs/README.md`](docs/README.md) | Mapa de toda la documentación |
 | [`ISSUES.md`](ISSUES.md) | Triage del backlog (P0–P3) |

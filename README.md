@@ -15,6 +15,7 @@
 
 <p align="center">
   <a href="#install">Install</a> ·
+  <a href="docs/user/README.md">User guide</a> ·
   <a href="#how-it-works">How It Works</a> ·
   <a href="#interfaces">Interfaces</a> ·
   <a href="#features">Features</a> ·

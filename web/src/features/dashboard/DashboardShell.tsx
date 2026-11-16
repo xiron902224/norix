@@ -31,6 +31,7 @@ import { renewSession } from '../auth/services/auth-api'
 import { sessionStore } from '../auth/services/session'
 import { listNodes } from '../nodes/services/nodes-api'
 import { listProjects } from '../projects/services/projects-api'
+import { fetchControlPlaneStatus } from '../../shared/lib/status'
 
 interface DashboardShellProps {
   user: SessionUser
@@ -120,14 +121,11 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
 
   useEffect(() => {
     let cancelled = false
-    void fetch('/status')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((body: { version?: string } | null) => {
-        if (cancelled) return
-        const ver = typeof body?.version === 'string' ? body.version.trim() : ''
-        if (ver) setCpVersion(ver.startsWith('v') ? ver : `v${ver}`)
-      })
-      .catch(() => { /* keep empty */ })
+    void fetchControlPlaneStatus().then((body) => {
+      if (cancelled || !body) return
+      const ver = typeof body.version === 'string' ? body.version.trim() : ''
+      if (ver) setCpVersion(ver.startsWith('v') ? ver : `v${ver}`)
+    })
     return () => {
       cancelled = true
     }
@@ -145,12 +143,16 @@ export function DashboardShell({ user, onSignOut }: DashboardShellProps) {
 
       <aside className="sidebar" aria-label="Primary">
         <div className="sidebar-brand">
-          <div className="brand-mark" aria-hidden>N</div>
+          <div className="brand-mark-stack">
+            <div className="brand-mark" aria-hidden>N</div>
+            {cpVersion ? (
+              <span className="brand-beta brand-beta-under-logo" title="Control plane version from /status">
+                {cpVersion}
+              </span>
+            ) : null}
+          </div>
           <div className="sidebar-brand-copy">
-            <div className="brand-title-row">
-              <strong>norix</strong>
-              {cpVersion ? <span className="brand-beta" title="Control plane version from /status">{cpVersion}</span> : null}
-            </div>
+            <strong>norix</strong>
           </div>
         </div>
 
