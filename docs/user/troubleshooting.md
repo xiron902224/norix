@@ -2,8 +2,8 @@
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| Deploy / DeployFromGit fails or stays pending | No node with Docker/containerd | Install Docker on a worker; restart agent; confirm Nodes → Docker = yes |
-| Opaque “internal error” on deploy | Often unschedulable (fixed messaging improving) | Check node runtimes and cordon/drain state |
+| Deploy / DeployFromGit fails with `no online node with Docker or containerd` | Agents online but no Docker/containerd socket | Install Docker on a worker; restart agent; confirm Nodes → Docker = yes |
+| Opaque “internal error” on deploy | Older CP hid scheduler reasons | Upgrade control plane; check node runtimes and cordon/drain |
 | Agent offline | Process dead, wrong `NORIX_CONTROL_PLANE_URL`, firewall | `norix-agent check`; inspect agent logs; allow worker → CP |
 | UI version badge missing (local Vite) | `/status` not proxied | Use Norix ≥ this guide’s release; Vite must proxy `/status` |
 | Agents on different versions | Partial upgrades | Nodes → **Update agent**, or `norix-agent update --version …` |
