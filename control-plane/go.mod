@@ -1,6 +1,6 @@
 module github.com/xiron902224/norix/control-plane
 
-go 1.27.2
+go 1.27.4
 
 require (
 	connectrpc.com/connect/v2 v2.0.2
