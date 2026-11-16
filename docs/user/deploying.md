@@ -5,7 +5,7 @@
 - At least one **online** node with `dockerSocket` (or containerd) **true**
 - Workload created under a project
 
-If no runtime is available, deploys fail with unschedulable / no feasible node. Fix: install Docker on a worker and ensure the agent reports it (see [Nodes](./nodes-agents.md) and runbook note in [`BARE_INSTALL.md`](../runbooks/BARE_INSTALL.md)).
+If no online node has Docker or containerd, deploys fail with `no online node with Docker or containerd`. Fix: install Docker on a worker and ensure the agent reports it (see [Nodes](./nodes-agents.md) and runbook note in [`BARE_INSTALL.md`](../runbooks/BARE_INSTALL.md)).
 
 ## Deploy from image
 
