@@ -133,13 +133,28 @@ curl -sf http://127.0.0.1:8080/healthz
 curl -sf http://127.0.0.1:8080/status | jq .
 ```
 
+### Required status checks on `main`
+
+Branch protection requires these job **`name:`** values from [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — keep them in sync if you rename jobs:
+
+| Required check |
+|---|
+| Validate Protobuf Contracts |
+| PostgreSQL migrations and RLS |
+| Build Web Dashboard |
+| Build Rust Agent |
+| Security vulnerability scans |
+| Build Control Plane (Go) |
+
+Do **not** rename jobs without updating branch protection (Settings → Branches → `main`).
+
 ## Pull requests
 
 1. Branch from `main`; target **`main`**.
 2. Fill the PR template (Summary, Issue, Test plan, **Cómo probarlo**).
 3. Title format: `type(#issue): short imperative summary`  
    (`fix` · `feat` · `docs` · `chore` · `refactor`)
-4. Wait for CI (protos → DB/RLS + web + agent → control-plane).
+4. Wait for CI (protos → DB/RLS + web + agent + security → control-plane).
 
 Examples: `fix(#59): …` · `docs(#66): …` · `feat(#73): …`
 
