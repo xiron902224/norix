@@ -16,6 +16,7 @@ import {
   ListProjectsRequestSchema,
   ListWorkloadReleasesRequestSchema,
   ListWorkloadsRequestSchema,
+  RevealWorkloadEnvRequestSchema,
   RollbackWorkloadRequestSchema,
   RuntimeType,
   UpdateWorkloadRequestSchema,
@@ -245,4 +246,11 @@ export async function rollbackWorkload(workloadId: string, releaseId: string) {
     workloadId,
     releaseId,
   }))
+}
+
+export async function revealWorkloadEnv(workloadId: string): Promise<Record<string, string>> {
+  const response = await workloadClient.revealWorkloadEnv(create(RevealWorkloadEnvRequestSchema, {
+    workloadId,
+  }))
+  return response.envVars
 }

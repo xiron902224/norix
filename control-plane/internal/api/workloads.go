@@ -546,6 +546,30 @@ func (service WorkloadService) RollbackWorkload(ctx context.Context, request *pa
 	}, nil
 }
 
+func (service WorkloadService) RevealWorkloadEnv(ctx context.Context, request *paasv1.RevealWorkloadEnvRequest) (*paasv1.RevealWorkloadEnvResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	workloadID := strings.TrimSpace(request.GetWorkloadId())
+	if workloadID == "" {
+		return nil, invalidArgument("workload_id is required")
+	}
+	env, err := db.RevealWorkloadEnvironment(ctx, service.pool, identity.OrganizationID, workloadID, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
+		}
+		return nil, internalError("reveal env", err)
+	}
+	return &paasv1.RevealWorkloadEnvResponse{EnvVars: env}, nil
+}
+
 func releaseToProto(rel db.WorkloadRelease) *paasv1.WorkloadRelease {
 	return &paasv1.WorkloadRelease{
 		Id: rel.ID, WorkloadId: rel.WorkloadID, DeploymentId: rel.DeploymentID,

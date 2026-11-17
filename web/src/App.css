@@ -3600,6 +3600,13 @@ a.ghost-button {
   cursor: pointer;
 }
 
+.env-vars-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .env-vars-summary {
   margin: 0;
   padding: 0;

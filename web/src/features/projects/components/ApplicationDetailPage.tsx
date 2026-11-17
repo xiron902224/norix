@@ -26,6 +26,7 @@ import {
   listProjects,
   listWorkloadReleases,
   listWorkloads,
+  revealWorkloadEnv,
   rollbackWorkload,
   updateWorkload,
 } from '../services/projects-api'
@@ -85,6 +86,7 @@ export function ApplicationDetailPage() {
   const [releases, setReleases] = useState<WorkloadRelease[]>([])
   const [releasesLoading, setReleasesLoading] = useState(false)
   const [rollbackId, setRollbackId] = useState('')
+  const [revealBusy, setRevealBusy] = useState(false)
   const tabRef = useRef(tab)
   tabRef.current = tab
 
@@ -237,6 +239,23 @@ export function ApplicationDetailPage() {
       setError(cause instanceof Error ? cause.message : 'Could not deploy')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function onRevealEnv() {
+    if (!workload) return
+    if (!window.confirm('Reveal plaintext secrets? This action is audited.')) return
+    setRevealBusy(true)
+    setError('')
+    try {
+      const env = await revealWorkloadEnv(workload.id)
+      setEditEnvRows(envMapToRows(env))
+      setNotice('Secrets revealed in the editor (audited). Save only if you intend to change them.')
+      setTab('edit')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not reveal env')
+    } finally {
+      setRevealBusy(false)
     }
   }
 
@@ -627,7 +646,9 @@ export function ApplicationDetailPage() {
               idPrefix="edit-env"
               rows={editEnvRows}
               onChange={setEditEnvRows}
-              hint="Leave ******** to keep the current secret. Clear a value or remove the row to change/delete it."
+              onReveal={() => void onRevealEnv()}
+              revealBusy={revealBusy}
+              hint="Leave ******** to keep the current secret. Import .env to merge keys. Reveal (owner/admin) loads plaintext and is audited."
             />
             <div className="page-actions" style={{ marginTop: 16 }}>
               <Button type="submit" disabled={savingEdit}>{savingEdit ? 'Saving…' : 'Save changes'}</Button>
