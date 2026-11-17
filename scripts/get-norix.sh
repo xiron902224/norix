@@ -432,6 +432,9 @@ NORIX_PULL_POLICY=${NORIX_PULL_POLICY}
 NORIX_BUILD_SECRETS_KEY=${secrets_key}
 LOG_LEVEL=info
 NORIX_INSTALL_MODE=docker
+# Docker published ports rarely look like loopback inside the container — allow
+# first-admin bootstrap over HTTP until you put TLS in front, then remove this.
+NORIX_ALLOW_INSECURE_BOOTSTRAP=1
 EOF
   chmod 600 "$ENV_FILE"
   ok "Wrote $ENV_FILE"
@@ -900,10 +903,20 @@ $(printf '\033[32m✔\033[0m') Norix is ready.
   Data:       ${NORIX_DATA}
   ${mode_note}
 
-Next:
-  1. Open the UI and create the first admin (bootstrap).
-  2. Deploy a workload (container deploys need Docker on a node).
-  3. Add workers with scripts/install-agent.sh when you scale out.
+Next (first admin / bootstrap):
+  Bootstrap only accepts HTTPS or a loopback client (unless NORIX_ALLOW_INSECURE_BOOTSTRAP=1).
+
+  Preferred — domain + TLS in front of the panel:
+    docs/user/production-tls.md  (EN) · docs/user/es/production-tls.md (ES)
+
+  Or SSH tunnel, then open the local URL:
+    ssh -L ${NORIX_HTTP_PORT}:127.0.0.1:${NORIX_HTTP_PORT} USER@HOST
+    open http://127.0.0.1:${NORIX_HTTP_PORT}
+
+  Docker one-click writes NORIX_ALLOW_INSECURE_BOOTSTRAP=1 for published ports;
+  remove it after the first admin exists and TLS is configured.
+
+  Then: deploy a workload · add workers with scripts/install-agent.sh
 
 Upgrade / re-run (idempotent):
   curl -fsSL ${NORIX_GITHUB_RAW}/${NORIX_REF}/scripts/get-norix.sh \\

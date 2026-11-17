@@ -45,6 +45,9 @@ bash -s -- --mode bare --port 8000 --public-url https://norix.example.com
 
 Abre la URL impresa → bootstrap del primer admin.
 
+> Bare **no** activa `NORIX_ALLOW_INSECURE_BOOTSTRAP` por defecto. Usa HTTPS ([production TLS](../user/production-tls.md)) o un túnel:
+> `ssh -L 8000:127.0.0.1:8000 user@host` → `http://127.0.0.1:8000`.
+
 Re-ejecutar el mismo comando es **seguro** (upgrade / resume).
 
 ## Labs / contenedores sin systemd

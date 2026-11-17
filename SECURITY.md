@@ -12,6 +12,10 @@ Report vulnerabilities **privately** to the maintainers. Do not open public issu
 | 1.0.x (GA) | Yes, once released |
 | < 1.0 / alpha | Best effort |
 
+## First-admin bootstrap
+
+`CreateInitialAdmin` requires a **loopback** client, **HTTPS** (trusted loopback proxy + `X-Forwarded-Proto`), or explicit `NORIX_ALLOW_INSECURE_BOOTSTRAP=1`. Docker one-click sets the opt-in for published ports; remove it after TLS. See [getting started](docs/user/getting-started.md) / [ES](docs/user/es/getting-started.md).
+
 ## Installer / release integrity
 
 Bare install and agent install verify **SHA256SUMS** before installing release binaries. When a Sigstore **cosign** bundle is published on the GitHub Release, verification is required (fail-closed) unless you explicitly set `NORIX_SKIP_COSIGN=1` / `--skip-cosign` (labs only).

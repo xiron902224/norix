@@ -4,6 +4,8 @@ One path from domain → DNS → certificates → panel HTTPS → app domains, f
 
 Norix control plane listens on plain HTTP by default (`HTTP_ADDR`). Put TLS in front (Caddy/nginx) or enable ACME DNS-01 for **app** hostnames via the edge. Do not expose an unauthenticated admin UI on the public internet over plain HTTP.
 
+**First-admin bootstrap (#6):** `CreateInitialAdmin` is allowed only from loopback, over HTTPS (with `X-Forwarded-Proto: https` from a loopback proxy), or when `NORIX_ALLOW_INSECURE_BOOTSTRAP=1`. Prefer finishing TLS (this guide) or an SSH tunnel before creating the owner account.
+
 ## 1. Choose names
 
 | Name | Example | Purpose |

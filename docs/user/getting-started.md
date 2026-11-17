@@ -6,6 +6,17 @@ Assumes Norix is already installed and you can open the dashboard URL (for examp
 
 On a fresh install the UI asks you to create the **first admin** (bootstrap). That user owns the first organization.
 
+Bootstrap only works over **HTTPS** (trusted reverse proxy) or from a **loopback** client (`http://127.0.0.1:…`). From a public HTTP URL the API returns a clear error unless `NORIX_ALLOW_INSECURE_BOOTSTRAP=1` (labs / Docker one-click only — remove after TLS).
+
+Secure options:
+
+```bash
+# SSH tunnel, then open http://127.0.0.1:8000
+ssh -L 8000:127.0.0.1:8000 user@YOUR_HOST
+```
+
+Or put TLS in front of the panel — [Production TLS](./production-tls.md).
+
 If you already have an account: **Login** with email/password (or SSO if your admin enabled OIDC — see [`AUTH_OIDC_TOTP.md`](../AUTH_OIDC_TOTP.md)).
 
 ## 2. Check the control plane

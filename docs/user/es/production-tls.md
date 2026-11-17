@@ -1,5 +1,7 @@
 # TLS en producción
 
+**Bootstrap del primer admin (#6):** solo loopback, HTTPS (proxy local con `X-Forwarded-Proto: https`) o `NORIX_ALLOW_INSECURE_BOOTSTRAP=1`. Preferible terminar TLS (esta guía) o un túnel SSH antes de crear el owner.
+
 Guía completa (EN): [`../production-tls.md`](../production-tls.md).
 
 Resumen:
