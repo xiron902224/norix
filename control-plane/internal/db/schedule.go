@@ -448,6 +448,13 @@ func syncParentFromPrimary(ctx context.Context, tx pgx.Tx, workloadID string) er
 
 // DeployWorkloadReplicas schedules all replicas for a workload deploy.
 func DeployWorkloadReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID string, containerPort int32, actor AuditActor) (Deployment, Workload, error) {
+	return deployWorkloadReplicas(ctx, pool, tenantID, workloadID, containerPort, actor, "deploy")
+}
+
+func deployWorkloadReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID string, containerPort int32, actor AuditActor, releaseSource string) (Deployment, Workload, error) {
+	if releaseSource == "" {
+		releaseSource = "deploy"
+	}
 	if containerPort <= 0 {
 		containerPort = 80
 	}
@@ -559,6 +566,11 @@ func DeployWorkloadReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID, w
 	}
 	if err := tx2.Commit(ctx); err != nil {
 		return Deployment{}, Workload{}, err
+	}
+	// Immutable release snapshot for rollback (#14). Best-effort: deploy already committed.
+	if _, err := RecordWorkloadRelease(ctx, pool, tenantID, workload, deployment.ID, releaseSource); err != nil {
+		// Do not fail the deploy if history write fails.
+		_ = err
 	}
 	return deployment, workload, nil
 }

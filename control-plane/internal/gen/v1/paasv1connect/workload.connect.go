@@ -66,6 +66,12 @@ const (
 	// WorkloadServiceUnassignDomainProcedure is the procedure name of the WorkloadService's
 	// UnassignDomain RPC.
 	WorkloadServiceUnassignDomainProcedure = "/v1.WorkloadService/UnassignDomain"
+	// WorkloadServiceListWorkloadReleasesProcedure is the procedure name of the WorkloadService's
+	// ListWorkloadReleases RPC.
+	WorkloadServiceListWorkloadReleasesProcedure = "/v1.WorkloadService/ListWorkloadReleases"
+	// WorkloadServiceRollbackWorkloadProcedure is the procedure name of the WorkloadService's
+	// RollbackWorkload RPC.
+	WorkloadServiceRollbackWorkloadProcedure = "/v1.WorkloadService/RollbackWorkload"
 	// ProjectServiceCreateProjectProcedure is the procedure name of the ProjectService's CreateProject
 	// RPC.
 	ProjectServiceCreateProjectProcedure = "/v1.ProjectService/CreateProject"
@@ -176,6 +182,20 @@ var (
 			Procedure:  WorkloadServiceUnassignDomainProcedure,
 		}
 	})
+	workloadServiceListWorkloadReleasesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("ListWorkloadReleases"),
+			Procedure:  WorkloadServiceListWorkloadReleasesProcedure,
+		}
+	})
+	workloadServiceRollbackWorkloadSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("RollbackWorkload"),
+			Procedure:  WorkloadServiceRollbackWorkloadProcedure,
+		}
+	})
 )
 
 // WorkloadServiceClient is a client for the v1.WorkloadService service.
@@ -194,6 +214,8 @@ type WorkloadServiceClient interface {
 	AssignDomain(context.Context, *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error)
 	ListDomains(context.Context, *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error)
 	UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error)
+	ListWorkloadReleases(context.Context, *v1.ListWorkloadReleasesRequest) (*v1.ListWorkloadReleasesResponse, error)
+	RollbackWorkload(context.Context, *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error)
 }
 
 // NewWorkloadServiceClient constructs a client for the v1.WorkloadService service. Multiple service
@@ -218,6 +240,8 @@ type WorkloadServiceHandler interface {
 	AssignDomain(context.Context, *v1.AssignDomainRequest) (*v1.AssignDomainResponse, error)
 	ListDomains(context.Context, *v1.ListDomainsRequest) (*v1.ListDomainsResponse, error)
 	UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error)
+	ListWorkloadReleases(context.Context, *v1.ListWorkloadReleasesRequest) (*v1.ListWorkloadReleasesResponse, error)
+	RollbackWorkload(context.Context, *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error)
 }
 
 // RegisterWorkloadServiceHandler registers svc as the v1.WorkloadService implementation on server.
@@ -238,6 +262,8 @@ func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceH
 		connect.Method{Spec: workloadServiceAssignDomainSpec(), Handler: adapter.assignDomain},
 		connect.Method{Spec: workloadServiceListDomainsSpec(), Handler: adapter.listDomains},
 		connect.Method{Spec: workloadServiceUnassignDomainSpec(), Handler: adapter.unassignDomain},
+		connect.Method{Spec: workloadServiceListWorkloadReleasesSpec(), Handler: adapter.listWorkloadReleases},
+		connect.Method{Spec: workloadServiceRollbackWorkloadSpec(), Handler: adapter.rollbackWorkload},
 	)
 }
 
@@ -298,6 +324,14 @@ func (UnimplementedWorkloadServiceHandler) ListDomains(context.Context, *v1.List
 
 func (UnimplementedWorkloadServiceHandler) UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.UnassignDomain is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) ListWorkloadReleases(context.Context, *v1.ListWorkloadReleasesRequest) (*v1.ListWorkloadReleasesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.ListWorkloadReleases is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) RollbackWorkload(context.Context, *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.RollbackWorkload is not implemented")
 }
 
 type workloadServiceClient struct {
@@ -411,6 +445,22 @@ func (c *workloadServiceClient) ListDomains(ctx context.Context, req *v1.ListDom
 func (c *workloadServiceClient) UnassignDomain(ctx context.Context, req *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error) {
 	var res v1.UnassignDomainResponse
 	if err := c.client.CallUnary(ctx, workloadServiceUnassignDomainSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) ListWorkloadReleases(ctx context.Context, req *v1.ListWorkloadReleasesRequest) (*v1.ListWorkloadReleasesResponse, error) {
+	var res v1.ListWorkloadReleasesResponse
+	if err := c.client.CallUnary(ctx, workloadServiceListWorkloadReleasesSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) RollbackWorkload(ctx context.Context, req *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error) {
+	var res v1.RollbackWorkloadResponse
+	if err := c.client.CallUnary(ctx, workloadServiceRollbackWorkloadSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -580,6 +630,30 @@ func (h workloadServiceHandler) unassignDomain(ctx context.Context, _ connect.Sp
 		return err
 	}
 	res, err := h.svc.UnassignDomain(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) listWorkloadReleases(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListWorkloadReleasesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListWorkloadReleases(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) rollbackWorkload(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RollbackWorkloadRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RollbackWorkload(ctx, &req)
 	if err != nil {
 		return err
 	}

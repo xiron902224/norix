@@ -20,7 +20,7 @@ Typical fields:
 - CPU / memory limits
 - ports
 
-From the workload view you can **Deploy**, view logs, assign domains, and trigger **Deploy from Git** when configured.
+From the workload view you can **Deploy**, view logs, assign domains, trigger **Deploy from Git** when configured, and open **Releases** to roll back to a previous snapshot (see [Release history & rollback](./releases-rollback.md)).
 
 ### Environment variables (dashboard)
 
