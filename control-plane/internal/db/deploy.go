@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -89,7 +88,11 @@ func scanWorkload(ctx context.Context, tx pgx.Tx, query string, args ...any) (Wo
 	if err != nil {
 		return Workload{}, fmt.Errorf("get workload: %w", err)
 	}
-	_ = json.Unmarshal([]byte(environmentText), &workload.Environment)
+	env, envErr := decodeEnvironmentJSON(environmentText)
+	if envErr != nil {
+		return Workload{}, envErr
+	}
+	workload.Environment = env
 	workload.AssignedNodeID = assignedNode
 	workload.AffinityLabels = decodeLabels([]byte(affinityText))
 	workload.AntiAffinityLabels = decodeLabels([]byte(antiAffinityText))
@@ -197,7 +200,11 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 		); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal([]byte(envText), &item.Environment)
+		env, envErr := decodeEnvironmentJSON(envText)
+		if envErr != nil {
+			return nil, envErr
+		}
+		item.Environment = env
 		result = append(result, item)
 	}
 	if err := rows.Err(); err != nil {

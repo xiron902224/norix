@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -67,7 +66,11 @@ func ListScalableWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID str
 		); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal([]byte(environmentText), &item.Environment)
+		env, envErr := decodeEnvironmentJSON(environmentText)
+		if envErr != nil {
+			return nil, envErr
+		}
+		item.Environment = env
 		item.AffinityLabels = decodeLabels([]byte(affinityText))
 		item.AntiAffinityLabels = decodeLabels([]byte(antiText))
 		item.HasNodeCPU = hasNode

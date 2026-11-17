@@ -25,5 +25,6 @@ From the workload view you can **Deploy**, view logs, assign domains, and trigge
 ## Lifecycle tips
 
 - Prefer small, reviewable env changes; avoid putting secrets in Git (use build secrets / env in the UI when available).
+- Workload **env vars are encrypted at rest** (AES-GCM, `NORIX_BUILD_SECRETS_KEY`). API/UI responses mask values as `********`. Agents still receive plaintext when applying containers. See [S7 operations](../runbooks/S7_OPERATIONS.md) for key rotation.
 - Before removing a node, **drain** it so replicas move (Nodes).
 - Deleting a workload removes its desired state; agents stop/reconcile containers on the next heartbeat.

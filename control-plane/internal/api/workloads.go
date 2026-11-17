@@ -100,7 +100,7 @@ func workloadToProto(workload db.Workload) *paasv1.Workload {
 	}
 	return &paasv1.Workload{
 		Id: workload.ID, ProjectId: workload.ProjectID, Name: workload.Name, Runtime: runtime,
-		ImageOrSource: workload.ImageOrSource, EnvVars: workload.Environment, CpuShares: workload.CPUShares,
+		ImageOrSource: workload.ImageOrSource, EnvVars: db.MaskEnvironment(workload.Environment), CpuShares: workload.CPUShares,
 		MemoryLimitMb: workload.MemoryLimitMB, Domain: workload.Domain, Status: status,
 		DesiredGeneration: workload.DesiredGeneration, ObservedGeneration: workload.ObservedGeneration,
 		HostPort: workload.HostPort, ContainerPort: workload.ContainerPort,
@@ -150,7 +150,7 @@ func (service WorkloadService) CreateWorkload(ctx context.Context, request *paas
 		Email:  identity.Email,
 	})
 	if err != nil {
-		if strings.Contains(err.Error(), "required") {
+		if strings.Contains(err.Error(), "required") || strings.Contains(err.Error(), "NORIX_BUILD_SECRETS_KEY") {
 			return nil, invalidArgument(err.Error())
 		}
 		return nil, internalError("create workload", err)
@@ -189,12 +189,17 @@ func (service WorkloadService) UpdateWorkload(ctx context.Context, request *paas
 	if err != nil {
 		return nil, err
 	}
+	existing, err := db.GetWorkload(ctx, service.pool, identity.OrganizationID, workload.ID)
+	if err != nil {
+		return nil, internalError("load workload", err)
+	}
+	workload.Environment = db.MergeEnvironmentUpdate(existing.Environment, workload.Environment)
 	updated, err := db.UpdateWorkload(ctx, service.pool, identity.OrganizationID, workload, db.AuditActor{
 		UserID: identity.UserID,
 		Email:  identity.Email,
 	})
 	if err != nil {
-		if strings.Contains(err.Error(), "required") {
+		if strings.Contains(err.Error(), "required") || strings.Contains(err.Error(), "NORIX_BUILD_SECRETS_KEY") {
 			return nil, invalidArgument(err.Error())
 		}
 		return nil, internalError("update workload", err)

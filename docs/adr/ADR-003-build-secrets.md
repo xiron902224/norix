@@ -21,3 +21,4 @@ Storing plaintext in PostgreSQL is unacceptable even for Alpha.
 - Operators must set/rotate the key out of band (Compose/env).
 - Multi-key / per-org wrapping with **age** remains a S8 hardening candidate; AES-GCM is enough for single-node v1.
 - Losing the key makes stored secrets unreadable (by design).
+- The same key also encrypts **workload env vars** at rest (#8), TOTP, WireGuard material, and managed-DB connection secrets — rotate with a re-entry plan ([S7_OPERATIONS](../runbooks/S7_OPERATIONS.md)).

@@ -47,7 +47,8 @@ Common failures: wrong CP URL, clock skew, firewall blocking worker → CP, expi
 | Build never starts | ≥1 online node with Docker/containerd; node not cordoned |
 | Build starts then errors | Dockerfile path; Git URL reachable from the **worker**; build logs in UI |
 | Git private repo | Credentials / network from the worker |
-| Secrets errors | `NORIX_BUILD_SECRETS_KEY` must be set on the CP for encrypted build secrets |
+| Secrets errors | `NORIX_BUILD_SECRETS_KEY` must be set on the CP for encrypted build secrets **and** workload env vars |
+| Env shows `********` | Expected — values are masked in API/UI; plaintext only reaches the agent at apply time (#8) |
 
 ## Webhooks not firing
 
