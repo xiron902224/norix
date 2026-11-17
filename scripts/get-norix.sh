@@ -400,6 +400,35 @@ install_docker() {
   ok "Docker installed"
 }
 
+ensure_join_token_env() {
+  local env_file="$1"
+  local join_token
+  if grep -qE '^NORIX_JOIN_TOKEN=.+' "$env_file" 2>/dev/null; then
+    if ! grep -qE '^NORIX_BOOTSTRAP_JOIN_TOKEN=.+' "$env_file" 2>/dev/null; then
+      join_token="$(grep -E '^NORIX_JOIN_TOKEN=' "$env_file" | head -n1 | cut -d= -f2-)"
+      echo "NORIX_BOOTSTRAP_JOIN_TOKEN=${join_token}" >>"$env_file"
+    fi
+    return 0
+  fi
+  join_token="$(openssl rand -base64 32 | tr -d '=\n/' | head -c 43)"
+  {
+    echo "NORIX_JOIN_TOKEN=${join_token}"
+    echo "NORIX_BOOTSTRAP_JOIN_TOKEN=${join_token}"
+    echo "NORIX_NODE_NAME=${NORIX_NODE_NAME:-norix-1}"
+  } >>"$env_file"
+  ok "Wrote NORIX_JOIN_TOKEN for Compose agent (#10)"
+}
+
+warn_docker_socket_exposure() {
+  cat >&2 <<'EOF'
+WARNING (#10): the Compose agent mounts /var/run/docker.sock (≈ host root on rootful Docker).
+  The control-plane container does NOT get the socket by default.
+  Docs: https://github.com/xiron902224/norix/blob/main/docs/user/docker-socket.md
+        https://github.com/xiron902224/norix/blob/main/docs/user/es/docker-socket.md
+  Opt-in embedded CP runtime (not recommended): docker-compose.embedded-runtime.yml
+EOF
+}
+
 write_env_docker() {
   local public_url app_pw owner_pw secrets_key
   public_url="$(detect_public_url)"
@@ -408,12 +437,15 @@ write_env_docker() {
     log "Keeping existing $ENV_FILE (upgrade-safe)"
     grep -q '^NORIX_HTTP_PORT=' "$ENV_FILE" || echo "NORIX_HTTP_PORT=$NORIX_HTTP_PORT" >>"$ENV_FILE"
     ensure_build_secrets_key "$ENV_FILE"
+    ensure_join_token_env "$ENV_FILE"
     return
   fi
 
   app_pw="$(openssl rand -hex 24)"
   owner_pw="$(openssl rand -hex 24)"
   secrets_key="$(openssl rand -hex 32)"
+  local join_token
+  join_token="$(openssl rand -base64 32 | tr -d '=\n/' | head -c 43)"
 
   cat >"$ENV_FILE" <<EOF
 POSTGRES_DB=norix
@@ -430,6 +462,9 @@ CORS_ALLOWED_ORIGINS=${public_url}
 NORIX_REGISTRY=none
 NORIX_PULL_POLICY=${NORIX_PULL_POLICY}
 NORIX_BUILD_SECRETS_KEY=${secrets_key}
+NORIX_JOIN_TOKEN=${join_token}
+NORIX_BOOTSTRAP_JOIN_TOKEN=${join_token}
+NORIX_NODE_NAME=norix-1
 LOG_LEVEL=info
 NORIX_INSTALL_MODE=docker
 # Docker published ports rarely look like loopback inside the container — allow
@@ -891,7 +926,9 @@ print_next() {
   To run container workloads on this host later, install Docker and the agent,
   or add worker nodes — see docs/runbooks/BARE_INSTALL.md.${supervise_note}"
   else
-    mode_note="Mode: docker (Compose stack under ${SOURCE_DIR})."
+    mode_note="Mode: docker (Compose stack under ${SOURCE_DIR}).
+  Agent holds docker.sock (control plane does not) — docs/user/docker-socket.md
+  After first admin, the Compose agent enrolls via NORIX_BOOTSTRAP_JOIN_TOKEN."
   fi
 
   cat <<EOF
@@ -916,7 +953,8 @@ Next (first admin / bootstrap):
   Docker one-click writes NORIX_ALLOW_INSECURE_BOOTSTRAP=1 for published ports;
   remove it after the first admin exists and TLS is configured.
 
-  Then: deploy a workload · add workers with scripts/install-agent.sh
+  Then: create the first admin → wait for agent node online → deploy a workload.
+  Extra workers: scripts/install-agent.sh (warns about docker.sock).
 
 Upgrade / re-run (idempotent):
   curl -fsSL ${NORIX_GITHUB_RAW}/${NORIX_REF}/scripts/get-norix.sh \\
@@ -961,6 +999,7 @@ if [[ "$NORIX_MODE" == "docker" ]]; then
   # shellcheck disable=SC1090
   set -a && source "$ENV_FILE" && set +a
   NORIX_HTTP_PORT="${NORIX_HTTP_PORT:-8000}"
+  warn_docker_socket_exposure
   start_stack_docker
   wait_health
   write_install_state "compose"

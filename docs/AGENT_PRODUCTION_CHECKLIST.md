@@ -16,6 +16,7 @@ Pendiente ops: E2E agent↔CP y tag `v1.0.0-beta.5` tras merge (GA después; ver
 - [x] Micro-VM Cloud Hypervisor cuando hay KVM + kernel/rootfs
 - [x] Mesh apply opt-in (`NORIX_APPLY_WIREGUARD=1` en CP)
 - [x] Modo degraded si runtime no disponible
+- [x] Compose: socket en agent, no en CP (#10) — ver `docs/user/docker-socket.md`
 
 ## Smoke E2E
 

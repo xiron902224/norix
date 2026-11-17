@@ -193,7 +193,7 @@ sudo systemctl start norix-control-plane
 | | `--mode bare` | `--mode docker` (default) |
 |---|---|---|
 | Postgres | Paquete del OS / externo | Contenedor Compose |
-| Control plane | Binario + systemd (o `--supervise none`) | Contenedor + `docker.sock` |
+| Control plane | Binario + systemd (o `--supervise none`) | Contenedor **sin** `docker.sock` (el **agent** Compose monta el socket; ver [docker-socket.md](../user/docker-socket.md)) |
 | Primer worker embebido | No (hasta instalar Docker/agent) | Sí (`localruntime` vía sock) |
 | Requiere Docker | No | Sí |
 | Integridad binario | SHA256SUMS obligatorio | Imagen build/pull |

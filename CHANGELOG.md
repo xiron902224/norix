@@ -7,12 +7,15 @@
 - Control plane no longer panics on legacy AES-GCM `dev-nonce` network secrets
 - First-admin bootstrap blocked on plain HTTP from non-loopback unless `NORIX_ALLOW_INSECURE_BOOTSTRAP=1` (#6)
 - Workload `env_vars` encrypted at rest (AES-GCM); API masks values; startup backfill for legacy plaintext (#8)
+- Docker Compose no longer mounts `docker.sock` into the control plane; agent holds the socket (#10)
 
 ### Added
 - Installer/agent verify cosign bundles when present on GitHub Releases; README EN/ES download → verify → run (#5)
 - Offline smoke `scripts/test-release-verify.sh` for SHA256 fail-closed behavior (#5)
 - Installer prints SSH-tunnel / TLS next steps for secure bootstrap (#6)
 - Dashboard env vars editor on create/edit workloads; Summary shows masked `********` (#8, partial #23)
+- `NORIX_BOOTSTRAP_JOIN_TOKEN` seed + Compose agent by default; opt-in `docker-compose.embedded-runtime.yml` (#10)
+- Docs EN/ES: Docker socket threat model, proxy/rootless notes (#10)
 
 ### Changed
 - Docs: bare/agent integrity notes (EN + ES), `SECURITY.md` installer section (#5)
@@ -20,6 +23,7 @@
 - Docker one-click writes `NORIX_ALLOW_INSECURE_BOOTSTRAP=1` (remove after TLS) (#6)
 - Docs EN/ES: workload env encryption + key rotation (projects-workloads, S7 ops, ADR-003, SECURITY) (#8)
 - Docs EN/ES: dashboard env editor steps in projects-workloads (#8)
+- Docs EN/ES: docker-socket.md; embedded runtime gated by `NORIX_EMBEDDED_RUNTIME` (#10)
 
 ## 1.0.0-beta.5 — 2026-11-16
 

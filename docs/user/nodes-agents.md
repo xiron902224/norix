@@ -20,6 +20,8 @@ Release installs verify **SHA256SUMS** and **cosign** when a `.cosign.bundle` ex
 
 If the host has no `/var/run/docker.sock` (and no containerd socket), `install-agent.sh` prints a **WARNING** and the agent logs the same — enroll still succeeds so you can add Docker later. Without a runtime this node will not receive builds/deploys.
 
+When the socket **is** present, the agent mounts it — that is powerful (≈ host root on rootful Docker). Production Compose keeps the socket off the control plane; see [Docker socket](./docker-socket.md).
+
 3. Confirm **online**, hostname, **Agent version**, **Docker = yes**
 
 ## Schedule controls

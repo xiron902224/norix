@@ -173,6 +173,12 @@ func main() {
 			logger.Info("encrypted legacy plaintext workload env_vars", "rows", n)
 		}
 
+		if n, err := norixdb.SeedBootstrapJoinToken(ctx, bootstrapPool); err != nil {
+			logger.Warn("bootstrap join token seed failed", "error", err)
+		} else if n > 0 {
+			logger.Info("seeded bootstrap join token for agent enroll", "tokens", n)
+		}
+
 		backgroundCtx, cancelBackground := context.WithCancel(context.Background())
 		defer cancelBackground()
 

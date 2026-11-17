@@ -1,0 +1,15 @@
+# OPTIONAL override — mounts docker.sock into the control plane and enables
+# NORIX_EMBEDDED_RUNTIME (#10). Higher blast radius: CP compromise ≈ host root.
+# Prefer the default stack (agent holds the socket). See docs/user/docker-socket.md
+#
+#   docker compose --env-file .env \
+#     -f deploy/norix/docker-compose.prod.yml \
+#     -f deploy/norix/docker-compose.embedded-runtime.yml up -d
+
+services:
+  control-plane:
+    environment:
+      NORIX_EMBEDDED_RUNTIME: "1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - norix_backups:/var/lib/norix/backups
