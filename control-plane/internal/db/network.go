@@ -143,7 +143,7 @@ func EnsureNodeNetworkIdentity(ctx context.Context, pool *pgxpool.Pool, tenantID
 	} else {
 		// Dev fallback: store plaintext bytes when secrets key is unset.
 		enc = []byte(pair.PrivateKey)
-		nonce = []byte("dev-nonce")
+		nonce = []byte(secrets.DevNonceMarker)
 	}
 	_, err = tx.Exec(ctx, `
 		UPDATE nodes SET
@@ -228,7 +228,7 @@ func ensurePlatformCertTx(ctx context.Context, tx pgx.Tx, tenantID string) error
 		}
 	} else {
 		enc = []byte(bundle.KeyPEM)
-		nonce = []byte("dev-nonce")
+		nonce = []byte(secrets.DevNonceMarker)
 	}
 	_, err = tx.Exec(ctx, `
 		INSERT INTO platform_certificates (organization_id, hostname, cert_pem, key_pem_enc, key_nonce, not_before, not_after, issuer)
@@ -441,13 +441,19 @@ func decryptNetworkSecret(enc, nonce []byte) string {
 	if len(enc) == 0 {
 		return ""
 	}
+	// Legacy local/dev rows stored plaintext with a fixed nonce marker
+	// (same convention as TOTP). Do not pass that nonce to AES-GCM.
+	if secrets.IsDevNonce(nonce) {
+		return string(enc)
+	}
 	key, err := secrets.KeyFromEnv()
 	if err != nil {
 		return string(enc)
 	}
 	plain, err := secrets.Decrypt(key, enc, nonce)
 	if err != nil {
-		return string(enc)
+		// Wrong key / corrupt blob: empty string, never treat ciphertext as a key.
+		return ""
 	}
 	return string(plain)
 }

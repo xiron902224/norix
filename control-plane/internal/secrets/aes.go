@@ -10,6 +10,15 @@ import (
 	"os"
 )
 
+// DevNonceMarker is stored with plaintext secrets when NORIX_BUILD_SECRETS_KEY
+// is unset (local/dev). It must never be passed to AES-GCM Open (wrong length → panic).
+const DevNonceMarker = "dev-nonce"
+
+// IsDevNonce reports whether nonce is the plaintext-storage marker.
+func IsDevNonce(nonce []byte) bool {
+	return string(nonce) == DevNonceMarker
+}
+
 // KeyFromEnv loads a 32-byte AES key from NORIX_BUILD_SECRETS_KEY (64 hex chars).
 // Empty key disables encryption and returns an error on Encrypt.
 func KeyFromEnv() ([]byte, error) {
@@ -51,6 +60,10 @@ func Decrypt(key, ciphertext, nonce []byte) ([]byte, error) {
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err
+	}
+	// Go's GCM.Open panics on wrong nonce length; treat untrusted DB nonces as errors.
+	if len(nonce) != gcm.NonceSize() {
+		return nil, fmt.Errorf("aes-gcm: nonce length %d, want %d", len(nonce), gcm.NonceSize())
 	}
 	return gcm.Open(nil, nonce, ciphertext, nil)
 }

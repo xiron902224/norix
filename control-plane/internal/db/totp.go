@@ -43,7 +43,7 @@ func encryptTOTPSecret(plain string) (enc string, nonce []byte, err error) {
 	key, keyErr := secrets.KeyFromEnv()
 	if keyErr != nil {
 		// Dev fallback when NORIX_BUILD_SECRETS_KEY is unset (matches network secrets).
-		return plain, []byte("dev-nonce"), nil
+		return plain, []byte(secrets.DevNonceMarker), nil
 	}
 	ciphertext, nonce, err := secrets.Encrypt(key, []byte(plain))
 	if err != nil {
@@ -53,7 +53,7 @@ func encryptTOTPSecret(plain string) (enc string, nonce []byte, err error) {
 }
 
 func decryptTOTPSecret(enc string, nonce []byte) (string, error) {
-	if string(nonce) == "dev-nonce" {
+	if secrets.IsDevNonce(nonce) {
 		return enc, nil
 	}
 	key, err := secrets.KeyFromEnv()
