@@ -54,7 +54,12 @@ func WithAuthentication(pool *pgxpool.Pool) connect.ServerInterceptor {
 
 			identity, err := findActiveSession(ctx, pool, hash)
 			if err != nil {
-				return connect.NewError(connect.CodeUnauthenticated, "session is invalid or expired")
+				// Personal access tokens (#22) use the same Bearer header.
+				patIdentity, patErr := db.FindIdentityByPATHash(ctx, pool, hash)
+				if patErr != nil {
+					return connect.NewError(connect.CodeUnauthenticated, "session is invalid or expired")
+				}
+				identity = patIdentity
 			}
 			return next(contextWithSession(ctx, identity), spec, stream)
 		}

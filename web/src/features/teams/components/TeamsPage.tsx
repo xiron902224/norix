@@ -21,6 +21,12 @@ import {
   type TeamItem,
   type TeamUsageItem,
 } from '../services/teams-api'
+import {
+  createPersonalAccessToken,
+  listPersonalAccessTokens,
+  revokePersonalAccessToken,
+} from '../../auth/services/auth-api'
+import type { PersonalAccessToken } from '../../../gen/v1/auth_pb'
 
 function bigintInput(value: bigint) {
   const n = Number(value)
@@ -54,10 +60,14 @@ export function TeamsPage() {
     maxPreviews: '10',
     maxDiskGb: '50',
   })
+  const [pats, setPats] = useState<PersonalAccessToken[]>([])
+  const [patName, setPatName] = useState('cli')
+  const [patPlaintext, setPatPlaintext] = useState('')
 
   async function refresh(teamId = selectedId) {
     try {
-      const [teamList, providers] = await Promise.all([listTeams(), listSSOProviders()])
+      const [teamList, providers, tokens] = await Promise.all([listTeams(), listSSOProviders(), listPersonalAccessTokens()])
+      setPats(tokens)
       setTeams(teamList)
       setSsoProviders(providers.map((p) => ({ id: p.id, name: p.name, kind: p.kind, enabled: p.enabled })))
       const active = teamId && teamList.some((t) => t.id === teamId)
@@ -436,6 +446,76 @@ export function TeamsPage() {
             )}
           </aside>
         </div>
+      </div>
+
+      <div className="compass-ov-card" style={{ marginTop: 24 }}>
+        <h2 className="compass-ov-card-title">Personal access tokens</h2>
+        <p className="muted">
+          Use as <code>Authorization: Bearer norix_pat_…</code> for CLI/API. Hashed at rest; plaintext shown once.
+        </p>
+        <div className="compass-create-form" style={{ marginBottom: 12 }}>
+          <FormField id="pat-name" label="Name" value={patName} onChange={(e) => setPatName(e.target.value)} />
+          <Button
+            type="button"
+            disabled={actionBusy === 'pat' || !patName.trim()}
+            onClick={() => {
+              void (async () => {
+                setActionBusy('pat')
+                setError('')
+                setPatPlaintext('')
+                try {
+                  const result = await createPersonalAccessToken(patName.trim())
+                  setPatPlaintext(result.plaintext)
+                  setNotice('Copy the token now — it will not be shown again.')
+                  await refresh()
+                } catch (cause) {
+                  setError(cause instanceof Error ? cause.message : 'Could not create token')
+                } finally {
+                  setActionBusy('')
+                }
+              })()
+            }}
+          >
+            {actionBusy === 'pat' ? '…' : 'Create token'}
+          </Button>
+        </div>
+        {patPlaintext ? (
+          <p className="mono" style={{ wordBreak: 'break-all' }} role="status">{patPlaintext}</p>
+        ) : null}
+        <ul className="release-list">
+          {pats.map((tok) => (
+            <li key={tok.id} className="release-row">
+              <div className="release-meta">
+                <strong>{tok.name}</strong>
+                <span className="muted mono">{tok.tokenPrefix}…</span>
+                {tok.revokedAt ? <span className="muted">revoked</span> : null}
+              </div>
+              <div className="release-actions">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!!tok.revokedAt || actionBusy === `rev-${tok.id}`}
+                  onClick={() => {
+                    void (async () => {
+                      setActionBusy(`rev-${tok.id}`)
+                      try {
+                        await revokePersonalAccessToken(tok.id)
+                        setNotice('Token revoked.')
+                        await refresh()
+                      } catch (cause) {
+                        setError(cause instanceof Error ? cause.message : 'Could not revoke')
+                      } finally {
+                        setActionBusy('')
+                      }
+                    })()
+                  }}
+                >
+                  Revoke
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <CreateModal

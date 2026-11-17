@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/auth.proto.
  */
 export const file_v1_auth: GenFile = /*@__PURE__*/
-  fileDesc("Cg12MS9hdXRoLnByb3RvEgJ2MSJHCgRVc2VyEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEgwKBG5hbWUYAyABKAkSFgoEcm9sZRgEIAEoDjIILnYxLlJvbGUiQgoMTG9naW5SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJEhEKCXRvdHBfY29kZRgDIAEoCSI2Cg1Mb2dpblJlc3BvbnNlEg0KBXRva2VuGAEgASgJEhYKBHVzZXIYAiABKAsyCC52MS5Vc2VyIhcKFUdldEN1cnJlbnRVc2VyUmVxdWVzdCIwChZHZXRDdXJyZW50VXNlclJlc3BvbnNlEhYKBHVzZXIYASABKAsyCC52MS5Vc2VyIhsKGUdldEJvb3RzdHJhcFN0YXR1c1JlcXVlc3QiMAoaR2V0Qm9vdHN0cmFwU3RhdHVzUmVzcG9uc2USEgoKY29uZmlndXJlZBgBIAEoCCJ3ChlDcmVhdGVJbml0aWFsQWRtaW5SZXF1ZXN0EhkKEW9yZ2FuaXphdGlvbl9uYW1lGAEgASgJEhIKCmFkbWluX25hbWUYAiABKAkSEwoLYWRtaW5fZW1haWwYAyABKAkSFgoOYWRtaW5fcGFzc3dvcmQYBCABKAkiQwoaQ3JlYXRlSW5pdGlhbEFkbWluUmVzcG9uc2USDQoFdG9rZW4YASABKAkSFgoEdXNlchgCIAEoCzIILnYxLlVzZXIiHgoNTG9nb3V0UmVxdWVzdBINCgV0b2tlbhgBIAEoCSIQCg5Mb2dvdXRSZXNwb25zZSIkChNSZW5ld1Nlc3Npb25SZXF1ZXN0Eg0KBXRva2VuGAEgASgJIj4KFFJlbmV3U2Vzc2lvblJlc3BvbnNlEg0KBXRva2VuGAEgASgJEhcKD2V4cGlyZXNfYXRfdW5peBgCIAEoAypNCgRSb2xlEhQKEFJPTEVfVU5TUEVDSUZJRUQQABIOCgpST0xFX09XTkVSEAESDgoKUk9MRV9BRE1JThACEg8KC1JPTEVfTUVNQkVSEAMyogMKC0F1dGhTZXJ2aWNlEiwKBUxvZ2luEhAudjEuTG9naW5SZXF1ZXN0GhEudjEuTG9naW5SZXNwb25zZRJTChJHZXRCb290c3RyYXBTdGF0dXMSHS52MS5HZXRCb290c3RyYXBTdGF0dXNSZXF1ZXN0Gh4udjEuR2V0Qm9vdHN0cmFwU3RhdHVzUmVzcG9uc2USUwoSQ3JlYXRlSW5pdGlhbEFkbWluEh0udjEuQ3JlYXRlSW5pdGlhbEFkbWluUmVxdWVzdBoeLnYxLkNyZWF0ZUluaXRpYWxBZG1pblJlc3BvbnNlEi8KBkxvZ291dBIRLnYxLkxvZ291dFJlcXVlc3QaEi52MS5Mb2dvdXRSZXNwb25zZRJBCgxSZW5ld1Nlc3Npb24SFy52MS5SZW5ld1Nlc3Npb25SZXF1ZXN0GhgudjEuUmVuZXdTZXNzaW9uUmVzcG9uc2USRwoOR2V0Q3VycmVudFVzZXISGS52MS5HZXRDdXJyZW50VXNlclJlcXVlc3QaGi52MS5HZXRDdXJyZW50VXNlclJlc3BvbnNlQn4KBmNvbS52MUIJQXV0aFByb3RvUAFaQWdpdGh1Yi5jb20veGlyb245MDIyMjQvbm9yaXgvY29udHJvbC1wbGFuZS9pbnRlcm5hbC9nZW4vdjE7cGFhc3YxogIDVlhYqgICVjHKAgJWMeICDlYxXEdQQk1ldGFkYXRh6gICVjFiBnByb3RvMw");
+  fileDesc("Cg12MS9hdXRoLnByb3RvEgJ2MSJHCgRVc2VyEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEgwKBG5hbWUYAyABKAkSFgoEcm9sZRgEIAEoDjIILnYxLlJvbGUiQgoMTG9naW5SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJEhEKCXRvdHBfY29kZRgDIAEoCSI2Cg1Mb2dpblJlc3BvbnNlEg0KBXRva2VuGAEgASgJEhYKBHVzZXIYAiABKAsyCC52MS5Vc2VyIhcKFUdldEN1cnJlbnRVc2VyUmVxdWVzdCIwChZHZXRDdXJyZW50VXNlclJlc3BvbnNlEhYKBHVzZXIYASABKAsyCC52MS5Vc2VyIhsKGUdldEJvb3RzdHJhcFN0YXR1c1JlcXVlc3QiMAoaR2V0Qm9vdHN0cmFwU3RhdHVzUmVzcG9uc2USEgoKY29uZmlndXJlZBgBIAEoCCJ3ChlDcmVhdGVJbml0aWFsQWRtaW5SZXF1ZXN0EhkKEW9yZ2FuaXphdGlvbl9uYW1lGAEgASgJEhIKCmFkbWluX25hbWUYAiABKAkSEwoLYWRtaW5fZW1haWwYAyABKAkSFgoOYWRtaW5fcGFzc3dvcmQYBCABKAkiQwoaQ3JlYXRlSW5pdGlhbEFkbWluUmVzcG9uc2USDQoFdG9rZW4YASABKAkSFgoEdXNlchgCIAEoCzIILnYxLlVzZXIiHgoNTG9nb3V0UmVxdWVzdBINCgV0b2tlbhgBIAEoCSIQCg5Mb2dvdXRSZXNwb25zZSIkChNSZW5ld1Nlc3Npb25SZXF1ZXN0Eg0KBXRva2VuGAEgASgJIj4KFFJlbmV3U2Vzc2lvblJlc3BvbnNlEg0KBXRva2VuGAEgASgJEhcKD2V4cGlyZXNfYXRfdW5peBgCIAEoAyKnAQoTUGVyc29uYWxBY2Nlc3NUb2tlbhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhQKDHRva2VuX3ByZWZpeBgDIAEoCRIOCgZzY29wZXMYBCADKAkSEgoKZXhwaXJlc19hdBgFIAEoCRISCgpyZXZva2VkX2F0GAYgASgJEhQKDGxhc3RfdXNlZF9hdBgHIAEoCRISCgpjcmVhdGVkX2F0GAggASgJIlQKIENyZWF0ZVBlcnNvbmFsQWNjZXNzVG9rZW5SZXF1ZXN0EgwKBG5hbWUYASABKAkSDgoGc2NvcGVzGAIgAygJEhIKCmV4cGlyZXNfYXQYAyABKAkiXgohQ3JlYXRlUGVyc29uYWxBY2Nlc3NUb2tlblJlc3BvbnNlEiYKBXRva2VuGAEgASgLMhcudjEuUGVyc29uYWxBY2Nlc3NUb2tlbhIRCglwbGFpbnRleHQYAiABKAkiIQofTGlzdFBlcnNvbmFsQWNjZXNzVG9rZW5zUmVxdWVzdCJLCiBMaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnNSZXNwb25zZRInCgZ0b2tlbnMYASADKAsyFy52MS5QZXJzb25hbEFjY2Vzc1Rva2VuIi4KIFJldm9rZVBlcnNvbmFsQWNjZXNzVG9rZW5SZXF1ZXN0EgoKAmlkGAEgASgJIiMKIVJldm9rZVBlcnNvbmFsQWNjZXNzVG9rZW5SZXNwb25zZSpNCgRSb2xlEhQKEFJPTEVfVU5TUEVDSUZJRUQQABIOCgpST0xFX09XTkVSEAESDgoKUk9MRV9BRE1JThACEg8KC1JPTEVfTUVNQkVSEAMy3QUKC0F1dGhTZXJ2aWNlEiwKBUxvZ2luEhAudjEuTG9naW5SZXF1ZXN0GhEudjEuTG9naW5SZXNwb25zZRJTChJHZXRCb290c3RyYXBTdGF0dXMSHS52MS5HZXRCb290c3RyYXBTdGF0dXNSZXF1ZXN0Gh4udjEuR2V0Qm9vdHN0cmFwU3RhdHVzUmVzcG9uc2USUwoSQ3JlYXRlSW5pdGlhbEFkbWluEh0udjEuQ3JlYXRlSW5pdGlhbEFkbWluUmVxdWVzdBoeLnYxLkNyZWF0ZUluaXRpYWxBZG1pblJlc3BvbnNlEi8KBkxvZ291dBIRLnYxLkxvZ291dFJlcXVlc3QaEi52MS5Mb2dvdXRSZXNwb25zZRJBCgxSZW5ld1Nlc3Npb24SFy52MS5SZW5ld1Nlc3Npb25SZXF1ZXN0GhgudjEuUmVuZXdTZXNzaW9uUmVzcG9uc2USRwoOR2V0Q3VycmVudFVzZXISGS52MS5HZXRDdXJyZW50VXNlclJlcXVlc3QaGi52MS5HZXRDdXJyZW50VXNlclJlc3BvbnNlEmgKGUNyZWF0ZVBlcnNvbmFsQWNjZXNzVG9rZW4SJC52MS5DcmVhdGVQZXJzb25hbEFjY2Vzc1Rva2VuUmVxdWVzdBolLnYxLkNyZWF0ZVBlcnNvbmFsQWNjZXNzVG9rZW5SZXNwb25zZRJlChhMaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnMSIy52MS5MaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnNSZXF1ZXN0GiQudjEuTGlzdFBlcnNvbmFsQWNjZXNzVG9rZW5zUmVzcG9uc2USaAoZUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlbhIkLnYxLlJldm9rZVBlcnNvbmFsQWNjZXNzVG9rZW5SZXF1ZXN0GiUudjEuUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlblJlc3BvbnNlQn4KBmNvbS52MUIJQXV0aFByb3RvUAFaQWdpdGh1Yi5jb20veGlyb245MDIyMjQvbm9yaXgvY29udHJvbC1wbGFuZS9pbnRlcm5hbC9nZW4vdjE7cGFhc3YxogIDVlhYqgICVjHKAgJWMeICDlYxXEdQQk1ldGFkYXRh6gICVjFiBnByb3RvMw");
 
 /**
  * @generated from message v1.User
@@ -279,6 +279,171 @@ export const RenewSessionResponseSchema: GenMessage<RenewSessionResponse> = /*@_
   messageDesc(file_v1_auth, 12);
 
 /**
+ * @generated from message v1.PersonalAccessToken
+ */
+export type PersonalAccessToken = Message<"v1.PersonalAccessToken"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string token_prefix = 3;
+   */
+  tokenPrefix: string;
+
+  /**
+   * @generated from field: repeated string scopes = 4;
+   */
+  scopes: string[];
+
+  /**
+   * @generated from field: string expires_at = 5;
+   */
+  expiresAt: string;
+
+  /**
+   * @generated from field: string revoked_at = 6;
+   */
+  revokedAt: string;
+
+  /**
+   * @generated from field: string last_used_at = 7;
+   */
+  lastUsedAt: string;
+
+  /**
+   * @generated from field: string created_at = 8;
+   */
+  createdAt: string;
+};
+
+/**
+ * Describes the message v1.PersonalAccessToken.
+ * Use `create(PersonalAccessTokenSchema)` to create a new message.
+ */
+export const PersonalAccessTokenSchema: GenMessage<PersonalAccessToken> = /*@__PURE__*/
+  messageDesc(file_v1_auth, 13);
+
+/**
+ * @generated from message v1.CreatePersonalAccessTokenRequest
+ */
+export type CreatePersonalAccessTokenRequest = Message<"v1.CreatePersonalAccessTokenRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: repeated string scopes = 2;
+   */
+  scopes: string[];
+
+  /**
+   * RFC3339; empty = no expiry
+   *
+   * @generated from field: string expires_at = 3;
+   */
+  expiresAt: string;
+};
+
+/**
+ * Describes the message v1.CreatePersonalAccessTokenRequest.
+ * Use `create(CreatePersonalAccessTokenRequestSchema)` to create a new message.
+ */
+export const CreatePersonalAccessTokenRequestSchema: GenMessage<CreatePersonalAccessTokenRequest> = /*@__PURE__*/
+  messageDesc(file_v1_auth, 14);
+
+/**
+ * @generated from message v1.CreatePersonalAccessTokenResponse
+ */
+export type CreatePersonalAccessTokenResponse = Message<"v1.CreatePersonalAccessTokenResponse"> & {
+  /**
+   * @generated from field: v1.PersonalAccessToken token = 1;
+   */
+  token?: PersonalAccessToken | undefined;
+
+  /**
+   * Plaintext shown once.
+   *
+   * @generated from field: string plaintext = 2;
+   */
+  plaintext: string;
+};
+
+/**
+ * Describes the message v1.CreatePersonalAccessTokenResponse.
+ * Use `create(CreatePersonalAccessTokenResponseSchema)` to create a new message.
+ */
+export const CreatePersonalAccessTokenResponseSchema: GenMessage<CreatePersonalAccessTokenResponse> = /*@__PURE__*/
+  messageDesc(file_v1_auth, 15);
+
+/**
+ * @generated from message v1.ListPersonalAccessTokensRequest
+ */
+export type ListPersonalAccessTokensRequest = Message<"v1.ListPersonalAccessTokensRequest"> & {
+};
+
+/**
+ * Describes the message v1.ListPersonalAccessTokensRequest.
+ * Use `create(ListPersonalAccessTokensRequestSchema)` to create a new message.
+ */
+export const ListPersonalAccessTokensRequestSchema: GenMessage<ListPersonalAccessTokensRequest> = /*@__PURE__*/
+  messageDesc(file_v1_auth, 16);
+
+/**
+ * @generated from message v1.ListPersonalAccessTokensResponse
+ */
+export type ListPersonalAccessTokensResponse = Message<"v1.ListPersonalAccessTokensResponse"> & {
+  /**
+   * @generated from field: repeated v1.PersonalAccessToken tokens = 1;
+   */
+  tokens: PersonalAccessToken[];
+};
+
+/**
+ * Describes the message v1.ListPersonalAccessTokensResponse.
+ * Use `create(ListPersonalAccessTokensResponseSchema)` to create a new message.
+ */
+export const ListPersonalAccessTokensResponseSchema: GenMessage<ListPersonalAccessTokensResponse> = /*@__PURE__*/
+  messageDesc(file_v1_auth, 17);
+
+/**
+ * @generated from message v1.RevokePersonalAccessTokenRequest
+ */
+export type RevokePersonalAccessTokenRequest = Message<"v1.RevokePersonalAccessTokenRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message v1.RevokePersonalAccessTokenRequest.
+ * Use `create(RevokePersonalAccessTokenRequestSchema)` to create a new message.
+ */
+export const RevokePersonalAccessTokenRequestSchema: GenMessage<RevokePersonalAccessTokenRequest> = /*@__PURE__*/
+  messageDesc(file_v1_auth, 18);
+
+/**
+ * @generated from message v1.RevokePersonalAccessTokenResponse
+ */
+export type RevokePersonalAccessTokenResponse = Message<"v1.RevokePersonalAccessTokenResponse"> & {
+};
+
+/**
+ * Describes the message v1.RevokePersonalAccessTokenResponse.
+ * Use `create(RevokePersonalAccessTokenResponseSchema)` to create a new message.
+ */
+export const RevokePersonalAccessTokenResponseSchema: GenMessage<RevokePersonalAccessTokenResponse> = /*@__PURE__*/
+  messageDesc(file_v1_auth, 19);
+
+/**
  * @generated from enum v1.Role
  */
 export enum Role {
@@ -360,6 +525,30 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof GetCurrentUserRequestSchema;
     output: typeof GetCurrentUserResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AuthService.CreatePersonalAccessToken
+   */
+  createPersonalAccessToken: {
+    methodKind: "unary";
+    input: typeof CreatePersonalAccessTokenRequestSchema;
+    output: typeof CreatePersonalAccessTokenResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AuthService.ListPersonalAccessTokens
+   */
+  listPersonalAccessTokens: {
+    methodKind: "unary";
+    input: typeof ListPersonalAccessTokensRequestSchema;
+    output: typeof ListPersonalAccessTokensResponseSchema;
+  },
+  /**
+   * @generated from rpc v1.AuthService.RevokePersonalAccessToken
+   */
+  revokePersonalAccessToken: {
+    methodKind: "unary";
+    input: typeof RevokePersonalAccessTokenRequestSchema;
+    output: typeof RevokePersonalAccessTokenResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_v1_auth, 0);
