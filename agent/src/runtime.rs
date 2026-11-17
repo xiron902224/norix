@@ -529,9 +529,7 @@ impl Runtime {
                     .output()
                     .await;
                 match output {
-                    Ok(out) if out.status.success() => {
-                        Some(format!("norix-volume-op:{id}:done:"))
-                    }
+                    Ok(out) if out.status.success() => Some(format!("norix-volume-op:{id}:done:")),
                     Ok(out) => Some(format!(
                         "norix-volume-op:{id}:failed:{}",
                         String::from_utf8_lossy(&out.stderr).trim()
