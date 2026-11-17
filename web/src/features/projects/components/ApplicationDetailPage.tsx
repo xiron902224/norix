@@ -81,6 +81,7 @@ export function ApplicationDetailPage() {
   const [editUpdateStrategy, setEditUpdateStrategy] = useState('rolling')
   const [editMaxSurge, setEditMaxSurge] = useState(1)
   const [editMaxUnavailable, setEditMaxUnavailable] = useState(0)
+  const [editProbeJson, setEditProbeJson] = useState('{"readiness":{"type":"http","path":"/"},"liveness":{"type":"none"}}')
   const [releases, setReleases] = useState<WorkloadRelease[]>([])
   const [releasesLoading, setReleasesLoading] = useState(false)
   const [rollbackId, setRollbackId] = useState('')
@@ -113,6 +114,7 @@ export function ApplicationDetailPage() {
     setEditUpdateStrategy(item.updateStrategy || 'rolling')
     setEditMaxSurge(item.maxSurge || 1)
     setEditMaxUnavailable(item.maxUnavailable || 0)
+    setEditProbeJson(item.probeSpecJson || '{"readiness":{"type":"http","path":"/"},"liveness":{"type":"none"}}')
   }
 
   async function refresh() {
@@ -318,6 +320,7 @@ export function ApplicationDetailPage() {
         updateStrategy: editUpdateStrategy,
         maxSurge: editMaxSurge,
         maxUnavailable: editMaxUnavailable,
+        probeSpecJson: editProbeJson,
       })
       setWorkload(updated)
       fillEdit(updated)
@@ -443,8 +446,12 @@ export function ApplicationDetailPage() {
               { label: 'Host port', value: workload.hostPort ? `:${workload.hostPort}` : '—' },
               { label: 'Generation', value: `${String(workload.observedGeneration)}/${String(workload.desiredGeneration)}` },
               { label: 'Region', value: workload.preferredZone || 'default' },
+              { label: 'Ready', value: workload.ready === false || workload.status === 'unready' ? 'no' : 'yes' },
             ]}
           />
+          {workload.probeStatusJson && workload.probeStatusJson !== '{}' ? (
+            <p className="muted mono" style={{ marginTop: 8 }}>probes: {workload.probeStatusJson}</p>
+          ) : null}
 
           <div className="compass-ov-card compass-app-detail-card">
             <h2 className="compass-ov-card-title">Application summary</h2>
@@ -604,6 +611,18 @@ export function ApplicationDetailPage() {
               <FormField id="edit-max-surge" label="Max surge" type="number" min={0} max={32} value={editMaxSurge} onChange={(e) => setEditMaxSurge(Number(e.target.value || 0))} />
               <FormField id="edit-max-unavail" label="Max unavailable" type="number" min={0} max={32} value={editMaxUnavailable} onChange={(e) => setEditMaxUnavailable(Number(e.target.value || 0))} />
             </div>
+            <label htmlFor="edit-probes" style={{ display: 'grid', gap: 6, marginTop: 12 }}>
+              Probes (JSON)
+              <textarea
+                id="edit-probes"
+                className="mono"
+                rows={5}
+                value={editProbeJson}
+                onChange={(e) => setEditProbeJson(e.target.value)}
+                spellCheck={false}
+              />
+              <span className="muted">readiness/liveness: type http|tcp|exec|none. Liveness fail restarts; readiness fail removes edge routing.</span>
+            </label>
             <EnvVarsEditor
               idPrefix="edit-env"
               rows={editEnvRows}

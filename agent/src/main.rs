@@ -6,6 +6,7 @@ mod edge;
 mod gitssrf;
 mod microvm;
 mod network;
+mod probes;
 mod proto_num;
 mod runtime;
 mod update;
@@ -210,6 +211,8 @@ async fn main() -> Result<()> {
                                             message: "use Runtimes / DesiredWasmPlan for wasm functions".into(),
                                             host_port: item.host_port,
                                             log_lines: vec!["skipped wasm workload".into()],
+                                            ready: true,
+                                            probe_status_json: "{}".into(),
                                         });
                                     } else {
                                         observed.push(client::ObservedWorkload {
@@ -220,6 +223,8 @@ async fn main() -> Result<()> {
                                             message: format!("unsupported runtime {}", item.runtime),
                                             host_port: item.host_port,
                                             log_lines: vec![],
+                                            ready: true,
+                                            probe_status_json: "{}".into(),
                                         });
                                     }
                                 }

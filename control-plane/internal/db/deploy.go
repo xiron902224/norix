@@ -28,6 +28,7 @@ type DesiredWorkload struct {
 	UpdateStrategy    string
 	SurgeHostPort     int32
 	ReadinessPath     string
+	ProbeSpecJSON     string
 }
 
 type ObservedWorkload struct {
@@ -38,6 +39,8 @@ type ObservedWorkload struct {
 	Message             string
 	HostPort            int32
 	LogLines            []string
+	Ready               bool
+	ProbeStatusJSON     string
 }
 
 type Deployment struct {
@@ -108,14 +111,25 @@ func scanWorkload(ctx context.Context, tx pgx.Tx, query string, args ...any) (Wo
 	if RequireKVMForIsolation(workload.IsolationMode) {
 		workload.RequireKVM = true
 	}
+	var probeRaw string
 	_ = tx.QueryRow(ctx, `
 		SELECT COALESCE(NULLIF(update_strategy, ''), 'rolling'),
-		       COALESCE(max_surge, 1), COALESCE(max_unavailable, 0)
+		       COALESCE(max_surge, 1), COALESCE(max_unavailable, 0),
+		       COALESCE(probe_spec::text, '{}')
 		FROM workloads WHERE id = $1::uuid`, workload.ID).Scan(
-		&workload.UpdateStrategy, &workload.MaxSurge, &workload.MaxUnavailable,
+		&workload.UpdateStrategy, &workload.MaxSurge, &workload.MaxUnavailable, &probeRaw,
 	)
 	workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable =
 		NormalizeUpdateStrategy(workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable)
+	spec, _ := DecodeProbeSpec(probeRaw)
+	workload.ProbeSpec = spec
+	var ready bool
+	var probeStatus string
+	_ = tx.QueryRow(ctx, `
+		SELECT ready, COALESCE(probe_status::text, '{}')
+		FROM workload_replicas WHERE workload_id = $1::uuid AND replica_index = 0`, workload.ID).Scan(&ready, &probeStatus)
+	workload.Ready = ready
+	workload.ProbeStatusJSON = probeStatus
 	return workload, nil
 }
 
@@ -178,7 +192,8 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 		       COALESCE(NULLIF(w.compose_service, ''), ''),
 		       COALESCE(NULLIF(w.update_strategy, ''), 'rolling'),
 		       COALESCE(wr.surge_host_port, 0),
-		       COALESCE(w.max_surge, 1)
+		       COALESCE(w.max_surge, 1),
+		       COALESCE(w.probe_spec::text, '{}')
 		FROM workload_replicas wr
 		JOIN workloads w ON w.id = wr.workload_id
 		WHERE wr.assigned_node_id = $1::uuid
@@ -187,7 +202,7 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 			wr.desired_action IN ('run', 'stop')
 			-- Self-heal: keep ensuring containers that should already be up
 			-- (covers host restarts / accidental docker rm while action=none).
-			OR (wr.desired_action = 'none' AND wr.status IN ('running', 'deploying'))
+			OR (wr.desired_action = 'none' AND wr.status IN ('running', 'deploying', 'unready'))
 		  )
 		  AND (
 			wr.desired_action = 'stop'
@@ -212,11 +227,13 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 		var item DesiredWorkload
 		var envText string
 		var maxSurge int32
+		var probeRaw string
 		if err := rows.Scan(
 			&item.ID, &item.ProjectID, &item.Name, &item.Image, &envText,
 			&item.CPUShares, &item.MemoryLimitMB, &item.HostPort, &item.ContainerPort,
 			&item.DesiredGeneration, &item.Action, &item.Runtime,
 			&item.NetworkName, &item.NetworkAlias, &item.UpdateStrategy, &item.SurgeHostPort, &maxSurge,
+			&probeRaw,
 		); err != nil {
 			return nil, err
 		}
@@ -226,7 +243,14 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 		}
 		item.Environment = env
 		item.UpdateStrategy, maxSurge, _ = NormalizeUpdateStrategy(item.UpdateStrategy, maxSurge, 0)
+		spec, _ := DecodeProbeSpec(probeRaw)
+		item.ProbeSpecJSON = ProbeSpecJSON(spec)
 		item.ReadinessPath = "/"
+		if spec.Readiness.Type == "http" && strings.TrimSpace(spec.Readiness.Path) != "" {
+			item.ReadinessPath = spec.Readiness.Path
+		} else if spec.Readiness.Type == "tcp" || spec.Readiness.Type == "none" {
+			item.ReadinessPath = ""
+		}
 		if item.UpdateStrategy == "rolling" && item.Action == "run" && maxSurge > 0 && item.SurgeHostPort <= 0 {
 			needsSurge = append(needsSurge, surgeNeed{replicaID: item.ID, idx: len(result)})
 		}
@@ -272,6 +296,23 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 		var prevHostPort int32
 		_ = tx.QueryRow(ctx, `SELECT COALESCE(host_port, 0) FROM workload_replicas WHERE id = $1::uuid`, item.ID).Scan(&prevHostPort)
 		var workloadID string
+		probeStatus := strings.TrimSpace(item.ProbeStatusJSON)
+		if probeStatus == "" {
+			probeStatus = "{}"
+		}
+		ready := true
+		switch status {
+		case "running":
+			// Only trust Ready when the agent sent probe_status_json (proto3 bool defaults false).
+			if probeStatus != "{}" && (!item.Ready || strings.Contains(probeStatus, `"readiness":"fail"`)) {
+				status = "unready"
+				ready = false
+			}
+		case "unready":
+			ready = false
+		case "failed", "stopped", "deploying":
+			ready = false
+		}
 		err := tx.QueryRow(ctx, `
 			UPDATE workload_replicas SET
 				status = CASE WHEN status = 'deleting' AND $2 = 'stopped' THEN 'stopped' ELSE $2 END,
@@ -282,19 +323,21 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 				END,
 				host_port = CASE WHEN $5 > 0 THEN $5 ELSE host_port END,
 				surge_host_port = CASE
-					WHEN $2 = 'running' AND $3 >= desired_generation THEN NULL
+					WHEN $2 IN ('running', 'unready') AND $3 >= desired_generation THEN NULL
 					ELSE surge_host_port
 				END,
+				ready = $7,
+				probe_status = $8::jsonb,
 				last_error = COALESCE($6, ''),
 				updated_at = NOW(),
 				desired_action = CASE
-					WHEN $2 IN ('running', 'stopped', 'failed') AND desired_action = 'run' AND $3 >= desired_generation THEN 'none'
+					WHEN $2 IN ('running', 'unready', 'stopped', 'failed') AND desired_action = 'run' AND $3 >= desired_generation THEN 'none'
 					WHEN $2 = 'stopped' AND desired_action = 'stop' THEN 'none'
 					ELSE desired_action
 				END
 			WHERE id = $1::uuid
 			RETURNING workload_id::text`,
-			item.ID, status, item.ObservedGeneration, item.ContainerID, item.HostPort, item.Message,
+			item.ID, status, item.ObservedGeneration, item.ContainerID, item.HostPort, item.Message, ready, probeStatus,
 		).Scan(&workloadID)
 		if err == pgx.ErrNoRows {
 			// Back-compat: observed id may still be the parent workload id.
@@ -342,7 +385,10 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 		if item.HostPort > 0 && prevHostPort > 0 && item.HostPort != prevHostPort && workloadID != "" {
 			edgeRefreshWorkloadIDs[workloadID] = struct{}{}
 		}
-		if status == "running" || status == "failed" || status == "stopped" {
+		if status == "unready" && workloadID != "" {
+			edgeRefreshWorkloadIDs[workloadID] = struct{}{}
+		}
+		if status == "running" || status == "failed" || status == "stopped" || status == "unready" {
 			_, _ = tx.Exec(ctx, `
 				UPDATE deployments SET status = $2, updated_at = NOW()
 				WHERE id = (

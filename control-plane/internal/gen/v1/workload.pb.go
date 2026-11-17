@@ -120,8 +120,12 @@ type Workload struct {
 	UpdateStrategy string `protobuf:"bytes,33,opt,name=update_strategy,json=updateStrategy,proto3" json:"update_strategy,omitempty"`
 	MaxSurge       int32  `protobuf:"varint,34,opt,name=max_surge,json=maxSurge,proto3" json:"max_surge,omitempty"`
 	MaxUnavailable int32  `protobuf:"varint,35,opt,name=max_unavailable,json=maxUnavailable,proto3" json:"max_unavailable,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// JSON ProbeSpec (#17): {readiness,liveness}
+	ProbeSpecJson   string `protobuf:"bytes,36,opt,name=probe_spec_json,json=probeSpecJson,proto3" json:"probe_spec_json,omitempty"`
+	Ready           bool   `protobuf:"varint,37,opt,name=ready,proto3" json:"ready,omitempty"`
+	ProbeStatusJson string `protobuf:"bytes,38,opt,name=probe_status_json,json=probeStatusJson,proto3" json:"probe_status_json,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Workload) Reset() {
@@ -397,6 +401,27 @@ func (x *Workload) GetMaxUnavailable() int32 {
 		return x.MaxUnavailable
 	}
 	return 0
+}
+
+func (x *Workload) GetProbeSpecJson() string {
+	if x != nil {
+		return x.ProbeSpecJson
+	}
+	return ""
+}
+
+func (x *Workload) GetReady() bool {
+	if x != nil {
+		return x.Ready
+	}
+	return false
+}
+
+func (x *Workload) GetProbeStatusJson() string {
+	if x != nil {
+		return x.ProbeStatusJson
+	}
+	return ""
 }
 
 type ListWorkloadsRequest struct {
@@ -2918,7 +2943,7 @@ var File_v1_workload_proto protoreflect.FileDescriptor
 
 const file_v1_workload_proto_rawDesc = "" +
 	"\n" +
-	"\x11v1/workload.proto\x12\x02v1\"\xff\v\n" +
+	"\x11v1/workload.proto\x12\x02v1\"\xe9\f\n" +
 	"\bWorkload\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -2960,7 +2985,10 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\x11compose_spec_json\x18  \x01(\tR\x0fcomposeSpecJson\x12'\n" +
 	"\x0fupdate_strategy\x18! \x01(\tR\x0eupdateStrategy\x12\x1b\n" +
 	"\tmax_surge\x18\" \x01(\x05R\bmaxSurge\x12'\n" +
-	"\x0fmax_unavailable\x18# \x01(\x05R\x0emaxUnavailable\x1a:\n" +
+	"\x0fmax_unavailable\x18# \x01(\x05R\x0emaxUnavailable\x12&\n" +
+	"\x0fprobe_spec_json\x18$ \x01(\tR\rprobeSpecJson\x12\x14\n" +
+	"\x05ready\x18% \x01(\bR\x05ready\x12*\n" +
+	"\x11probe_status_json\x18& \x01(\tR\x0fprobeStatusJson\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aA\n" +

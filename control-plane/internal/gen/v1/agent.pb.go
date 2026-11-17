@@ -926,6 +926,8 @@ type DesiredWorkload struct {
 	SurgeHostPort int32 `protobuf:"varint,16,opt,name=surge_host_port,json=surgeHostPort,proto3" json:"surge_host_port,omitempty"`
 	// HTTP path for readiness during rolling (default "/"); empty skips HTTP and uses TCP.
 	ReadinessPath string `protobuf:"bytes,17,opt,name=readiness_path,json=readinessPath,proto3" json:"readiness_path,omitempty"`
+	// JSON ProbeSpec (#17).
+	ProbeSpecJson string `protobuf:"bytes,18,opt,name=probe_spec_json,json=probeSpecJson,proto3" json:"probe_spec_json,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1075,6 +1077,13 @@ func (x *DesiredWorkload) GetSurgeHostPort() int32 {
 func (x *DesiredWorkload) GetReadinessPath() string {
 	if x != nil {
 		return x.ReadinessPath
+	}
+	return ""
+}
+
+func (x *DesiredWorkload) GetProbeSpecJson() string {
+	if x != nil {
+		return x.ProbeSpecJson
 	}
 	return ""
 }
@@ -1456,6 +1465,8 @@ type ObservedWorkload struct {
 	Message            string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
 	HostPort           int32                  `protobuf:"varint,6,opt,name=host_port,json=hostPort,proto3" json:"host_port,omitempty"`
 	LogLines           []string               `protobuf:"bytes,7,rep,name=log_lines,json=logLines,proto3" json:"log_lines,omitempty"`
+	Ready              bool                   `protobuf:"varint,8,opt,name=ready,proto3" json:"ready,omitempty"`
+	ProbeStatusJson    string                 `protobuf:"bytes,9,opt,name=probe_status_json,json=probeStatusJson,proto3" json:"probe_status_json,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1537,6 +1548,20 @@ func (x *ObservedWorkload) GetLogLines() []string {
 		return x.LogLines
 	}
 	return nil
+}
+
+func (x *ObservedWorkload) GetReady() bool {
+	if x != nil {
+		return x.Ready
+	}
+	return false
+}
+
+func (x *ObservedWorkload) GetProbeStatusJson() string {
+	if x != nil {
+		return x.ProbeStatusJson
+	}
+	return ""
 }
 
 type HeartbeatRequest struct {
@@ -4105,7 +4130,7 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1d\n" +
 	"\n" +
 	"node_token\x18\x02 \x01(\tR\tnodeToken\x12'\n" +
-	"\x0forganization_id\x18\x03 \x01(\tR\x0eorganizationId\"\x8f\x05\n" +
+	"\x0forganization_id\x18\x03 \x01(\tR\x0eorganizationId\"\xb7\x05\n" +
 	"\x0fDesiredWorkload\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -4126,7 +4151,8 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\rnetwork_alias\x18\x0e \x01(\tR\fnetworkAlias\x12'\n" +
 	"\x0fupdate_strategy\x18\x0f \x01(\tR\x0eupdateStrategy\x12&\n" +
 	"\x0fsurge_host_port\x18\x10 \x01(\x05R\rsurgeHostPort\x12%\n" +
-	"\x0ereadiness_path\x18\x11 \x01(\tR\rreadinessPath\x1a:\n" +
+	"\x0ereadiness_path\x18\x11 \x01(\tR\rreadinessPath\x12&\n" +
+	"\x0fprobe_spec_json\x18\x12 \x01(\tR\rprobeSpecJson\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbc\x01\n" +
@@ -4160,7 +4186,7 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x11ReportWasmRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12$\n" +
 	"\x04wasm\x18\x02 \x01(\v2\x10.v1.ObservedWasmR\x04wasm\"\x14\n" +
-	"\x12ReportWasmResponse\"\xe2\x01\n" +
+	"\x12ReportWasmResponse\"\xa4\x02\n" +
 	"\x10ObservedWorkload\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12!\n" +
@@ -4168,7 +4194,9 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x13observed_generation\x18\x04 \x01(\x03R\x12observedGeneration\x12\x18\n" +
 	"\amessage\x18\x05 \x01(\tR\amessage\x12\x1b\n" +
 	"\thost_port\x18\x06 \x01(\x05R\bhostPort\x12\x1b\n" +
-	"\tlog_lines\x18\a \x03(\tR\blogLines\"\x81\x02\n" +
+	"\tlog_lines\x18\a \x03(\tR\blogLines\x12\x14\n" +
+	"\x05ready\x18\b \x01(\bR\x05ready\x12*\n" +
+	"\x11probe_status_json\x18\t \x01(\tR\x0fprobeStatusJson\"\x81\x02\n" +
 	"\x10HeartbeatRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12*\n" +
 	"\x11cpu_usage_percent\x18\x02 \x01(\x01R\x0fcpuUsagePercent\x12$\n" +

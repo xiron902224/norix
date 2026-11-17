@@ -272,9 +272,11 @@ func getDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 
 	rows, err := tx.Query(ctx, `
 		SELECT d.id::text, d.hostname, d.tls_mode, d.edge_generation, d.status,
-		       COALESCE(w.host_port, 0), COALESCE(w.assigned_node_id::text, ''), d.updated_at
+		       COALESCE(w.host_port, 0), COALESCE(w.assigned_node_id::text, ''), d.updated_at,
+		       COALESCE(w.status, ''), COALESCE(wr.ready, TRUE)
 		FROM domain_routes d
 		JOIN workloads w ON w.id = d.workload_id
+		LEFT JOIN workload_replicas wr ON wr.workload_id = w.id AND wr.replica_index = 0
 		WHERE d.status IN ('pending', 'provisioning', 'active', 'deleting', 'failed')
 		ORDER BY d.hostname`)
 	if err != nil {
@@ -290,16 +292,18 @@ func getDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 	}
 	needsApply := force
 	type pendingRow struct {
-		route        DesiredEdgeRoute
-		status       string
-		hostPort     int32
-		assignedNode string
-		updatedAt    time.Time
+		route          DesiredEdgeRoute
+		status         string
+		hostPort       int32
+		assignedNode   string
+		updatedAt      time.Time
+		workloadStatus string
+		ready          bool
 	}
 	pending := make([]pendingRow, 0)
 	for rows.Next() {
 		var item pendingRow
-		if err := rows.Scan(&item.route.DomainID, &item.route.Hostname, &item.route.TLSMode, &item.route.EdgeGeneration, &item.status, &item.hostPort, &item.assignedNode, &item.updatedAt); err != nil {
+		if err := rows.Scan(&item.route.DomainID, &item.route.Hostname, &item.route.TLSMode, &item.route.EdgeGeneration, &item.status, &item.hostPort, &item.assignedNode, &item.updatedAt, &item.workloadStatus, &item.ready); err != nil {
 			return DesiredEdgePlan{}, err
 		}
 		if item.status == "pending" || item.status == "provisioning" || item.status == "deleting" {
@@ -308,6 +312,9 @@ func getDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 		// Retry failed routes after a short cooldown so a temporary dead
 		// upstream (container restart) does not stick forever in the UI.
 		if item.status == "failed" && item.hostPort > 0 && time.Since(item.updatedAt) >= 30*time.Second {
+			needsApply = true
+		}
+		if item.workloadStatus == "unready" || !item.ready {
 			needsApply = true
 		}
 		pending = append(pending, item)
@@ -340,6 +347,12 @@ func getDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 			continue
 		}
 		if item.assignedNode != "" && item.assignedNode != nodeID {
+			continue
+		}
+		// Readiness failing (#17): remove from edge instead of serving dead upstream.
+		if item.workloadStatus == "unready" || !item.ready {
+			route.Action = "delete"
+			plan.Routes = append(plan.Routes, route)
 			continue
 		}
 		route.Action = "upsert"

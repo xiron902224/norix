@@ -46,6 +46,8 @@ impl Runtime {
                         .into(),
                     host_port: item.host_port,
                     log_lines: vec!["skipped wasm workload in container reconcile".into()],
+                    ready: true,
+                    probe_status_json: "{}".into(),
                 });
                 continue;
             }
@@ -61,6 +63,8 @@ impl Runtime {
                         message: error.to_string(),
                         host_port: item.host_port,
                         log_lines: vec![format!("reconcile error: {error}")],
+                        ready: true,
+                        probe_status_json: "{}".into(),
                     });
                 }
             }
@@ -112,6 +116,8 @@ impl Runtime {
                 message: String::new(),
                 host_port: desired.host_port,
                 log_lines: vec![format!("stopped {}", name)],
+                ready: true,
+                probe_status_json: "{}".into(),
             });
         }
 
@@ -139,15 +145,30 @@ impl Runtime {
                     .to_string();
                 // Clean leftover surge container after a completed roll.
                 let _ = self.remove_container(&format!("{name}-next")).await;
-                return Ok(ObservedWorkload {
+                let (ready, probe_status) = crate::probes::evaluate_probes(desired, &name).await;
+                let mut observed = ObservedWorkload {
                     id: desired.id.clone(),
                     status: "running".into(),
                     container_id,
                     observed_generation: desired.desired_generation,
-                    message: String::new(),
+                    message: probe_status.message.clone(),
                     host_port: desired.host_port,
                     log_lines: logs,
-                });
+                    ready,
+                    probe_status_json: crate::probes::probe_status_json(&probe_status),
+                };
+                if probe_status.liveness == "fail" {
+                    // Liveness failure: recreate container (#17).
+                    let _ = self.remove_container(&name).await;
+                    self.pull(&desired.image).await?;
+                    let container_id = self.run(desired, &name).await?;
+                    observed.container_id = container_id;
+                    observed.status = "deploying".into();
+                    observed.ready = false;
+                    observed.message =
+                        format!("liveness failed; restarted: {}", probe_status.message);
+                }
+                return Ok(observed);
             }
             if is_rolling(desired) {
                 return self.reconcile_rolling(desired, &name).await;
@@ -173,6 +194,8 @@ impl Runtime {
                     message,
                     host_port: desired.host_port,
                     log_lines: logs,
+                    ready: true,
+                    probe_status_json: "{}".into(),
                 });
             }
             let _ = self.remove_container(&name).await;
@@ -193,6 +216,8 @@ impl Runtime {
                 message: String::new(),
                 host_port: desired.host_port,
                 log_lines: logs,
+                ready: true,
+                probe_status_json: "{}".into(),
             });
         }
         let logs = self.logs(&name, 40).await.unwrap_or_default();
@@ -209,6 +234,8 @@ impl Runtime {
             message,
             host_port: desired.host_port,
             log_lines: logs,
+            ready: true,
+            probe_status_json: "{}".into(),
         })
     }
 
@@ -263,6 +290,8 @@ impl Runtime {
                 message,
                 host_port: desired.host_port,
                 log_lines: logs,
+                ready: true,
+                probe_status_json: "{}".into(),
             });
         }
 
@@ -278,6 +307,8 @@ impl Runtime {
                 message: format!("rolling readiness pending: {error}"),
                 host_port: desired.host_port,
                 log_lines: logs,
+                ready: true,
+                probe_status_json: "{}".into(),
             });
         }
 
@@ -307,6 +338,8 @@ impl Runtime {
             message: format!("rolled via surge port {surge}"),
             host_port: surge,
             log_lines: logs,
+            ready: true,
+            probe_status_json: "{}".into(),
         })
     }
 
