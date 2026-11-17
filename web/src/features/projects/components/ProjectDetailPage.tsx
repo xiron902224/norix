@@ -19,6 +19,7 @@ import {
   listProjects,
   listWorkloads,
 } from '../services/projects-api'
+import { EnvVarsEditor, envRowsToMap, type EnvRow } from './EnvVarsEditor'
 
 function artifactLabel(workload: Workload) {
   if (workload.sourceKind === 'git' || workload.gitUrl) {
@@ -46,6 +47,7 @@ export function ProjectDetailPage() {
   const [composeGitRef, setComposeGitRef] = useState('main')
   const [composeStackName, setComposeStackName] = useState('')
   const [composeAnalyzing, setComposeAnalyzing] = useState(false)
+  const [createEnvRows, setCreateEnvRows] = useState<EnvRow[]>([])
 
   function visibleWorkloads(items: Workload[]) {
     return items.filter((item) => item.status !== 'deleting')
@@ -127,7 +129,9 @@ export function ProjectDetailPage() {
         scheduleStrategy: String(form.get('strategy') || 'spread'),
         preferredZone: String(form.get('zone') || 'default'),
         requireKvm: form.get('requireKvm') === 'on',
+        envVars: envRowsToMap(createEnvRows),
       })
+      setCreateEnvRows([])
       setModalMode(null)
       setNotice('Workload created.')
       await refresh()
@@ -156,6 +160,7 @@ export function ProjectDetailPage() {
         gitRef: String(form.get('gitRef') || 'main'),
         dockerfilePath,
         containerPort,
+        envVars: envRowsToMap(createEnvRows),
       })
       const build = await deployFromGit({
         workloadId: workload.id,
@@ -164,6 +169,7 @@ export function ProjectDetailPage() {
         dockerfilePath: workload.dockerfilePath || dockerfilePath,
         containerPort: workload.containerPort || containerPort,
       })
+      setCreateEnvRows([])
       setModalMode(null)
       setNotice(`Build queued (${shortId(build.buildId)}).`)
       await refresh()
@@ -295,8 +301,14 @@ export function ProjectDetailPage() {
             }}>
               <Layers size={14} /> Compose stack
             </Button>
-            <Button type="button" variant="secondary" onClick={() => setModalMode('git')}>From git</Button>
-            <Button type="button" onClick={() => setModalMode('image')}>
+            <Button type="button" variant="secondary" onClick={() => {
+              setCreateEnvRows([])
+              setModalMode('git')
+            }}>From git</Button>
+            <Button type="button" onClick={() => {
+              setCreateEnvRows([])
+              setModalMode('image')
+            }}>
               <Plus size={14} /> New application
             </Button>
           </>
@@ -388,6 +400,12 @@ export function ProjectDetailPage() {
           <input id="workload-kvm" name="requireKvm" type="checkbox" />
           Requires KVM
         </label>
+        <EnvVarsEditor
+          idPrefix="create-image-env"
+          rows={createEnvRows}
+          onChange={setCreateEnvRows}
+          hint="Stored encrypted at rest. Values are never shown again after save."
+        />
       </CreateModal>
 
       <CreateModal
@@ -403,6 +421,12 @@ export function ProjectDetailPage() {
         <FormField id="git-ref" name="gitRef" label="Ref" placeholder="main" defaultValue="main" />
         <FormField id="git-dockerfile" name="dockerfile" label="Dockerfile / compose" placeholder="Dockerfile or docker-compose.yml" defaultValue="Dockerfile" />
         <FormField id="git-port" name="port" label="Container port" type="number" placeholder="80" defaultValue={80} />
+        <EnvVarsEditor
+          idPrefix="create-git-env"
+          rows={createEnvRows}
+          onChange={setCreateEnvRows}
+          hint="Stored encrypted at rest. Values are never shown again after save."
+        />
         <p className="muted">Single Dockerfile apps. For multi-service compose, use <strong>Compose stack</strong>.</p>
         {!hasOnlineNode ? <p className="muted">You need an online agent (or local runtime) to build.</p> : null}
       </CreateModal>

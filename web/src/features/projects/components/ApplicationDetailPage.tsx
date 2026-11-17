@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronRight,
@@ -27,6 +27,7 @@ import {
   listWorkloads,
   updateWorkload,
 } from '../services/projects-api'
+import { EnvVarsEditor, envMapToRows, envRowsToMap, type EnvRow } from './EnvVarsEditor'
 
 type DetailTab = 'summary' | 'build' | 'edit'
 
@@ -73,6 +74,9 @@ export function ApplicationDetailPage() {
   const [editGitUrl, setEditGitUrl] = useState('')
   const [editGitRef, setEditGitRef] = useState('main')
   const [editDockerfile, setEditDockerfile] = useState('Dockerfile')
+  const [editEnvRows, setEditEnvRows] = useState<EnvRow[]>([])
+  const tabRef = useRef(tab)
+  tabRef.current = tab
 
   function fillEdit(item: Workload) {
     setEditName(item.name)
@@ -84,6 +88,7 @@ export function ApplicationDetailPage() {
     setEditGitUrl(item.gitUrl || '')
     setEditGitRef(item.gitRef || 'main')
     setEditDockerfile(item.dockerfilePath || 'Dockerfile')
+    setEditEnvRows(envMapToRows(item.envVars))
   }
 
   async function refresh() {
@@ -99,7 +104,8 @@ export function ApplicationDetailPage() {
     setWorkload(foundWorkload)
     setTotalNodes(nodes.length)
     setOnlineNodes(nodes.filter((node) => node.status === 'online').length)
-    if (foundWorkload) fillEdit(foundWorkload)
+    // Don't clobber the Edit form while the user is typing (env values especially).
+    if (foundWorkload && tabRef.current !== 'edit') fillEdit(foundWorkload)
     if (!foundProject) setError('Project not found')
     else if (!foundWorkload) setError('Application not found')
   }
@@ -261,6 +267,7 @@ export function ApplicationDetailPage() {
         dockerfilePath: editDockerfile,
         memoryLimitMb: Number(workload.memoryLimitMb || 512n),
         cpuShares: workload.cpuShares || 1024,
+        envVars: envRowsToMap(editEnvRows),
       })
       setWorkload(updated)
       fillEdit(updated)
@@ -407,6 +414,23 @@ export function ApplicationDetailPage() {
               <div><dt>Assigned node</dt><dd className="mono">{workload.assignedNodeId || '—'}</dd></div>
               <div><dt>Container</dt><dd className="mono">{shortId(workload.containerId, 16)}</dd></div>
               <div className="detail-span">
+                <dt>Environment</dt>
+                <dd>
+                  {Object.keys(workload.envVars || {}).length === 0 ? (
+                    <span className="muted">No env vars</span>
+                  ) : (
+                    <ul className="env-vars-summary">
+                      {Object.entries(workload.envVars).map(([key, value]) => (
+                        <li key={key}>
+                          <span className="env-key">{key}</span>
+                          <span className="muted mono">{value}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </dd>
+              </div>
+              <div className="detail-span">
                 <dt>Now</dt>
                 <dd>{workloadHint(workload.status, workload.observedGeneration, workload.desiredGeneration, hasOnlineNode)}</dd>
               </div>
@@ -476,6 +500,12 @@ export function ApplicationDetailPage() {
               <FormField id="edit-ref" label="Git ref" value={editGitRef} onChange={(e) => setEditGitRef(e.target.value)} />
               <FormField id="edit-dockerfile" label="Dockerfile" value={editDockerfile} onChange={(e) => setEditDockerfile(e.target.value)} />
             </div>
+            <EnvVarsEditor
+              idPrefix="edit-env"
+              rows={editEnvRows}
+              onChange={setEditEnvRows}
+              hint="Leave ******** to keep the current secret. Clear a value or remove the row to change/delete it."
+            />
             <div className="page-actions" style={{ marginTop: 16 }}>
               <Button type="submit" disabled={savingEdit}>{savingEdit ? 'Saving…' : 'Save changes'}</Button>
               <Button type="button" variant="secondary" onClick={() => { fillEdit(workload); setTab('summary') }}>Cancel</Button>
