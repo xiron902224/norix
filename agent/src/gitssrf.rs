@@ -37,9 +37,8 @@ pub fn validate_git_url(raw: &str) -> Result<()> {
         bail!("git url dns lookup {host:?}: no addresses");
     }
     for ip in addrs {
-        check_ip(ip, &allowlist).with_context(|| {
-            format!("git url host {host} resolves to blocked address {ip}")
-        })?;
+        check_ip(ip, &allowlist)
+            .with_context(|| format!("git url host {host} resolves to blocked address {ip}"))?;
     }
     Ok(())
 }
@@ -103,14 +102,13 @@ fn host_from_url(raw: &str) -> Result<String> {
 }
 
 fn parse_scp_host(raw: &str) -> Result<String> {
-    let at = raw
-        .rfind('@')
-        .ok_or_else(|| anyhow::anyhow!("git url must be https://, ssh://, or scp-like user@host:path"))?;
+    let at = raw.rfind('@').ok_or_else(|| {
+        anyhow::anyhow!("git url must be https://, ssh://, or scp-like user@host:path")
+    })?;
     let rest = &raw[at + 1..];
-    let colon = rest
-        .find(':')
-        .filter(|&i| i > 0)
-        .ok_or_else(|| anyhow::anyhow!("git url must be https://, ssh://, or scp-like user@host:path"))?;
+    let colon = rest.find(':').filter(|&i| i > 0).ok_or_else(|| {
+        anyhow::anyhow!("git url must be https://, ssh://, or scp-like user@host:path")
+    })?;
     let mut host = rest[..colon].to_string();
     if host.contains('/') {
         bail!("git url must be https://, ssh://, or scp-like user@host:path");
