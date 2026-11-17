@@ -37,8 +37,10 @@ type Node struct {
 	Draining         bool
 	Zone             string
 	Labels                map[string]string
-	ReportedWorkloadIDs   []string
-	DesiredAgentVersion   string
+	ReportedWorkloadIDs      []string
+	DesiredAgentVersion      string
+	CredentialRotatePending  bool
+	ClientCertConfigured     bool
 }
 
 type JoinToken struct {
@@ -192,18 +194,30 @@ func uniqueNodeName(ctx context.Context, tx pgx.Tx, organizationID, base string)
 func FindNodeByTokenHash(ctx context.Context, pool *pgxpool.Pool, tokenHash []byte) (Node, error) {
 	var node Node
 	var lastSeen *time.Time
+	var rotateAt *time.Time
+	var cert *string
 	err := pool.QueryRow(ctx, `
 		SELECT id::text, organization_id::text, name, status, last_seen_at,
 		       cpu_cores, memory_total_mb, docker_socket, containerd_socket,
 		       kvm_level, hostname, agent_version, is_local,
-		       COALESCE(desired_agent_version, '')
+		       COALESCE(desired_agent_version, ''),
+		       credential_rotate_requested_at,
+		       client_cert_sha256
 		FROM nodes
-		WHERE token_hash = $1`, tokenHash).Scan(
+		WHERE token_revoked_at IS NULL
+		  AND (
+		    token_hash = $1
+		    OR (
+		      previous_token_hash = $1
+		      AND previous_token_expires_at IS NOT NULL
+		      AND previous_token_expires_at > NOW()
+		    )
+		  )`, tokenHash).Scan(
 		&node.ID, &node.OrganizationID, &node.Name, &node.Status, &lastSeen,
 		&node.Capabilities.CPUCores, &node.Capabilities.MemoryTotalMB,
 		&node.Capabilities.DockerSocket, &node.Capabilities.ContainerdSocket,
 		&node.Capabilities.KVMLevel, &node.Capabilities.Hostname, &node.Capabilities.AgentVersion,
-		&node.IsLocal, &node.DesiredAgentVersion,
+		&node.IsLocal, &node.DesiredAgentVersion, &rotateAt, &cert,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -212,6 +226,8 @@ func FindNodeByTokenHash(ctx context.Context, pool *pgxpool.Pool, tokenHash []by
 		return Node{}, fmt.Errorf("lookup node credential: %w", err)
 	}
 	node.LastSeenAt = lastSeen
+	node.CredentialRotatePending = rotateAt != nil
+	node.ClientCertConfigured = cert != nil && strings.TrimSpace(*cert) != ""
 	return node, nil
 }
 
@@ -232,7 +248,9 @@ func ListNodes(ctx context.Context, pool *pgxpool.Pool, organizationID string) (
 		       cpu_usage_percent, memory_free_mb, disk_free_mb,
 		       role, cordoned, draining, zone, labels::text,
 		       COALESCE(reported_workload_ids, '{}'),
-		       COALESCE(desired_agent_version, '')
+		       COALESCE(desired_agent_version, ''),
+		       credential_rotate_requested_at,
+		       client_cert_sha256
 		FROM nodes
 		ORDER BY is_local DESC, COALESCE(last_seen_at, created_at) DESC, name`)
 	if err != nil {
@@ -245,6 +263,8 @@ func ListNodes(ctx context.Context, pool *pgxpool.Pool, organizationID string) (
 		var node Node
 		var lastSeen *time.Time
 		var labelsText string
+		var rotateAt *time.Time
+		var cert *string
 		if err := rows.Scan(
 			&node.ID, &node.OrganizationID, &node.Name, &node.Status, &lastSeen,
 			&node.Capabilities.CPUCores, &node.Capabilities.MemoryTotalMB,
@@ -252,11 +272,13 @@ func ListNodes(ctx context.Context, pool *pgxpool.Pool, organizationID string) (
 			&node.Capabilities.KVMLevel, &node.Capabilities.Hostname, &node.Capabilities.AgentVersion,
 			&node.IsLocal, &node.CPUUsagePercent, &node.MemoryFreeMB, &node.DiskFreeMB,
 			&node.Role, &node.Cordoned, &node.Draining, &node.Zone, &labelsText,
-			&node.ReportedWorkloadIDs, &node.DesiredAgentVersion,
+			&node.ReportedWorkloadIDs, &node.DesiredAgentVersion, &rotateAt, &cert,
 		); err != nil {
 			return nil, fmt.Errorf("scan node: %w", err)
 		}
 		node.LastSeenAt = lastSeen
+		node.CredentialRotatePending = rotateAt != nil
+		node.ClientCertConfigured = cert != nil && strings.TrimSpace(*cert) != ""
 		node.Labels = decodeLabels([]byte(labelsText))
 		if node.Role == "" {
 			node.Role = "worker"

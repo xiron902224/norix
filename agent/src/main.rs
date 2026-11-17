@@ -123,7 +123,7 @@ async fn main() -> Result<()> {
             None
         }
     };
-    let state = load_or_enroll(&client, &config, &caps).await?;
+    let mut state = load_or_enroll(&client, &config, &caps).await?;
     info!(node_id = %state.node_id, "agent enrolled");
 
     let mut backoff = Duration::from_secs(1);
@@ -153,6 +153,14 @@ async fn main() -> Result<()> {
                             info!("heartbeat restored");
                         }
                         backoff = Duration::from_secs(1);
+                        if let Some(new_token) = desired.rotated_node_token.as_deref() {
+                            state.node_token = new_token.to_string();
+                            if let Err(error) = write_state(&config.state_path(), &state) {
+                                warn!(%error, "failed to persist rotated node token");
+                            } else {
+                                info!("persisted rotated node token from control plane");
+                            }
+                        }
                         if let Some(target) = desired
                             .desired_agent_version
                             .as_deref()

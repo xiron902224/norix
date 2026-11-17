@@ -5,6 +5,9 @@ import {
   CreateJoinTokenRequestSchema,
   DrainNodeRequestSchema,
   ListNodesRequestSchema,
+  RevokeNodeTokenRequestSchema,
+  RotateNodeTokenRequestSchema,
+  SetNodeClientCertRequestSchema,
   UpdateNodeAgentRequestSchema,
   UpdateNodeScheduleRequestSchema,
   type Node,
@@ -64,6 +67,27 @@ export async function updateNodeAgent(input: {
   const response = await agentClient.updateNodeAgent(create(UpdateNodeAgentRequestSchema, {
     nodeId: input.nodeId,
     version: input.version ?? '',
+  }))
+  if (!response.node) throw new Error('Node was not returned')
+  return response.node
+}
+
+export async function rotateNodeToken(nodeId: string): Promise<{ node: Node; message: string }> {
+  const response = await agentClient.rotateNodeToken(create(RotateNodeTokenRequestSchema, { nodeId }))
+  if (!response.node) throw new Error('Node was not returned')
+  return { node: response.node, message: response.message || 'Rotation queued' }
+}
+
+export async function revokeNodeToken(nodeId: string): Promise<Node> {
+  const response = await agentClient.revokeNodeToken(create(RevokeNodeTokenRequestSchema, { nodeId }))
+  if (!response.node) throw new Error('Node was not returned')
+  return response.node
+}
+
+export async function setNodeClientCert(nodeId: string, certificateSha256: string): Promise<Node> {
+  const response = await agentClient.setNodeClientCert(create(SetNodeClientCertRequestSchema, {
+    nodeId,
+    certificateSha256,
   }))
   if (!response.node) throw new Error('Node was not returned')
   return response.node

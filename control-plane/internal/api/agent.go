@@ -103,6 +103,21 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 		value := capabilitiesFromProto(request.GetCapabilities())
 		caps = &value
 	}
+	rotatedToken := ""
+	if node.CredentialRotatePending {
+		plain, hash, err := auth.NewSessionToken()
+		if err != nil {
+			return nil, internalError("rotate node token", err)
+		}
+		okRotate, err := db.CompleteNodeTokenRotationIfRequested(ctx, service.pool, node.OrganizationID, node.ID, hash)
+		if err != nil {
+			return nil, internalError("complete node token rotation", err)
+		}
+		if okRotate {
+			rotatedToken = plain
+		}
+	}
+
 	if err := db.RecordHeartbeat(
 		ctx,
 		service.pool,
@@ -199,6 +214,7 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds,
 		DesiredEdge: desiredEdge, DesiredNetwork: desiredNetwork, DesiredWasm: desiredWasm,
 		DesiredAgentVersion: desiredAgentVersion,
+		RotatedNodeToken:    rotatedToken,
 	}, nil
 }
 
@@ -575,8 +591,10 @@ func nodeToProto(node db.Node) *paasv1.Node {
 		Draining:        node.Draining,
 		Zone:            zone,
 		Labels:          node.Labels,
-		ReportedWorkloadIds:   node.ReportedWorkloadIDs,
-		DesiredAgentVersion:   node.DesiredAgentVersion,
+		ReportedWorkloadIds:      node.ReportedWorkloadIDs,
+		DesiredAgentVersion:      node.DesiredAgentVersion,
+		CredentialRotatePending:  node.CredentialRotatePending,
+		ClientCertConfigured:     node.ClientCertConfigured,
 		Capabilities: &paasv1.NodeCapabilities{
 			CpuCores:         node.Capabilities.CPUCores,
 			MemoryTotalMb:    node.Capabilities.MemoryTotalMB,
@@ -692,4 +710,70 @@ func (service AgentService) UpdateNodeSchedule(ctx context.Context, request *paa
 		return nil, invalidArgument(err.Error())
 	}
 	return &paasv1.UpdateNodeScheduleResponse{Node: nodeToProto(node)}, nil
+}
+
+func (service AgentService) RotateNodeToken(ctx context.Context, request *paasv1.RotateNodeTokenRequest) (*paasv1.RotateNodeTokenResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		return nil, invalidArgument("node_id is required")
+	}
+	node, err := db.RequestNodeTokenRotation(ctx, service.pool, identity.OrganizationID, nodeID, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.RotateNodeTokenResponse{
+		Node:    nodeToProto(node),
+		Message: "Rotation queued. The next agent heartbeat receives a new token and persists it (15m grace for the old token).",
+	}, nil
+}
+
+func (service AgentService) RevokeNodeToken(ctx context.Context, request *paasv1.RevokeNodeTokenRequest) (*paasv1.RevokeNodeTokenResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		return nil, invalidArgument("node_id is required")
+	}
+	node, err := db.RevokeNodeToken(ctx, service.pool, identity.OrganizationID, nodeID, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.RevokeNodeTokenResponse{Node: nodeToProto(node)}, nil
+}
+
+func (service AgentService) SetNodeClientCert(ctx context.Context, request *paasv1.SetNodeClientCertRequest) (*paasv1.SetNodeClientCertResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		return nil, invalidArgument("node_id is required")
+	}
+	node, err := db.SetNodeClientCertSHA256(ctx, service.pool, identity.OrganizationID, nodeID, request.GetCertificateSha256(), db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.SetNodeClientCertResponse{Node: nodeToProto(node)}, nil
 }

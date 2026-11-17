@@ -310,6 +310,8 @@ pub struct HeartbeatResult {
     pub desired_network: Option<DesiredNetworkPlan>,
     pub desired_wasm: Option<DesiredWasmPlan>,
     pub desired_agent_version: Option<String>,
+    /// One-shot replacement bearer after UI/API RotateNodeToken (#13).
+    pub rotated_node_token: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -330,6 +332,8 @@ struct HeartbeatResponse {
     desired_wasm: Option<DesiredWasmPlan>,
     #[serde(default)]
     desired_agent_version: Option<String>,
+    #[serde(default)]
+    rotated_node_token: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -347,11 +351,32 @@ pub struct AgentClient {
 
 impl AgentClient {
     pub fn new(api_base: String) -> Result<Self> {
-        let http = Client::builder()
+        let mut builder = Client::builder()
             .user_agent(format!("norix-agent/{}", env!("CARGO_PKG_VERSION")))
-            .timeout(std::time::Duration::from_secs(60))
-            .build()
-            .context("build http client")?;
+            .timeout(std::time::Duration::from_secs(60));
+        // Optional mTLS identity (#13): NORIX_AGENT_CLIENT_CERT + NORIX_AGENT_CLIENT_KEY
+        // (+ optional NORIX_AGENT_CA_CERT to trust the control-plane / CA).
+        if let (Ok(cert_path), Ok(key_path)) = (
+            std::env::var("NORIX_AGENT_CLIENT_CERT"),
+            std::env::var("NORIX_AGENT_CLIENT_KEY"),
+        ) {
+            let cert_pem = std::fs::read(&cert_path)
+                .with_context(|| format!("read NORIX_AGENT_CLIENT_CERT {}", cert_path))?;
+            let key_pem = std::fs::read(&key_path)
+                .with_context(|| format!("read NORIX_AGENT_CLIENT_KEY {}", key_path))?;
+            let identity = reqwest::Identity::from_pem(&[cert_pem, key_pem].concat())
+                .context("parse agent client TLS identity (PEM cert+key)")?;
+            builder = builder.identity(identity);
+            tracing::info!("agent mTLS client identity loaded");
+        }
+        if let Ok(ca_path) = std::env::var("NORIX_AGENT_CA_CERT") {
+            let ca_pem = std::fs::read(&ca_path)
+                .with_context(|| format!("read NORIX_AGENT_CA_CERT {}", ca_path))?;
+            let ca = reqwest::Certificate::from_pem(&ca_pem)
+                .context("parse NORIX_AGENT_CA_CERT PEM")?;
+            builder = builder.add_root_certificate(ca);
+        }
+        let http = builder.build().context("build http client")?;
         Ok(Self { http, api_base })
     }
 
@@ -408,6 +433,10 @@ impl AgentClient {
                     .filter(|plan| !plan.functions.is_empty()),
                 desired_agent_version: parsed
                     .desired_agent_version
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty()),
+                rotated_node_token: parsed
+                    .rotated_node_token
                     .map(|v| v.trim().to_string())
                     .filter(|v| !v.is_empty()),
             }),

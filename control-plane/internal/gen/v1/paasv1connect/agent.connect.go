@@ -63,6 +63,15 @@ const (
 	// AgentServiceUpdateNodeAgentProcedure is the procedure name of the AgentService's UpdateNodeAgent
 	// RPC.
 	AgentServiceUpdateNodeAgentProcedure = "/v1.AgentService/UpdateNodeAgent"
+	// AgentServiceRotateNodeTokenProcedure is the procedure name of the AgentService's RotateNodeToken
+	// RPC.
+	AgentServiceRotateNodeTokenProcedure = "/v1.AgentService/RotateNodeToken"
+	// AgentServiceRevokeNodeTokenProcedure is the procedure name of the AgentService's RevokeNodeToken
+	// RPC.
+	AgentServiceRevokeNodeTokenProcedure = "/v1.AgentService/RevokeNodeToken"
+	// AgentServiceSetNodeClientCertProcedure is the procedure name of the AgentService's
+	// SetNodeClientCert RPC.
+	AgentServiceSetNodeClientCertProcedure = "/v1.AgentService/SetNodeClientCert"
 	// AgentServiceConnectStreamProcedure is the procedure name of the AgentService's ConnectStream RPC.
 	AgentServiceConnectStreamProcedure = "/v1.AgentService/ConnectStream"
 )
@@ -180,6 +189,27 @@ var (
 			Procedure:  AgentServiceUpdateNodeAgentProcedure,
 		}
 	})
+	agentServiceRotateNodeTokenSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("RotateNodeToken"),
+			Procedure:  AgentServiceRotateNodeTokenProcedure,
+		}
+	})
+	agentServiceRevokeNodeTokenSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("RevokeNodeToken"),
+			Procedure:  AgentServiceRevokeNodeTokenProcedure,
+		}
+	})
+	agentServiceSetNodeClientCertSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("SetNodeClientCert"),
+			Procedure:  AgentServiceSetNodeClientCertProcedure,
+		}
+	})
 	agentServiceConnectStreamSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeBidi,
@@ -207,6 +237,9 @@ type AgentServiceClient interface {
 	DrainNode(context.Context, *v1.DrainNodeRequest) (*v1.DrainNodeResponse, error)
 	UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error)
 	UpdateNodeAgent(context.Context, *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error)
+	RotateNodeToken(context.Context, *v1.RotateNodeTokenRequest) (*v1.RotateNodeTokenResponse, error)
+	RevokeNodeToken(context.Context, *v1.RevokeNodeTokenRequest) (*v1.RevokeNodeTokenResponse, error)
+	SetNodeClientCert(context.Context, *v1.SetNodeClientCertRequest) (*v1.SetNodeClientCertResponse, error)
 	ConnectStream(context.Context) (AgentServiceConnectStreamClientStream, error)
 }
 
@@ -271,6 +304,9 @@ type AgentServiceHandler interface {
 	DrainNode(context.Context, *v1.DrainNodeRequest) (*v1.DrainNodeResponse, error)
 	UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error)
 	UpdateNodeAgent(context.Context, *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error)
+	RotateNodeToken(context.Context, *v1.RotateNodeTokenRequest) (*v1.RotateNodeTokenResponse, error)
+	RevokeNodeToken(context.Context, *v1.RevokeNodeTokenRequest) (*v1.RevokeNodeTokenResponse, error)
+	SetNodeClientCert(context.Context, *v1.SetNodeClientCertRequest) (*v1.SetNodeClientCertResponse, error)
 	ConnectStream(context.Context, AgentServiceConnectStreamServerStream) error
 }
 
@@ -294,6 +330,9 @@ func RegisterAgentServiceHandler(server *connect.Server, svc AgentServiceHandler
 		connect.Method{Spec: agentServiceDrainNodeSpec(), Handler: adapter.drainNode},
 		connect.Method{Spec: agentServiceUpdateNodeScheduleSpec(), Handler: adapter.updateNodeSchedule},
 		connect.Method{Spec: agentServiceUpdateNodeAgentSpec(), Handler: adapter.updateNodeAgent},
+		connect.Method{Spec: agentServiceRotateNodeTokenSpec(), Handler: adapter.rotateNodeToken},
+		connect.Method{Spec: agentServiceRevokeNodeTokenSpec(), Handler: adapter.revokeNodeToken},
+		connect.Method{Spec: agentServiceSetNodeClientCertSpec(), Handler: adapter.setNodeClientCert},
 		connect.Method{Spec: agentServiceConnectStreamSpec(), Handler: adapter.connectStream},
 	)
 }
@@ -388,6 +427,18 @@ func (UnimplementedAgentServiceHandler) UpdateNodeSchedule(context.Context, *v1.
 
 func (UnimplementedAgentServiceHandler) UpdateNodeAgent(context.Context, *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.UpdateNodeAgent is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) RotateNodeToken(context.Context, *v1.RotateNodeTokenRequest) (*v1.RotateNodeTokenResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.RotateNodeToken is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) RevokeNodeToken(context.Context, *v1.RevokeNodeTokenRequest) (*v1.RevokeNodeTokenResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.RevokeNodeToken is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) SetNodeClientCert(context.Context, *v1.SetNodeClientCertRequest) (*v1.SetNodeClientCertResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.SetNodeClientCert is not implemented")
 }
 
 func (UnimplementedAgentServiceHandler) ConnectStream(context.Context, AgentServiceConnectStreamServerStream) error {
@@ -521,6 +572,30 @@ func (c *agentServiceClient) UpdateNodeSchedule(ctx context.Context, req *v1.Upd
 func (c *agentServiceClient) UpdateNodeAgent(ctx context.Context, req *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error) {
 	var res v1.UpdateNodeAgentResponse
 	if err := c.client.CallUnary(ctx, agentServiceUpdateNodeAgentSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) RotateNodeToken(ctx context.Context, req *v1.RotateNodeTokenRequest) (*v1.RotateNodeTokenResponse, error) {
+	var res v1.RotateNodeTokenResponse
+	if err := c.client.CallUnary(ctx, agentServiceRotateNodeTokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) RevokeNodeToken(ctx context.Context, req *v1.RevokeNodeTokenRequest) (*v1.RevokeNodeTokenResponse, error) {
+	var res v1.RevokeNodeTokenResponse
+	if err := c.client.CallUnary(ctx, agentServiceRevokeNodeTokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) SetNodeClientCert(ctx context.Context, req *v1.SetNodeClientCertRequest) (*v1.SetNodeClientCertResponse, error) {
+	var res v1.SetNodeClientCertResponse
+	if err := c.client.CallUnary(ctx, agentServiceSetNodeClientCertSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -722,6 +797,42 @@ func (h agentServiceHandler) updateNodeAgent(ctx context.Context, _ connect.Spec
 		return err
 	}
 	res, err := h.svc.UpdateNodeAgent(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) rotateNodeToken(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RotateNodeTokenRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RotateNodeToken(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) revokeNodeToken(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RevokeNodeTokenRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RevokeNodeToken(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) setNodeClientCert(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SetNodeClientCertRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SetNodeClientCert(ctx, &req)
 	if err != nil {
 		return err
 	}

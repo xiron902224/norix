@@ -15,7 +15,17 @@ import { StatusPill } from '../../../shared/ui/StatusPill'
 import { formatWhen, relativeAge, shortId } from '../../../shared/lib/format'
 import type { Node } from '../../../gen/v1/agent_pb'
 import { fetchControlPlaneStatus } from '../../../shared/lib/status'
-import { cordonNode, createJoinToken, drainNode, listNodes, updateNodeAgent, updateNodeSchedule } from '../services/nodes-api'
+import {
+  cordonNode,
+  createJoinToken,
+  drainNode,
+  listNodes,
+  revokeNodeToken,
+  rotateNodeToken,
+  setNodeClientCert,
+  updateNodeAgent,
+  updateNodeSchedule,
+} from '../services/nodes-api'
 
 export function NodesPage() {
   const [nodes, setNodes] = useState<Node[]>([])
@@ -31,6 +41,8 @@ export function NodesPage() {
   const [scheduleZone, setScheduleZone] = useState('default')
   const [controlPlaneUrl, setControlPlaneUrl] = useState(() => window.location.origin)
   const [controlPlaneVersion, setControlPlaneVersion] = useState('')
+  const [clientCertSha, setClientCertSha] = useState('')
+  const [notice, setNotice] = useState('')
   const agentRelease = controlPlaneVersion
     ? (controlPlaneVersion.startsWith('v') ? controlPlaneVersion : `v${controlPlaneVersion}`)
     : 'v1.0.0-beta.5'
@@ -187,6 +199,57 @@ export function NodesPage() {
     }
   }
 
+  async function onRotateToken() {
+    if (!selected || selected.isLocal) return
+    if (!window.confirm(`Rotate credentials for “${selected.name}”? Next heartbeat delivers a new token to the agent.`)) return
+    setActionBusy('rotate')
+    setError('')
+    setNotice('')
+    try {
+      const result = await rotateNodeToken(selected.id)
+      setNotice(result.message)
+      await refreshNodes(selected.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not rotate token')
+    } finally {
+      setActionBusy('')
+    }
+  }
+
+  async function onRevokeToken() {
+    if (!selected || selected.isLocal) return
+    if (!window.confirm(`Revoke credentials for “${selected.name}”? Agent stops until you re-enroll with a new join token.`)) return
+    setActionBusy('revoke')
+    setError('')
+    setNotice('')
+    try {
+      await revokeNodeToken(selected.id)
+      setNotice('Node token revoked.')
+      await refreshNodes(selected.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not revoke token')
+    } finally {
+      setActionBusy('')
+    }
+  }
+
+  async function onSaveClientCert(event: FormEvent) {
+    event.preventDefault()
+    if (!selected || selected.isLocal) return
+    setActionBusy('client-cert')
+    setError('')
+    setNotice('')
+    try {
+      await setNodeClientCert(selected.id, clientCertSha.trim())
+      setNotice(clientCertSha.trim() ? 'Client cert fingerprint saved.' : 'Client cert binding cleared.')
+      await refreshNodes(selected.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not save client cert')
+    } finally {
+      setActionBusy('')
+    }
+  }
+
   const online = nodes.filter((node) => node.status === 'online').length
   const installCommand = joinToken
     ? `curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/${agentRelease}/scripts/install-agent.sh \\\n  | bash -s -- --version ${agentRelease} \\\n      --control-plane '${controlPlaneUrl}' \\\n      --token '${joinToken.token}'`
@@ -310,7 +373,14 @@ export function NodesPage() {
                   <div><dt>RAM libre</dt><dd>{String(selected.memoryFreeMb || 0)} MB</dd></div>
                   <div><dt>Docker</dt><dd>{selected.capabilities?.dockerSocket ? 'yes' : 'no'}</dd></div>
                   <div><dt>KVM</dt><dd>{selected.capabilities?.kvmLevel ?? 0}</dd></div>
+                  {!selected.isLocal ? (
+                    <>
+                      <div><dt>Token rotate</dt><dd>{selected.credentialRotatePending ? 'pending (next heartbeat)' : 'idle'}</dd></div>
+                      <div><dt>mTLS cert</dt><dd>{selected.clientCertConfigured ? 'bound' : 'not set'}</dd></div>
+                    </>
+                  ) : null}
                 </dl>
+                {notice ? <div className="compass-notice" role="status" style={{ marginTop: 12 }}>{notice}</div> : null}
                 <div className="page-actions" style={{ marginTop: 16, flexWrap: 'wrap' }}>
                   <Button type="button" variant="secondary" disabled={!!actionBusy || selected.cordoned} onClick={() => void onCordon(true)}>
                     {actionBusy === 'cordon' ? '…' : 'Cordon'}
@@ -325,17 +395,39 @@ export function NodesPage() {
                     Stop drain
                   </Button>
                   {!selected.isLocal ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={!!actionBusy || selected.status !== 'online'}
-                      onClick={() => void onUpdateAgent()}
-                      title={controlPlaneVersion ? `Pin agent to ${controlPlaneVersion}` : 'Pin agent to control-plane version'}
-                    >
-                      {actionBusy === 'update-agent' ? '…' : 'Update agent'}
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={!!actionBusy || selected.status !== 'online'}
+                        onClick={() => void onUpdateAgent()}
+                        title={controlPlaneVersion ? `Pin agent to ${controlPlaneVersion}` : 'Pin agent to control-plane version'}
+                      >
+                        {actionBusy === 'update-agent' ? '…' : 'Update agent'}
+                      </Button>
+                      <Button type="button" variant="secondary" disabled={!!actionBusy} onClick={() => void onRotateToken()}>
+                        {actionBusy === 'rotate' ? '…' : 'Rotate token'}
+                      </Button>
+                      <Button type="button" variant="danger" disabled={!!actionBusy} onClick={() => void onRevokeToken()}>
+                        {actionBusy === 'revoke' ? '…' : 'Revoke token'}
+                      </Button>
+                    </>
                   ) : null}
                 </div>
+                {!selected.isLocal ? (
+                  <form className="compass-create-form" style={{ marginTop: 16 }} onSubmit={(event) => void onSaveClientCert(event)}>
+                    <FormField
+                      id="node-client-cert"
+                      label="Client cert SHA-256 (optional mTLS)"
+                      value={clientCertSha}
+                      onChange={(event) => setClientCertSha(event.target.value)}
+                      placeholder="64 hex chars — empty clears"
+                    />
+                    <Button type="submit" variant="secondary" disabled={!!actionBusy}>
+                      {actionBusy === 'client-cert' ? 'Saving…' : 'Save client cert'}
+                    </Button>
+                  </form>
+                ) : null}
                 <form className="compass-create-form" style={{ marginTop: 16 }} onSubmit={(event) => void onSaveSchedule(event)}>
                   <label>
                     <span>Role</span>

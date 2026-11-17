@@ -26,6 +26,10 @@ Bare install and agent install verify **SHA256SUMS** before installing release b
 
 Manual download → verify → run: see [README](README.md#verify-release-binaries-download--verify--run) / [README.es.md](README.es.md#verificar-binarios-del-release-bajar--verificar--ejecutar).
 
+## Agent credentials
+
+Node bearers can be **rotated** (next heartbeat) or **revoked** from the dashboard. Optional mTLS binds a client-cert SHA-256 per node (`NORIX_TLS_*`, `NORIX_AGENT_MTLS_CA`, agent `NORIX_AGENT_CLIENT_*`). See [ADR-004](docs/adr/ADR-004-agent-auth.md) and [agent-auth.md](docs/user/agent-auth.md).
+
 ## Docker socket
 
 Mounting `/var/run/docker.sock` into a container is effectively host root on a rootful daemon. Production Compose mounts the socket on the **agent** only — not the control plane. Opt-in embedded runtime (`NORIX_EMBEDDED_RUNTIME=1`) is documented in [docker-socket.md](docs/user/docker-socket.md) / [ES](docs/user/es/docker-socket.md). Optional hardening: socket proxy, rootless Engine.

@@ -20,6 +20,8 @@ Si no hay socket de Docker/containerd, `install-agent.sh` imprime un **WARNING**
 
 Si el socket **sí** está, el agent lo monta — es potente (≈ root del host con Docker rootful). En Compose de producción el socket no va al control plane; ver [docker-socket](./docker-socket.md).
 
+Credenciales: **Rotate token** / **Revoke token** y mTLS opcional — [Autenticación del agent](./agent-auth.md).
+
 ## Controles
 
 Cordon · Drain · role/zone.
