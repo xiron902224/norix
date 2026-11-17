@@ -17,6 +17,7 @@ Official documentation for **people who run apps on Norix** — after the contro
 3. [Projects & workloads](./projects-workloads.md)
 4. [Deploying](./deploying.md) — image, Git, Compose
 5. [Nodes & agents](./nodes-agents.md) — workers, join tokens, updates
+5b. [Docker socket](./docker-socket.md) — who mounts `docker.sock`, proxy/rootless
 6. [Domains & TLS](./domains.md)
 7. [Production TLS](./production-tls.md) — domain → DNS → certs → HTTPS panel + apps
 8. [Databases](./databases.md)

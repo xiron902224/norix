@@ -26,6 +26,10 @@ Bare install and agent install verify **SHA256SUMS** before installing release b
 
 Manual download → verify → run: see [README](README.md#verify-release-binaries-download--verify--run) / [README.es.md](README.es.md#verificar-binarios-del-release-bajar--verificar--ejecutar).
 
+## Docker socket
+
+Mounting `/var/run/docker.sock` into a container is effectively host root on a rootful daemon. Production Compose mounts the socket on the **agent** only — not the control plane. Opt-in embedded runtime (`NORIX_EMBEDDED_RUNTIME=1`) is documented in [docker-socket.md](docs/user/docker-socket.md) / [ES](docs/user/es/docker-socket.md). Optional hardening: socket proxy, rootless Engine.
+
 ## Secrets
 
 Never commit `.env`, join tokens, or `NORIX_BUILD_SECRETS_KEY`. Rotate join tokens after use.

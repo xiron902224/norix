@@ -18,6 +18,8 @@ Los installs desde release verifican **SHA256SUMS** y **cosign** si hay `.cosign
 
 Si no hay socket de Docker/containerd, `install-agent.sh` imprime un **WARNING** (el enroll sigue); sin runtime este nodo no recibe builds/deploys.
 
+Si el socket **sí** está, el agent lo monta — es potente (≈ root del host con Docker rootful). En Compose de producción el socket no va al control plane; ver [docker-socket](./docker-socket.md).
+
 ## Controles
 
 Cordon · Drain · role/zone.

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -192,6 +193,11 @@ func (service AuthService) CreateInitialAdmin(ctx context.Context, request *paas
 	}
 	if err := db.CreateSession(ctx, service.bootstrapPool, created.OrganizationID, created.ID, tokenHash, time.Now().UTC().Add(12*time.Hour)); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, "could not create session")
+	}
+
+	// Docker Compose agent uses NORIX_BOOTSTRAP_JOIN_TOKEN / NORIX_JOIN_TOKEN (#10).
+	if n, err := db.SeedBootstrapJoinToken(ctx, service.bootstrapPool); err == nil && n > 0 {
+		slog.Info("seeded bootstrap join token after initial admin", "tokens", n)
 	}
 
 	return &paasv1.CreateInitialAdminResponse{Token: token, User: roleUser(created)}, nil

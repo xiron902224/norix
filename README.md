@@ -124,7 +124,7 @@ cp deploy/norix/env.production.example .env   # set strong passwords
 docker compose --env-file .env -f deploy/norix/docker-compose.prod.yml up -d --build
 ```
 
-Panel: `http://SERVER_IP:8000`. The control-plane container mounts `/var/run/docker.sock` — use a trusted host. Back up `.env` off-box.
+Panel: `http://SERVER_IP:8000`. The **agent** mounts `/var/run/docker.sock` (not the control plane) — treat that host as trusted. See [docker-socket.md](docs/user/docker-socket.md). Back up `.env` off-box.
 
 </details>
 
@@ -152,7 +152,7 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 - **Web dashboard** — projects, workloads, nodes (cordon/drain/zones), domains, ops.
 - **Connect RPC / protobuf API** — `proto/v1` shared by Go, TypeScript, and the Rust agent.
 - **Rust agent** — enroll, heartbeat, build, reconcile, edge/mesh apply.
-- **Embedded local runtime** — reconcile path inside the control plane when `docker.sock` is available (Docker install mode).
+- **Embedded local runtime** — opt-in (`NORIX_EMBEDDED_RUNTIME=1` + socket mount); default Docker mode uses the **agent** for reconcile ([#10](https://github.com/xiron902224/norix/issues/10)).
 
 ---
 
@@ -232,7 +232,7 @@ To appear here: merge a PR to `main` (contributors graph) and/or accept a **Sett
 
 Report vulnerabilities **privately** to the maintainers — not in public issues. Policy: [`SECURITY.md`](SECURITY.md).
 
-Docker mode mounts the host Docker socket — treat that VPS as trusted.
+Docker mode mounts the host Docker socket on the **agent** — treat that VPS as trusted ([docker-socket.md](docs/user/docker-socket.md)).
 
 ---
 

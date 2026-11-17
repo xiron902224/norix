@@ -74,6 +74,13 @@ warn_missing_container_runtime() {
     has_containerd=1
   fi
   if [[ "$has_docker" -eq 1 || "$has_containerd" -eq 1 ]]; then
+    cat >&2 <<'EOF'
+NOTE: this agent will use the host Docker/containerd socket to run workloads.
+  On a rootful daemon that is effectively host root if the agent is compromised.
+  Prefer keeping docker.sock off the control-plane container (Compose default).
+  Docs: https://github.com/xiron902224/norix/blob/main/docs/user/docker-socket.md
+        https://github.com/xiron902224/norix/blob/main/docs/user/es/docker-socket.md
+EOF
     return 0
   fi
   cat >&2 <<'EOF'
@@ -83,6 +90,7 @@ WARNING: no Docker or containerd socket found on this host.
   Install Docker on this worker, then restart the agent.
   Docs: https://github.com/xiron902224/norix/blob/main/docs/user/nodes-agents.md
         https://github.com/xiron902224/norix/blob/main/docs/runbooks/BARE_INSTALL.md
+        https://github.com/xiron902224/norix/blob/main/docs/user/docker-socket.md
 EOF
 }
 

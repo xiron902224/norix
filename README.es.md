@@ -165,7 +165,7 @@ Para aparecer: mergear un PR a `main` y/o aceptar invitación en **Settings → 
 
 Reporta vulnerabilidades **en privado** a los maintainers — no en issues públicos. Política: [`SECURITY.md`](SECURITY.md).
 
-El modo Docker monta el socket de Docker del host: trata ese VPS como de confianza.
+El modo Docker monta el socket de Docker del host en el **agent** (no en el control plane): trata ese VPS como de confianza ([docker-socket.md](docs/user/es/docker-socket.md)).
 
 ---
 

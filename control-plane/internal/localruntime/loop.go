@@ -10,9 +10,16 @@ import (
 )
 
 // Start runs the embedded control-plane reconciler until ctx is cancelled.
+// Container reconcile requires NORIX_EMBEDDED_RUNTIME=1 (#10); otherwise only
+// inventory touch runs (no docker.sock needed on the control-plane container).
 func Start(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
 	if logger == nil {
 		logger = slog.Default()
+	}
+	if !EmbeddedRuntimeEnabled() {
+		logger.Info("embedded runtime off; workloads need an agent (set NORIX_EMBEDDED_RUNTIME=1 only with a mounted docker.sock)")
+		go touchLoop(ctx, pool, logger)
+		return
 	}
 	runtime, err := Detect(ctx)
 	if err != nil {
