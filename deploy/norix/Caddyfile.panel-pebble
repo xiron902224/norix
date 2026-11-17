@@ -1,0 +1,14 @@
+# Panel TLS against Pebble (#26 lab). Mount pebble.minica.pem as NORIX_ACME_CA_ROOT.
+{
+	email {$NORIX_ACME_EMAIL}
+	acme_ca {$NORIX_ACME_CA}
+	acme_ca_root {$NORIX_ACME_CA_ROOT}
+}
+
+{$NORIX_PANEL_DOMAIN} {
+	encode gzip
+	reverse_proxy control-plane:8080 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}
