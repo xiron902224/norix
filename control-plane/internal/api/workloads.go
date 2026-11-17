@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/xiron902224/norix/control-plane/internal/db"
 	paasv1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
+	"github.com/xiron902224/norix/control-plane/internal/gitssrf"
 )
 
 type WorkloadService struct{ pool *pgxpool.Pool }
@@ -125,6 +126,11 @@ func (service WorkloadService) CreateWorkload(ctx context.Context, request *paas
 	workload, err := workloadFromProto(request.GetWorkload())
 	if err != nil {
 		return nil, err
+	}
+	if workload.GitURL != "" {
+		if err := gitssrf.ValidateGitURL(workload.GitURL); err != nil {
+			return nil, invalidArgument(err.Error())
+		}
 	}
 	cpu := int32(1)
 	if workload.CPUShares > 0 {
@@ -307,6 +313,9 @@ func (service WorkloadService) DeployFromGit(ctx context.Context, request *paasv
 	if gitURL == "" {
 		return nil, invalidArgument("git url is required")
 	}
+	if err := gitssrf.ValidateGitURL(gitURL); err != nil {
+		return nil, invalidArgument(err.Error())
+	}
 	build, err := db.CreateBuild(
 		ctx,
 		service.pool,
@@ -326,7 +335,10 @@ func (service WorkloadService) DeployFromGit(ctx context.Context, request *paasv
 		if strings.Contains(err.Error(), "workload not found") {
 			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
 		}
-		if strings.Contains(err.Error(), "required") || strings.Contains(err.Error(), "NORIX_BUILD_SECRETS_KEY") {
+		if strings.Contains(err.Error(), "required") ||
+			strings.Contains(err.Error(), "NORIX_BUILD_SECRETS_KEY") ||
+			strings.Contains(err.Error(), "not allowed") ||
+			strings.Contains(err.Error(), "git url") {
 			return nil, invalidArgument(err.Error())
 		}
 		return nil, internalError("create build", err)

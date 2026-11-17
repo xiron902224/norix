@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/xiron902224/norix/control-plane/internal/composeparse"
+	"github.com/xiron902224/norix/control-plane/internal/gitssrf"
 )
 
 // AnalyzeComposeFromGit shallow-clones the repo and parses the compose file.
@@ -20,6 +21,9 @@ func AnalyzeComposeFromGit(gitURL, gitRef, composePath string) (composeparse.Sta
 	gitURL = strings.TrimSpace(gitURL)
 	if gitURL == "" {
 		return composeparse.Stack{}, fmt.Errorf("git url is required")
+	}
+	if err := gitssrf.ValidateGitURL(gitURL); err != nil {
+		return composeparse.Stack{}, err
 	}
 	if gitRef == "" {
 		gitRef = "main"

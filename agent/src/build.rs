@@ -7,6 +7,7 @@ use tokio::process::Command;
 use tracing::info;
 
 use crate::client::{DesiredBuild, ObservedBuild};
+use crate::gitssrf;
 use crate::runtime::Runtime;
 
 impl Runtime {
@@ -29,6 +30,7 @@ impl Runtime {
 
     async fn run_build(&self, build: &DesiredBuild) -> Result<ObservedBuild> {
         let mut logs = vec![format!("building {} @ {}", build.git_url, build.git_ref)];
+        gitssrf::validate_git_url(&build.git_url)?;
         let workdir = tempfile_dir().await?;
         let clone_dir = workdir.join("src");
         let ref_name = if build.git_ref.is_empty() {

@@ -10,6 +10,7 @@ import (
 	"github.com/xiron902224/norix/control-plane/internal/composeparse"
 	"github.com/xiron902224/norix/control-plane/internal/db"
 	paasv1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
+	"github.com/xiron902224/norix/control-plane/internal/gitssrf"
 )
 
 func (service WorkloadService) AnalyzeComposeFromGit(ctx context.Context, request *paasv1.AnalyzeComposeFromGitRequest) (*paasv1.AnalyzeComposeFromGitResponse, error) {
@@ -44,6 +45,9 @@ func (service WorkloadService) DeployComposeStack(ctx context.Context, request *
 	stackName := strings.TrimSpace(request.GetStackName())
 	if projectID == "" || gitURL == "" || stackName == "" {
 		return nil, invalidArgument("project_id, stack_name and git_url are required")
+	}
+	if err := gitssrf.ValidateGitURL(gitURL); err != nil {
+		return nil, invalidArgument(err.Error())
 	}
 	gitRef := strings.TrimSpace(request.GetGitRef())
 	if gitRef == "" {

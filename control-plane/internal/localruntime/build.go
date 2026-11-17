@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/xiron902224/norix/control-plane/internal/db"
+	"github.com/xiron902224/norix/control-plane/internal/gitssrf"
 )
 
 // BuildLogFn streams live lines to the control plane while a build runs.
@@ -60,6 +61,10 @@ func (runtime *Runtime) runBuild(ctx context.Context, build db.DesiredBuild, onL
 	}
 
 	appendLog(fmt.Sprintf("building %s @ %s", build.GitURL, build.GitRef))
+	if err := gitssrf.ValidateGitURL(build.GitURL); err != nil {
+		appendLog(err.Error())
+		return db.ObservedBuild{}, err
+	}
 	workdir, err := os.MkdirTemp("", "norix-build-*")
 	if err != nil {
 		return db.ObservedBuild{}, err
