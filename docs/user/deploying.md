@@ -20,6 +20,25 @@ If no online node has Docker or containerd, deploys fail with `no online node wi
 2. Dockerfile path if not default
 3. **Deploy from Git** — a build runs on a capable node, then the resulting image is scheduled
 
+### Railpack (no Dockerfile)
+
+If the repo has **no** Dockerfile / Containerfile / compose file, Norix falls back to **[Railpack](https://railpack.com/)** when it finds:
+
+| Marker | Detected as |
+|---|---|
+| `package.json` | Node.js |
+| `go.mod` | Go |
+| `pyproject.toml` / `requirements.txt` / `Pipfile` | Python |
+| `index.html` | Static site |
+
+The builder node needs `railpack` on `PATH` and a BuildKit daemon (`BUILDKIT_HOST`, or Norix starts a `norix-buildkit` container). Install:
+
+```bash
+curl -sSL https://railpack.com/install.sh | sh
+```
+
+Examples without Dockerfiles: [`examples/`](../../examples/). Build logs stream in the dashboard (Build logs tab) the same as Dockerfile builds.
+
 Build nodes need Docker. Progress and logs appear under builds / workload logs in the UI.
 
 ### Git URL SSRF controls

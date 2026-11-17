@@ -101,7 +101,7 @@ func (runtime *Runtime) runBuild(ctx context.Context, build db.DesiredBuild, onL
 		appendLog(line)
 	}
 	if kind == "" {
-		return db.ObservedBuild{ID: build.ID, Status: "failed", Message: "no Dockerfile or compose file found", LogLines: logs}, fmt.Errorf("no Dockerfile or compose file found")
+		return db.ObservedBuild{ID: build.ID, Status: "failed", Message: "no Dockerfile, compose, or Railpack source found", LogLines: logs}, fmt.Errorf("no Dockerfile, compose, or Railpack source found")
 	}
 
 	var buildErr error
@@ -131,6 +131,9 @@ func (runtime *Runtime) runBuild(ctx context.Context, build db.DesiredBuild, onL
 		appendLog(fmt.Sprintf("using compose file %s", path))
 		rewriteNpmDockerfilesForCompose(cloneDir, appendLog)
 		buildErr = runtime.buildCompose(ctx, cloneDir, path, build, appendLog)
+	case "railpack":
+		appendLog(fmt.Sprintf("using Railpack (%s)", path))
+		buildErr = runtime.buildRailpack(ctx, cloneDir, build, appendLog)
 	default:
 		buildErr = fmt.Errorf("unknown build kind %s", kind)
 	}
@@ -791,7 +794,11 @@ func resolveBuildSource(cloneDir, hint string) (kind, path string, logs []string
 		return "dockerfile", foundDockerfile, logs
 	}
 
-	return "", "", append(logs, "no Dockerfile or compose file found in repo")
+	if kind, reason, ok := detectRailpackSource(cloneDir); ok {
+		return kind, reason, append(logs, "no Dockerfile/compose; falling back to Railpack for "+reason)
+	}
+
+	return "", "", append(logs, "no Dockerfile, compose file, or Railpack-detectable source found in repo")
 }
 
 func isComposeName(name string) bool {
