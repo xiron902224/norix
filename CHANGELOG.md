@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Git builds without Dockerfile fall back to Railpack (Node/Go/Python/static markers); examples + CI; docs EN/ES (#18)
 - Persistent named volumes for workloads: declare mounts, sticky node placement, drain warnings, Backup/Delete API + UI, docs EN/ES (#16)
 
 ### Fixed

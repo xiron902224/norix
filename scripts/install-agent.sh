@@ -81,6 +81,13 @@ NOTE: this agent will use the host Docker/containerd socket to run workloads.
   Docs: https://github.com/xiron902224/norix/blob/main/docs/user/docker-socket.md
         https://github.com/xiron902224/norix/blob/main/docs/user/es/docker-socket.md
 EOF
+    if ! command -v railpack >/dev/null 2>&1; then
+      cat >&2 <<'EOF'
+NOTE: railpack is not installed — Git deploys without a Dockerfile will fail on this node.
+  Optional: curl -sSL https://railpack.com/install.sh | sh
+  Docs: https://github.com/xiron902224/norix/blob/main/docs/user/deploying.md
+EOF
+    fi
     return 0
   fi
   cat >&2 <<'EOF'

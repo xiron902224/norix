@@ -68,7 +68,7 @@ We label every capability so nobody has to guess. Source: repository audit of 20
 | App rollbacks / release history | Planned | |
 | Rolling / zero-downtime updates | Planned | Update is currently stop → start |
 | Persistent volumes for apps | Beta | Named Docker mounts, sticky node, backup/delete (#16) |
-| Buildpacks / build without a Dockerfile | Planned | |
+| Buildpacks / build without a Dockerfile | Beta | Railpack fallback when no Dockerfile (#18) |
 | One-click app catalog | Planned | |
 | CLI | Experimental | `health`, `login`, `projects`; `deploy` is a stub |
 | SDKs (TS / Python / Go) | Experimental | Minimal clients |

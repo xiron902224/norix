@@ -86,7 +86,11 @@ impl Runtime {
                 self.build_compose(&clone_dir, &path, build, &mut logs)
                     .await?;
             }
-            _ => bail!("no Dockerfile or compose file found"),
+            "railpack" => {
+                logs.push(format!("using Railpack ({path})"));
+                self.build_railpack(&clone_dir, build, &mut logs).await?;
+            }
+            _ => bail!("no Dockerfile, compose, or Railpack source found"),
         }
 
         if !build.registry.is_empty() && build.image_tag.contains(&build.registry) {
@@ -109,6 +113,48 @@ impl Runtime {
             message: String::new(),
             log_lines: logs,
         })
+    }
+
+    async fn build_railpack(
+        &self,
+        clone_dir: &Path,
+        build: &DesiredBuild,
+        logs: &mut Vec<String>,
+    ) -> Result<()> {
+        let (ok, which) = run_capture("railpack", &["--version"]).await;
+        if !ok {
+            bail!(
+                "railpack not found in PATH — install from https://railpack.com/installation/ ({which})"
+            );
+        }
+        logs.extend(truncate_lines(&which, 5));
+
+        let host = ensure_buildkit_host(logs).await?;
+        logs.push(format!("railpack build --name {} .", build.image_tag));
+        let output = Command::new("railpack")
+            .args([
+                "build",
+                "--name",
+                &build.image_tag,
+                "--progress",
+                "plain",
+                ".",
+            ])
+            .current_dir(clone_dir)
+            .env("BUILDKIT_HOST", &host)
+            .env("DOCKER_BUILDKIT", "1")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .await
+            .context("run railpack")?;
+        let mut text = String::from_utf8_lossy(&output.stdout).to_string();
+        text.push_str(&String::from_utf8_lossy(&output.stderr));
+        logs.extend(truncate_lines(&text, 120));
+        if !output.status.success() {
+            bail!("railpack build failed");
+        }
+        Ok(())
     }
 
     async fn build_dockerfile(
@@ -325,8 +371,32 @@ async fn resolve_build_source(clone_dir: &Path, hint: &str) -> (String, String, 
         }
     }
 
-    logs.push("no Dockerfile or compose file found in repo".into());
+    if let Some(reason) = detect_railpack_source(clone_dir).await {
+        logs.push(format!(
+            "no Dockerfile/compose; falling back to Railpack for {reason}"
+        ));
+        return ("railpack".into(), reason, logs);
+    }
+
+    logs.push("no Dockerfile, compose file, or Railpack-detectable source found in repo".into());
     (String::new(), String::new(), logs)
+}
+
+async fn detect_railpack_source(clone_dir: &Path) -> Option<String> {
+    const MARKERS: &[(&str, &str)] = &[
+        ("package.json", "Node.js (package.json)"),
+        ("go.mod", "Go (go.mod)"),
+        ("pyproject.toml", "Python (pyproject.toml)"),
+        ("requirements.txt", "Python (requirements.txt)"),
+        ("Pipfile", "Python (Pipfile)"),
+        ("index.html", "static site (index.html)"),
+    ];
+    for (file, label) in MARKERS {
+        if clone_dir.join(file).is_file() {
+            return Some((*label).to_string());
+        }
+    }
+    None
 }
 
 fn is_compose_name(name: &str) -> bool {
@@ -371,6 +441,43 @@ fn uuid_like() -> String {
         .map(|d| d.as_nanos())
         .unwrap_or(0);
     format!("{nanos:x}")
+}
+
+async fn ensure_buildkit_host(logs: &mut Vec<String>) -> Result<String> {
+    if let Ok(host) = std::env::var("BUILDKIT_HOST") {
+        let host = host.trim().to_string();
+        if !host.is_empty() {
+            logs.push(format!("using BUILDKIT_HOST={host}"));
+            return Ok(host);
+        }
+    }
+    const NAME: &str = "norix-buildkit";
+    let (ok, out) = run_capture("docker", &["inspect", "-f", "{{.State.Running}}", NAME]).await;
+    let running = ok && out.trim() == "true";
+    if !running {
+        logs.push(format!("starting BuildKit container {NAME}"));
+        let _ = run_capture("docker", &["rm", "-f", NAME]).await;
+        let (started, start_out) = run_capture(
+            "docker",
+            &[
+                "run",
+                "--rm",
+                "--privileged",
+                "-d",
+                "--name",
+                NAME,
+                "moby/buildkit:buildx-stable-1",
+            ],
+        )
+        .await;
+        if !started {
+            bail!("start buildkit failed: {start_out}");
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+    } else {
+        logs.push(format!("reusing BuildKit container {NAME}"));
+    }
+    Ok(format!("docker-container://{NAME}"))
 }
 
 async fn run_capture(program: &str, args: &[&str]) -> (bool, String) {

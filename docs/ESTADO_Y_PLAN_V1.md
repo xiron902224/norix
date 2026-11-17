@@ -73,7 +73,8 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | Micro-VM (Cloud Hypervisor) | Experimental | Needs KVM + artifacts — **not** “ready” |
 | Micro-VM (Firecracker) | Planned | Enum only |
 | App rollbacks / rolling updates / volumes | Beta | Named Docker volumes + sticky node (#16) |
-| Buildpacks / catalog | Planned | |
+| Buildpacks (Railpack) | Beta | No-Dockerfile Git builds (#18) |
+| App catalog | Planned | |
 | CLI / SDKs | Experimental | Minimal |
 | User API tokens (PAT) | Planned | |
 

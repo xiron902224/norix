@@ -365,10 +365,36 @@ jobs:
         working-directory: agent
         run: cargo audit
 
+  railpack-examples:
+    name: Railpack example builds (#18)
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Railpack
+        run: curl -sSL https://railpack.com/install.sh | sh
+
+      - name: Start BuildKit
+        run: |
+          docker run --rm --privileged -d --name norix-buildkit moby/buildkit:buildx-stable-1
+          echo "BUILDKIT_HOST=docker-container://norix-buildkit" >> "$GITHUB_ENV"
+          sleep 2
+
+      - name: Build examples without Dockerfile
+        run: |
+          set -euo pipefail
+          for dir in examples/hello-node examples/hello-python examples/hello-static examples/hello-go-railpack; do
+            echo "::group::railpack $dir"
+            railpack build --name "norix-ci-$(basename "$dir")" --progress plain "$dir"
+            echo "::endgroup::"
+          done
+
   build-control-plane:
     name: Build Control Plane (Go)
     runs-on: ubuntu-latest
-    needs: [validate-protos, database-integration, build-web, build-agent, security-audit]
+    needs: [validate-protos, database-integration, build-web, build-agent, security-audit, railpack-examples]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
