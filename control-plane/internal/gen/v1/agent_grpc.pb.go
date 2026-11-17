@@ -35,6 +35,9 @@ const (
 	AgentService_DrainNode_FullMethodName          = "/v1.AgentService/DrainNode"
 	AgentService_UpdateNodeSchedule_FullMethodName = "/v1.AgentService/UpdateNodeSchedule"
 	AgentService_UpdateNodeAgent_FullMethodName    = "/v1.AgentService/UpdateNodeAgent"
+	AgentService_RotateNodeToken_FullMethodName    = "/v1.AgentService/RotateNodeToken"
+	AgentService_RevokeNodeToken_FullMethodName    = "/v1.AgentService/RevokeNodeToken"
+	AgentService_SetNodeClientCert_FullMethodName  = "/v1.AgentService/SetNodeClientCert"
 	AgentService_ConnectStream_FullMethodName      = "/v1.AgentService/ConnectStream"
 )
 
@@ -58,6 +61,9 @@ type AgentServiceClient interface {
 	DrainNode(ctx context.Context, in *DrainNodeRequest, opts ...grpc.CallOption) (*DrainNodeResponse, error)
 	UpdateNodeSchedule(ctx context.Context, in *UpdateNodeScheduleRequest, opts ...grpc.CallOption) (*UpdateNodeScheduleResponse, error)
 	UpdateNodeAgent(ctx context.Context, in *UpdateNodeAgentRequest, opts ...grpc.CallOption) (*UpdateNodeAgentResponse, error)
+	RotateNodeToken(ctx context.Context, in *RotateNodeTokenRequest, opts ...grpc.CallOption) (*RotateNodeTokenResponse, error)
+	RevokeNodeToken(ctx context.Context, in *RevokeNodeTokenRequest, opts ...grpc.CallOption) (*RevokeNodeTokenResponse, error)
+	SetNodeClientCert(ctx context.Context, in *SetNodeClientCertRequest, opts ...grpc.CallOption) (*SetNodeClientCertResponse, error)
 	ConnectStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ConnectStreamRequest, ConnectStreamResponse], error)
 }
 
@@ -229,6 +235,36 @@ func (c *agentServiceClient) UpdateNodeAgent(ctx context.Context, in *UpdateNode
 	return out, nil
 }
 
+func (c *agentServiceClient) RotateNodeToken(ctx context.Context, in *RotateNodeTokenRequest, opts ...grpc.CallOption) (*RotateNodeTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RotateNodeTokenResponse)
+	err := c.cc.Invoke(ctx, AgentService_RotateNodeToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) RevokeNodeToken(ctx context.Context, in *RevokeNodeTokenRequest, opts ...grpc.CallOption) (*RevokeNodeTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RevokeNodeTokenResponse)
+	err := c.cc.Invoke(ctx, AgentService_RevokeNodeToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) SetNodeClientCert(ctx context.Context, in *SetNodeClientCertRequest, opts ...grpc.CallOption) (*SetNodeClientCertResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetNodeClientCertResponse)
+	err := c.cc.Invoke(ctx, AgentService_SetNodeClientCert_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *agentServiceClient) ConnectStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ConnectStreamRequest, ConnectStreamResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &AgentService_ServiceDesc.Streams[0], AgentService_ConnectStream_FullMethodName, cOpts...)
@@ -262,6 +298,9 @@ type AgentServiceServer interface {
 	DrainNode(context.Context, *DrainNodeRequest) (*DrainNodeResponse, error)
 	UpdateNodeSchedule(context.Context, *UpdateNodeScheduleRequest) (*UpdateNodeScheduleResponse, error)
 	UpdateNodeAgent(context.Context, *UpdateNodeAgentRequest) (*UpdateNodeAgentResponse, error)
+	RotateNodeToken(context.Context, *RotateNodeTokenRequest) (*RotateNodeTokenResponse, error)
+	RevokeNodeToken(context.Context, *RevokeNodeTokenRequest) (*RevokeNodeTokenResponse, error)
+	SetNodeClientCert(context.Context, *SetNodeClientCertRequest) (*SetNodeClientCertResponse, error)
 	ConnectStream(grpc.BidiStreamingServer[ConnectStreamRequest, ConnectStreamResponse]) error
 	mustEmbedUnimplementedAgentServiceServer()
 }
@@ -320,6 +359,15 @@ func (UnimplementedAgentServiceServer) UpdateNodeSchedule(context.Context, *Upda
 }
 func (UnimplementedAgentServiceServer) UpdateNodeAgent(context.Context, *UpdateNodeAgentRequest) (*UpdateNodeAgentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateNodeAgent not implemented")
+}
+func (UnimplementedAgentServiceServer) RotateNodeToken(context.Context, *RotateNodeTokenRequest) (*RotateNodeTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RotateNodeToken not implemented")
+}
+func (UnimplementedAgentServiceServer) RevokeNodeToken(context.Context, *RevokeNodeTokenRequest) (*RevokeNodeTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeNodeToken not implemented")
+}
+func (UnimplementedAgentServiceServer) SetNodeClientCert(context.Context, *SetNodeClientCertRequest) (*SetNodeClientCertResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetNodeClientCert not implemented")
 }
 func (UnimplementedAgentServiceServer) ConnectStream(grpc.BidiStreamingServer[ConnectStreamRequest, ConnectStreamResponse]) error {
 	return status.Error(codes.Unimplemented, "method ConnectStream not implemented")
@@ -633,6 +681,60 @@ func _AgentService_UpdateNodeAgent_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AgentService_RotateNodeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RotateNodeTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).RotateNodeToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_RotateNodeToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).RotateNodeToken(ctx, req.(*RotateNodeTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_RevokeNodeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeNodeTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).RevokeNodeToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_RevokeNodeToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).RevokeNodeToken(ctx, req.(*RevokeNodeTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_SetNodeClientCert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetNodeClientCertRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).SetNodeClientCert(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_SetNodeClientCert_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).SetNodeClientCert(ctx, req.(*SetNodeClientCertRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AgentService_ConnectStream_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(AgentServiceServer).ConnectStream(&grpc.GenericServerStream[ConnectStreamRequest, ConnectStreamResponse]{ServerStream: stream})
 }
@@ -710,6 +812,18 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateNodeAgent",
 			Handler:    _AgentService_UpdateNodeAgent_Handler,
+		},
+		{
+			MethodName: "RotateNodeToken",
+			Handler:    _AgentService_RotateNodeToken_Handler,
+		},
+		{
+			MethodName: "RevokeNodeToken",
+			Handler:    _AgentService_RevokeNodeToken_Handler,
+		},
+		{
+			MethodName: "SetNodeClientCert",
+			Handler:    _AgentService_SetNodeClientCert_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

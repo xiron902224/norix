@@ -42,6 +42,10 @@ message Node {
   repeated string reported_workload_ids = 16;
   // Target agent release (e.g. 1.0.0-beta.4). Empty = no pending update.
   string desired_agent_version = 17;
+  // True after RotateNodeToken until the agent receives rotated_node_token (#13).
+  bool credential_rotate_pending = 18;
+  // True when a client-cert SHA-256 fingerprint is stored for optional mTLS (#13).
+  bool client_cert_configured = 19;
 }
 
 message CordonNodeRequest {
@@ -267,6 +271,35 @@ message HeartbeatResponse {
   DesiredWasmPlan desired_wasm = 6;
   // When set and different from the running agent, the agent should self-update.
   string desired_agent_version = 7;
+  // One-shot replacement node bearer after RotateNodeToken (#13). Agent must persist it.
+  string rotated_node_token = 8;
+}
+
+message RotateNodeTokenRequest {
+  string node_id = 1;
+}
+
+message RotateNodeTokenResponse {
+  Node node = 1;
+  string message = 2;
+}
+
+message RevokeNodeTokenRequest {
+  string node_id = 1;
+}
+
+message RevokeNodeTokenResponse {
+  Node node = 1;
+}
+
+message SetNodeClientCertRequest {
+  string node_id = 1;
+  // SHA-256 hex (64 chars) of the DER client certificate. Empty clears mTLS binding.
+  string certificate_sha256 = 2;
+}
+
+message SetNodeClientCertResponse {
+  Node node = 1;
 }
 
 message UpdateNodeAgentRequest {
@@ -396,5 +429,8 @@ service AgentService {
   rpc DrainNode(DrainNodeRequest) returns (DrainNodeResponse);
   rpc UpdateNodeSchedule(UpdateNodeScheduleRequest) returns (UpdateNodeScheduleResponse);
   rpc UpdateNodeAgent(UpdateNodeAgentRequest) returns (UpdateNodeAgentResponse);
+  rpc RotateNodeToken(RotateNodeTokenRequest) returns (RotateNodeTokenResponse);
+  rpc RevokeNodeToken(RevokeNodeTokenRequest) returns (RevokeNodeTokenResponse);
+  rpc SetNodeClientCert(SetNodeClientCertRequest) returns (SetNodeClientCertResponse);
   rpc ConnectStream(stream ConnectStreamRequest) returns (stream ConnectStreamResponse);
 }

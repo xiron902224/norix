@@ -17,6 +17,7 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 4. [Desplegar](./deploying.md)
 5. [Nodos y agents](./nodes-agents.md)
 5b. [Socket Docker](./docker-socket.md) — quién monta `docker.sock`, proxy/rootless
+5c. [Autenticación del agent](./agent-auth.md) — rotar/revocar token, mTLS opcional
 6. [Dominios y TLS](./domains.md)
 7. [Bases de datos](./databases.md)
 8. [Red y edge](./network.md)

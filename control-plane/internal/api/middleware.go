@@ -30,7 +30,24 @@ func WithAuthentication(pool *pgxpool.Pool) connect.ServerInterceptor {
 			if isAgentProcedure(spec.Procedure) {
 				node, err := db.FindNodeByTokenHash(ctx, pool, hash)
 				if err != nil {
+					// Optional mTLS: authenticate by client-cert fingerprint (#13).
+					if fp, ok := ClientCertFingerprintFromContext(ctx); ok {
+						node, err = db.FindNodeByClientCertSHA256(ctx, pool, fp)
+					}
+				}
+				if err != nil {
 					return connect.NewError(connect.CodeUnauthenticated, "node credential is invalid")
+				}
+				if AgentMTLSRequired() {
+					fp, ok := ClientCertFingerprintFromContext(ctx)
+					if !ok || !node.ClientCertConfigured {
+						return connect.NewError(connect.CodeUnauthenticated, "agent mTLS client certificate required")
+					}
+					// Fingerprint must match the node bound to this credential.
+					bound, ferr := db.FindNodeByClientCertSHA256(ctx, pool, fp)
+					if ferr != nil || bound.ID != node.ID {
+						return connect.NewError(connect.CodeUnauthenticated, "agent mTLS client certificate mismatch")
+					}
 				}
 				return next(contextWithNode(ctx, node), spec, stream)
 			}

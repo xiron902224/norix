@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -204,10 +206,24 @@ func main() {
 		})
 	}
 
+	handler := api.WithClientCertFingerprint(api.WithCORS(newHandler(authService)))
 	server := &http.Server{
 		Addr:              httpAddress(),
-		Handler:           api.WithCORS(newHandler(authService)),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	tlsCert := strings.TrimSpace(os.Getenv("NORIX_TLS_CERT"))
+	tlsKey := strings.TrimSpace(os.Getenv("NORIX_TLS_KEY"))
+	if tlsCert != "" && tlsKey != "" {
+		tlsCfg, err := api.LoadOptionalAgentMTLSConfig(&tls.Config{MinVersion: tls.VersionTLS12})
+		if err != nil {
+			logger.Error("agent mTLS CA config failed", "error", err)
+			os.Exit(1)
+		}
+		server.TLSConfig = tlsCfg
+	} else if strings.TrimSpace(os.Getenv("NORIX_AGENT_MTLS_CA")) != "" {
+		logger.Warn("NORIX_AGENT_MTLS_CA set but NORIX_TLS_CERT/KEY missing; client certs require HTTPS")
 	}
 
 	shutdown := make(chan os.Signal, 1)
@@ -222,9 +238,15 @@ func main() {
 		}
 	}()
 
-	logger.Info("control plane started", "address", server.Addr)
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		logger.Error("control plane stopped", "error", err)
+	logger.Info("control plane started", "address", server.Addr, "tls", tlsCert != "" && tlsKey != "")
+	var serveErr error
+	if tlsCert != "" && tlsKey != "" {
+		serveErr = server.ListenAndServeTLS(tlsCert, tlsKey)
+	} else {
+		serveErr = server.ListenAndServe()
+	}
+	if serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
+		logger.Error("control plane stopped", "error", serveErr)
 		os.Exit(1)
 	}
 }

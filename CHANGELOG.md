@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixed
+- Agent node tokens can be rotated (heartbeat delivery) and revoked from UI/API; optional mTLS fingerprint (#13)
 - Git SSRF: validate clone URLs (https/ssh only; block private/metadata ranges; `NORIX_GIT_SSRF_ALLOWLIST`) (#4)
 - Control plane no longer panics on legacy AES-GCM `dev-nonce` network secrets
 - First-admin bootstrap blocked on plain HTTP from non-loopback unless `NORIX_ALLOW_INSECURE_BOOTSTRAP=1` (#6)
@@ -24,6 +25,7 @@
 - Docs EN/ES: workload env encryption + key rotation (projects-workloads, S7 ops, ADR-003, SECURITY) (#8)
 - Docs EN/ES: dashboard env editor steps in projects-workloads (#8)
 - Docs EN/ES: docker-socket.md; embedded runtime gated by `NORIX_EMBEDDED_RUNTIME` (#10)
+- ADR-004 + docs EN/ES agent auth (rotate/revoke/mTLS) (#13)
 
 ## 1.0.0-beta.5 — 2026-11-16
 

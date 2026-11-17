@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -193,13 +194,17 @@ func GetNode(ctx context.Context, pool *pgxpool.Pool, tenantID, nodeID string) (
 	}
 	var node Node
 	var labelsText string
+	var rotateAt *time.Time
+	var cert *string
 	err = tx.QueryRow(ctx, `
 		SELECT id::text, organization_id::text, name, status, last_seen_at, is_local,
 		       cpu_cores, memory_total_mb, docker_socket, containerd_socket,
 		       kvm_level, hostname, agent_version,
 		       cpu_usage_percent, memory_free_mb, disk_free_mb,
 		       role, cordoned, draining, zone, labels::text,
-		       COALESCE(desired_agent_version, '')
+		       COALESCE(desired_agent_version, ''),
+		       credential_rotate_requested_at,
+		       client_cert_sha256
 		FROM nodes WHERE id = $1::uuid`, nodeID).Scan(
 		&node.ID, &node.OrganizationID, &node.Name, &node.Status, &node.LastSeenAt, &node.IsLocal,
 		&node.Capabilities.CPUCores, &node.Capabilities.MemoryTotalMB,
@@ -207,12 +212,14 @@ func GetNode(ctx context.Context, pool *pgxpool.Pool, tenantID, nodeID string) (
 		&node.Capabilities.KVMLevel, &node.Capabilities.Hostname, &node.Capabilities.AgentVersion,
 		&node.CPUUsagePercent, &node.MemoryFreeMB, &node.DiskFreeMB,
 		&node.Role, &node.Cordoned, &node.Draining, &node.Zone, &labelsText,
-		&node.DesiredAgentVersion,
+		&node.DesiredAgentVersion, &rotateAt, &cert,
 	)
 	if err != nil {
 		return Node{}, fmt.Errorf("get node: %w", err)
 	}
 	node.Labels = decodeLabels([]byte(labelsText))
+	node.CredentialRotatePending = rotateAt != nil
+	node.ClientCertConfigured = cert != nil && strings.TrimSpace(*cert) != ""
 	return node, tx.Commit(ctx)
 }
 
