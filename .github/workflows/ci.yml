@@ -376,6 +376,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Railpack
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Pin avoids GitHub API 403 rate limits on anonymous latest lookup.
+          RAILPACK_VERSION: "0.17.1"
         run: curl -sSL https://railpack.com/install.sh | sh
 
       - name: Start BuildKit
