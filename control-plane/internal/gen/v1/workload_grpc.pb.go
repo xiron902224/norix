@@ -35,6 +35,7 @@ const (
 	WorkloadService_UnassignDomain_FullMethodName        = "/v1.WorkloadService/UnassignDomain"
 	WorkloadService_ListWorkloadReleases_FullMethodName  = "/v1.WorkloadService/ListWorkloadReleases"
 	WorkloadService_RollbackWorkload_FullMethodName      = "/v1.WorkloadService/RollbackWorkload"
+	WorkloadService_RevealWorkloadEnv_FullMethodName     = "/v1.WorkloadService/RevealWorkloadEnv"
 )
 
 // WorkloadServiceClient is the client API for WorkloadService service.
@@ -57,6 +58,7 @@ type WorkloadServiceClient interface {
 	UnassignDomain(ctx context.Context, in *UnassignDomainRequest, opts ...grpc.CallOption) (*UnassignDomainResponse, error)
 	ListWorkloadReleases(ctx context.Context, in *ListWorkloadReleasesRequest, opts ...grpc.CallOption) (*ListWorkloadReleasesResponse, error)
 	RollbackWorkload(ctx context.Context, in *RollbackWorkloadRequest, opts ...grpc.CallOption) (*RollbackWorkloadResponse, error)
+	RevealWorkloadEnv(ctx context.Context, in *RevealWorkloadEnvRequest, opts ...grpc.CallOption) (*RevealWorkloadEnvResponse, error)
 }
 
 type workloadServiceClient struct {
@@ -227,6 +229,16 @@ func (c *workloadServiceClient) RollbackWorkload(ctx context.Context, in *Rollba
 	return out, nil
 }
 
+func (c *workloadServiceClient) RevealWorkloadEnv(ctx context.Context, in *RevealWorkloadEnvRequest, opts ...grpc.CallOption) (*RevealWorkloadEnvResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RevealWorkloadEnvResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_RevealWorkloadEnv_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkloadServiceServer is the server API for WorkloadService service.
 // All implementations must embed UnimplementedWorkloadServiceServer
 // for forward compatibility.
@@ -247,6 +259,7 @@ type WorkloadServiceServer interface {
 	UnassignDomain(context.Context, *UnassignDomainRequest) (*UnassignDomainResponse, error)
 	ListWorkloadReleases(context.Context, *ListWorkloadReleasesRequest) (*ListWorkloadReleasesResponse, error)
 	RollbackWorkload(context.Context, *RollbackWorkloadRequest) (*RollbackWorkloadResponse, error)
+	RevealWorkloadEnv(context.Context, *RevealWorkloadEnvRequest) (*RevealWorkloadEnvResponse, error)
 	mustEmbedUnimplementedWorkloadServiceServer()
 }
 
@@ -304,6 +317,9 @@ func (UnimplementedWorkloadServiceServer) ListWorkloadReleases(context.Context, 
 }
 func (UnimplementedWorkloadServiceServer) RollbackWorkload(context.Context, *RollbackWorkloadRequest) (*RollbackWorkloadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RollbackWorkload not implemented")
+}
+func (UnimplementedWorkloadServiceServer) RevealWorkloadEnv(context.Context, *RevealWorkloadEnvRequest) (*RevealWorkloadEnvResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevealWorkloadEnv not implemented")
 }
 func (UnimplementedWorkloadServiceServer) mustEmbedUnimplementedWorkloadServiceServer() {}
 func (UnimplementedWorkloadServiceServer) testEmbeddedByValue()                         {}
@@ -614,6 +630,24 @@ func _WorkloadService_RollbackWorkload_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkloadService_RevealWorkloadEnv_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevealWorkloadEnvRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).RevealWorkloadEnv(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_RevealWorkloadEnv_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).RevealWorkloadEnv(ctx, req.(*RevealWorkloadEnvRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WorkloadService_ServiceDesc is the grpc.ServiceDesc for WorkloadService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -684,6 +718,10 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RollbackWorkload",
 			Handler:    _WorkloadService_RollbackWorkload_Handler,
+		},
+		{
+			MethodName: "RevealWorkloadEnv",
+			Handler:    _WorkloadService_RevealWorkloadEnv_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

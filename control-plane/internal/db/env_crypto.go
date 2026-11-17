@@ -27,6 +27,36 @@ type envEncEnvelope struct {
 	Entries map[string]envEncEntry  `json:"entries"`
 }
 
+// RevealWorkloadEnvironment returns decrypted env and writes an audit event (#23).
+func RevealWorkloadEnvironment(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID string, actor AuditActor) (map[string]string, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+	if err := WithTenant(ctx, tx, tenantID); err != nil {
+		return nil, err
+	}
+	var envText string
+	err = tx.QueryRow(ctx, `SELECT env_vars::text FROM workloads WHERE id = $1::uuid`, workloadID).Scan(&envText)
+	if err != nil {
+		return nil, fmt.Errorf("workload not found")
+	}
+	env, err := decodeEnvironmentJSON(envText)
+	if err != nil {
+		return nil, err
+	}
+	if err := writeAudit(ctx, tx, tenantID, "workload.env_revealed", "workload", workloadID, actor, map[string]string{
+		"keys": fmt.Sprintf("%d", len(env)),
+	}); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return env, nil
+}
+
 // MaskEnvironment replaces every value with EnvVarMaskedPlaceholder (keys preserved).
 func MaskEnvironment(env map[string]string) map[string]string {
 	if len(env) == 0 {

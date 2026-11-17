@@ -28,7 +28,13 @@ From the workload view you can **Deploy**, view logs, assign domains, trigger **
 2. **View** — Application → **Summary** lists keys with values masked as `********` (never plaintext).
 3. **Edit** — **Edit** tab → change a value or leave `********` to keep the current secret → **Save changes**. Remove a row to delete that key.
 
-Values are stored encrypted at rest; the API merge treats `********` as “unchanged”. Full secret UX (`.env` import, audited reveal) is tracked in [#23](https://github.com/xiron902224/norix/issues/23).
+Values are stored encrypted at rest; the API merge treats `********` as “unchanged”.
+
+**Import `.env`** — Edit → **Import .env** merges keys into the editor (then Save).
+
+**Reveal** — owner/admin only; loads plaintext into the editor and writes `workload.env_revealed` to the audit log. Confirm before revealing.
+
+Per-environment overlays (staging vs prod maps) remain a follow-up; use separate workloads/projects for now.
 
 ## Lifecycle tips
 

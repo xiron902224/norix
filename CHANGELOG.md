@@ -11,6 +11,7 @@
 - Docker Compose no longer mounts `docker.sock` into the control plane; agent holds the socket (#10)
 
 ### Added
+- Env UX: bulk `.env` import in the editor + audited `RevealWorkloadEnv` (owner/admin) (#23)
 - Installer `--panel-domain` / `--acme-email` wires Caddy in front of the panel with ACME HTTP-01 (`docker-compose.panel-tls.yml`); Pebble overlay + smoke script (#26)
 - Workload liveness/readiness probes (HTTP/TCP/exec); unready removes edge routing; liveness restarts container; UI probe JSON + Ready status (#17)
 - Docs EN/ES: probes.md (#17)

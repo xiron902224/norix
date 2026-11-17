@@ -72,6 +72,9 @@ const (
 	// WorkloadServiceRollbackWorkloadProcedure is the procedure name of the WorkloadService's
 	// RollbackWorkload RPC.
 	WorkloadServiceRollbackWorkloadProcedure = "/v1.WorkloadService/RollbackWorkload"
+	// WorkloadServiceRevealWorkloadEnvProcedure is the procedure name of the WorkloadService's
+	// RevealWorkloadEnv RPC.
+	WorkloadServiceRevealWorkloadEnvProcedure = "/v1.WorkloadService/RevealWorkloadEnv"
 	// ProjectServiceCreateProjectProcedure is the procedure name of the ProjectService's CreateProject
 	// RPC.
 	ProjectServiceCreateProjectProcedure = "/v1.ProjectService/CreateProject"
@@ -196,6 +199,13 @@ var (
 			Procedure:  WorkloadServiceRollbackWorkloadProcedure,
 		}
 	})
+	workloadServiceRevealWorkloadEnvSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("RevealWorkloadEnv"),
+			Procedure:  WorkloadServiceRevealWorkloadEnvProcedure,
+		}
+	})
 )
 
 // WorkloadServiceClient is a client for the v1.WorkloadService service.
@@ -216,6 +226,7 @@ type WorkloadServiceClient interface {
 	UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error)
 	ListWorkloadReleases(context.Context, *v1.ListWorkloadReleasesRequest) (*v1.ListWorkloadReleasesResponse, error)
 	RollbackWorkload(context.Context, *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error)
+	RevealWorkloadEnv(context.Context, *v1.RevealWorkloadEnvRequest) (*v1.RevealWorkloadEnvResponse, error)
 }
 
 // NewWorkloadServiceClient constructs a client for the v1.WorkloadService service. Multiple service
@@ -242,6 +253,7 @@ type WorkloadServiceHandler interface {
 	UnassignDomain(context.Context, *v1.UnassignDomainRequest) (*v1.UnassignDomainResponse, error)
 	ListWorkloadReleases(context.Context, *v1.ListWorkloadReleasesRequest) (*v1.ListWorkloadReleasesResponse, error)
 	RollbackWorkload(context.Context, *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error)
+	RevealWorkloadEnv(context.Context, *v1.RevealWorkloadEnvRequest) (*v1.RevealWorkloadEnvResponse, error)
 }
 
 // RegisterWorkloadServiceHandler registers svc as the v1.WorkloadService implementation on server.
@@ -264,6 +276,7 @@ func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceH
 		connect.Method{Spec: workloadServiceUnassignDomainSpec(), Handler: adapter.unassignDomain},
 		connect.Method{Spec: workloadServiceListWorkloadReleasesSpec(), Handler: adapter.listWorkloadReleases},
 		connect.Method{Spec: workloadServiceRollbackWorkloadSpec(), Handler: adapter.rollbackWorkload},
+		connect.Method{Spec: workloadServiceRevealWorkloadEnvSpec(), Handler: adapter.revealWorkloadEnv},
 	)
 }
 
@@ -332,6 +345,10 @@ func (UnimplementedWorkloadServiceHandler) ListWorkloadReleases(context.Context,
 
 func (UnimplementedWorkloadServiceHandler) RollbackWorkload(context.Context, *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.RollbackWorkload is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) RevealWorkloadEnv(context.Context, *v1.RevealWorkloadEnvRequest) (*v1.RevealWorkloadEnvResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.RevealWorkloadEnv is not implemented")
 }
 
 type workloadServiceClient struct {
@@ -461,6 +478,14 @@ func (c *workloadServiceClient) ListWorkloadReleases(ctx context.Context, req *v
 func (c *workloadServiceClient) RollbackWorkload(ctx context.Context, req *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error) {
 	var res v1.RollbackWorkloadResponse
 	if err := c.client.CallUnary(ctx, workloadServiceRollbackWorkloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) RevealWorkloadEnv(ctx context.Context, req *v1.RevealWorkloadEnvRequest) (*v1.RevealWorkloadEnvResponse, error) {
+	var res v1.RevealWorkloadEnvResponse
+	if err := c.client.CallUnary(ctx, workloadServiceRevealWorkloadEnvSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -654,6 +679,18 @@ func (h workloadServiceHandler) rollbackWorkload(ctx context.Context, _ connect.
 		return err
 	}
 	res, err := h.svc.RollbackWorkload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) revealWorkloadEnv(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RevealWorkloadEnvRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RevealWorkloadEnv(ctx, &req)
 	if err != nil {
 		return err
 	}

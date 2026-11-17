@@ -12,7 +12,13 @@
 2. **Ver** — Application → **Summary**: keys con valor `********` (nunca plaintext).
 3. **Editar** — pestaña **Edit** → cambiar el valor o dejar `********` para conservar el secreto → **Save changes**. Quitar la fila elimina esa key.
 
-Se guardan cifradas en reposo; la API trata `********` como “sin cambio”. UX completa (import `.env`, reveal auditado): [#23](https://github.com/xiron902224/norix/issues/23).
+Se guardan cifradas en reposo; la API trata `********` como “sin cambio”.
+
+**Import `.env`** — Edit → **Import .env** fusiona claves (luego Save).
+
+**Reveal** — solo owner/admin; carga plaintext y escribe `workload.env_revealed` en auditoría.
+
+Overlays por entorno (staging/prod): pendiente; usa workloads/proyectos distintos por ahora.
 
 Antes de retirar un nodo: **drain**. Los secrets no van en Git.
 

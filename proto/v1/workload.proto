@@ -277,6 +277,15 @@ message RollbackWorkloadResponse {
   WorkloadRelease release = 5;
 }
 
+// Reveal plaintext env (#23). Owner/admin only; audited.
+message RevealWorkloadEnvRequest {
+  string workload_id = 1;
+}
+
+message RevealWorkloadEnvResponse {
+  map<string, string> env_vars = 1;
+}
+
 service WorkloadService {
   rpc CreateWorkload(CreateWorkloadRequest) returns (CreateWorkloadResponse);
   rpc Deploy(DeployRequest) returns (DeployResponse);
@@ -294,6 +303,7 @@ service WorkloadService {
   rpc UnassignDomain(UnassignDomainRequest) returns (UnassignDomainResponse);
   rpc ListWorkloadReleases(ListWorkloadReleasesRequest) returns (ListWorkloadReleasesResponse);
   rpc RollbackWorkload(RollbackWorkloadRequest) returns (RollbackWorkloadResponse);
+  rpc RevealWorkloadEnv(RevealWorkloadEnvRequest) returns (RevealWorkloadEnvResponse);
 }
 
 message Project {
