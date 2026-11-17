@@ -189,6 +189,32 @@ message HeartbeatRequest {
   string status = 4;
   repeated string running_workload_ids = 5;
   NodeCapabilities capabilities = 6;
+  // Observed managed database containers (#20).
+  repeated ObservedManagedDatabase observed_managed_databases = 7;
+}
+
+// Desired managed DB engine container for a node (#20).
+message DesiredManagedDatabase {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string engine = 4; // postgres | mysql | redis
+  string image = 5;
+  map<string, string> env_vars = 6;
+  repeated string command = 7;
+  int32 host_port = 8;
+  int32 container_port = 9;
+  string volume_name = 10;
+  string volume_mount_path = 11;
+  string action = 12; // run | stop
+}
+
+message ObservedManagedDatabase {
+  string id = 1;
+  string status = 2; // ready | provisioning | failed | stopped
+  string container_id = 3;
+  string message = 4;
+  int32 host_port = 5;
 }
 
 message DesiredBuild {
@@ -291,6 +317,7 @@ message HeartbeatResponse {
   string desired_agent_version = 7;
   // One-shot replacement node bearer after RotateNodeToken (#13). Agent must persist it.
   string rotated_node_token = 8;
+  repeated DesiredManagedDatabase desired_managed_databases = 9;
 }
 
 message RotateNodeTokenRequest {

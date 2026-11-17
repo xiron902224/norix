@@ -66,7 +66,7 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | Domains + Caddy edge | Beta | Route health + rollback |
 | TLS / ACME | Experimental | DNS-01 exists; CP serves plain HTTP by default |
 | Preview environments | Experimental | Stub pipeline; webhook secret required (#11) |
-| Managed databases | Experimental | Records/backups; engine not provisioned |
+| Managed databases | Beta | Real Postgres/MySQL/Redis containers (#20) |
 | Autoscaler | Experimental | `NORIX_AUTOSCALER=1` |
 | WireGuard mesh | Experimental | Dry-run by default |
 | Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; not production-ready |

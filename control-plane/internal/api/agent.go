@@ -142,6 +142,19 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 	if _, err := db.ReclaimPendingBuilds(ctx, service.pool, node.OrganizationID, node.ID); err != nil {
 		return nil, internalError("reclaim pending builds", err)
 	}
+	if observedDBs := request.GetObservedManagedDatabases(); len(observedDBs) > 0 {
+		items := make([]db.ObservedManagedDatabase, 0, len(observedDBs))
+		for _, item := range observedDBs {
+			items = append(items, db.ObservedManagedDatabase{
+				ID: item.GetId(), Status: item.GetStatus(), ContainerID: item.GetContainerId(),
+				Message: item.GetMessage(), HostPort: item.GetHostPort(),
+			})
+		}
+		if err := db.ApplyObservedManagedDatabases(ctx, service.pool, node.OrganizationID, items); err != nil {
+			return nil, internalError("apply managed databases", err)
+		}
+	}
+	_, _ = db.EnsureProvisioningDatabases(ctx, service.pool, node.OrganizationID, node.ID)
 	desired, err := db.ListDesiredWorkloadsForNode(ctx, service.pool, node.OrganizationID, node.ID)
 	if err != nil {
 		return nil, internalError("list desired workloads", err)
@@ -211,11 +224,25 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 	if refreshed, err := db.GetNode(ctx, service.pool, node.OrganizationID, node.ID); err == nil {
 		desiredAgentVersion = strings.TrimSpace(refreshed.DesiredAgentVersion)
 	}
+	desiredDBs, err := db.ListDesiredManagedDatabasesForNode(ctx, service.pool, node.OrganizationID, node.ID)
+	if err != nil {
+		return nil, internalError("list desired managed databases", err)
+	}
+	desiredManaged := make([]*paasv1.DesiredManagedDatabase, 0, len(desiredDBs))
+	for _, item := range desiredDBs {
+		desiredManaged = append(desiredManaged, &paasv1.DesiredManagedDatabase{
+			Id: item.ID, ProjectId: item.ProjectID, Name: item.Name, Engine: item.Engine,
+			Image: item.Image, EnvVars: item.EnvVars, Command: item.Command,
+			HostPort: item.HostPort, ContainerPort: item.ContainerPort,
+			VolumeName: item.VolumeName, VolumeMountPath: item.VolumeMountPath, Action: item.Action,
+		})
+	}
 	return &paasv1.HeartbeatResponse{
 		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds,
 		DesiredEdge: desiredEdge, DesiredNetwork: desiredNetwork, DesiredWasm: desiredWasm,
 		DesiredAgentVersion: desiredAgentVersion,
 		RotatedNodeToken:    rotatedToken,
+		DesiredManagedDatabases: desiredManaged,
 	}, nil
 }
 

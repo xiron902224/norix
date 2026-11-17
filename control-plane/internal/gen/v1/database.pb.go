@@ -87,8 +87,12 @@ type ManagedDatabase struct {
 	VolumePath     string                 `protobuf:"bytes,7,opt,name=volume_path,json=volumePath,proto3" json:"volume_path,omitempty"`
 	BackupSchedule string                 `protobuf:"bytes,8,opt,name=backup_schedule,json=backupSchedule,proto3" json:"backup_schedule,omitempty"`
 	LastBackupAt   int64                  `protobuf:"varint,9,opt,name=last_backup_at,json=lastBackupAt,proto3" json:"last_backup_at,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Populated after provision (redacted password unless reveal/owner path).
+	ConnectionUri string `protobuf:"bytes,10,opt,name=connection_uri,json=connectionUri,proto3" json:"connection_uri,omitempty"`
+	HostPort      int32  `protobuf:"varint,11,opt,name=host_port,json=hostPort,proto3" json:"host_port,omitempty"`
+	ContainerId   string `protobuf:"bytes,12,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ManagedDatabase) Reset() {
@@ -182,6 +186,27 @@ func (x *ManagedDatabase) GetLastBackupAt() int64 {
 		return x.LastBackupAt
 	}
 	return 0
+}
+
+func (x *ManagedDatabase) GetConnectionUri() string {
+	if x != nil {
+		return x.ConnectionUri
+	}
+	return ""
+}
+
+func (x *ManagedDatabase) GetHostPort() int32 {
+	if x != nil {
+		return x.HostPort
+	}
+	return 0
+}
+
+func (x *ManagedDatabase) GetContainerId() string {
+	if x != nil {
+		return x.ContainerId
+	}
+	return ""
 }
 
 type ListManagedDatabasesRequest struct {
@@ -564,7 +589,7 @@ var File_v1_database_proto protoreflect.FileDescriptor
 
 const file_v1_database_proto_rawDesc = "" +
 	"\n" +
-	"\x11v1/database.proto\x12\x02v1\"\xa8\x02\n" +
+	"\x11v1/database.proto\x12\x02v1\"\x8f\x03\n" +
 	"\x0fManagedDatabase\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -576,7 +601,11 @@ const file_v1_database_proto_rawDesc = "" +
 	"\vvolume_path\x18\a \x01(\tR\n" +
 	"volumePath\x12'\n" +
 	"\x0fbackup_schedule\x18\b \x01(\tR\x0ebackupSchedule\x12$\n" +
-	"\x0elast_backup_at\x18\t \x01(\x03R\flastBackupAt\"<\n" +
+	"\x0elast_backup_at\x18\t \x01(\x03R\flastBackupAt\x12%\n" +
+	"\x0econnection_uri\x18\n" +
+	" \x01(\tR\rconnectionUri\x12\x1b\n" +
+	"\thost_port\x18\v \x01(\x05R\bhostPort\x12!\n" +
+	"\fcontainer_id\x18\f \x01(\tR\vcontainerId\"<\n" +
 	"\x1bListManagedDatabasesRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\"Q\n" +

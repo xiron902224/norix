@@ -108,6 +108,53 @@ struct HeartbeatRequest<'a> {
     capabilities: &'a Capabilities,
     #[serde(default)]
     running_workload_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "slice_is_empty")]
+    observed_managed_databases: &'a [ObservedManagedDatabase],
+}
+
+fn slice_is_empty<T>(value: &&[T]) -> bool {
+    value.is_empty()
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredManagedDatabase {
+    pub id: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub project_id: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub name: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub engine: String,
+    #[serde(default)]
+    pub image: String,
+    #[serde(default)]
+    pub env_vars: HashMap<String, String>,
+    #[serde(default)]
+    pub command: Vec<String>,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub host_port: i32,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub container_port: i32,
+    #[serde(default)]
+    pub volume_name: String,
+    #[serde(default)]
+    pub volume_mount_path: String,
+    #[serde(default)]
+    pub action: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedManagedDatabase {
+    pub id: String,
+    pub status: String,
+    pub container_id: String,
+    pub message: String,
+    pub host_port: i32,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -334,6 +381,7 @@ pub struct HeartbeatResult {
     pub desired_agent_version: Option<String>,
     /// One-shot replacement bearer after UI/API RotateNodeToken (#13).
     pub rotated_node_token: Option<String>,
+    pub desired_managed_databases: Vec<DesiredManagedDatabase>,
 }
 
 #[derive(Deserialize)]
@@ -356,6 +404,8 @@ struct HeartbeatResponse {
     desired_agent_version: Option<String>,
     #[serde(default)]
     rotated_node_token: Option<String>,
+    #[serde(default)]
+    desired_managed_databases: Vec<DesiredManagedDatabase>,
 }
 
 #[derive(Serialize)]
@@ -432,6 +482,7 @@ impl AgentClient {
         memory_free_mb: i64,
         cpu_usage_percent: f64,
         running_workload_ids: Vec<String>,
+        observed_managed_databases: &[ObservedManagedDatabase],
     ) -> Result<HeartbeatResult> {
         let body = HeartbeatRequest {
             node_id: &state.node_id,
@@ -440,6 +491,7 @@ impl AgentClient {
             status: "online",
             capabilities,
             running_workload_ids,
+            observed_managed_databases,
         };
         let response = self
             .post_json("/v1.AgentService/Heartbeat", Some(&state.node_token), &body)
@@ -461,6 +513,7 @@ impl AgentClient {
                     .rotated_node_token
                     .map(|v| v.trim().to_string())
                     .filter(|v| !v.is_empty()),
+                desired_managed_databases: parsed.desired_managed_databases,
             }),
             Err(error) => {
                 let mut result = HeartbeatResult::default();

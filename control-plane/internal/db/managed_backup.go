@@ -156,6 +156,24 @@ func writeManagedDump(ctx context.Context, item ManagedDatabase) (string, error)
 }
 
 func dumpPostgres(ctx context.Context, item ManagedDatabase, dest string) error {
+	// Prefer the provisioned managed container (#20).
+	if _, err := exec.LookPath("docker"); err == nil {
+		container := ManagedDBContainerName(item.ID)
+		outFile, createErr := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o640)
+		if createErr == nil {
+			dbName := sanitizeDBName(item.Name)
+			cmd := exec.CommandContext(ctx, "docker", "exec", "-i", container, "pg_dump", "-U", "norix", "--format=custom", "--no-owner", "--no-acl", dbName)
+			cmd.Stdout = outFile
+			var stderr strings.Builder
+			cmd.Stderr = &stderr
+			runErr := cmd.Run()
+			_ = outFile.Close()
+			if runErr == nil {
+				return nil
+			}
+			_ = os.Remove(dest)
+		}
+	}
 	dsn := managedDSNFromEnv(item)
 	if bin, err := exec.LookPath("pg_dump"); err == nil && dsn != "" {
 		cmd := exec.CommandContext(ctx, bin, "--format=custom", "--no-owner", "--no-acl", "--dbname="+dsn, "--file="+dest)
@@ -201,6 +219,16 @@ func dumpPostgres(ctx context.Context, item ManagedDatabase, dest string) error 
 }
 
 func dumpMySQL(ctx context.Context, item ManagedDatabase, dest, stamp string) error {
+	if _, err := exec.LookPath("docker"); err == nil {
+		container := ManagedDBContainerName(item.ID)
+		dbName := sanitizeDBName(item.Name)
+		cmd := exec.CommandContext(ctx, "docker", "exec", container,
+			"sh", "-c", fmt.Sprintf("mysqldump -u norix -p\"$MYSQL_PASSWORD\" %s", dbName))
+		out, runErr := cmd.CombinedOutput()
+		if runErr == nil {
+			return os.WriteFile(dest, out, 0o640)
+		}
+	}
 	dsn := strings.TrimSpace(os.Getenv("NORIX_MANAGED_MYSQL_DSN"))
 	if dsn != "" {
 		if _, err := exec.LookPath("mysqldump"); err == nil {
@@ -216,6 +244,15 @@ func dumpMySQL(ctx context.Context, item ManagedDatabase, dest, stamp string) er
 }
 
 func dumpRedis(ctx context.Context, item ManagedDatabase, dest, stamp string) error {
+	if _, err := exec.LookPath("docker"); err == nil {
+		container := ManagedDBContainerName(item.ID)
+		cmd := exec.CommandContext(ctx, "docker", "exec", container,
+			"sh", "-c", `redis-cli -a "$REDISCLI_AUTH" --rdb /data/dump.rdb >/dev/null 2>&1 || redis-cli SAVE; cat /data/dump.rdb 2>/dev/null || echo REDIS-SAVE-OK`)
+		out, runErr := cmd.CombinedOutput()
+		if runErr == nil && len(out) > 0 {
+			return os.WriteFile(dest, out, 0o640)
+		}
+	}
 	if host := strings.TrimSpace(os.Getenv("NORIX_MANAGED_REDIS_HOST")); host != "" {
 		if _, err := exec.LookPath("redis-cli"); err == nil {
 			cmd := exec.CommandContext(ctx, "redis-cli", "-h", host, "--rdb", dest)
@@ -537,13 +574,15 @@ func GetManagedDatabase(ctx context.Context, pool *pgxpool.Pool, tenantID, datab
 	var lastBackup *time.Time
 	err = tx.QueryRow(ctx, `
 		SELECT id::text, organization_id::text, project_id::text, engine, name, status,
-		       COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at
+		       COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at,
+		       COALESCE(host_port, 0), COALESCE(container_id, ''), COALESCE(connection_uri, ''), COALESCE(last_error, '')
 		FROM managed_databases
 		WHERE id = $1::uuid AND organization_id = $2::uuid`,
 		databaseID, tenantID,
 	).Scan(
 		&item.ID, &item.OrganizationID, &item.ProjectID, &item.Engine, &item.Name, &item.Status,
 		&item.NodeID, &item.VolumePath, &item.BackupSchedule, &lastBackup,
+		&item.HostPort, &item.ContainerID, &item.ConnectionURI, &item.LastError,
 	)
 	if err != nil {
 		return ManagedDatabase{}, fmt.Errorf("get managed database: %w", err)

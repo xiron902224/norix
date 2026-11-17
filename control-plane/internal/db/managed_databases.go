@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/xiron902224/norix/control-plane/internal/secrets"
 )
 
 type ManagedDatabase struct {
@@ -23,6 +22,10 @@ type ManagedDatabase struct {
 	VolumePath     string
 	BackupSchedule string
 	LastBackupAt   *time.Time
+	HostPort       int32
+	ContainerID    string
+	ConnectionURI  string
+	LastError      string
 }
 
 func engineFromString(engine string) (string, error) {
@@ -81,16 +84,17 @@ func CreateManagedDatabase(ctx context.Context, pool *pgxpool.Pool, tenantID, pr
 	if name == "" || projectID == "" {
 		return ManagedDatabase{}, fmt.Errorf("project and name are required")
 	}
+	if engine == "mongodb" {
+		return ManagedDatabase{}, fmt.Errorf("mongodb provisioning is not implemented yet; use postgres, mysql, or redis")
+	}
 	password := randomPassword(24)
-	connJSON := fmt.Sprintf(`{"password":%q,"user":%q}`, password, "norix_"+name)
-
-	key, keyErr := secrets.KeyFromEnv()
-	var secretEnc, secretNonce []byte
-	if keyErr == nil {
-		secretEnc, secretNonce, err = secrets.Encrypt(key, []byte(connJSON))
-		if err != nil {
-			return ManagedDatabase{}, err
-		}
+	secret, _, err := buildManagedSecret(engine, name, password, 0)
+	if err != nil {
+		return ManagedDatabase{}, err
+	}
+	secretEnc, secretNonce, err := encryptManagedSecret(secret)
+	if err != nil {
+		return ManagedDatabase{}, fmt.Errorf("encrypt connection secret (set NORIX_BUILD_SECRETS_KEY): %w", err)
 	}
 
 	tx, err := pool.Begin(ctx)
@@ -108,19 +112,21 @@ func CreateManagedDatabase(ctx context.Context, pool *pgxpool.Pool, tenantID, pr
 		                               connection_secret_enc, connection_secret_nonce, backup_schedule)
 		VALUES ($1::uuid, $2::uuid, $3, $4, 'provisioning', $5, $6, $7, $8)
 		RETURNING id::text, organization_id::text, project_id::text, engine, name, status,
-		          COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at`,
-		tenantID, projectID, engine, name, fmt.Sprintf("/var/lib/norix/dbs/%s", name),
+		          COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at,
+		          COALESCE(host_port, 0), COALESCE(container_id, ''), COALESCE(connection_uri, ''), COALESCE(last_error, '')`,
+		tenantID, projectID, engine, name, fmt.Sprintf("docker:%s", ManagedDBVolumeName("pending")),
 		secretEnc, secretNonce, backupSchedule,
 	).Scan(
 		&item.ID, &item.OrganizationID, &item.ProjectID, &item.Engine, &item.Name, &item.Status,
 		&item.NodeID, &item.VolumePath, &item.BackupSchedule, &lastBackup,
+		&item.HostPort, &item.ContainerID, &item.ConnectionURI, &item.LastError,
 	)
 	if err != nil {
 		return ManagedDatabase{}, fmt.Errorf("create managed database: %w", err)
 	}
 	item.LastBackupAt = lastBackup
-	_, _ = tx.Exec(ctx, `UPDATE managed_databases SET status = 'ready', updated_at = NOW() WHERE id = $1::uuid`, item.ID)
-	item.Status = "ready"
+	item.VolumePath = "docker:" + ManagedDBVolumeName(item.ID)
+	_, _ = tx.Exec(ctx, `UPDATE managed_databases SET volume_path = $2 WHERE id = $1::uuid`, item.ID, item.VolumePath)
 	if err := tx.Commit(ctx); err != nil {
 		return ManagedDatabase{}, err
 	}
@@ -138,7 +144,8 @@ func ListManagedDatabases(ctx context.Context, pool *pgxpool.Pool, tenantID, pro
 	}
 	query := `
 		SELECT id::text, organization_id::text, project_id::text, engine, name, status,
-		       COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at
+		       COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at,
+		       COALESCE(host_port, 0), COALESCE(container_id, ''), COALESCE(connection_uri, ''), COALESCE(last_error, '')
 		FROM managed_databases WHERE organization_id = $1::uuid`
 	args := []any{tenantID}
 	if projectID != "" {
@@ -158,6 +165,7 @@ func ListManagedDatabases(ctx context.Context, pool *pgxpool.Pool, tenantID, pro
 		if err := rows.Scan(
 			&item.ID, &item.OrganizationID, &item.ProjectID, &item.Engine, &item.Name, &item.Status,
 			&item.NodeID, &item.VolumePath, &item.BackupSchedule, &lastBackup,
+			&item.HostPort, &item.ContainerID, &item.ConnectionURI, &item.LastError,
 		); err != nil {
 			return nil, err
 		}
@@ -170,6 +178,7 @@ func ListManagedDatabases(ctx context.Context, pool *pgxpool.Pool, tenantID, pro
 	return out, tx.Commit(ctx)
 }
 
+// EnsureProvisioningDatabases assigns provisioning DBs to a node (does not mark ready — agent does).
 func EnsureProvisioningDatabases(ctx context.Context, pool *pgxpool.Pool, tenantID, nodeID string) (int64, error) {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -180,10 +189,10 @@ func EnsureProvisioningDatabases(ctx context.Context, pool *pgxpool.Pool, tenant
 		return 0, err
 	}
 	tag, err := tx.Exec(ctx, `
-		UPDATE managed_databases SET status = 'ready', node_id = $2::uuid, updated_at = NOW()
+		UPDATE managed_databases SET node_id = $2::uuid, updated_at = NOW()
 		WHERE organization_id = $1::uuid
 		  AND status = 'provisioning'
-		  AND (node_id IS NULL OR node_id = $2::uuid)`,
+		  AND node_id IS NULL`,
 		tenantID, nodeID)
 	if err != nil {
 		return 0, err
@@ -209,12 +218,14 @@ func finishManagedDatabaseOperation(ctx context.Context, pool *pgxpool.Pool, ten
 	query += `
 		WHERE id = $1::uuid AND organization_id = $2::uuid
 		RETURNING id::text, organization_id::text, project_id::text, engine, name, status,
-		          COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at`
+		          COALESCE(node_id::text, ''), volume_path, backup_schedule, last_backup_at,
+		          COALESCE(host_port, 0), COALESCE(container_id, ''), COALESCE(connection_uri, ''), COALESCE(last_error, '')`
 	var item ManagedDatabase
 	var lastBackup *time.Time
 	err = tx.QueryRow(ctx, query, databaseID, tenantID).Scan(
 		&item.ID, &item.OrganizationID, &item.ProjectID, &item.Engine, &item.Name, &item.Status,
 		&item.NodeID, &item.VolumePath, &item.BackupSchedule, &lastBackup,
+		&item.HostPort, &item.ContainerID, &item.ConnectionURI, &item.LastError,
 	)
 	if err != nil {
 		return ManagedDatabase{}, fmt.Errorf("finish managed database operation: %w", err)

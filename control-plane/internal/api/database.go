@@ -41,6 +41,9 @@ func managedDBToProto(item db.ManagedDatabase) *paasv1.ManagedDatabase {
 		NodeId:         item.NodeID,
 		VolumePath:     item.VolumePath,
 		BackupSchedule: item.BackupSchedule,
+		ConnectionUri:  item.ConnectionURI,
+		HostPort:       item.HostPort,
+		ContainerId:    item.ContainerID,
 	}
 	switch item.Engine {
 	case "postgres":
@@ -93,7 +96,10 @@ func (service DatabaseService) CreateManagedDatabase(ctx context.Context, reques
 	}
 	item, err := db.CreateManagedDatabase(ctx, service.pool, identity.OrganizationID, request.GetProjectId(), engine, request.GetName(), request.GetBackupSchedule())
 	if err != nil {
-		if strings.Contains(err.Error(), "required") || strings.Contains(err.Error(), "unsupported") {
+		if strings.Contains(err.Error(), "required") ||
+			strings.Contains(err.Error(), "unsupported") ||
+			strings.Contains(err.Error(), "not implemented") ||
+			strings.Contains(err.Error(), "encrypt") {
 			return nil, invalidArgument(err.Error())
 		}
 		return nil, internalError("create managed database", err)

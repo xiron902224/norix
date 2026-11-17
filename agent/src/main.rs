@@ -4,6 +4,7 @@ mod client;
 mod config;
 mod edge;
 mod gitssrf;
+mod managed_db;
 mod microvm;
 mod network;
 mod probes;
@@ -130,6 +131,7 @@ async fn main() -> Result<()> {
     let mut backoff = Duration::from_secs(1);
     let max_backoff = Duration::from_secs(30);
     let heartbeat = Duration::from_secs(config.heartbeat_secs);
+    let mut last_observed_dbs: Vec<client::ObservedManagedDatabase> = Vec::new();
 
     loop {
         tokio::select! {
@@ -146,7 +148,14 @@ async fn main() -> Result<()> {
                     Vec::new()
                 };
                 match client
-                    .heartbeat(&state, &caps, memory_free, cpu_usage, running_ids)
+                    .heartbeat(
+                        &state,
+                        &caps,
+                        memory_free,
+                        cpu_usage,
+                        running_ids,
+                        &last_observed_dbs,
+                    )
                     .await
                 {
                     Ok(desired) => {
@@ -242,8 +251,20 @@ async fn main() -> Result<()> {
                                     warn!(%error, "report observed failed after retries");
                                 }
                             }
-                        } else if !desired.desired_workloads.is_empty() || !desired.desired_builds.is_empty() {
-                            warn!("desired builds/workloads pending but no container runtime; degraded mode active");
+                            if !desired.desired_managed_databases.is_empty() {
+                                info!(
+                                    count = desired.desired_managed_databases.len(),
+                                    "reconciling managed databases"
+                                );
+                                last_observed_dbs = runtime
+                                    .reconcile_managed_databases(&desired.desired_managed_databases)
+                                    .await;
+                            }
+                        } else if !desired.desired_workloads.is_empty()
+                            || !desired.desired_builds.is_empty()
+                            || !desired.desired_managed_databases.is_empty()
+                        {
+                            warn!("desired builds/workloads/DBs pending but no container runtime; degraded mode active");
                         }
                         if let Some(plan) = desired.desired_edge.as_ref() {
                             info!(generation = plan.generation, "applying edge plan");
