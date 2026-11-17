@@ -22,6 +22,23 @@ If no online node has Docker or containerd, deploys fail with `no online node wi
 
 Build nodes need Docker. Progress and logs appear under builds / workload logs in the UI.
 
+### Git URL SSRF controls
+
+Norix validates Git remotes before clone (control plane and agent):
+
+- Allowed schemes by default: `https://`, `ssh://`, and scp-like `git@host:path`
+- `http://`, `file://`, and `git://` are rejected
+- After DNS lookup, loopback, RFC1918, link-local, CGNAT (`100.64.0.0/10`), and IPv6 ULA are rejected (including cloud metadata `169.254.169.254`)
+
+For private Git hosts (lab / self-hosted), set a comma-separated allowlist on the control plane **and** agent:
+
+```bash
+# hostnames and/or CIDRs that may resolve to otherwise-blocked addresses
+export NORIX_GIT_SSRF_ALLOWLIST=git.internal.example,10.10.0.0/16
+```
+
+Allowlisting a hostname still does **not** reopen blocked schemes (`http://`, etc.).
+
 ## GitHub push webhook
 
 Mint a token (`POST /api/webhooks/workloads/{workloadID}` with a session Bearer). Response includes `webhook_url` and `secret` (same value as the path token).

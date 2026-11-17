@@ -3,6 +3,7 @@ mod capabilities;
 mod client;
 mod config;
 mod edge;
+mod gitssrf;
 mod microvm;
 mod network;
 mod proto_num;

@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/xiron902224/norix/control-plane/internal/gitssrf"
 	"github.com/xiron902224/norix/control-plane/internal/secrets"
 )
 
@@ -73,6 +74,9 @@ func CreateBuild(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID, 
 	gitURL = strings.TrimSpace(gitURL)
 	if gitURL == "" {
 		return Build{}, fmt.Errorf("git url is required")
+	}
+	if err := gitssrf.ValidateGitURL(gitURL); err != nil {
+		return Build{}, err
 	}
 	if gitRef == "" {
 		gitRef = "main"
