@@ -372,8 +372,8 @@ impl AgentClient {
         if let Ok(ca_path) = std::env::var("NORIX_AGENT_CA_CERT") {
             let ca_pem = std::fs::read(&ca_path)
                 .with_context(|| format!("read NORIX_AGENT_CA_CERT {}", ca_path))?;
-            let ca = reqwest::Certificate::from_pem(&ca_pem)
-                .context("parse NORIX_AGENT_CA_CERT PEM")?;
+            let ca =
+                reqwest::Certificate::from_pem(&ca_pem).context("parse NORIX_AGENT_CA_CERT PEM")?;
             builder = builder.add_root_certificate(ca);
         }
         let http = builder.build().context("build http client")?;
