@@ -266,7 +266,8 @@ impl Runtime {
             });
         }
 
-        if let Err(error) = readiness_check(surge, desired.container_port, &desired.readiness_path).await
+        if let Err(error) =
+            readiness_check(surge, desired.container_port, &desired.readiness_path).await
         {
             let logs = self.logs(&next, 40).await.unwrap_or_default();
             return Ok(ObservedWorkload {
