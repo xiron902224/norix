@@ -17,6 +17,7 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 4. [Desplegar](./deploying.md)
 4b. [Historial de releases y rollback](./releases-rollback.md) — snapshots inmutables, restore en un clic
 4c. [Updates rolling](./rolling-updates.md) — start-before-stop, maxSurge / maxUnavailable
+4d. [Probes](./probes.md) — liveness / readiness HTTP·TCP·exec
 5. [Nodos y agents](./nodes-agents.md)
 5b. [Socket Docker](./docker-socket.md) — quién monta `docker.sock`, proxy/rootless
 5c. [Autenticación del agent](./agent-auth.md) — rotar/revocar token, mTLS opcional

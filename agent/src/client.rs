@@ -53,6 +53,8 @@ pub struct DesiredWorkload {
     pub surge_host_port: i32,
     #[serde(default)]
     pub readiness_path: String,
+    #[serde(default)]
+    pub probe_spec_json: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -65,6 +67,10 @@ pub struct ObservedWorkload {
     pub message: String,
     pub host_port: i32,
     pub log_lines: Vec<String>,
+    #[serde(default)]
+    pub ready: bool,
+    #[serde(default)]
+    pub probe_status_json: String,
 }
 
 #[derive(Serialize)]

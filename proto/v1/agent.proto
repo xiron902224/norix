@@ -122,6 +122,8 @@ message DesiredWorkload {
   int32 surge_host_port = 16;
   // HTTP path for readiness during rolling (default "/"); empty skips HTTP and uses TCP.
   string readiness_path = 17;
+  // JSON ProbeSpec (#17).
+  string probe_spec_json = 18;
 }
 
 message DesiredWasmFunction {
@@ -168,6 +170,8 @@ message ObservedWorkload {
   string message = 5;
   int32 host_port = 6;
   repeated string log_lines = 7;
+  bool ready = 8;
+  string probe_status_json = 9;
 }
 
 message HeartbeatRequest {

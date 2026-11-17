@@ -53,6 +53,10 @@ message Workload {
   string update_strategy = 33;
   int32 max_surge = 34;
   int32 max_unavailable = 35;
+  // JSON ProbeSpec (#17): {readiness,liveness}
+  string probe_spec_json = 36;
+  bool ready = 37;
+  string probe_status_json = 38;
 }
 
 message ListWorkloadsRequest {

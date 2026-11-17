@@ -81,7 +81,16 @@ func workloadFromProto(workload *paasv1.Workload) (db.Workload, error) {
 		UpdateStrategy:     workload.GetUpdateStrategy(),
 		MaxSurge:           workload.GetMaxSurge(),
 		MaxUnavailable:     workload.GetMaxUnavailable(),
+		ProbeSpec:          decodeProbeSpecFromJSON(workload.GetProbeSpecJson()),
 	}, nil
+}
+
+func decodeProbeSpecFromJSON(raw string) db.ProbeSpec {
+	spec, err := db.DecodeProbeSpec(raw)
+	if err != nil {
+		return db.DefaultProbeSpec()
+	}
+	return spec
 }
 
 func workloadToProto(workload db.Workload) *paasv1.Workload {
@@ -116,6 +125,7 @@ func workloadToProto(workload db.Workload) *paasv1.Workload {
 		AffinityLabels: workload.AffinityLabels, AntiAffinityLabels: workload.AntiAffinityLabels,
 		StackId: workload.StackID, ComposeService: workload.ComposeService, ComposeSpecJson: workload.ComposeSpecJSON,
 		UpdateStrategy: workload.UpdateStrategy, MaxSurge: workload.MaxSurge, MaxUnavailable: workload.MaxUnavailable,
+		ProbeSpecJson: db.ProbeSpecJSON(workload.ProbeSpec), Ready: workload.Ready, ProbeStatusJson: workload.ProbeStatusJSON,
 	}
 }
 

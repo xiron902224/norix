@@ -111,6 +111,7 @@ export async function updateWorkload(input: {
   updateStrategy?: string
   maxSurge?: number
   maxUnavailable?: number
+  probeSpecJson?: string
 }): Promise<Workload> {
   const response = await workloadClient.updateWorkload(create(UpdateWorkloadRequestSchema, {
     workload: create(WorkloadSchema, {
@@ -134,6 +135,7 @@ export async function updateWorkload(input: {
       updateStrategy: input.updateStrategy ?? 'rolling',
       maxSurge: input.maxSurge ?? 1,
       maxUnavailable: input.maxUnavailable ?? 0,
+      probeSpecJson: input.probeSpecJson ?? '',
     }),
   }))
   if (!response.workload) throw new Error('Workload was not returned')

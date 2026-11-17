@@ -28,6 +28,8 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
             message: String::new(),
             host_port: desired.host_port,
             log_lines: vec!["microvm stopped".into()],
+            ready: true,
+            probe_status_json: "{}".into(),
         };
     }
 
@@ -80,6 +82,8 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
             message: msg.into(),
             host_port: desired.host_port,
             log_lines: vec![format!("wrote {}", intent_path.display()), msg.into()],
+            ready: true,
+            probe_status_json: "{}".into(),
         };
     }
 
@@ -146,6 +150,8 @@ pub async fn reconcile_one(workdir: &Path, desired: &DesiredWorkload) -> Observe
                     format!("wrote {}", intent_path.display()),
                     format!("cloud-hypervisor pid={pid}"),
                 ],
+                ready: true,
+                probe_status_json: "{}".into(),
             }
         }
         Err(error) => {
@@ -179,6 +185,8 @@ fn failed(desired: &DesiredWorkload, message: String, mut logs: Vec<String>) -> 
         message,
         host_port: desired.host_port,
         log_lines: logs,
+        ready: false,
+        probe_status_json: "{}".into(),
     }
 }
 

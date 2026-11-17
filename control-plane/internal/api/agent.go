@@ -461,6 +461,8 @@ func (service AgentService) ReportObserved(ctx context.Context, request *paasv1.
 			Message:            item.GetMessage(),
 			HostPort:           item.GetHostPort(),
 			LogLines:           item.GetLogLines(),
+			Ready:              item.GetReady(),
+			ProbeStatusJSON:    item.GetProbeStatusJson(),
 		})
 	}
 	if err := db.ApplyObservedWorkloads(ctx, service.pool, node.OrganizationID, observed); err != nil {
@@ -689,6 +691,7 @@ func desiredWorkloadToProto(item db.DesiredWorkload) *paasv1.DesiredWorkload {
 		DesiredGeneration: item.DesiredGeneration, Action: item.Action, Runtime: runtime,
 		NetworkName: item.NetworkName, NetworkAlias: item.NetworkAlias,
 		UpdateStrategy: item.UpdateStrategy, SurgeHostPort: item.SurgeHostPort, ReadinessPath: item.ReadinessPath,
+		ProbeSpecJson: item.ProbeSpecJSON,
 	}
 }
 
