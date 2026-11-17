@@ -688,6 +688,7 @@ func desiredWorkloadToProto(item db.DesiredWorkload) *paasv1.DesiredWorkload {
 		HostPort: item.HostPort, ContainerPort: item.ContainerPort,
 		DesiredGeneration: item.DesiredGeneration, Action: item.Action, Runtime: runtime,
 		NetworkName: item.NetworkName, NetworkAlias: item.NetworkAlias,
+		UpdateStrategy: item.UpdateStrategy, SurgeHostPort: item.SurgeHostPort, ReadinessPath: item.ReadinessPath,
 	}
 }
 

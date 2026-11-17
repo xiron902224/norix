@@ -78,6 +78,9 @@ export function ApplicationDetailPage() {
   const [editGitRef, setEditGitRef] = useState('main')
   const [editDockerfile, setEditDockerfile] = useState('Dockerfile')
   const [editEnvRows, setEditEnvRows] = useState<EnvRow[]>([])
+  const [editUpdateStrategy, setEditUpdateStrategy] = useState('rolling')
+  const [editMaxSurge, setEditMaxSurge] = useState(1)
+  const [editMaxUnavailable, setEditMaxUnavailable] = useState(0)
   const [releases, setReleases] = useState<WorkloadRelease[]>([])
   const [releasesLoading, setReleasesLoading] = useState(false)
   const [rollbackId, setRollbackId] = useState('')
@@ -107,6 +110,9 @@ export function ApplicationDetailPage() {
     setEditGitRef(item.gitRef || 'main')
     setEditDockerfile(item.dockerfilePath || 'Dockerfile')
     setEditEnvRows(envMapToRows(item.envVars))
+    setEditUpdateStrategy(item.updateStrategy || 'rolling')
+    setEditMaxSurge(item.maxSurge || 1)
+    setEditMaxUnavailable(item.maxUnavailable || 0)
   }
 
   async function refresh() {
@@ -309,6 +315,9 @@ export function ApplicationDetailPage() {
         memoryLimitMb: Number(workload.memoryLimitMb || 512n),
         cpuShares: workload.cpuShares || 1024,
         envVars: envRowsToMap(editEnvRows),
+        updateStrategy: editUpdateStrategy,
+        maxSurge: editMaxSurge,
+        maxUnavailable: editMaxUnavailable,
       })
       setWorkload(updated)
       fillEdit(updated)
@@ -585,6 +594,15 @@ export function ApplicationDetailPage() {
               <FormField id="edit-git" label="Git URL" value={editGitUrl} onChange={(e) => setEditGitUrl(e.target.value)} />
               <FormField id="edit-ref" label="Git ref" value={editGitRef} onChange={(e) => setEditGitRef(e.target.value)} />
               <FormField id="edit-dockerfile" label="Dockerfile" value={editDockerfile} onChange={(e) => setEditDockerfile(e.target.value)} />
+              <label htmlFor="edit-update-strategy">
+                Update strategy
+                <select id="edit-update-strategy" value={editUpdateStrategy} onChange={(e) => setEditUpdateStrategy(e.target.value)}>
+                  <option value="rolling">rolling (start before stop)</option>
+                  <option value="recreate">recreate (stop then start)</option>
+                </select>
+              </label>
+              <FormField id="edit-max-surge" label="Max surge" type="number" min={0} max={32} value={editMaxSurge} onChange={(e) => setEditMaxSurge(Number(e.target.value || 0))} />
+              <FormField id="edit-max-unavail" label="Max unavailable" type="number" min={0} max={32} value={editMaxUnavailable} onChange={(e) => setEditMaxUnavailable(Number(e.target.value || 0))} />
             </div>
             <EnvVarsEditor
               idPrefix="edit-env"

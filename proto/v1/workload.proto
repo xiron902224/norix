@@ -49,6 +49,10 @@ message Workload {
   string stack_id = 30;
   string compose_service = 31;
   string compose_spec_json = 32;
+  // rolling | recreate (#15)
+  string update_strategy = 33;
+  int32 max_surge = 34;
+  int32 max_unavailable = 35;
 }
 
 message ListWorkloadsRequest {

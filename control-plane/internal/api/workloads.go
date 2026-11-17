@@ -78,6 +78,9 @@ func workloadFromProto(workload *paasv1.Workload) (db.Workload, error) {
 		PreferredZone:      strings.TrimSpace(workload.GetPreferredZone()),
 		AffinityLabels:     workload.GetAffinityLabels(),
 		AntiAffinityLabels: workload.GetAntiAffinityLabels(),
+		UpdateStrategy:     workload.GetUpdateStrategy(),
+		MaxSurge:           workload.GetMaxSurge(),
+		MaxUnavailable:     workload.GetMaxUnavailable(),
 	}, nil
 }
 
@@ -112,6 +115,7 @@ func workloadToProto(workload db.Workload) *paasv1.Workload {
 		RequireKvm: workload.RequireKVM, PreferredZone: workload.PreferredZone,
 		AffinityLabels: workload.AffinityLabels, AntiAffinityLabels: workload.AntiAffinityLabels,
 		StackId: workload.StackID, ComposeService: workload.ComposeService, ComposeSpecJson: workload.ComposeSpecJSON,
+		UpdateStrategy: workload.UpdateStrategy, MaxSurge: workload.MaxSurge, MaxUnavailable: workload.MaxUnavailable,
 	}
 }
 

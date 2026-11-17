@@ -11,6 +11,8 @@
 - Docker Compose no longer mounts `docker.sock` into the control plane; agent holds the socket (#10)
 
 ### Added
+- Rolling updates: start-before-stop with surge host port + readiness HTTP/TCP; workload knobs `update_strategy` / `max_surge` / `max_unavailable`; edge refresh on host_port change (#15)
+- Docs EN/ES: rolling-updates.md (#15)
 - Immutable workload release history + one-click rollback (API/UI); retention `NORIX_RELEASE_RETENTION`; optional `NORIX_AUTO_ROLLBACK` on failed apply (#14)
 - Docs EN/ES: releases-rollback.md (#14)
 - Installer/agent verify cosign bundles when present on GitHub Releases; README EN/ES download → verify → run (#5)

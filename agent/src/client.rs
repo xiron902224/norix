@@ -46,6 +46,13 @@ pub struct DesiredWorkload {
     pub network_name: String,
     #[serde(default)]
     pub network_alias: String,
+    /// rolling | recreate (#15)
+    #[serde(default)]
+    pub update_strategy: String,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub surge_host_port: i32,
+    #[serde(default)]
+    pub readiness_path: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
