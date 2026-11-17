@@ -197,20 +197,25 @@ export function DatabasesPage() {
 
         {selected ? (
           <div className="compass-selected-note">
-            Selected <strong>{selected.name}</strong> · {engineLabel(selected.engine)} · {storageLabel(selected)} · volume {selected.volumePath || '—'}
+            Selected <strong>{selected.name}</strong> · {engineLabel(selected.engine)} · status {selected.status || '—'}
+            {selected.hostPort ? ` · port ${selected.hostPort}` : ''}
+            <div className="mono" style={{ marginTop: 8 }}>
+              {selected.connectionUri || 'Connection URI appears when status is ready (password redacted).'}
+            </div>
+            <div className="muted" style={{ marginTop: 4 }}>volume {selected.volumePath || '—'} · container {selected.containerId || '—'}</div>
           </div>
         ) : null}
 
         <div className="compass-info-cards compass-info-cards-row">
           <article className="compass-info-card">
-            <h4>Automatic backups</h4>
-            <p>Every 6 hours</p>
-            <span className="muted">Retention: 7 days</span>
+            <h4>Backups</h4>
+            <p>On-demand from the API / Ops</p>
+            <span className="muted">Dumps via docker exec into the engine</span>
           </article>
           <article className="compass-info-card">
             <h4>Persistent volumes</h4>
-            <p>Cross-node replication</p>
-            <span className="muted">Encrypted at rest</span>
+            <p>Named Docker volume on the pinned node</p>
+            <span className="muted">Not cross-node replicated</span>
           </article>
         </div>
       </div>

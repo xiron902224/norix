@@ -22,6 +22,10 @@ message ManagedDatabase {
   string volume_path = 7;
   string backup_schedule = 8;
   int64 last_backup_at = 9;
+  // Populated after provision (redacted password unless reveal/owner path).
+  string connection_uri = 10;
+  int32 host_port = 11;
+  string container_id = 12;
 }
 
 message ListManagedDatabasesRequest {

@@ -59,7 +59,7 @@ We label every capability so nobody has to guess. Source: repository audit of 20
 | Domains + Caddy edge | Beta | Route health + rollback of edge upstreams |
 | TLS / ACME | Experimental | DNS-01 path exists; control plane itself serves plain HTTP |
 | Preview environments | Experimental | DB rows + TTL; deploy pipeline is a stub |
-| Managed databases | Experimental | Records + backups exist; the engine container is not actually provisioned |
+| Managed databases | Beta | Postgres/MySQL/Redis containers + URI (#20); Mongo not yet |
 | Autoscaler | Experimental | `NORIX_AUTOSCALER=1` |
 | WireGuard mesh | Experimental | Dry-run by default |
 | Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; OCI → Wasm materialization incomplete |
