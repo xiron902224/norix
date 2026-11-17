@@ -113,11 +113,11 @@ jobs:
           PGPASSWORD: ci-postgres-password
         run: |
           psql -h 127.0.0.1 -U norix -d norix -v ON_ERROR_STOP=1 <<'SQL'
-          -- Migrations through 000023 (000022 oidc states; 000023 desired_agent_version).
+          -- Migrations through 000024 (000023 desired_agent_version; 000024 env_vars encryption comment).
           DO $$
           BEGIN
-            IF NOT (SELECT version = 23 AND NOT dirty FROM schema_migrations) THEN
-              RAISE EXCEPTION 'expected schema_migrations version=23 dirty=false';
+            IF NOT (SELECT version = 24 AND NOT dirty FROM schema_migrations) THEN
+              RAISE EXCEPTION 'expected schema_migrations version=24 dirty=false';
             END IF;
             IF (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename IN (
               'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
@@ -161,6 +161,16 @@ jobs:
                 AND column_name = 'desired_agent_version'
             ) THEN
               RAISE EXCEPTION 'nodes.desired_agent_version missing';
+            END IF;
+            -- 000024: workload env_vars encryption documentation (AES-GCM envelope).
+            IF NOT EXISTS (
+              SELECT 1 FROM pg_catalog.pg_description d
+              JOIN pg_catalog.pg_class c ON c.oid = d.objoid
+              JOIN pg_catalog.pg_attribute a ON a.attrelid = c.oid AND a.attnum = d.objsubid
+              WHERE c.relname = 'workloads' AND a.attname = 'env_vars'
+                AND d.description ILIKE '%AES-GCM%'
+            ) THEN
+              RAISE EXCEPTION 'workloads.env_vars encryption comment missing';
             END IF;
             IF to_regclass('public.audit_events') IS NULL THEN
               RAISE EXCEPTION 'audit_events missing';
