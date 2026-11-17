@@ -361,9 +361,9 @@ impl AgentClient {
             std::env::var("NORIX_AGENT_CLIENT_KEY"),
         ) {
             let cert_pem = std::fs::read(&cert_path)
-                .with_context(|| format!("read NORIX_AGENT_CLIENT_CERT {}", cert_path))?;
+                .with_context(|| format!("read NORIX_AGENT_CLIENT_CERT {cert_path}"))?;
             let key_pem = std::fs::read(&key_path)
-                .with_context(|| format!("read NORIX_AGENT_CLIENT_KEY {}", key_path))?;
+                .with_context(|| format!("read NORIX_AGENT_CLIENT_KEY {key_path}"))?;
             let identity = reqwest::Identity::from_pem(&[cert_pem, key_pem].concat())
                 .context("parse agent client TLS identity (PEM cert+key)")?;
             builder = builder.identity(identity);
@@ -371,7 +371,7 @@ impl AgentClient {
         }
         if let Ok(ca_path) = std::env::var("NORIX_AGENT_CA_CERT") {
             let ca_pem = std::fs::read(&ca_path)
-                .with_context(|| format!("read NORIX_AGENT_CA_CERT {}", ca_path))?;
+                .with_context(|| format!("read NORIX_AGENT_CA_CERT {ca_path}"))?;
             let ca =
                 reqwest::Certificate::from_pem(&ca_pem).context("parse NORIX_AGENT_CA_CERT PEM")?;
             builder = builder.add_root_certificate(ca);
