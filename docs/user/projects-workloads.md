@@ -22,6 +22,14 @@ Typical fields:
 
 From the workload view you can **Deploy**, view logs, assign domains, and trigger **Deploy from Git** when configured.
 
+### Environment variables (dashboard)
+
+1. **Create** — Projects → **New application** (image or git) → **Environment variables** → **Add** → key/value (e.g. `FOO` / `secret`) → Create.
+2. **View** — Application → **Summary** lists keys with values masked as `********` (never plaintext).
+3. **Edit** — **Edit** tab → change a value or leave `********` to keep the current secret → **Save changes**. Remove a row to delete that key.
+
+Values are stored encrypted at rest; the API merge treats `********` as “unchanged”. Full secret UX (`.env` import, audited reveal) is tracked in [#23](https://github.com/xiron902224/norix/issues/23).
+
 ## Lifecycle tips
 
 - Prefer small, reviewable env changes; avoid putting secrets in Git (use build secrets / env in the UI when available).

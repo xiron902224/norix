@@ -12,12 +12,14 @@
 - Installer/agent verify cosign bundles when present on GitHub Releases; README EN/ES download → verify → run (#5)
 - Offline smoke `scripts/test-release-verify.sh` for SHA256 fail-closed behavior (#5)
 - Installer prints SSH-tunnel / TLS next steps for secure bootstrap (#6)
+- Dashboard env vars editor on create/edit workloads; Summary shows masked `********` (#8, partial #23)
 
 ### Changed
 - Docs: bare/agent integrity notes (EN + ES), `SECURITY.md` installer section (#5)
 - Docs EN/ES: getting-started + production-tls bootstrap rules (#6)
 - Docker one-click writes `NORIX_ALLOW_INSECURE_BOOTSTRAP=1` (remove after TLS) (#6)
 - Docs EN/ES: workload env encryption + key rotation (projects-workloads, S7 ops, ADR-003, SECURITY) (#8)
+- Docs EN/ES: dashboard env editor steps in projects-workloads (#8)
 
 ## 1.0.0-beta.5 — 2026-11-16
 

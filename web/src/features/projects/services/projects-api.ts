@@ -57,6 +57,7 @@ export async function createWorkload(input: {
   scheduleStrategy?: string
   requireKvm?: boolean
   preferredZone?: string
+  envVars?: Record<string, string>
 }): Promise<Workload> {
   const sourceKind = input.sourceKind ?? (input.gitUrl ? 'git' : 'image')
   const response = await workloadClient.createWorkload(create(CreateWorkloadRequestSchema, {
@@ -76,6 +77,7 @@ export async function createWorkload(input: {
       scheduleStrategy: input.scheduleStrategy ?? 'spread',
       requireKvm: input.requireKvm ?? false,
       preferredZone: input.preferredZone ?? 'default',
+      envVars: input.envVars ?? {},
     }),
   }))
   if (!response.workload) throw new Error('Workload was not returned')
@@ -102,6 +104,7 @@ export async function updateWorkload(input: {
   dockerfilePath?: string
   memoryLimitMb?: number
   cpuShares?: number
+  envVars?: Record<string, string>
 }): Promise<Workload> {
   const response = await workloadClient.updateWorkload(create(UpdateWorkloadRequestSchema, {
     workload: create(WorkloadSchema, {
@@ -121,6 +124,7 @@ export async function updateWorkload(input: {
       scheduleStrategy: input.scheduleStrategy ?? 'spread',
       requireKvm: input.requireKvm ?? false,
       preferredZone: input.preferredZone ?? 'default',
+      envVars: input.envVars ?? {},
     }),
   }))
   if (!response.workload) throw new Error('Workload was not returned')
