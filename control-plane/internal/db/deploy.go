@@ -29,6 +29,9 @@ type DesiredWorkload struct {
 	SurgeHostPort     int32
 	ReadinessPath     string
 	ProbeSpecJSON     string
+	WorkloadID            string
+	VolumeMountsJSON      string
+	VolumePendingOpJSON   string
 }
 
 type ObservedWorkload struct {
@@ -111,18 +114,27 @@ func scanWorkload(ctx context.Context, tx pgx.Tx, query string, args ...any) (Wo
 	if RequireKVMForIsolation(workload.IsolationMode) {
 		workload.RequireKVM = true
 	}
-	var probeRaw string
+	var probeRaw, mountsRaw, pendingRaw, backupsRaw string
 	_ = tx.QueryRow(ctx, `
 		SELECT COALESCE(NULLIF(update_strategy, ''), 'rolling'),
 		       COALESCE(max_surge, 1), COALESCE(max_unavailable, 0),
-		       COALESCE(probe_spec::text, '{}')
+		       COALESCE(probe_spec::text, '{}'),
+		       COALESCE(volume_mounts::text, '[]'),
+		       COALESCE(volume_pending_op::text, ''),
+		       COALESCE(volume_backups::text, '[]')
 		FROM workloads WHERE id = $1::uuid`, workload.ID).Scan(
 		&workload.UpdateStrategy, &workload.MaxSurge, &workload.MaxUnavailable, &probeRaw,
+		&mountsRaw, &pendingRaw, &backupsRaw,
 	)
 	workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable =
 		NormalizeUpdateStrategy(workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable)
 	spec, _ := DecodeProbeSpec(probeRaw)
 	workload.ProbeSpec = spec
+	if mounts, err := DecodeVolumeMounts(mountsRaw); err == nil {
+		workload.VolumeMounts = mounts
+	}
+	workload.VolumePendingOpJSON = pendingRaw
+	workload.VolumeBackupsJSON = backupsRaw
 	var ready bool
 	var probeStatus string
 	_ = tx.QueryRow(ctx, `
@@ -193,7 +205,10 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 		       COALESCE(NULLIF(w.update_strategy, ''), 'rolling'),
 		       COALESCE(wr.surge_host_port, 0),
 		       COALESCE(w.max_surge, 1),
-		       COALESCE(w.probe_spec::text, '{}')
+		       COALESCE(w.probe_spec::text, '{}'),
+		       w.id::text,
+		       COALESCE(w.volume_mounts::text, '[]'),
+		       COALESCE(w.volume_pending_op::text, '')
 		FROM workload_replicas wr
 		JOIN workloads w ON w.id = wr.workload_id
 		WHERE wr.assigned_node_id = $1::uuid
@@ -203,9 +218,12 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 			-- Self-heal: keep ensuring containers that should already be up
 			-- (covers host restarts / accidental docker rm while action=none).
 			OR (wr.desired_action = 'none' AND wr.status IN ('running', 'deploying', 'unready'))
+			-- Volume backup/delete ops must reach the agent even when settled.
+			OR w.volume_pending_op IS NOT NULL
 		  )
 		  AND (
 			wr.desired_action = 'stop'
+			OR w.volume_pending_op IS NOT NULL
 			OR (
 				w.image_or_source <> ''
 				AND w.image_or_source <> 'pending-build'
@@ -233,7 +251,7 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 			&item.CPUShares, &item.MemoryLimitMB, &item.HostPort, &item.ContainerPort,
 			&item.DesiredGeneration, &item.Action, &item.Runtime,
 			&item.NetworkName, &item.NetworkAlias, &item.UpdateStrategy, &item.SurgeHostPort, &maxSurge,
-			&probeRaw,
+			&probeRaw, &item.WorkloadID, &item.VolumeMountsJSON, &item.VolumePendingOpJSON,
 		); err != nil {
 			return nil, err
 		}
@@ -288,6 +306,9 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 	}
 	failedWorkloadIDs := make([]string, 0)
 	edgeRefreshWorkloadIDs := make(map[string]struct{})
+	volumeOpResults := make([]struct {
+		workloadID, opID, status, detail string
+	}, 0)
 	for _, item := range observed {
 		status := strings.TrimSpace(item.Status)
 		if status == "" {
@@ -415,6 +436,13 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 			  AND id < COALESCE((
 				SELECT id FROM workload_logs WHERE workload_id = $1::uuid ORDER BY id DESC OFFSET 500 LIMIT 1
 			  ), 0)`, workloadID)
+		if workloadID != "" {
+			if opID, status, detail, ok := parseVolumeOpMessage(item.Message); ok {
+				volumeOpResults = append(volumeOpResults, struct {
+					workloadID, opID, status, detail string
+				}{workloadID, opID, status, detail})
+			}
+		}
 	}
 	for workloadID := range edgeRefreshWorkloadIDs {
 		_, _ = tx.Exec(ctx, `
@@ -429,6 +457,15 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
+	for _, res := range volumeOpResults {
+		hostPath, errMsg := "", ""
+		if res.status == "done" {
+			hostPath = res.detail
+		} else {
+			errMsg = res.detail
+		}
+		_ = ApplyVolumeOpResult(ctx, pool, organizationID, res.workloadID, res.opID, res.status, hostPath, errMsg)
+	}
 	_, _ = PurgeDeletingWorkloads(ctx, pool, organizationID)
 	if AutoRollbackEnabled() {
 		for _, workloadID := range failedWorkloadIDs {
@@ -440,6 +477,35 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 		}
 	}
 	return nil
+}
+
+// parseVolumeOpMessage parses agent reports: norix-volume-op:<id>:<done|failed>:<detail>
+// The token may appear anywhere in the message (often after "; ").
+func parseVolumeOpMessage(message string) (opID, status, detail string, ok bool) {
+	const prefix = "norix-volume-op:"
+	message = strings.TrimSpace(message)
+	idx := strings.Index(message, prefix)
+	if idx < 0 {
+		return "", "", "", false
+	}
+	payload := message[idx+len(prefix):]
+	// Stop at next "; " segment if the agent appended more status text.
+	if cut := strings.Index(payload, ";"); cut >= 0 {
+		payload = payload[:cut]
+	}
+	parts := strings.SplitN(payload, ":", 3)
+	if len(parts) < 2 {
+		return "", "", "", false
+	}
+	opID = strings.TrimSpace(parts[0])
+	status = strings.ToLower(strings.TrimSpace(parts[1]))
+	if len(parts) == 3 {
+		detail = strings.TrimSpace(parts[2])
+	}
+	if opID == "" || (status != "done" && status != "failed") {
+		return "", "", "", false
+	}
+	return opID, status, detail, true
 }
 
 func ListWorkloadLogs(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID string, tail int32) ([]string, error) {

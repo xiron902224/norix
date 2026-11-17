@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -670,13 +671,23 @@ func (service AgentService) DrainNode(ctx context.Context, request *paasv1.Drain
 	if nodeID == "" {
 		return nil, invalidArgument("node_id is required")
 	}
+	warnings := make([]string, 0)
+	if request.GetDraining() {
+		names, _ := db.ListStatefulWorkloadNamesOnNode(ctx, service.pool, identity.OrganizationID, nodeID)
+		for _, name := range names {
+			warnings = append(warnings, fmt.Sprintf(
+				"stateful workload %q has volumes and will not be auto-moved; stop or backup before retiring this node",
+				name,
+			))
+		}
+	}
 	node, err := db.SetNodeDrain(ctx, service.pool, identity.OrganizationID, nodeID, request.GetDraining(), db.AuditActor{
 		UserID: identity.UserID, Email: identity.Email,
 	})
 	if err != nil {
 		return nil, invalidArgument(err.Error())
 	}
-	return &paasv1.DrainNodeResponse{Node: nodeToProto(node)}, nil
+	return &paasv1.DrainNodeResponse{Node: nodeToProto(node), Warnings: warnings}, nil
 }
 
 func desiredWorkloadToProto(item db.DesiredWorkload) *paasv1.DesiredWorkload {
@@ -692,6 +703,8 @@ func desiredWorkloadToProto(item db.DesiredWorkload) *paasv1.DesiredWorkload {
 		NetworkName: item.NetworkName, NetworkAlias: item.NetworkAlias,
 		UpdateStrategy: item.UpdateStrategy, SurgeHostPort: item.SurgeHostPort, ReadinessPath: item.ReadinessPath,
 		ProbeSpecJson: item.ProbeSpecJSON,
+		VolumeMountsJson: item.VolumeMountsJSON, VolumePendingOpJson: item.VolumePendingOpJSON,
+		WorkloadId: item.WorkloadID,
 	}
 }
 

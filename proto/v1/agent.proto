@@ -64,6 +64,8 @@ message DrainNodeRequest {
 
 message DrainNodeResponse {
   Node node = 1;
+  // Stateful workloads with volumes that will not be auto-moved (#16).
+  repeated string warnings = 2;
 }
 
 message UpdateNodeScheduleRequest {
@@ -124,6 +126,12 @@ message DesiredWorkload {
   string readiness_path = 17;
   // JSON ProbeSpec (#17).
   string probe_spec_json = 18;
+  // JSON array of {name,mount_path,read_only} (#16).
+  string volume_mounts_json = 19;
+  // Pending backup|delete JSON (#16).
+  string volume_pending_op_json = 20;
+  // Parent workload id (stable Docker volume naming).
+  string workload_id = 21;
 }
 
 message DesiredWasmFunction {

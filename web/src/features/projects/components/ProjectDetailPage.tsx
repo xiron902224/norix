@@ -14,6 +14,7 @@ import { listNodes } from '../../nodes/services/nodes-api'
 import {
   analyzeComposeFromGit,
   createWorkload,
+  parseVolumeMountsJson,
   deployComposeStack,
   deployFromGit,
   listProjects,
@@ -48,6 +49,7 @@ export function ProjectDetailPage() {
   const [composeStackName, setComposeStackName] = useState('')
   const [composeAnalyzing, setComposeAnalyzing] = useState(false)
   const [createEnvRows, setCreateEnvRows] = useState<EnvRow[]>([])
+  const [createVolumesJson, setCreateVolumesJson] = useState('[]')
 
   function visibleWorkloads(items: Workload[]) {
     return items.filter((item) => item.status !== 'deleting')
@@ -130,8 +132,10 @@ export function ProjectDetailPage() {
         preferredZone: String(form.get('zone') || 'default'),
         requireKvm: form.get('requireKvm') === 'on',
         envVars: envRowsToMap(createEnvRows),
+        volumeMounts: parseVolumeMountsJson(createVolumesJson),
       })
       setCreateEnvRows([])
+      setCreateVolumesJson('[]')
       setModalMode(null)
       setNotice('Workload created.')
       await refresh()
@@ -399,6 +403,19 @@ export function ProjectDetailPage() {
         <label htmlFor="workload-kvm" className="checkbox-row">
           <input id="workload-kvm" name="requireKvm" type="checkbox" />
           Requires KVM
+        </label>
+        <label htmlFor="workload-volumes" style={{ display: 'grid', gap: 6 }}>
+          Volumes (JSON, optional)
+          <textarea
+            id="workload-volumes"
+            className="mono"
+            name="volumes"
+            rows={3}
+            value={createVolumesJson}
+            onChange={(e) => setCreateVolumesJson(e.target.value)}
+            spellCheck={false}
+          />
+          <span className="muted">{'Named Docker volumes, node-local. Example: [{"name":"data","mount_path":"/data"}]'}</span>
         </label>
         <EnvVarsEditor
           idPrefix="create-image-env"

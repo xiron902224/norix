@@ -16,6 +16,19 @@ func TestFeasibleRejectsNoKVMForMicroVM(t *testing.T) {
 	}
 }
 
+func TestFeasibleRequireNodeID(t *testing.T) {
+	pin := Node{ID: "pin", Status: "online", Role: "worker", DockerSocket: true, MemoryFreeMB: 4096}
+	other := Node{ID: "other", Status: "online", Role: "worker", DockerSocket: true, MemoryFreeMB: 4096}
+	ok, reason := Feasible(other, Request{RequireNodeID: "pin", MemoryLimitMB: 512})
+	if ok || reason != "pinned volume node" {
+		t.Fatalf("want pinned reject, got ok=%v reason=%q", ok, reason)
+	}
+	ok, _ = Feasible(pin, Request{RequireNodeID: "pin", MemoryLimitMB: 512})
+	if !ok {
+		t.Fatal("pin node should be feasible")
+	}
+}
+
 func TestSelectNeverPlacesMicroVMOnNonKVM(t *testing.T) {
 	nodes := []Node{
 		{ID: "plain", Name: "plain", Status: "online", Role: "worker", DockerSocket: true, KVMLevel: 0, MemoryFreeMB: 8192},

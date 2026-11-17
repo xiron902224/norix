@@ -82,7 +82,37 @@ func workloadFromProto(workload *paasv1.Workload) (db.Workload, error) {
 		MaxSurge:           workload.GetMaxSurge(),
 		MaxUnavailable:     workload.GetMaxUnavailable(),
 		ProbeSpec:          decodeProbeSpecFromJSON(workload.GetProbeSpecJson()),
+		VolumeMounts:       volumeMountsFromProto(workload.GetVolumeMounts()),
 	}, nil
+}
+
+func volumeMountsFromProto(in []*paasv1.VolumeMount) []db.VolumeMount {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]db.VolumeMount, 0, len(in))
+	for _, m := range in {
+		if m == nil {
+			continue
+		}
+		out = append(out, db.VolumeMount{
+			Name: m.GetName(), MountPath: m.GetMountPath(), ReadOnly: m.GetReadOnly(),
+		})
+	}
+	return out
+}
+
+func volumeMountsToProto(in []db.VolumeMount) []*paasv1.VolumeMount {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]*paasv1.VolumeMount, 0, len(in))
+	for _, m := range in {
+		out = append(out, &paasv1.VolumeMount{
+			Name: m.Name, MountPath: m.MountPath, ReadOnly: m.ReadOnly,
+		})
+	}
+	return out
 }
 
 func decodeProbeSpecFromJSON(raw string) db.ProbeSpec {
@@ -126,6 +156,8 @@ func workloadToProto(workload db.Workload) *paasv1.Workload {
 		StackId: workload.StackID, ComposeService: workload.ComposeService, ComposeSpecJson: workload.ComposeSpecJSON,
 		UpdateStrategy: workload.UpdateStrategy, MaxSurge: workload.MaxSurge, MaxUnavailable: workload.MaxUnavailable,
 		ProbeSpecJson: db.ProbeSpecJSON(workload.ProbeSpec), Ready: workload.Ready, ProbeStatusJson: workload.ProbeStatusJSON,
+		VolumeMounts: volumeMountsToProto(workload.VolumeMounts),
+		VolumePendingOpJson: workload.VolumePendingOpJSON, VolumeBackupsJson: workload.VolumeBackupsJSON,
 	}
 }
 
@@ -568,6 +600,53 @@ func (service WorkloadService) RevealWorkloadEnv(ctx context.Context, request *p
 		return nil, internalError("reveal env", err)
 	}
 	return &paasv1.RevealWorkloadEnvResponse{EnvVars: env}, nil
+}
+
+func (service WorkloadService) BackupWorkloadVolume(ctx context.Context, request *paasv1.BackupWorkloadVolumeRequest) (*paasv1.BackupWorkloadVolumeResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	workloadID := strings.TrimSpace(request.GetWorkloadId())
+	name := strings.TrimSpace(request.GetVolumeName())
+	if workloadID == "" || name == "" {
+		return nil, invalidArgument("workload_id and volume_name are required")
+	}
+	op, err := db.EnqueueVolumeOp(ctx, service.pool, identity.OrganizationID, workloadID, "backup", name, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.BackupWorkloadVolumeResponse{OpId: op.ID, Status: "pending"}, nil
+}
+
+func (service WorkloadService) DeleteWorkloadVolume(ctx context.Context, request *paasv1.DeleteWorkloadVolumeRequest) (*paasv1.DeleteWorkloadVolumeResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	if !request.GetConfirm() {
+		return nil, invalidArgument("confirm must be true to delete volume data")
+	}
+	workloadID := strings.TrimSpace(request.GetWorkloadId())
+	name := strings.TrimSpace(request.GetVolumeName())
+	if workloadID == "" || name == "" {
+		return nil, invalidArgument("workload_id and volume_name are required")
+	}
+	op, err := db.EnqueueVolumeOp(ctx, service.pool, identity.OrganizationID, workloadID, "delete", name, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.DeleteWorkloadVolumeResponse{OpId: op.ID, Status: "pending"}, nil
 }
 
 func releaseToProto(rel db.WorkloadRelease) *paasv1.WorkloadRelease {

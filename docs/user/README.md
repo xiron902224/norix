@@ -19,6 +19,7 @@ Official documentation for **people who run apps on Norix** — after the contro
 4b. [Release history & rollback](./releases-rollback.md) — immutable snapshots, one-click restore
 4c. [Rolling updates](./rolling-updates.md) — start-before-stop, maxSurge / maxUnavailable
 4d. [Probes](./probes.md) — liveness / readiness HTTP·TCP·exec
+4e. [Persistent volumes](./volumes.md) — named Docker mounts, sticky node, backup/delete
 5. [Nodes & agents](./nodes-agents.md) — workers, join tokens, updates
 5b. [Docker socket](./docker-socket.md) — who mounts `docker.sock`, proxy/rootless
 5c. [Agent authentication](./agent-auth.md) — rotate/revoke node token, optional mTLS

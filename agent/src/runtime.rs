@@ -52,15 +52,28 @@ impl Runtime {
                 continue;
             }
             match self.reconcile_one(item).await {
-                Ok(value) => observed.push(value),
+                Ok(mut value) => {
+                    if let Some(op_msg) = self.apply_volume_op(item).await {
+                        if value.message.is_empty() {
+                            value.message = op_msg;
+                        } else {
+                            value.message = format!("{}; {}", value.message, op_msg);
+                        }
+                    }
+                    observed.push(value);
+                }
                 Err(error) => {
                     warn!(workload = %item.id, %error, "reconcile failed");
+                    let mut message = error.to_string();
+                    if let Some(op_msg) = self.apply_volume_op(item).await {
+                        message = format!("{message}; {op_msg}");
+                    }
                     observed.push(ObservedWorkload {
                         id: item.id.clone(),
                         status: "failed".into(),
                         container_id: String::new(),
                         observed_generation: item.desired_generation,
-                        message: error.to_string(),
+                        message,
                         host_port: item.host_port,
                         log_lines: vec![format!("reconcile error: {error}")],
                         ready: true,
@@ -436,6 +449,27 @@ impl Runtime {
             args.push("-e".into());
             args.push(format!("{key}={value}"));
         }
+        let workload_id = if desired.workload_id.trim().is_empty() {
+            desired.id.as_str()
+        } else {
+            desired.workload_id.trim()
+        };
+        for mount in parse_volume_mounts(&desired.volume_mounts_json) {
+            let docker_name = docker_volume_name(workload_id, &mount.name);
+            let _ = Command::new(self.bin())
+                .args(["volume", "create", &docker_name])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .await;
+            let spec = if mount.read_only {
+                format!("{docker_name}:{}:ro", mount.mount_path)
+            } else {
+                format!("{docker_name}:{}", mount.mount_path)
+            };
+            args.push("-v".into());
+            args.push(spec);
+        }
         args.push(desired.image.clone());
 
         let output = Command::new(self.bin())
@@ -460,6 +494,89 @@ impl Runtime {
             .status()
             .await;
         Ok(())
+    }
+
+    /// Runs pending backup/delete; returns norix-volume-op:… message for the control plane.
+    async fn apply_volume_op(&self, desired: &DesiredWorkload) -> Option<String> {
+        let raw = desired.volume_pending_op_json.trim();
+        if raw.is_empty() || raw == "null" {
+            return None;
+        }
+        let op: serde_json::Value = serde_json::from_str(raw).ok()?;
+        let id = op.get("id")?.as_str()?.trim();
+        let kind = op.get("op")?.as_str()?.trim().to_ascii_lowercase();
+        let name = op.get("name")?.as_str()?.trim();
+        if id.is_empty() || name.is_empty() {
+            return None;
+        }
+        let workload_id = if desired.workload_id.trim().is_empty() {
+            desired.id.as_str()
+        } else {
+            desired.workload_id.trim()
+        };
+        let docker_name = docker_volume_name(workload_id, name);
+        match kind.as_str() {
+            "backup" => match self.backup_named_volume(&docker_name, id).await {
+                Ok(path) => Some(format!("norix-volume-op:{id}:done:{path}")),
+                Err(err) => Some(format!("norix-volume-op:{id}:failed:{err}")),
+            },
+            "delete" => {
+                // Best-effort stop container using the volume, then rm volume.
+                let cname = container_name(&desired.id);
+                let _ = self.remove_container(&cname).await;
+                let output = Command::new(self.bin())
+                    .args(["volume", "rm", "-f", &docker_name])
+                    .output()
+                    .await;
+                match output {
+                    Ok(out) if out.status.success() => Some(format!("norix-volume-op:{id}:done:")),
+                    Ok(out) => Some(format!(
+                        "norix-volume-op:{id}:failed:{}",
+                        String::from_utf8_lossy(&out.stderr).trim()
+                    )),
+                    Err(err) => Some(format!("norix-volume-op:{id}:failed:{err}")),
+                }
+            }
+            _ => None,
+        }
+    }
+
+    async fn backup_named_volume(&self, docker_name: &str, op_id: &str) -> Result<String> {
+        let dir = std::path::PathBuf::from("/var/lib/norix/volume-backups");
+        tokio::fs::create_dir_all(&dir)
+            .await
+            .context("create volume backup dir")?;
+        let host_path = dir.join(format!("{docker_name}-{op_id}.tar.gz"));
+        let host_path_str = host_path.to_string_lossy().to_string();
+        let mount_vol = format!("{docker_name}:/source:ro");
+        let mount_out = format!("{}:/backup", dir.display());
+        let archive = format!("/backup/{docker_name}-{op_id}.tar.gz");
+        let output = Command::new(self.bin())
+            .args([
+                "run",
+                "--rm",
+                "-v",
+                &mount_vol,
+                "-v",
+                &mount_out,
+                "alpine:3.20",
+                "tar",
+                "czf",
+                &archive,
+                "-C",
+                "/source",
+                ".",
+            ])
+            .output()
+            .await
+            .context("volume backup docker run")?;
+        if !output.status.success() {
+            bail!(
+                "backup failed: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        Ok(host_path_str)
     }
 
     async fn ensure_network(&self, name: &str) -> Result<()> {
@@ -553,6 +670,77 @@ impl Runtime {
             .map(str::to_string)
             .collect())
     }
+}
+
+#[derive(Debug, Clone)]
+struct VolumeMountSpec {
+    name: String,
+    mount_path: String,
+    read_only: bool,
+}
+
+fn parse_volume_mounts(raw: &str) -> Vec<VolumeMountSpec> {
+    let raw = raw.trim();
+    if raw.is_empty() || raw == "null" || raw == "[]" {
+        return Vec::new();
+    }
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(raw) else {
+        return Vec::new();
+    };
+    let Some(arr) = value.as_array() else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for item in arr {
+        let name = item
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let mount_path = item
+            .get("mount_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if name.is_empty() || !mount_path.starts_with('/') || mount_path == "/" {
+            continue;
+        }
+        if mount_path.contains("..") {
+            continue;
+        }
+        let read_only = item
+            .get("read_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        out.push(VolumeMountSpec {
+            name,
+            mount_path,
+            read_only,
+        });
+    }
+    out
+}
+
+fn docker_volume_name(workload_id: &str, logical: &str) -> String {
+    let id = workload_id.replace('-', "");
+    let id = if id.len() > 12 { &id[..12] } else { &id };
+    let mut name = logical.to_ascii_lowercase();
+    name = name
+        .chars()
+        .map(|c| match c {
+            'a'..='z' | '0'..='9' | '-' | '_' | '.' => c,
+            _ => '-',
+        })
+        .collect();
+    if name.is_empty() {
+        name = "data".into();
+    }
+    if name.len() > 40 {
+        name.truncate(40);
+    }
+    format!("norix-wv-{id}-{name}")
 }
 
 fn container_name(workload_id: &str) -> String {

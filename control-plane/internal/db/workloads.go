@@ -51,6 +51,9 @@ type Workload struct {
 	ProbeSpec          ProbeSpec
 	Ready              bool
 	ProbeStatusJSON    string
+	VolumeMounts       []VolumeMount
+	VolumePendingOpJSON string
+	VolumeBackupsJSON  string
 }
 
 // NormalizeUpdateStrategy returns rolling|recreate and clamped surge/unavailable.
@@ -137,12 +140,17 @@ func CreateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 		return Workload{}, err
 	}
 	var affinityOut, antiOut string
+	mountsJSON, err := EncodeVolumeMounts(workload.VolumeMounts)
+	if err != nil {
+		return Workload{}, err
+	}
 	if err := tx.QueryRow(ctx, `
 		INSERT INTO workloads (organization_id, project_id, name, runtime, image_or_source, env_vars, cpu_shares, memory_limit_mb, domain, container_port,
 		                       source_kind, git_url, git_ref, dockerfile_path,
-		                       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels, anti_affinity_labels)
+		                       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels, anti_affinity_labels,
+		                       volume_mounts)
 		VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, NULLIF($9, ''), $10, $11, $12, $13, $14,
-		        $15, $16, $17, $18, $19::jsonb, $20::jsonb)
+		        $15, $16, $17, $18, $19::jsonb, $20::jsonb, $21::jsonb)
 		RETURNING id::text, organization_id::text, project_id::text, name, runtime, image_or_source, cpu_shares, memory_limit_mb, COALESCE(domain, ''), status,
 		          desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
 		          COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
@@ -153,6 +161,7 @@ func CreateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 		workload.SourceKind, workload.GitURL, workload.GitRef, workload.DockerfilePath,
 		workload.ReplicaCount, workload.ScheduleStrategy, workload.RequireKVM, workload.PreferredZone,
 		encodeLabels(workload.AffinityLabels), encodeLabels(workload.AntiAffinityLabels),
+		string(mountsJSON),
 	).Scan(
 		&workload.ID, &workload.OrganizationID, &workload.ProjectID, &workload.Name, &workload.Runtime, &workload.ImageOrSource,
 		&workload.CPUShares, &workload.MemoryLimitMB, &workload.Domain, &workload.Status,
@@ -208,7 +217,8 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker'),
 		       COALESCE(stack_id::text, ''), COALESCE(compose_service, ''), COALESCE(compose_spec::text, '{}'),
 		       COALESCE(NULLIF(update_strategy, ''), 'rolling'), COALESCE(max_surge, 1), COALESCE(max_unavailable, 0),
-		       COALESCE(probe_spec::text, '{}')
+		       COALESCE(probe_spec::text, '{}'),
+		       COALESCE(volume_mounts::text, '[]'), COALESCE(volume_pending_op::text, ''), COALESCE(volume_backups::text, '[]')
 		FROM workloads WHERE project_id = $1::uuid AND status <> 'deleting' ORDER BY created_at, name`, projectID)
 	if err != nil {
 		return nil, err
@@ -219,7 +229,7 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 		var workload Workload
 		var environmentText string
 		var affinityText, antiText string
-		var probeRaw string
+		var probeRaw, mountsRaw string
 		if err := rows.Scan(
 			&workload.ID, &workload.OrganizationID, &workload.ProjectID, &workload.Name,
 			&workload.Runtime, &workload.ImageOrSource, &environmentText, &workload.CPUShares,
@@ -231,6 +241,7 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 			&affinityText, &antiText, &workload.IsolationMode, &workload.ExecutionRuntime,
 			&workload.StackID, &workload.ComposeService, &workload.ComposeSpecJSON,
 			&workload.UpdateStrategy, &workload.MaxSurge, &workload.MaxUnavailable, &probeRaw,
+			&mountsRaw, &workload.VolumePendingOpJSON, &workload.VolumeBackupsJSON,
 		); err != nil {
 			return nil, err
 		}
@@ -245,6 +256,9 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 			NormalizeUpdateStrategy(workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable)
 		if decoded, err := DecodeProbeSpec(probeRaw); err == nil {
 			workload.ProbeSpec = decoded
+		}
+		if mounts, err := DecodeVolumeMounts(mountsRaw); err == nil {
+			workload.VolumeMounts = mounts
 		}
 		workload.Ready = workload.Status == "running"
 		result = append(result, workload)
@@ -408,6 +422,10 @@ func UpdateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 	if err != nil {
 		return Workload{}, err
 	}
+	mountsJSON, err := EncodeVolumeMounts(workload.VolumeMounts)
+	if err != nil {
+		return Workload{}, err
+	}
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return Workload{}, err
@@ -417,13 +435,14 @@ func UpdateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 		return Workload{}, err
 	}
 	var affinityOut, antiOut string
-	var probeOut string
+	var probeOut, mountsOut string
 	err = tx.QueryRow(ctx, `
 		UPDATE workloads SET name=$2, runtime=$3, image_or_source=$4, env_vars=$5,
 		 cpu_shares=$6, memory_limit_mb=$7, domain=NULLIF($8, ''), container_port=$9,
 		 replica_count=$10, schedule_strategy=$11, require_kvm=$12, preferred_zone=$13,
 		 affinity_labels=$14::jsonb, anti_affinity_labels=$15::jsonb,
-		 update_strategy=$17, max_surge=$18, max_unavailable=$19, probe_spec=$20::jsonb, updated_at=NOW()
+		 update_strategy=$17, max_surge=$18, max_unavailable=$19, probe_spec=$20::jsonb,
+		 volume_mounts=$21::jsonb, updated_at=NOW()
 		WHERE id=$1::uuid AND organization_id=$16::uuid
 		RETURNING id::text, organization_id::text, project_id::text, name, runtime, image_or_source,
 		 cpu_shares, memory_limit_mb, COALESCE(domain, ''), status,
@@ -431,19 +450,22 @@ func UpdateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 		 COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		 source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
 		 replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
-		 update_strategy, max_surge, max_unavailable, COALESCE(probe_spec::text, '{}')`,
+		 update_strategy, max_surge, max_unavailable, COALESCE(probe_spec::text, '{}'),
+		 COALESCE(volume_mounts::text, '[]')`,
 		workload.ID, workload.Name, workload.Runtime, workload.ImageOrSource, envJSON,
 		workload.CPUShares, workload.MemoryLimitMB, workload.Domain, workload.ContainerPort,
 		workload.ReplicaCount, workload.ScheduleStrategy, workload.RequireKVM, workload.PreferredZone,
 		encodeLabels(workload.AffinityLabels), encodeLabels(workload.AntiAffinityLabels), tenantID,
-		workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable, string(probeJSON)).Scan(
+		workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable, string(probeJSON),
+		string(mountsJSON)).Scan(
 		&workload.ID, &workload.OrganizationID, &workload.ProjectID, &workload.Name, &workload.Runtime,
 		&workload.ImageOrSource, &workload.CPUShares, &workload.MemoryLimitMB, &workload.Domain, &workload.Status,
 		&workload.DesiredGeneration, &workload.ObservedGeneration, &workload.HostPort, &workload.ContainerPort,
 		&workload.AssignedNodeID, &workload.ContainerID, &workload.LastError, &workload.DesiredAction,
 		&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 		&workload.ReplicaCount, &workload.ScheduleStrategy, &workload.RequireKVM, &workload.PreferredZone,
-		&affinityOut, &antiOut, &workload.UpdateStrategy, &workload.MaxSurge, &workload.MaxUnavailable, &probeOut)
+		&affinityOut, &antiOut, &workload.UpdateStrategy, &workload.MaxSurge, &workload.MaxUnavailable, &probeOut,
+		&mountsOut)
 	if err != nil {
 		return Workload{}, fmt.Errorf("update workload: %w", err)
 	}
@@ -451,6 +473,9 @@ func UpdateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 	workload.AntiAffinityLabels = decodeLabels([]byte(antiOut))
 	if decoded, err := DecodeProbeSpec(probeOut); err == nil {
 		workload.ProbeSpec = decoded
+	}
+	if mounts, err := DecodeVolumeMounts(mountsOut); err == nil {
+		workload.VolumeMounts = mounts
 	}
 	if err := EnsureWorkloadReplicas(ctx, tx, tenantID, workload); err != nil {
 		return Workload{}, err

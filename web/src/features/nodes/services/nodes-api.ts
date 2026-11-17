@@ -38,10 +38,10 @@ export async function cordonNode(nodeId: string, cordoned: boolean): Promise<Nod
   return response.node
 }
 
-export async function drainNode(nodeId: string, draining: boolean): Promise<Node> {
+export async function drainNode(nodeId: string, draining: boolean): Promise<{ node: Node; warnings: string[] }> {
   const response = await agentClient.drainNode(create(DrainNodeRequestSchema, { nodeId, draining }))
   if (!response.node) throw new Error('Node was not returned')
-  return response.node
+  return { node: response.node, warnings: response.warnings ?? [] }
 }
 
 export async function updateNodeSchedule(input: {

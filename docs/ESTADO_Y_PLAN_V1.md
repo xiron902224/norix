@@ -72,7 +72,8 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; not production-ready |
 | Micro-VM (Cloud Hypervisor) | Experimental | Needs KVM + artifacts — **not** “ready” |
 | Micro-VM (Firecracker) | Planned | Enum only |
-| App rollbacks / rolling updates / volumes / buildpacks / catalog | Planned | |
+| App rollbacks / rolling updates / volumes | Beta | Named Docker volumes + sticky node (#16) |
+| Buildpacks / catalog | Planned | |
 | CLI / SDKs | Experimental | Minimal |
 | User API tokens (PAT) | Planned | |
 

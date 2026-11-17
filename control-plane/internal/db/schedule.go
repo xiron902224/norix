@@ -120,7 +120,7 @@ func ScheduleRequestFromWorkload(workload Workload) scheduler.Request {
 	if strategy == "" {
 		strategy = "spread"
 	}
-	return scheduler.Request{
+	req := scheduler.Request{
 		WorkloadID:         workload.ID,
 		MemoryLimitMB:      workload.MemoryLimitMB,
 		RequireKVM:         requireKVM,
@@ -130,6 +130,11 @@ func ScheduleRequestFromWorkload(workload Workload) scheduler.Request {
 		AntiAffinityLabels: workload.AntiAffinityLabels,
 		PreferRemote:       true,
 	}
+	// Sticky pin once a stateful workload has been placed (#16).
+	if HasVolumeMounts(workload.VolumeMounts) && strings.TrimSpace(workload.AssignedNodeID) != "" {
+		req.RequireNodeID = workload.AssignedNodeID
+	}
+	return req
 }
 
 // PickScheduledNode selects a node via filter+score. Falls back to ensuring local node.
@@ -632,6 +637,23 @@ func scheduleOneReplica(ctx context.Context, pool *pgxpool.Pool, tenantID string
 	req.AvoidNodesWithSame = avoid
 	delete(req.AvoidNodesWithSame, replica.AssignedNodeID) // may re-pick same if only option
 
+	// Named volumes are node-local: pin every replica to the first placed node (#16).
+	if HasVolumeMounts(workload.VolumeMounts) {
+		pin := strings.TrimSpace(workload.AssignedNodeID)
+		if pin == "" {
+			for nodeID := range avoid {
+				if nodeID != "" {
+					pin = nodeID
+					break
+				}
+			}
+		}
+		if pin != "" {
+			req.RequireNodeID = pin
+			req.AvoidNodesWithSame = nil
+		}
+	}
+
 	node, err := PickScheduledNode(ctx, pool, tenantID, req)
 	if err != nil {
 		return err
@@ -684,8 +706,10 @@ func RescheduleOrphanReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID 
 	rows, err := tx.Query(ctx, `
 		SELECT wr.id::text, wr.workload_id::text, wr.replica_index, COALESCE(wr.assigned_node_id::text, ''),
 		       COALESCE(wr.host_port, 0), wr.container_port, wr.desired_action, wr.status, wr.container_id,
-		       COALESCE(n.status, ''), COALESCE(n.draining, FALSE)
+		       COALESCE(n.status, ''), COALESCE(n.draining, FALSE),
+		       jsonb_array_length(COALESCE(w.volume_mounts, '[]'::jsonb)) > 0
 		FROM workload_replicas wr
+		JOIN workloads w ON w.id = wr.workload_id
 		LEFT JOIN nodes n ON n.id = wr.assigned_node_id
 		WHERE (
 			wr.assigned_node_id IS NULL
@@ -719,6 +743,7 @@ func RescheduleOrphanReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID 
 		DesiredAction, Status, ContainerID string
 		NodeStatus             string
 		NodeDraining           bool
+		HasVolumes             bool
 	}
 	orphans := make([]orphan, 0)
 	for rows.Next() {
@@ -726,7 +751,7 @@ func RescheduleOrphanReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID 
 		if err := rows.Scan(
 			&item.ID, &item.WorkloadID, &item.Index, &item.NodeID,
 			&item.HostPort, &item.ContainerPort, &item.DesiredAction, &item.Status, &item.ContainerID,
-			&item.NodeStatus, &item.NodeDraining,
+			&item.NodeStatus, &item.NodeDraining, &item.HasVolumes,
 		); err != nil {
 			rows.Close()
 			return 0, err
@@ -778,6 +803,10 @@ func RescheduleOrphanReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID 
 			}
 		}
 
+		// Persistent volumes are node-local — never auto-move data (#16).
+		if item.HasVolumes {
+			continue
+		}
 		workload, err := GetWorkload(ctx, pool, tenantID, item.WorkloadID)
 		if err != nil {
 			continue

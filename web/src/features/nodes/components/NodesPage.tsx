@@ -153,7 +153,10 @@ export function NodesPage() {
     setActionBusy(draining ? 'drain' : 'undrain')
     setError('')
     try {
-      await drainNode(selected.id, draining)
+      const result = await drainNode(selected.id, draining)
+      if (result.warnings.length > 0) {
+        setError(result.warnings.join(' · '))
+      }
       await refreshNodes(selected.id)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not update drain')

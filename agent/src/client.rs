@@ -55,6 +55,15 @@ pub struct DesiredWorkload {
     pub readiness_path: String,
     #[serde(default)]
     pub probe_spec_json: String,
+    /// JSON array of {name,mount_path,read_only} (#16).
+    #[serde(default)]
+    pub volume_mounts_json: String,
+    /// Pending backup|delete JSON (#16).
+    #[serde(default)]
+    pub volume_pending_op_json: String,
+    /// Parent workload id for stable Docker volume names.
+    #[serde(default)]
+    pub workload_id: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
