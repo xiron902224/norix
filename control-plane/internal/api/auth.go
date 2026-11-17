@@ -202,3 +202,85 @@ func (service AuthService) CreateInitialAdmin(ctx context.Context, request *paas
 
 	return &paasv1.CreateInitialAdminResponse{Token: token, User: roleUser(created)}, nil
 }
+
+func (service AuthService) CreatePersonalAccessToken(ctx context.Context, request *paasv1.CreatePersonalAccessTokenRequest) (*paasv1.CreatePersonalAccessTokenResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	name := strings.TrimSpace(request.GetName())
+	if name == "" {
+		return nil, invalidArgument("name is required")
+	}
+	var expires *time.Time
+	if raw := strings.TrimSpace(request.GetExpiresAt()); raw != "" {
+		parsed, err := time.Parse(time.RFC3339, raw)
+		if err != nil {
+			return nil, invalidArgument("expires_at must be RFC3339")
+		}
+		if parsed.Before(time.Now().UTC()) {
+			return nil, invalidArgument("expires_at must be in the future")
+		}
+		expires = &parsed
+	}
+	tok, plain, err := db.CreateUserAPIToken(ctx, service.appPool, identity.OrganizationID, identity.UserID, name, request.GetScopes(), expires, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.CreatePersonalAccessTokenResponse{
+		Token:     patToProto(tok),
+		Plaintext: plain,
+	}, nil
+}
+
+func (service AuthService) ListPersonalAccessTokens(ctx context.Context, _ *paasv1.ListPersonalAccessTokensRequest) (*paasv1.ListPersonalAccessTokensResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	items, err := db.ListUserAPITokens(ctx, service.appPool, identity.OrganizationID, identity.UserID)
+	if err != nil {
+		return nil, internalError("list pats", err)
+	}
+	out := make([]*paasv1.PersonalAccessToken, 0, len(items))
+	for _, item := range items {
+		out = append(out, patToProto(item))
+	}
+	return &paasv1.ListPersonalAccessTokensResponse{Tokens: out}, nil
+}
+
+func (service AuthService) RevokePersonalAccessToken(ctx context.Context, request *paasv1.RevokePersonalAccessTokenRequest) (*paasv1.RevokePersonalAccessTokenResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	id := strings.TrimSpace(request.GetId())
+	if id == "" {
+		return nil, invalidArgument("id is required")
+	}
+	if err := db.RevokeUserAPIToken(ctx, service.appPool, identity.OrganizationID, identity.UserID, id, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	}); err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, connect.NewError(connect.CodeNotFound, "token not found")
+		}
+		return nil, internalError("revoke pat", err)
+	}
+	return &paasv1.RevokePersonalAccessTokenResponse{}, nil
+}
+
+func patToProto(tok db.UserAPIToken) *paasv1.PersonalAccessToken {
+	format := func(t *time.Time) string {
+		if t == nil {
+			return ""
+		}
+		return t.UTC().Format(time.RFC3339)
+	}
+	return &paasv1.PersonalAccessToken{
+		Id: tok.ID, Name: tok.Name, TokenPrefix: tok.TokenPrefix, Scopes: tok.Scopes,
+		ExpiresAt: format(tok.ExpiresAt), RevokedAt: format(tok.RevokedAt),
+		LastUsedAt: format(tok.LastUsedAt), CreatedAt: tok.CreatedAt.UTC().Format(time.RFC3339),
+	}
+}

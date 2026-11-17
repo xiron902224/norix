@@ -69,6 +69,42 @@ message RenewSessionResponse {
   int64 expires_at_unix = 2;
 }
 
+message PersonalAccessToken {
+  string id = 1;
+  string name = 2;
+  string token_prefix = 3;
+  repeated string scopes = 4;
+  string expires_at = 5;
+  string revoked_at = 6;
+  string last_used_at = 7;
+  string created_at = 8;
+}
+
+message CreatePersonalAccessTokenRequest {
+  string name = 1;
+  repeated string scopes = 2;
+  // RFC3339; empty = no expiry
+  string expires_at = 3;
+}
+
+message CreatePersonalAccessTokenResponse {
+  PersonalAccessToken token = 1;
+  // Plaintext shown once.
+  string plaintext = 2;
+}
+
+message ListPersonalAccessTokensRequest {}
+
+message ListPersonalAccessTokensResponse {
+  repeated PersonalAccessToken tokens = 1;
+}
+
+message RevokePersonalAccessTokenRequest {
+  string id = 1;
+}
+
+message RevokePersonalAccessTokenResponse {}
+
 service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc GetBootstrapStatus(GetBootstrapStatusRequest) returns (GetBootstrapStatusResponse);
@@ -76,4 +112,7 @@ service AuthService {
   rpc Logout(LogoutRequest) returns (LogoutResponse);
   rpc RenewSession(RenewSessionRequest) returns (RenewSessionResponse);
   rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+  rpc CreatePersonalAccessToken(CreatePersonalAccessTokenRequest) returns (CreatePersonalAccessTokenResponse);
+  rpc ListPersonalAccessTokens(ListPersonalAccessTokensRequest) returns (ListPersonalAccessTokensResponse);
+  rpc RevokePersonalAccessToken(RevokePersonalAccessTokenRequest) returns (RevokePersonalAccessTokenResponse);
 }

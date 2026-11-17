@@ -19,12 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Login_FullMethodName              = "/v1.AuthService/Login"
-	AuthService_GetBootstrapStatus_FullMethodName = "/v1.AuthService/GetBootstrapStatus"
-	AuthService_CreateInitialAdmin_FullMethodName = "/v1.AuthService/CreateInitialAdmin"
-	AuthService_Logout_FullMethodName             = "/v1.AuthService/Logout"
-	AuthService_RenewSession_FullMethodName       = "/v1.AuthService/RenewSession"
-	AuthService_GetCurrentUser_FullMethodName     = "/v1.AuthService/GetCurrentUser"
+	AuthService_Login_FullMethodName                     = "/v1.AuthService/Login"
+	AuthService_GetBootstrapStatus_FullMethodName        = "/v1.AuthService/GetBootstrapStatus"
+	AuthService_CreateInitialAdmin_FullMethodName        = "/v1.AuthService/CreateInitialAdmin"
+	AuthService_Logout_FullMethodName                    = "/v1.AuthService/Logout"
+	AuthService_RenewSession_FullMethodName              = "/v1.AuthService/RenewSession"
+	AuthService_GetCurrentUser_FullMethodName            = "/v1.AuthService/GetCurrentUser"
+	AuthService_CreatePersonalAccessToken_FullMethodName = "/v1.AuthService/CreatePersonalAccessToken"
+	AuthService_ListPersonalAccessTokens_FullMethodName  = "/v1.AuthService/ListPersonalAccessTokens"
+	AuthService_RevokePersonalAccessToken_FullMethodName = "/v1.AuthService/RevokePersonalAccessToken"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -37,6 +40,9 @@ type AuthServiceClient interface {
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
 	RenewSession(ctx context.Context, in *RenewSessionRequest, opts ...grpc.CallOption) (*RenewSessionResponse, error)
 	GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error)
+	CreatePersonalAccessToken(ctx context.Context, in *CreatePersonalAccessTokenRequest, opts ...grpc.CallOption) (*CreatePersonalAccessTokenResponse, error)
+	ListPersonalAccessTokens(ctx context.Context, in *ListPersonalAccessTokensRequest, opts ...grpc.CallOption) (*ListPersonalAccessTokensResponse, error)
+	RevokePersonalAccessToken(ctx context.Context, in *RevokePersonalAccessTokenRequest, opts ...grpc.CallOption) (*RevokePersonalAccessTokenResponse, error)
 }
 
 type authServiceClient struct {
@@ -107,6 +113,36 @@ func (c *authServiceClient) GetCurrentUser(ctx context.Context, in *GetCurrentUs
 	return out, nil
 }
 
+func (c *authServiceClient) CreatePersonalAccessToken(ctx context.Context, in *CreatePersonalAccessTokenRequest, opts ...grpc.CallOption) (*CreatePersonalAccessTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreatePersonalAccessTokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_CreatePersonalAccessToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) ListPersonalAccessTokens(ctx context.Context, in *ListPersonalAccessTokensRequest, opts ...grpc.CallOption) (*ListPersonalAccessTokensResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPersonalAccessTokensResponse)
+	err := c.cc.Invoke(ctx, AuthService_ListPersonalAccessTokens_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) RevokePersonalAccessToken(ctx context.Context, in *RevokePersonalAccessTokenRequest, opts ...grpc.CallOption) (*RevokePersonalAccessTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RevokePersonalAccessTokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_RevokePersonalAccessToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -117,6 +153,9 @@ type AuthServiceServer interface {
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
 	RenewSession(context.Context, *RenewSessionRequest) (*RenewSessionResponse, error)
 	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*GetCurrentUserResponse, error)
+	CreatePersonalAccessToken(context.Context, *CreatePersonalAccessTokenRequest) (*CreatePersonalAccessTokenResponse, error)
+	ListPersonalAccessTokens(context.Context, *ListPersonalAccessTokensRequest) (*ListPersonalAccessTokensResponse, error)
+	RevokePersonalAccessToken(context.Context, *RevokePersonalAccessTokenRequest) (*RevokePersonalAccessTokenResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -144,6 +183,15 @@ func (UnimplementedAuthServiceServer) RenewSession(context.Context, *RenewSessio
 }
 func (UnimplementedAuthServiceServer) GetCurrentUser(context.Context, *GetCurrentUserRequest) (*GetCurrentUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCurrentUser not implemented")
+}
+func (UnimplementedAuthServiceServer) CreatePersonalAccessToken(context.Context, *CreatePersonalAccessTokenRequest) (*CreatePersonalAccessTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreatePersonalAccessToken not implemented")
+}
+func (UnimplementedAuthServiceServer) ListPersonalAccessTokens(context.Context, *ListPersonalAccessTokensRequest) (*ListPersonalAccessTokensResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPersonalAccessTokens not implemented")
+}
+func (UnimplementedAuthServiceServer) RevokePersonalAccessToken(context.Context, *RevokePersonalAccessTokenRequest) (*RevokePersonalAccessTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokePersonalAccessToken not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -274,6 +322,60 @@ func _AuthService_GetCurrentUser_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_CreatePersonalAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePersonalAccessTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).CreatePersonalAccessToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_CreatePersonalAccessToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).CreatePersonalAccessToken(ctx, req.(*CreatePersonalAccessTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_ListPersonalAccessTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPersonalAccessTokensRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ListPersonalAccessTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_ListPersonalAccessTokens_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ListPersonalAccessTokens(ctx, req.(*ListPersonalAccessTokensRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_RevokePersonalAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokePersonalAccessTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).RevokePersonalAccessToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_RevokePersonalAccessToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).RevokePersonalAccessToken(ctx, req.(*RevokePersonalAccessTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +406,18 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCurrentUser",
 			Handler:    _AuthService_GetCurrentUser_Handler,
+		},
+		{
+			MethodName: "CreatePersonalAccessToken",
+			Handler:    _AuthService_CreatePersonalAccessToken_Handler,
+		},
+		{
+			MethodName: "ListPersonalAccessTokens",
+			Handler:    _AuthService_ListPersonalAccessTokens_Handler,
+		},
+		{
+			MethodName: "RevokePersonalAccessToken",
+			Handler:    _AuthService_RevokePersonalAccessToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

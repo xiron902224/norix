@@ -38,6 +38,15 @@ const (
 	AuthServiceRenewSessionProcedure = "/v1.AuthService/RenewSession"
 	// AuthServiceGetCurrentUserProcedure is the procedure name of the AuthService's GetCurrentUser RPC.
 	AuthServiceGetCurrentUserProcedure = "/v1.AuthService/GetCurrentUser"
+	// AuthServiceCreatePersonalAccessTokenProcedure is the procedure name of the AuthService's
+	// CreatePersonalAccessToken RPC.
+	AuthServiceCreatePersonalAccessTokenProcedure = "/v1.AuthService/CreatePersonalAccessToken"
+	// AuthServiceListPersonalAccessTokensProcedure is the procedure name of the AuthService's
+	// ListPersonalAccessTokens RPC.
+	AuthServiceListPersonalAccessTokensProcedure = "/v1.AuthService/ListPersonalAccessTokens"
+	// AuthServiceRevokePersonalAccessTokenProcedure is the procedure name of the AuthService's
+	// RevokePersonalAccessToken RPC.
+	AuthServiceRevokePersonalAccessTokenProcedure = "/v1.AuthService/RevokePersonalAccessToken"
 )
 
 var (
@@ -83,6 +92,27 @@ var (
 			Procedure:  AuthServiceGetCurrentUserProcedure,
 		}
 	})
+	authServiceCreatePersonalAccessTokenSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_auth_proto.Services().ByName("AuthService").Methods().ByName("CreatePersonalAccessToken"),
+			Procedure:  AuthServiceCreatePersonalAccessTokenProcedure,
+		}
+	})
+	authServiceListPersonalAccessTokensSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_auth_proto.Services().ByName("AuthService").Methods().ByName("ListPersonalAccessTokens"),
+			Procedure:  AuthServiceListPersonalAccessTokensProcedure,
+		}
+	})
+	authServiceRevokePersonalAccessTokenSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_auth_proto.Services().ByName("AuthService").Methods().ByName("RevokePersonalAccessToken"),
+			Procedure:  AuthServiceRevokePersonalAccessTokenProcedure,
+		}
+	})
 )
 
 // AuthServiceClient is a client for the v1.AuthService service.
@@ -93,6 +123,9 @@ type AuthServiceClient interface {
 	Logout(context.Context, *v1.LogoutRequest) (*v1.LogoutResponse, error)
 	RenewSession(context.Context, *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error)
 	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
+	CreatePersonalAccessToken(context.Context, *v1.CreatePersonalAccessTokenRequest) (*v1.CreatePersonalAccessTokenResponse, error)
+	ListPersonalAccessTokens(context.Context, *v1.ListPersonalAccessTokensRequest) (*v1.ListPersonalAccessTokensResponse, error)
+	RevokePersonalAccessToken(context.Context, *v1.RevokePersonalAccessTokenRequest) (*v1.RevokePersonalAccessTokenResponse, error)
 }
 
 // NewAuthServiceClient constructs a client for the v1.AuthService service. Multiple service clients
@@ -109,6 +142,9 @@ type AuthServiceHandler interface {
 	Logout(context.Context, *v1.LogoutRequest) (*v1.LogoutResponse, error)
 	RenewSession(context.Context, *v1.RenewSessionRequest) (*v1.RenewSessionResponse, error)
 	GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error)
+	CreatePersonalAccessToken(context.Context, *v1.CreatePersonalAccessTokenRequest) (*v1.CreatePersonalAccessTokenResponse, error)
+	ListPersonalAccessTokens(context.Context, *v1.ListPersonalAccessTokensRequest) (*v1.ListPersonalAccessTokensResponse, error)
+	RevokePersonalAccessToken(context.Context, *v1.RevokePersonalAccessTokenRequest) (*v1.RevokePersonalAccessTokenResponse, error)
 }
 
 // RegisterAuthServiceHandler registers svc as the v1.AuthService implementation on server.
@@ -121,6 +157,9 @@ func RegisterAuthServiceHandler(server *connect.Server, svc AuthServiceHandler) 
 		connect.Method{Spec: authServiceLogoutSpec(), Handler: adapter.logout},
 		connect.Method{Spec: authServiceRenewSessionSpec(), Handler: adapter.renewSession},
 		connect.Method{Spec: authServiceGetCurrentUserSpec(), Handler: adapter.getCurrentUser},
+		connect.Method{Spec: authServiceCreatePersonalAccessTokenSpec(), Handler: adapter.createPersonalAccessToken},
+		connect.Method{Spec: authServiceListPersonalAccessTokensSpec(), Handler: adapter.listPersonalAccessTokens},
+		connect.Method{Spec: authServiceRevokePersonalAccessTokenSpec(), Handler: adapter.revokePersonalAccessToken},
 	)
 }
 
@@ -149,6 +188,18 @@ func (UnimplementedAuthServiceHandler) RenewSession(context.Context, *v1.RenewSe
 
 func (UnimplementedAuthServiceHandler) GetCurrentUser(context.Context, *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.GetCurrentUser is not implemented")
+}
+
+func (UnimplementedAuthServiceHandler) CreatePersonalAccessToken(context.Context, *v1.CreatePersonalAccessTokenRequest) (*v1.CreatePersonalAccessTokenResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.CreatePersonalAccessToken is not implemented")
+}
+
+func (UnimplementedAuthServiceHandler) ListPersonalAccessTokens(context.Context, *v1.ListPersonalAccessTokensRequest) (*v1.ListPersonalAccessTokensResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.ListPersonalAccessTokens is not implemented")
+}
+
+func (UnimplementedAuthServiceHandler) RevokePersonalAccessToken(context.Context, *v1.RevokePersonalAccessTokenRequest) (*v1.RevokePersonalAccessTokenResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AuthService.RevokePersonalAccessToken is not implemented")
 }
 
 type authServiceClient struct {
@@ -198,6 +249,30 @@ func (c *authServiceClient) RenewSession(ctx context.Context, req *v1.RenewSessi
 func (c *authServiceClient) GetCurrentUser(ctx context.Context, req *v1.GetCurrentUserRequest) (*v1.GetCurrentUserResponse, error) {
 	var res v1.GetCurrentUserResponse
 	if err := c.client.CallUnary(ctx, authServiceGetCurrentUserSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authServiceClient) CreatePersonalAccessToken(ctx context.Context, req *v1.CreatePersonalAccessTokenRequest) (*v1.CreatePersonalAccessTokenResponse, error) {
+	var res v1.CreatePersonalAccessTokenResponse
+	if err := c.client.CallUnary(ctx, authServiceCreatePersonalAccessTokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authServiceClient) ListPersonalAccessTokens(ctx context.Context, req *v1.ListPersonalAccessTokensRequest) (*v1.ListPersonalAccessTokensResponse, error) {
+	var res v1.ListPersonalAccessTokensResponse
+	if err := c.client.CallUnary(ctx, authServiceListPersonalAccessTokensSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *authServiceClient) RevokePersonalAccessToken(ctx context.Context, req *v1.RevokePersonalAccessTokenRequest) (*v1.RevokePersonalAccessTokenResponse, error) {
+	var res v1.RevokePersonalAccessTokenResponse
+	if err := c.client.CallUnary(ctx, authServiceRevokePersonalAccessTokenSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -271,6 +346,42 @@ func (h authServiceHandler) getCurrentUser(ctx context.Context, _ connect.Spec, 
 		return err
 	}
 	res, err := h.svc.GetCurrentUser(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authServiceHandler) createPersonalAccessToken(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreatePersonalAccessTokenRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreatePersonalAccessToken(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authServiceHandler) listPersonalAccessTokens(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListPersonalAccessTokensRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListPersonalAccessTokens(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h authServiceHandler) revokePersonalAccessToken(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RevokePersonalAccessTokenRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RevokePersonalAccessToken(ctx, &req)
 	if err != nil {
 		return err
 	}
