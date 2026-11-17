@@ -25,6 +25,9 @@ type DesiredWorkload struct {
 	Runtime           string
 	NetworkName       string
 	NetworkAlias      string
+	UpdateStrategy    string
+	SurgeHostPort     int32
+	ReadinessPath     string
 }
 
 type ObservedWorkload struct {
@@ -105,6 +108,14 @@ func scanWorkload(ctx context.Context, tx pgx.Tx, query string, args ...any) (Wo
 	if RequireKVMForIsolation(workload.IsolationMode) {
 		workload.RequireKVM = true
 	}
+	_ = tx.QueryRow(ctx, `
+		SELECT COALESCE(NULLIF(update_strategy, ''), 'rolling'),
+		       COALESCE(max_surge, 1), COALESCE(max_unavailable, 0)
+		FROM workloads WHERE id = $1::uuid`, workload.ID).Scan(
+		&workload.UpdateStrategy, &workload.MaxSurge, &workload.MaxUnavailable,
+	)
+	workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable =
+		NormalizeUpdateStrategy(workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable)
 	return workload, nil
 }
 
@@ -164,7 +175,10 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 		         WHEN w.stack_id IS NULL THEN ''
 		         ELSE 'norix-stack-' || substr(replace(w.stack_id::text, '-', ''), 1, 12)
 		       END,
-		       COALESCE(NULLIF(w.compose_service, ''), '')
+		       COALESCE(NULLIF(w.compose_service, ''), ''),
+		       COALESCE(NULLIF(w.update_strategy, ''), 'rolling'),
+		       COALESCE(wr.surge_host_port, 0),
+		       COALESCE(w.max_surge, 1)
 		FROM workload_replicas wr
 		JOIN workloads w ON w.id = wr.workload_id
 		WHERE wr.assigned_node_id = $1::uuid
@@ -189,14 +203,20 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 	}
 	defer rows.Close()
 	result := make([]DesiredWorkload, 0)
+	type surgeNeed struct {
+		replicaID string
+		idx       int
+	}
+	needsSurge := make([]surgeNeed, 0)
 	for rows.Next() {
 		var item DesiredWorkload
 		var envText string
+		var maxSurge int32
 		if err := rows.Scan(
 			&item.ID, &item.ProjectID, &item.Name, &item.Image, &envText,
 			&item.CPUShares, &item.MemoryLimitMB, &item.HostPort, &item.ContainerPort,
 			&item.DesiredGeneration, &item.Action, &item.Runtime,
-			&item.NetworkName, &item.NetworkAlias,
+			&item.NetworkName, &item.NetworkAlias, &item.UpdateStrategy, &item.SurgeHostPort, &maxSurge,
 		); err != nil {
 			return nil, err
 		}
@@ -205,10 +225,27 @@ func ListDesiredWorkloadsForNode(ctx context.Context, pool *pgxpool.Pool, organi
 			return nil, envErr
 		}
 		item.Environment = env
+		item.UpdateStrategy, maxSurge, _ = NormalizeUpdateStrategy(item.UpdateStrategy, maxSurge, 0)
+		item.ReadinessPath = "/"
+		if item.UpdateStrategy == "rolling" && item.Action == "run" && maxSurge > 0 && item.SurgeHostPort <= 0 {
+			needsSurge = append(needsSurge, surgeNeed{replicaID: item.ID, idx: len(result)})
+		}
 		result = append(result, item)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	for _, need := range needsSurge {
+		port, allocErr := allocateHostPortTx(ctx, tx)
+		if allocErr != nil {
+			return nil, allocErr
+		}
+		if _, err := tx.Exec(ctx, `
+			UPDATE workload_replicas SET surge_host_port = $2, updated_at = NOW()
+			WHERE id = $1::uuid`, need.replicaID, port); err != nil {
+			return nil, err
+		}
+		result[need.idx].SurgeHostPort = port
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
@@ -226,11 +263,14 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 		return err
 	}
 	failedWorkloadIDs := make([]string, 0)
+	edgeRefreshWorkloadIDs := make(map[string]struct{})
 	for _, item := range observed {
 		status := strings.TrimSpace(item.Status)
 		if status == "" {
 			status = "deploying"
 		}
+		var prevHostPort int32
+		_ = tx.QueryRow(ctx, `SELECT COALESCE(host_port, 0) FROM workload_replicas WHERE id = $1::uuid`, item.ID).Scan(&prevHostPort)
 		var workloadID string
 		err := tx.QueryRow(ctx, `
 			UPDATE workload_replicas SET
@@ -241,6 +281,10 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 					ELSE COALESCE(NULLIF($4, ''), container_id)
 				END,
 				host_port = CASE WHEN $5 > 0 THEN $5 ELSE host_port END,
+				surge_host_port = CASE
+					WHEN $2 = 'running' AND $3 >= desired_generation THEN NULL
+					ELSE surge_host_port
+				END,
 				last_error = COALESCE($6, ''),
 				updated_at = NOW(),
 				desired_action = CASE
@@ -295,6 +339,9 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 		} else if err := syncParentFromPrimary(ctx, tx, workloadID); err != nil {
 			return err
 		}
+		if item.HostPort > 0 && prevHostPort > 0 && item.HostPort != prevHostPort && workloadID != "" {
+			edgeRefreshWorkloadIDs[workloadID] = struct{}{}
+		}
 		if status == "running" || status == "failed" || status == "stopped" {
 			_, _ = tx.Exec(ctx, `
 				UPDATE deployments SET status = $2, updated_at = NOW()
@@ -322,6 +369,16 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 			  AND id < COALESCE((
 				SELECT id FROM workload_logs WHERE workload_id = $1::uuid ORDER BY id DESC OFFSET 500 LIMIT 1
 			  ), 0)`, workloadID)
+	}
+	for workloadID := range edgeRefreshWorkloadIDs {
+		_, _ = tx.Exec(ctx, `
+			UPDATE domain_routes SET status = 'provisioning', updated_at = NOW()
+			WHERE workload_id = $1::uuid AND status IN ('active', 'failed', 'pending', 'provisioning')`, workloadID)
+		_, _ = tx.Exec(ctx, `
+			INSERT INTO edge_snapshots (organization_id, generation, status, message)
+			SELECT $1::uuid,
+			       COALESCE((SELECT MAX(generation) FROM edge_snapshots WHERE organization_id = $1::uuid), 0) + 1,
+			       'pending', 'host_port changed during rolling update'`, organizationID)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return err

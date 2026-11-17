@@ -116,8 +116,12 @@ type Workload struct {
 	StackId         string `protobuf:"bytes,30,opt,name=stack_id,json=stackId,proto3" json:"stack_id,omitempty"`
 	ComposeService  string `protobuf:"bytes,31,opt,name=compose_service,json=composeService,proto3" json:"compose_service,omitempty"`
 	ComposeSpecJson string `protobuf:"bytes,32,opt,name=compose_spec_json,json=composeSpecJson,proto3" json:"compose_spec_json,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// rolling | recreate (#15)
+	UpdateStrategy string `protobuf:"bytes,33,opt,name=update_strategy,json=updateStrategy,proto3" json:"update_strategy,omitempty"`
+	MaxSurge       int32  `protobuf:"varint,34,opt,name=max_surge,json=maxSurge,proto3" json:"max_surge,omitempty"`
+	MaxUnavailable int32  `protobuf:"varint,35,opt,name=max_unavailable,json=maxUnavailable,proto3" json:"max_unavailable,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Workload) Reset() {
@@ -372,6 +376,27 @@ func (x *Workload) GetComposeSpecJson() string {
 		return x.ComposeSpecJson
 	}
 	return ""
+}
+
+func (x *Workload) GetUpdateStrategy() string {
+	if x != nil {
+		return x.UpdateStrategy
+	}
+	return ""
+}
+
+func (x *Workload) GetMaxSurge() int32 {
+	if x != nil {
+		return x.MaxSurge
+	}
+	return 0
+}
+
+func (x *Workload) GetMaxUnavailable() int32 {
+	if x != nil {
+		return x.MaxUnavailable
+	}
+	return 0
 }
 
 type ListWorkloadsRequest struct {
@@ -2893,7 +2918,7 @@ var File_v1_workload_proto protoreflect.FileDescriptor
 
 const file_v1_workload_proto_rawDesc = "" +
 	"\n" +
-	"\x11v1/workload.proto\x12\x02v1\"\x90\v\n" +
+	"\x11v1/workload.proto\x12\x02v1\"\xff\v\n" +
 	"\bWorkload\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -2932,7 +2957,10 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\x14anti_affinity_labels\x18\x1d \x03(\v2$.v1.Workload.AntiAffinityLabelsEntryR\x12antiAffinityLabels\x12\x19\n" +
 	"\bstack_id\x18\x1e \x01(\tR\astackId\x12'\n" +
 	"\x0fcompose_service\x18\x1f \x01(\tR\x0ecomposeService\x12*\n" +
-	"\x11compose_spec_json\x18  \x01(\tR\x0fcomposeSpecJson\x1a:\n" +
+	"\x11compose_spec_json\x18  \x01(\tR\x0fcomposeSpecJson\x12'\n" +
+	"\x0fupdate_strategy\x18! \x01(\tR\x0eupdateStrategy\x12\x1b\n" +
+	"\tmax_surge\x18\" \x01(\x05R\bmaxSurge\x12'\n" +
+	"\x0fmax_unavailable\x18# \x01(\x05R\x0emaxUnavailable\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aA\n" +

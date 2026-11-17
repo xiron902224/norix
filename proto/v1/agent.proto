@@ -116,6 +116,12 @@ message DesiredWorkload {
   // Optional docker network for compose stacks (norix-stack-<id>).
   string network_name = 13;
   string network_alias = 14;
+  // rolling | recreate (#15). Empty defaults to rolling on the agent.
+  string update_strategy = 15;
+  // Temporary host port for start-before-stop; 0 = agent picks a free port.
+  int32 surge_host_port = 16;
+  // HTTP path for readiness during rolling (default "/"); empty skips HTTP and uses TCP.
+  string readiness_path = 17;
 }
 
 message DesiredWasmFunction {

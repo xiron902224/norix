@@ -45,6 +45,33 @@ type Workload struct {
 	StackID            string
 	ComposeService     string
 	ComposeSpecJSON    string
+	UpdateStrategy     string // rolling | recreate
+	MaxSurge           int32
+	MaxUnavailable     int32
+}
+
+// NormalizeUpdateStrategy returns rolling|recreate and clamped surge/unavailable.
+func NormalizeUpdateStrategy(strategy string, maxSurge, maxUnavailable int32) (string, int32, int32) {
+	strategy = strings.ToLower(strings.TrimSpace(strategy))
+	if strategy != "recreate" {
+		strategy = "rolling"
+	}
+	if maxSurge < 0 {
+		maxSurge = 0
+	}
+	if maxSurge > 32 {
+		maxSurge = 32
+	}
+	if maxUnavailable < 0 {
+		maxUnavailable = 0
+	}
+	if maxUnavailable > 32 {
+		maxUnavailable = 32
+	}
+	if strategy == "rolling" && maxSurge == 0 && maxUnavailable == 0 {
+		maxSurge = 1
+	}
+	return strategy, maxSurge, maxUnavailable
 }
 
 func CreateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, workload Workload, actor AuditActor) (Workload, error) {
@@ -176,7 +203,8 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 		       source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
 		       replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
 		       COALESCE(isolation_mode, 'container'), COALESCE(execution_runtime, 'docker'),
-		       COALESCE(stack_id::text, ''), COALESCE(compose_service, ''), COALESCE(compose_spec::text, '{}')
+		       COALESCE(stack_id::text, ''), COALESCE(compose_service, ''), COALESCE(compose_spec::text, '{}'),
+		       COALESCE(NULLIF(update_strategy, ''), 'rolling'), COALESCE(max_surge, 1), COALESCE(max_unavailable, 0)
 		FROM workloads WHERE project_id = $1::uuid AND status <> 'deleting' ORDER BY created_at, name`, projectID)
 	if err != nil {
 		return nil, err
@@ -197,6 +225,7 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 			&workload.ReplicaCount, &workload.ScheduleStrategy, &workload.RequireKVM, &workload.PreferredZone,
 			&affinityText, &antiText, &workload.IsolationMode, &workload.ExecutionRuntime,
 			&workload.StackID, &workload.ComposeService, &workload.ComposeSpecJSON,
+			&workload.UpdateStrategy, &workload.MaxSurge, &workload.MaxUnavailable,
 		); err != nil {
 			return nil, err
 		}
@@ -207,6 +236,8 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 		workload.Environment = env
 		workload.AffinityLabels = decodeLabels([]byte(affinityText))
 		workload.AntiAffinityLabels = decodeLabels([]byte(antiText))
+		workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable =
+			NormalizeUpdateStrategy(workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable)
 		result = append(result, workload)
 	}
 	return result, rows.Err()
@@ -351,6 +382,8 @@ func UpdateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 	if workload.ScheduleStrategy == "" {
 		workload.ScheduleStrategy = "spread"
 	}
+	workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable =
+		NormalizeUpdateStrategy(workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable)
 	if RequireKVMForRuntime(workload.Runtime) {
 		workload.RequireKVM = true
 	}
@@ -374,25 +407,28 @@ func UpdateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 		UPDATE workloads SET name=$2, runtime=$3, image_or_source=$4, env_vars=$5,
 		 cpu_shares=$6, memory_limit_mb=$7, domain=NULLIF($8, ''), container_port=$9,
 		 replica_count=$10, schedule_strategy=$11, require_kvm=$12, preferred_zone=$13,
-		 affinity_labels=$14::jsonb, anti_affinity_labels=$15::jsonb, updated_at=NOW()
+		 affinity_labels=$14::jsonb, anti_affinity_labels=$15::jsonb,
+		 update_strategy=$17, max_surge=$18, max_unavailable=$19, updated_at=NOW()
 		WHERE id=$1::uuid AND organization_id=$16::uuid
 		RETURNING id::text, organization_id::text, project_id::text, name, runtime, image_or_source,
 		 cpu_shares, memory_limit_mb, COALESCE(domain, ''), status,
 		 desired_generation, observed_generation, COALESCE(host_port, 0), container_port,
 		 COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		 source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
-		 replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text`,
+		 replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text,
+		 update_strategy, max_surge, max_unavailable`,
 		workload.ID, workload.Name, workload.Runtime, workload.ImageOrSource, envJSON,
 		workload.CPUShares, workload.MemoryLimitMB, workload.Domain, workload.ContainerPort,
 		workload.ReplicaCount, workload.ScheduleStrategy, workload.RequireKVM, workload.PreferredZone,
-		encodeLabels(workload.AffinityLabels), encodeLabels(workload.AntiAffinityLabels), tenantID).Scan(
+		encodeLabels(workload.AffinityLabels), encodeLabels(workload.AntiAffinityLabels), tenantID,
+		workload.UpdateStrategy, workload.MaxSurge, workload.MaxUnavailable).Scan(
 		&workload.ID, &workload.OrganizationID, &workload.ProjectID, &workload.Name, &workload.Runtime,
 		&workload.ImageOrSource, &workload.CPUShares, &workload.MemoryLimitMB, &workload.Domain, &workload.Status,
 		&workload.DesiredGeneration, &workload.ObservedGeneration, &workload.HostPort, &workload.ContainerPort,
 		&workload.AssignedNodeID, &workload.ContainerID, &workload.LastError, &workload.DesiredAction,
 		&workload.SourceKind, &workload.GitURL, &workload.GitRef, &workload.DockerfilePath, &workload.LatestBuildID,
 		&workload.ReplicaCount, &workload.ScheduleStrategy, &workload.RequireKVM, &workload.PreferredZone,
-		&affinityOut, &antiOut)
+		&affinityOut, &antiOut, &workload.UpdateStrategy, &workload.MaxSurge, &workload.MaxUnavailable)
 	if err != nil {
 		return Workload{}, fmt.Errorf("update workload: %w", err)
 	}

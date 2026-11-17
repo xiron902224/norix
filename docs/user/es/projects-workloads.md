@@ -4,7 +4,7 @@
 
 1. **Projects** → crear proyecto  
 2. Abrir → crear workload (nombre, imagen, env, límites, puertos)  
-3. Deploy / logs / dominios desde la ficha del workload; pestaña **Releases** para rollback ([guía](./releases-rollback.md))
+3. Deploy / logs / dominios desde la ficha del workload; pestaña **Releases** para rollback ([guía](./releases-rollback.md)); **Edit** → update strategy ([rolling](./rolling-updates.md))
 
 ### Variables de entorno (dashboard)
 

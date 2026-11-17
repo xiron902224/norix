@@ -137,6 +137,8 @@ impl Runtime {
                     .and_then(|value| value.as_str())
                     .unwrap_or_default()
                     .to_string();
+                // Clean leftover surge container after a completed roll.
+                let _ = self.remove_container(&format!("{name}-next")).await;
                 return Ok(ObservedWorkload {
                     id: desired.id.clone(),
                     status: "running".into(),
@@ -146,6 +148,9 @@ impl Runtime {
                     host_port: desired.host_port,
                     log_lines: logs,
                 });
+            }
+            if is_rolling(desired) {
+                return self.reconcile_rolling(desired, &name).await;
             }
             let _ = self.remove_container(&name).await;
         } else if let Some(info) = self.inspect_any(&name).await? {
@@ -203,6 +208,104 @@ impl Runtime {
             observed_generation: desired.desired_generation,
             message,
             host_port: desired.host_port,
+            log_lines: logs,
+        })
+    }
+
+    /// Start-before-stop: bring up `{name}-next` on surge port, health-check, swap, drop old.
+    async fn reconcile_rolling(
+        &self,
+        desired: &DesiredWorkload,
+        name: &str,
+    ) -> Result<ObservedWorkload> {
+        let next = format!("{name}-next");
+        let surge = if desired.surge_host_port > 0 {
+            desired.surge_host_port
+        } else {
+            desired.host_port.saturating_add(1000).max(19000)
+        };
+        let mut surge_desired = desired.clone();
+        surge_desired.host_port = surge;
+
+        if let Some(existing_next) = self.inspect_running(&next).await? {
+            let generation = existing_next
+                .get("Config")
+                .and_then(|cfg| cfg.get("Labels"))
+                .and_then(|labels| labels.get("norix.generation"))
+                .and_then(|value| value.as_str())
+                .and_then(|value| value.parse::<i64>().ok())
+                .unwrap_or(0);
+            if generation != desired.desired_generation {
+                let _ = self.remove_container(&next).await;
+            }
+        }
+
+        if self.inspect_running(&next).await?.is_none() {
+            self.pull(&desired.image).await?;
+            let _ = self.remove_container(&next).await;
+            let _ = self.run(&surge_desired, &next).await?;
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        }
+
+        if self.inspect_running(&next).await?.is_none() {
+            let logs = self.logs(&next, 40).await.unwrap_or_default();
+            let message = if let Some(info) = self.inspect_any(&next).await? {
+                unhealthy_message(&info)
+            } else {
+                "rolling surge container exited".into()
+            };
+            let _ = self.remove_container(&next).await;
+            return Ok(ObservedWorkload {
+                id: desired.id.clone(),
+                status: "failed".into(),
+                container_id: String::new(),
+                observed_generation: desired.desired_generation,
+                message,
+                host_port: desired.host_port,
+                log_lines: logs,
+            });
+        }
+
+        if let Err(error) =
+            readiness_check(surge, desired.container_port, &desired.readiness_path).await
+        {
+            let logs = self.logs(&next, 40).await.unwrap_or_default();
+            return Ok(ObservedWorkload {
+                id: desired.id.clone(),
+                status: "deploying".into(),
+                container_id: String::new(),
+                observed_generation: desired.desired_generation.saturating_sub(1),
+                message: format!("rolling readiness pending: {error}"),
+                host_port: desired.host_port,
+                log_lines: logs,
+            });
+        }
+
+        // Ready: cut over host_port to surge, stop old, rename next → canonical.
+        let _ = self.remove_container(name).await;
+        let _ = Command::new(self.bin())
+            .args(["rename", &next, name])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .await;
+        let logs = self.logs(name, 40).await.unwrap_or_default();
+        let container_id = self
+            .inspect_running(name)
+            .await?
+            .and_then(|info| {
+                info.get("Id")
+                    .and_then(|value| value.as_str())
+                    .map(str::to_string)
+            })
+            .unwrap_or_default();
+        Ok(ObservedWorkload {
+            id: desired.id.clone(),
+            status: "running".into(),
+            container_id,
+            observed_generation: desired.desired_generation,
+            message: format!("rolled via surge port {surge}"),
+            host_port: surge,
             log_lines: logs,
         })
     }
@@ -425,6 +528,39 @@ fn container_name(workload_id: &str) -> String {
         .filter(|ch| ch.is_ascii_hexdigit())
         .collect();
     format!("norix-{}", &compact[..compact.len().min(12)])
+}
+
+fn is_rolling(desired: &DesiredWorkload) -> bool {
+    let strategy = desired.update_strategy.trim().to_ascii_lowercase();
+    strategy.is_empty() || strategy == "rolling"
+}
+
+async fn readiness_check(host_port: i32, _container_port: i32, path: &str) -> Result<()> {
+    let path = if path.trim().is_empty() {
+        "/"
+    } else if path.starts_with('/') {
+        path.trim()
+    } else {
+        return tcp_ready(host_port).await;
+    };
+    let url = format!("http://127.0.0.1:{host_port}{path}");
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(3))
+        .build()
+        .context("readiness http client")?;
+    match client.get(&url).send().await {
+        Ok(resp) if resp.status().as_u16() < 500 => Ok(()),
+        Ok(resp) => bail!("readiness HTTP {}", resp.status()),
+        Err(_) => tcp_ready(host_port).await,
+    }
+}
+
+async fn tcp_ready(host_port: i32) -> Result<()> {
+    use tokio::net::TcpStream;
+    match TcpStream::connect(("127.0.0.1", host_port as u16)).await {
+        Ok(_) => Ok(()),
+        Err(err) => bail!("readiness TCP {host_port}: {err}"),
+    }
 }
 
 pub fn is_container_runtime(runtime: &str) -> bool {

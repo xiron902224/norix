@@ -918,8 +918,14 @@ type DesiredWorkload struct {
 	// container | docker-compose | microvm | wasm | static-site
 	Runtime string `protobuf:"bytes,12,opt,name=runtime,proto3" json:"runtime,omitempty"`
 	// Optional docker network for compose stacks (norix-stack-<id>).
-	NetworkName   string `protobuf:"bytes,13,opt,name=network_name,json=networkName,proto3" json:"network_name,omitempty"`
-	NetworkAlias  string `protobuf:"bytes,14,opt,name=network_alias,json=networkAlias,proto3" json:"network_alias,omitempty"`
+	NetworkName  string `protobuf:"bytes,13,opt,name=network_name,json=networkName,proto3" json:"network_name,omitempty"`
+	NetworkAlias string `protobuf:"bytes,14,opt,name=network_alias,json=networkAlias,proto3" json:"network_alias,omitempty"`
+	// rolling | recreate (#15). Empty defaults to rolling on the agent.
+	UpdateStrategy string `protobuf:"bytes,15,opt,name=update_strategy,json=updateStrategy,proto3" json:"update_strategy,omitempty"`
+	// Temporary host port for start-before-stop; 0 = agent picks a free port.
+	SurgeHostPort int32 `protobuf:"varint,16,opt,name=surge_host_port,json=surgeHostPort,proto3" json:"surge_host_port,omitempty"`
+	// HTTP path for readiness during rolling (default "/"); empty skips HTTP and uses TCP.
+	ReadinessPath string `protobuf:"bytes,17,opt,name=readiness_path,json=readinessPath,proto3" json:"readiness_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1048,6 +1054,27 @@ func (x *DesiredWorkload) GetNetworkName() string {
 func (x *DesiredWorkload) GetNetworkAlias() string {
 	if x != nil {
 		return x.NetworkAlias
+	}
+	return ""
+}
+
+func (x *DesiredWorkload) GetUpdateStrategy() string {
+	if x != nil {
+		return x.UpdateStrategy
+	}
+	return ""
+}
+
+func (x *DesiredWorkload) GetSurgeHostPort() int32 {
+	if x != nil {
+		return x.SurgeHostPort
+	}
+	return 0
+}
+
+func (x *DesiredWorkload) GetReadinessPath() string {
+	if x != nil {
+		return x.ReadinessPath
 	}
 	return ""
 }
@@ -4078,7 +4105,7 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1d\n" +
 	"\n" +
 	"node_token\x18\x02 \x01(\tR\tnodeToken\x12'\n" +
-	"\x0forganization_id\x18\x03 \x01(\tR\x0eorganizationId\"\x97\x04\n" +
+	"\x0forganization_id\x18\x03 \x01(\tR\x0eorganizationId\"\x8f\x05\n" +
 	"\x0fDesiredWorkload\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -4096,7 +4123,10 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x06action\x18\v \x01(\tR\x06action\x12\x18\n" +
 	"\aruntime\x18\f \x01(\tR\aruntime\x12!\n" +
 	"\fnetwork_name\x18\r \x01(\tR\vnetworkName\x12#\n" +
-	"\rnetwork_alias\x18\x0e \x01(\tR\fnetworkAlias\x1a:\n" +
+	"\rnetwork_alias\x18\x0e \x01(\tR\fnetworkAlias\x12'\n" +
+	"\x0fupdate_strategy\x18\x0f \x01(\tR\x0eupdateStrategy\x12&\n" +
+	"\x0fsurge_host_port\x18\x10 \x01(\x05R\rsurgeHostPort\x12%\n" +
+	"\x0ereadiness_path\x18\x11 \x01(\tR\rreadinessPath\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbc\x01\n" +
