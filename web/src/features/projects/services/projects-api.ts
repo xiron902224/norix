@@ -21,11 +21,15 @@ import {
   RuntimeType,
   UpdateWorkloadRequestSchema,
   WorkloadSchema,
+  VolumeMountSchema,
+  BackupWorkloadVolumeRequestSchema,
+  DeleteWorkloadVolumeRequestSchema,
   type Build,
   type ComposeServiceSpec,
   type Project,
   type Workload,
   type WorkloadRelease,
+  type VolumeMount,
 } from '../../../gen/v1/workload_pb'
 
 export async function listProjects(): Promise<Project[]> {
@@ -62,6 +66,7 @@ export async function createWorkload(input: {
   requireKvm?: boolean
   preferredZone?: string
   envVars?: Record<string, string>
+  volumeMounts?: VolumeMount[]
 }): Promise<Workload> {
   const sourceKind = input.sourceKind ?? (input.gitUrl ? 'git' : 'image')
   const response = await workloadClient.createWorkload(create(CreateWorkloadRequestSchema, {
@@ -82,6 +87,7 @@ export async function createWorkload(input: {
       requireKvm: input.requireKvm ?? false,
       preferredZone: input.preferredZone ?? 'default',
       envVars: input.envVars ?? {},
+      volumeMounts: input.volumeMounts ?? [],
     }),
   }))
   if (!response.workload) throw new Error('Workload was not returned')
@@ -113,6 +119,7 @@ export async function updateWorkload(input: {
   maxSurge?: number
   maxUnavailable?: number
   probeSpecJson?: string
+  volumeMounts?: VolumeMount[]
 }): Promise<Workload> {
   const response = await workloadClient.updateWorkload(create(UpdateWorkloadRequestSchema, {
     workload: create(WorkloadSchema, {
@@ -137,10 +144,40 @@ export async function updateWorkload(input: {
       maxSurge: input.maxSurge ?? 1,
       maxUnavailable: input.maxUnavailable ?? 0,
       probeSpecJson: input.probeSpecJson ?? '',
+      volumeMounts: input.volumeMounts ?? [],
     }),
   }))
   if (!response.workload) throw new Error('Workload was not returned')
   return response.workload
+}
+
+export function parseVolumeMountsJson(raw: string): VolumeMount[] {
+  const trimmed = raw.trim()
+  if (!trimmed) return []
+  const parsed = JSON.parse(trimmed) as Array<{ name?: string; mount_path?: string; mountPath?: string; read_only?: boolean; readOnly?: boolean }>
+  if (!Array.isArray(parsed)) throw new Error('volume mounts must be a JSON array')
+  return parsed.map((m) => create(VolumeMountSchema, {
+    name: (m.name ?? '').trim(),
+    mountPath: (m.mount_path ?? m.mountPath ?? '').trim(),
+    readOnly: Boolean(m.read_only ?? m.readOnly),
+  }))
+}
+
+export async function backupWorkloadVolume(workloadId: string, volumeName: string): Promise<{ opId: string; status: string }> {
+  const response = await workloadClient.backupWorkloadVolume(create(BackupWorkloadVolumeRequestSchema, {
+    workloadId,
+    volumeName,
+  }))
+  return { opId: response.opId, status: response.status }
+}
+
+export async function deleteWorkloadVolume(workloadId: string, volumeName: string): Promise<{ opId: string; status: string }> {
+  const response = await workloadClient.deleteWorkloadVolume(create(DeleteWorkloadVolumeRequestSchema, {
+    workloadId,
+    volumeName,
+    confirm: true,
+  }))
+  return { opId: response.opId, status: response.status }
 }
 
 export async function deployWorkload(id: string, containerPort?: number) {

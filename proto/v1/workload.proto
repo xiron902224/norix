@@ -57,6 +57,18 @@ message Workload {
   string probe_spec_json = 36;
   bool ready = 37;
   string probe_status_json = 38;
+  // Named Docker volumes (#16); node-local, sticky placement.
+  repeated VolumeMount volume_mounts = 39;
+  // Pending backup|delete op JSON (read-only in list responses).
+  string volume_pending_op_json = 40;
+  // Completed volume backups JSON array.
+  string volume_backups_json = 41;
+}
+
+message VolumeMount {
+  string name = 1;
+  string mount_path = 2;
+  bool read_only = 3;
 }
 
 message ListWorkloadsRequest {
@@ -304,6 +316,30 @@ service WorkloadService {
   rpc ListWorkloadReleases(ListWorkloadReleasesRequest) returns (ListWorkloadReleasesResponse);
   rpc RollbackWorkload(RollbackWorkloadRequest) returns (RollbackWorkloadResponse);
   rpc RevealWorkloadEnv(RevealWorkloadEnvRequest) returns (RevealWorkloadEnvResponse);
+  rpc BackupWorkloadVolume(BackupWorkloadVolumeRequest) returns (BackupWorkloadVolumeResponse);
+  rpc DeleteWorkloadVolume(DeleteWorkloadVolumeRequest) returns (DeleteWorkloadVolumeResponse);
+}
+
+message BackupWorkloadVolumeRequest {
+  string workload_id = 1;
+  string volume_name = 2;
+}
+
+message BackupWorkloadVolumeResponse {
+  string op_id = 1;
+  string status = 2; // pending
+}
+
+message DeleteWorkloadVolumeRequest {
+  string workload_id = 1;
+  string volume_name = 2;
+  // Must be true — deletes Docker volume data on the node after stop.
+  bool confirm = 3;
+}
+
+message DeleteWorkloadVolumeResponse {
+  string op_id = 1;
+  string status = 2; // pending
 }
 
 message Project {

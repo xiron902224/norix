@@ -62,6 +62,8 @@ type Request struct {
 	AllowCordoned       bool
 	AllowDraining       bool
 	PreferRemote        bool
+	// RequireNodeID pins placement (persistent volumes stay on one node) (#16).
+	RequireNodeID string
 }
 
 // ErrNoContainerRuntime is returned when every otherwise-eligible online node
@@ -118,6 +120,9 @@ func unschedulableReason(nodes []Node, req Request) string {
 
 // Feasible applies hard filters.
 func Feasible(node Node, req Request) (bool, string) {
+	if req.RequireNodeID != "" && node.ID != req.RequireNodeID {
+		return false, "pinned volume node"
+	}
 	if req.ExcludeNodeIDs != nil {
 		if _, skip := req.ExcludeNodeIDs[node.ID]; skip {
 			return false, "excluded"

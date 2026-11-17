@@ -18,7 +18,9 @@ import { DeployProgressSteps } from './DeployProgressSteps'
 import type { Project, Workload } from '../../../gen/v1/workload_pb'
 import { listNodes } from '../../nodes/services/nodes-api'
 import {
+  backupWorkloadVolume,
   deleteWorkload,
+  deleteWorkloadVolume,
   deployFromGit,
   deployWorkload,
   getBuildLogs,
@@ -26,6 +28,7 @@ import {
   listProjects,
   listWorkloadReleases,
   listWorkloads,
+  parseVolumeMountsJson,
   revealWorkloadEnv,
   rollbackWorkload,
   updateWorkload,
@@ -83,6 +86,8 @@ export function ApplicationDetailPage() {
   const [editMaxSurge, setEditMaxSurge] = useState(1)
   const [editMaxUnavailable, setEditMaxUnavailable] = useState(0)
   const [editProbeJson, setEditProbeJson] = useState('{"readiness":{"type":"http","path":"/"},"liveness":{"type":"none"}}')
+  const [editVolumesJson, setEditVolumesJson] = useState('[]')
+  const [volumeOpBusy, setVolumeOpBusy] = useState('')
   const [releases, setReleases] = useState<WorkloadRelease[]>([])
   const [releasesLoading, setReleasesLoading] = useState(false)
   const [rollbackId, setRollbackId] = useState('')
@@ -117,6 +122,15 @@ export function ApplicationDetailPage() {
     setEditMaxSurge(item.maxSurge || 1)
     setEditMaxUnavailable(item.maxUnavailable || 0)
     setEditProbeJson(item.probeSpecJson || '{"readiness":{"type":"http","path":"/"},"liveness":{"type":"none"}}')
+    setEditVolumesJson(JSON.stringify(
+      (item.volumeMounts || []).map((m) => ({
+        name: m.name,
+        mount_path: m.mountPath,
+        read_only: m.readOnly || undefined,
+      })),
+      null,
+      2,
+    ))
   }
 
   async function refresh() {
@@ -314,12 +328,51 @@ export function ApplicationDetailPage() {
     }
   }
 
+  async function onVolumeBackup(name: string) {
+    if (!workload) return
+    setVolumeOpBusy(`backup:${name}`)
+    setError('')
+    setNotice('')
+    try {
+      const result = await backupWorkloadVolume(workload.id, name)
+      setNotice(`Volume backup queued (${result.opId}). Tar lands on the pinned node under /var/lib/norix/volume-backups.`)
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not backup volume')
+    } finally {
+      setVolumeOpBusy('')
+    }
+  }
+
+  async function onVolumeDelete(name: string) {
+    if (!workload) return
+    if (!window.confirm(`Delete Docker volume “${name}”? Data on the node is removed after the agent stops using it.`)) return
+    setVolumeOpBusy(`delete:${name}`)
+    setError('')
+    setNotice('')
+    try {
+      const result = await deleteWorkloadVolume(workload.id, name)
+      setNotice(`Volume delete queued (${result.opId}).`)
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not delete volume')
+    } finally {
+      setVolumeOpBusy('')
+    }
+  }
+
   async function onSaveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!workload) return
     setSavingEdit(true)
     setError('')
     try {
+      let volumeMounts
+      try {
+        volumeMounts = parseVolumeMountsJson(editVolumesJson)
+      } catch (cause) {
+        throw new Error(cause instanceof Error ? cause.message : 'Invalid volume mounts JSON')
+      }
       const updated = await updateWorkload({
         id: workload.id,
         projectId,
@@ -340,6 +393,7 @@ export function ApplicationDetailPage() {
         maxSurge: editMaxSurge,
         maxUnavailable: editMaxUnavailable,
         probeSpecJson: editProbeJson,
+        volumeMounts,
       })
       setWorkload(updated)
       fillEdit(updated)
@@ -511,6 +565,45 @@ export function ApplicationDetailPage() {
                 <dt>Now</dt>
                 <dd>{workloadHint(workload.status, workload.observedGeneration, workload.desiredGeneration, hasOnlineNode)}</dd>
               </div>
+              <div className="detail-span">
+                <dt>Volumes</dt>
+                <dd>
+                  {(workload.volumeMounts || []).length === 0 ? (
+                    <span className="muted">None — add named mounts in Edit (node-local; sticky placement)</span>
+                  ) : (
+                    <ul className="env-vars-summary">
+                      {workload.volumeMounts.map((mount) => (
+                        <li key={mount.name} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                          <span className="env-key">{mount.name}</span>
+                          <span className="muted mono">{mount.mountPath}{mount.readOnly ? ' (ro)' : ''}</span>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={!!volumeOpBusy || !!workload.volumePendingOpJson || !workload.assignedNodeId}
+                            onClick={() => void onVolumeBackup(mount.name)}
+                          >
+                            {volumeOpBusy === `backup:${mount.name}` ? 'Backing up…' : 'Backup'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            disabled={!!volumeOpBusy || !!workload.volumePendingOpJson || !workload.assignedNodeId}
+                            onClick={() => void onVolumeDelete(mount.name)}
+                          >
+                            {volumeOpBusy === `delete:${mount.name}` ? 'Deleting…' : 'Delete'}
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {workload.volumePendingOpJson ? (
+                    <p className="muted mono" style={{ marginTop: 8 }}>pending: {workload.volumePendingOpJson}</p>
+                  ) : null}
+                  {workload.volumeBackupsJson && workload.volumeBackupsJson !== '[]' ? (
+                    <p className="muted mono" style={{ marginTop: 8 }}>backups: {workload.volumeBackupsJson}</p>
+                  ) : null}
+                </dd>
+              </div>
             </dl>
 
             <div className="compass-summary-logs">
@@ -530,7 +623,7 @@ export function ApplicationDetailPage() {
             <div className="compass-danger-zone">
               <div>
                 <strong>Delete application</strong>
-                <p className="muted">Stops the container and removes this workload from the project.</p>
+                <p className="muted">Stops the container and removes this workload. Named Docker volumes are kept until you Delete them explicitly on Summary.</p>
               </div>
               <Button type="button" variant="danger" disabled={busy} onClick={() => void onDelete()}>
                 Delete
@@ -641,6 +734,20 @@ export function ApplicationDetailPage() {
                 spellCheck={false}
               />
               <span className="muted">readiness/liveness: type http|tcp|exec|none. Liveness fail restarts; readiness fail removes edge routing.</span>
+            </label>
+            <label htmlFor="edit-volumes" style={{ display: 'grid', gap: 6, marginTop: 12 }}>
+              Volumes (JSON)
+              <textarea
+                id="edit-volumes"
+                className="mono"
+                rows={4}
+                value={editVolumesJson}
+                onChange={(e) => setEditVolumesJson(e.target.value)}
+                spellCheck={false}
+              />
+              <span className="muted">
+                Named Docker volumes, node-local. Example: {'[{"name":"data","mount_path":"/var/lib/app"}]'}. Prefer recreate updates; drain warns before moving the node.
+              </span>
             </label>
             <EnvVarsEditor
               idPrefix="edit-env"

@@ -523,8 +523,10 @@ func (x *DrainNodeRequest) GetDraining() bool {
 }
 
 type DrainNodeResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Node          *Node                  `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Node  *Node                  `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
+	// Stateful workloads with volumes that will not be auto-moved (#16).
+	Warnings      []string `protobuf:"bytes,2,rep,name=warnings,proto3" json:"warnings,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -562,6 +564,13 @@ func (*DrainNodeResponse) Descriptor() ([]byte, []int) {
 func (x *DrainNodeResponse) GetNode() *Node {
 	if x != nil {
 		return x.Node
+	}
+	return nil
+}
+
+func (x *DrainNodeResponse) GetWarnings() []string {
+	if x != nil {
+		return x.Warnings
 	}
 	return nil
 }
@@ -928,6 +937,12 @@ type DesiredWorkload struct {
 	ReadinessPath string `protobuf:"bytes,17,opt,name=readiness_path,json=readinessPath,proto3" json:"readiness_path,omitempty"`
 	// JSON ProbeSpec (#17).
 	ProbeSpecJson string `protobuf:"bytes,18,opt,name=probe_spec_json,json=probeSpecJson,proto3" json:"probe_spec_json,omitempty"`
+	// JSON array of {name,mount_path,read_only} (#16).
+	VolumeMountsJson string `protobuf:"bytes,19,opt,name=volume_mounts_json,json=volumeMountsJson,proto3" json:"volume_mounts_json,omitempty"`
+	// Pending backup|delete JSON (#16).
+	VolumePendingOpJson string `protobuf:"bytes,20,opt,name=volume_pending_op_json,json=volumePendingOpJson,proto3" json:"volume_pending_op_json,omitempty"`
+	// Parent workload id (stable Docker volume naming).
+	WorkloadId    string `protobuf:"bytes,21,opt,name=workload_id,json=workloadId,proto3" json:"workload_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1084,6 +1099,27 @@ func (x *DesiredWorkload) GetReadinessPath() string {
 func (x *DesiredWorkload) GetProbeSpecJson() string {
 	if x != nil {
 		return x.ProbeSpecJson
+	}
+	return ""
+}
+
+func (x *DesiredWorkload) GetVolumeMountsJson() string {
+	if x != nil {
+		return x.VolumeMountsJson
+	}
+	return ""
+}
+
+func (x *DesiredWorkload) GetVolumePendingOpJson() string {
+	if x != nil {
+		return x.VolumePendingOpJson
+	}
+	return ""
+}
+
+func (x *DesiredWorkload) GetWorkloadId() string {
+	if x != nil {
+		return x.WorkloadId
 	}
 	return ""
 }
@@ -4100,9 +4136,10 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x04node\x18\x01 \x01(\v2\b.v1.NodeR\x04node\"G\n" +
 	"\x10DrainNodeRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1a\n" +
-	"\bdraining\x18\x02 \x01(\bR\bdraining\"1\n" +
+	"\bdraining\x18\x02 \x01(\bR\bdraining\"M\n" +
 	"\x11DrainNodeResponse\x12\x1c\n" +
-	"\x04node\x18\x01 \x01(\v2\b.v1.NodeR\x04node\"\xda\x01\n" +
+	"\x04node\x18\x01 \x01(\v2\b.v1.NodeR\x04node\x12\x1a\n" +
+	"\bwarnings\x18\x02 \x03(\tR\bwarnings\"\xda\x01\n" +
 	"\x19UpdateNodeScheduleRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x12\n" +
 	"\x04role\x18\x02 \x01(\tR\x04role\x12\x12\n" +
@@ -4130,7 +4167,7 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1d\n" +
 	"\n" +
 	"node_token\x18\x02 \x01(\tR\tnodeToken\x12'\n" +
-	"\x0forganization_id\x18\x03 \x01(\tR\x0eorganizationId\"\xb7\x05\n" +
+	"\x0forganization_id\x18\x03 \x01(\tR\x0eorganizationId\"\xbb\x06\n" +
 	"\x0fDesiredWorkload\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -4152,7 +4189,11 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x0fupdate_strategy\x18\x0f \x01(\tR\x0eupdateStrategy\x12&\n" +
 	"\x0fsurge_host_port\x18\x10 \x01(\x05R\rsurgeHostPort\x12%\n" +
 	"\x0ereadiness_path\x18\x11 \x01(\tR\rreadinessPath\x12&\n" +
-	"\x0fprobe_spec_json\x18\x12 \x01(\tR\rprobeSpecJson\x1a:\n" +
+	"\x0fprobe_spec_json\x18\x12 \x01(\tR\rprobeSpecJson\x12,\n" +
+	"\x12volume_mounts_json\x18\x13 \x01(\tR\x10volumeMountsJson\x123\n" +
+	"\x16volume_pending_op_json\x18\x14 \x01(\tR\x13volumePendingOpJson\x12\x1f\n" +
+	"\vworkload_id\x18\x15 \x01(\tR\n" +
+	"workloadId\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbc\x01\n" +

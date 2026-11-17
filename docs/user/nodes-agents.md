@@ -29,7 +29,7 @@ Node credentials: **Rotate token** / **Revoke token** and optional mTLS fingerpr
 ## Schedule controls
 
 - **Cordon** — no new workloads
-- **Drain** — evacuate then cordon behavior for migration
+- **Drain** — evacuate then cordon behavior for migration. Warns if workloads with [persistent volumes](./volumes.md) are on the node (data is node-local and not auto-moved)
 - **Role / zone** — scheduling hints (`worker` / `edge`, zone labels)
 
 ## Update agents

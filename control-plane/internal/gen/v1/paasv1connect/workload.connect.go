@@ -75,6 +75,12 @@ const (
 	// WorkloadServiceRevealWorkloadEnvProcedure is the procedure name of the WorkloadService's
 	// RevealWorkloadEnv RPC.
 	WorkloadServiceRevealWorkloadEnvProcedure = "/v1.WorkloadService/RevealWorkloadEnv"
+	// WorkloadServiceBackupWorkloadVolumeProcedure is the procedure name of the WorkloadService's
+	// BackupWorkloadVolume RPC.
+	WorkloadServiceBackupWorkloadVolumeProcedure = "/v1.WorkloadService/BackupWorkloadVolume"
+	// WorkloadServiceDeleteWorkloadVolumeProcedure is the procedure name of the WorkloadService's
+	// DeleteWorkloadVolume RPC.
+	WorkloadServiceDeleteWorkloadVolumeProcedure = "/v1.WorkloadService/DeleteWorkloadVolume"
 	// ProjectServiceCreateProjectProcedure is the procedure name of the ProjectService's CreateProject
 	// RPC.
 	ProjectServiceCreateProjectProcedure = "/v1.ProjectService/CreateProject"
@@ -206,6 +212,20 @@ var (
 			Procedure:  WorkloadServiceRevealWorkloadEnvProcedure,
 		}
 	})
+	workloadServiceBackupWorkloadVolumeSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("BackupWorkloadVolume"),
+			Procedure:  WorkloadServiceBackupWorkloadVolumeProcedure,
+		}
+	})
+	workloadServiceDeleteWorkloadVolumeSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("DeleteWorkloadVolume"),
+			Procedure:  WorkloadServiceDeleteWorkloadVolumeProcedure,
+		}
+	})
 )
 
 // WorkloadServiceClient is a client for the v1.WorkloadService service.
@@ -227,6 +247,8 @@ type WorkloadServiceClient interface {
 	ListWorkloadReleases(context.Context, *v1.ListWorkloadReleasesRequest) (*v1.ListWorkloadReleasesResponse, error)
 	RollbackWorkload(context.Context, *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error)
 	RevealWorkloadEnv(context.Context, *v1.RevealWorkloadEnvRequest) (*v1.RevealWorkloadEnvResponse, error)
+	BackupWorkloadVolume(context.Context, *v1.BackupWorkloadVolumeRequest) (*v1.BackupWorkloadVolumeResponse, error)
+	DeleteWorkloadVolume(context.Context, *v1.DeleteWorkloadVolumeRequest) (*v1.DeleteWorkloadVolumeResponse, error)
 }
 
 // NewWorkloadServiceClient constructs a client for the v1.WorkloadService service. Multiple service
@@ -254,6 +276,8 @@ type WorkloadServiceHandler interface {
 	ListWorkloadReleases(context.Context, *v1.ListWorkloadReleasesRequest) (*v1.ListWorkloadReleasesResponse, error)
 	RollbackWorkload(context.Context, *v1.RollbackWorkloadRequest) (*v1.RollbackWorkloadResponse, error)
 	RevealWorkloadEnv(context.Context, *v1.RevealWorkloadEnvRequest) (*v1.RevealWorkloadEnvResponse, error)
+	BackupWorkloadVolume(context.Context, *v1.BackupWorkloadVolumeRequest) (*v1.BackupWorkloadVolumeResponse, error)
+	DeleteWorkloadVolume(context.Context, *v1.DeleteWorkloadVolumeRequest) (*v1.DeleteWorkloadVolumeResponse, error)
 }
 
 // RegisterWorkloadServiceHandler registers svc as the v1.WorkloadService implementation on server.
@@ -277,6 +301,8 @@ func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceH
 		connect.Method{Spec: workloadServiceListWorkloadReleasesSpec(), Handler: adapter.listWorkloadReleases},
 		connect.Method{Spec: workloadServiceRollbackWorkloadSpec(), Handler: adapter.rollbackWorkload},
 		connect.Method{Spec: workloadServiceRevealWorkloadEnvSpec(), Handler: adapter.revealWorkloadEnv},
+		connect.Method{Spec: workloadServiceBackupWorkloadVolumeSpec(), Handler: adapter.backupWorkloadVolume},
+		connect.Method{Spec: workloadServiceDeleteWorkloadVolumeSpec(), Handler: adapter.deleteWorkloadVolume},
 	)
 }
 
@@ -349,6 +375,14 @@ func (UnimplementedWorkloadServiceHandler) RollbackWorkload(context.Context, *v1
 
 func (UnimplementedWorkloadServiceHandler) RevealWorkloadEnv(context.Context, *v1.RevealWorkloadEnvRequest) (*v1.RevealWorkloadEnvResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.RevealWorkloadEnv is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) BackupWorkloadVolume(context.Context, *v1.BackupWorkloadVolumeRequest) (*v1.BackupWorkloadVolumeResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.BackupWorkloadVolume is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) DeleteWorkloadVolume(context.Context, *v1.DeleteWorkloadVolumeRequest) (*v1.DeleteWorkloadVolumeResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeleteWorkloadVolume is not implemented")
 }
 
 type workloadServiceClient struct {
@@ -486,6 +520,22 @@ func (c *workloadServiceClient) RollbackWorkload(ctx context.Context, req *v1.Ro
 func (c *workloadServiceClient) RevealWorkloadEnv(ctx context.Context, req *v1.RevealWorkloadEnvRequest) (*v1.RevealWorkloadEnvResponse, error) {
 	var res v1.RevealWorkloadEnvResponse
 	if err := c.client.CallUnary(ctx, workloadServiceRevealWorkloadEnvSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) BackupWorkloadVolume(ctx context.Context, req *v1.BackupWorkloadVolumeRequest) (*v1.BackupWorkloadVolumeResponse, error) {
+	var res v1.BackupWorkloadVolumeResponse
+	if err := c.client.CallUnary(ctx, workloadServiceBackupWorkloadVolumeSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) DeleteWorkloadVolume(ctx context.Context, req *v1.DeleteWorkloadVolumeRequest) (*v1.DeleteWorkloadVolumeResponse, error) {
+	var res v1.DeleteWorkloadVolumeResponse
+	if err := c.client.CallUnary(ctx, workloadServiceDeleteWorkloadVolumeSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -691,6 +741,30 @@ func (h workloadServiceHandler) revealWorkloadEnv(ctx context.Context, _ connect
 		return err
 	}
 	res, err := h.svc.RevealWorkloadEnv(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) backupWorkloadVolume(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.BackupWorkloadVolumeRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.BackupWorkloadVolume(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) deleteWorkloadVolume(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteWorkloadVolumeRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteWorkloadVolume(ctx, &req)
 	if err != nil {
 		return err
 	}

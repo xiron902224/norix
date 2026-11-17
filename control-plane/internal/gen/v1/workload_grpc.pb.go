@@ -36,6 +36,8 @@ const (
 	WorkloadService_ListWorkloadReleases_FullMethodName  = "/v1.WorkloadService/ListWorkloadReleases"
 	WorkloadService_RollbackWorkload_FullMethodName      = "/v1.WorkloadService/RollbackWorkload"
 	WorkloadService_RevealWorkloadEnv_FullMethodName     = "/v1.WorkloadService/RevealWorkloadEnv"
+	WorkloadService_BackupWorkloadVolume_FullMethodName  = "/v1.WorkloadService/BackupWorkloadVolume"
+	WorkloadService_DeleteWorkloadVolume_FullMethodName  = "/v1.WorkloadService/DeleteWorkloadVolume"
 )
 
 // WorkloadServiceClient is the client API for WorkloadService service.
@@ -59,6 +61,8 @@ type WorkloadServiceClient interface {
 	ListWorkloadReleases(ctx context.Context, in *ListWorkloadReleasesRequest, opts ...grpc.CallOption) (*ListWorkloadReleasesResponse, error)
 	RollbackWorkload(ctx context.Context, in *RollbackWorkloadRequest, opts ...grpc.CallOption) (*RollbackWorkloadResponse, error)
 	RevealWorkloadEnv(ctx context.Context, in *RevealWorkloadEnvRequest, opts ...grpc.CallOption) (*RevealWorkloadEnvResponse, error)
+	BackupWorkloadVolume(ctx context.Context, in *BackupWorkloadVolumeRequest, opts ...grpc.CallOption) (*BackupWorkloadVolumeResponse, error)
+	DeleteWorkloadVolume(ctx context.Context, in *DeleteWorkloadVolumeRequest, opts ...grpc.CallOption) (*DeleteWorkloadVolumeResponse, error)
 }
 
 type workloadServiceClient struct {
@@ -239,6 +243,26 @@ func (c *workloadServiceClient) RevealWorkloadEnv(ctx context.Context, in *Revea
 	return out, nil
 }
 
+func (c *workloadServiceClient) BackupWorkloadVolume(ctx context.Context, in *BackupWorkloadVolumeRequest, opts ...grpc.CallOption) (*BackupWorkloadVolumeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BackupWorkloadVolumeResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_BackupWorkloadVolume_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) DeleteWorkloadVolume(ctx context.Context, in *DeleteWorkloadVolumeRequest, opts ...grpc.CallOption) (*DeleteWorkloadVolumeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteWorkloadVolumeResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_DeleteWorkloadVolume_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkloadServiceServer is the server API for WorkloadService service.
 // All implementations must embed UnimplementedWorkloadServiceServer
 // for forward compatibility.
@@ -260,6 +284,8 @@ type WorkloadServiceServer interface {
 	ListWorkloadReleases(context.Context, *ListWorkloadReleasesRequest) (*ListWorkloadReleasesResponse, error)
 	RollbackWorkload(context.Context, *RollbackWorkloadRequest) (*RollbackWorkloadResponse, error)
 	RevealWorkloadEnv(context.Context, *RevealWorkloadEnvRequest) (*RevealWorkloadEnvResponse, error)
+	BackupWorkloadVolume(context.Context, *BackupWorkloadVolumeRequest) (*BackupWorkloadVolumeResponse, error)
+	DeleteWorkloadVolume(context.Context, *DeleteWorkloadVolumeRequest) (*DeleteWorkloadVolumeResponse, error)
 	mustEmbedUnimplementedWorkloadServiceServer()
 }
 
@@ -320,6 +346,12 @@ func (UnimplementedWorkloadServiceServer) RollbackWorkload(context.Context, *Rol
 }
 func (UnimplementedWorkloadServiceServer) RevealWorkloadEnv(context.Context, *RevealWorkloadEnvRequest) (*RevealWorkloadEnvResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevealWorkloadEnv not implemented")
+}
+func (UnimplementedWorkloadServiceServer) BackupWorkloadVolume(context.Context, *BackupWorkloadVolumeRequest) (*BackupWorkloadVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BackupWorkloadVolume not implemented")
+}
+func (UnimplementedWorkloadServiceServer) DeleteWorkloadVolume(context.Context, *DeleteWorkloadVolumeRequest) (*DeleteWorkloadVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteWorkloadVolume not implemented")
 }
 func (UnimplementedWorkloadServiceServer) mustEmbedUnimplementedWorkloadServiceServer() {}
 func (UnimplementedWorkloadServiceServer) testEmbeddedByValue()                         {}
@@ -648,6 +680,42 @@ func _WorkloadService_RevealWorkloadEnv_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkloadService_BackupWorkloadVolume_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BackupWorkloadVolumeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).BackupWorkloadVolume(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_BackupWorkloadVolume_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).BackupWorkloadVolume(ctx, req.(*BackupWorkloadVolumeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_DeleteWorkloadVolume_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteWorkloadVolumeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).DeleteWorkloadVolume(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_DeleteWorkloadVolume_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).DeleteWorkloadVolume(ctx, req.(*DeleteWorkloadVolumeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WorkloadService_ServiceDesc is the grpc.ServiceDesc for WorkloadService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -722,6 +790,14 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevealWorkloadEnv",
 			Handler:    _WorkloadService_RevealWorkloadEnv_Handler,
+		},
+		{
+			MethodName: "BackupWorkloadVolume",
+			Handler:    _WorkloadService_BackupWorkloadVolume_Handler,
+		},
+		{
+			MethodName: "DeleteWorkloadVolume",
+			Handler:    _WorkloadService_DeleteWorkloadVolume_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

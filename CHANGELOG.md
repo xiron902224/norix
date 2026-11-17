@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- Persistent named volumes for workloads: declare mounts, sticky node placement, drain warnings, Backup/Delete API + UI, docs EN/ES (#16)
+
 ### Fixed
 - Agent node tokens can be rotated (heartbeat delivery) and revoked from UI/API; optional mTLS fingerprint (#13)
 - Git SSRF: validate clone URLs (https/ssh only; block private/metadata ranges; `NORIX_GIT_SSRF_ALLOWLIST`) (#4)

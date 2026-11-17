@@ -67,7 +67,7 @@ We label every capability so nobody has to guess. Source: repository audit of 20
 | Micro-VM (Firecracker) | Planned | Enum only |
 | App rollbacks / release history | Planned | |
 | Rolling / zero-downtime updates | Planned | Update is currently stop → start |
-| Persistent volumes for apps | Planned | |
+| Persistent volumes for apps | Beta | Named Docker mounts, sticky node, backup/delete (#16) |
 | Buildpacks / build without a Dockerfile | Planned | |
 | One-click app catalog | Planned | |
 | CLI | Experimental | `health`, `login`, `projects`; `deploy` is a stub |
