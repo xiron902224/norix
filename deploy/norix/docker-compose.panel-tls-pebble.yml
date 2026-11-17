@@ -1,0 +1,22 @@
+# Pebble CA sidecar for panel TLS lab (#26).
+# Combine with docker-compose.prod.yml + docker-compose.panel-tls.yml.
+# Mount Caddyfile.panel-pebble and a Pebble root CA when running full ACME labs.
+
+services:
+  pebble:
+    image: ghcr.io/letsencrypt/pebble:latest
+    command: ["-config", "/test/config/pebble-config.json", "-strict"]
+    environment:
+      PEBBLE_VA_ALWAYS_VALID: "1"
+    ports:
+      - "127.0.0.1:14000:14000"
+    networks: [norix]
+
+  panel-caddy:
+    environment:
+      NORIX_ACME_CA: https://pebble:14000/dir
+    volumes:
+      - ./Caddyfile.panel-pebble:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - control-plane
+      - pebble

@@ -1,0 +1,14 @@
+# Panel TLS against Pebble (#26 lab). PEBBLE_VA_ALWAYS_VALID=1 skips real HTTP-01.
+# For stricter labs, mount pebble.minica.pem and set acme_ca_root.
+{
+	email {$NORIX_ACME_EMAIL}
+	acme_ca {$NORIX_ACME_CA}
+}
+
+{$NORIX_PANEL_DOMAIN} {
+	encode gzip
+	reverse_proxy control-plane:8080 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}

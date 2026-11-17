@@ -1,0 +1,42 @@
+# Panel HTTPS via Caddy (#26).
+# Usage (with prod stack):
+#   NORIX_PANEL_DOMAIN=norix.example.com NORIX_ACME_EMAIL=ops@example.com \
+#   docker compose --env-file .env \
+#     -f deploy/norix/docker-compose.prod.yml \
+#     -f deploy/norix/docker-compose.panel-tls.yml up -d
+#
+# Lab / Pebble:
+#   NORIX_ACME_CA=https://pebble:14000/dir (and include lab pebble service or
+#   docker-compose.panel-tls-pebble.yml).
+
+services:
+  control-plane:
+    environment:
+      NORIX_PUBLIC_URL: ${NORIX_PUBLIC_URL:-https://${NORIX_PANEL_DOMAIN}}
+      NORIX_WEB_ORIGIN: ${NORIX_WEB_ORIGIN:-https://${NORIX_PANEL_DOMAIN}}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://${NORIX_PANEL_DOMAIN}}
+      # Prefer TLS path for bootstrap once panel HTTPS is up.
+      NORIX_ALLOW_INSECURE_BOOTSTRAP: ${NORIX_ALLOW_INSECURE_BOOTSTRAP:-0}
+
+  panel-caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - control-plane
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NORIX_PANEL_DOMAIN: ${NORIX_PANEL_DOMAIN:?set NORIX_PANEL_DOMAIN}
+      NORIX_ACME_EMAIL: ${NORIX_ACME_EMAIL:-admin@localhost}
+      # Empty string → Caddy default LE. Set for Pebble / staging.
+      NORIX_ACME_CA: ${NORIX_ACME_CA:-}
+    volumes:
+      - ./Caddyfile.panel:/etc/caddy/Caddyfile:ro
+      - norix_panel_caddy_data:/data
+      - norix_panel_caddy_config:/config
+    networks: [norix]
+
+volumes:
+  norix_panel_caddy_data:
+  norix_panel_caddy_config:

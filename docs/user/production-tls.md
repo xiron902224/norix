@@ -34,7 +34,24 @@ Wait for propagation before requesting certificates.
 
 ## 3. Certificates for the panel
 
-### Option A — reverse proxy (recommended)
+### Option A — installer panel Caddy (HTTP-01) (#26)
+
+Point DNS `A/AAAA` for the panel hostname at the VPS, open **:80** and **:443**, then:
+
+```bash
+curl -fsSL …/get-norix.sh | bash -s -- \
+  --panel-domain norix.example.com \
+  --acme-email ops@example.com
+```
+
+This adds `deploy/norix/docker-compose.panel-tls.yml` (Caddy → `control-plane:8080`), sets
+`NORIX_PUBLIC_URL` / CORS to `https://…`, and clears insecure bootstrap once TLS is intended.
+Certificates come from Let’s Encrypt via **HTTP-01**.
+
+Lab / Pebble: set `NORIX_ACME_CA=https://pebble:14000/dir` and also `-f docker-compose.panel-tls-pebble.yml`.
+Smoke: `scripts/test-panel-tls-pebble.sh`.
+
+### Option B — reverse proxy you manage
 
 Bind the control plane locally and terminate TLS on Caddy/nginx.
 
@@ -55,15 +72,15 @@ norix.example.com {
 
 Issue Let’s Encrypt via the proxy’s ACME (HTTP-01 on :80 or DNS-01).
 
-### Option B — Docker Compose edge profile
+### Option C — Docker Compose edge profile (apps)
 
-Lab Compose may use **Pebble** (fake CA). For production, remove Pebble and use a real CA / external proxy. See [`BETA1_3NODE_INSTALL.md`](../runbooks/BETA1_3NODE_INSTALL.md).
+Lab Compose may use **Pebble** (fake CA) for the **app** edge. For production app domains, use a real CA / DNS-01 (`NORIX_ACME_DNS_PROVIDER` + `NORIX_ACME_EMAIL`). See [`BETA1_3NODE_INSTALL.md`](../runbooks/BETA1_3NODE_INSTALL.md).
 
 ### Docker mode checklist
 
-1. Install with `get-norix.sh` (default Docker).
-2. Point DNS at the host.
-3. Put Caddy/nginx (or a cloud LB) in front of `NORIX_HTTP_PORT` (default `8000`) **or** set `HTTP_ADDR` to localhost and proxy only.
+1. Install with `get-norix.sh` (prefer `--panel-domain` + `--acme-email`).
+2. Point DNS at the host; open 80/443.
+3. Or put your own Caddy/nginx in front of `NORIX_HTTP_PORT` (default `8000`).
 4. Open `https://norix.example.com` — cookie / CORS origins must match HTTPS.
 
 ### Bare mode checklist

@@ -21,6 +21,9 @@
 #   NORIX_DATA            data root (default: /data/norix)
 #   NORIX_HTTP_PORT       panel port (default: 8000; also --port)
 #   NORIX_PUBLIC_URL      public URL (also --public-url)
+#   NORIX_PANEL_DOMAIN    enable panel Caddy HTTPS (also --panel-domain) (#26)
+#   NORIX_ACME_EMAIL      ACME account email (also --acme-email)
+#   NORIX_ACME_CA         optional ACME directory (Pebble/staging)
 #   NORIX_SKIP_DOCKER     if 1, do not install Docker in docker mode
 #   NORIX_PULL_POLICY     build|missing|always (docker mode)
 #   NORIX_VERSION         release tag for bare binary (default: VERSION file / ref)
@@ -44,6 +47,9 @@ NORIX_GITHUB_RAW="${NORIX_GITHUB_RAW:-https://raw.githubusercontent.com/xiron902
 NORIX_GITHUB_REPO="${NORIX_GITHUB_REPO:-xiron902224/norix}"
 NORIX_MIN_RAM_MB="${NORIX_MIN_RAM_MB:-900}"
 NORIX_YES="${NORIX_YES:-0}"
+NORIX_PANEL_DOMAIN="${NORIX_PANEL_DOMAIN:-}"
+NORIX_ACME_EMAIL="${NORIX_ACME_EMAIL:-}"
+NORIX_ACME_CA="${NORIX_ACME_CA:-}"
 NORIX_SKIP_COSIGN="${NORIX_SKIP_COSIGN:-0}"
 NORIX_COSIGN_OIDC_ISSUER="${NORIX_COSIGN_OIDC_ISSUER:-https://token.actions.githubusercontent.com}"
 # Keyless Sigstore identity for artifacts signed by this repo's release.yml.
@@ -81,11 +87,14 @@ Options:
                          none → nohup (labs / containers without systemd)
   --port N               HTTP port (default: 8000)
   --public-url URL       Public UI/API URL
+  --panel-domain HOST    Put Caddy in front of the panel with ACME HTTPS (#26)
+  --acme-email EMAIL     ACME account email (required with --panel-domain)
   --yes                  Non-interactive (reserved; always noninteractive today)
   -h, --help             Show this help
 
 Examples:
   curl -fsSL …/get-norix.sh | bash
+  curl -fsSL …/get-norix.sh | bash -s -- --panel-domain norix.example.com --acme-email ops@example.com
   curl -fsSL …/get-norix.sh | NORIX_REF=v1.0.0-beta.5 bash -s -- --mode bare
   curl -fsSL …/get-norix.sh | bash -s -- --mode bare --supervise none --port 8000
 EOF
@@ -130,6 +139,24 @@ while [[ $# -gt 0 ]]; do
       NORIX_PUBLIC_URL="${1#--public-url=}"
       shift
       ;;
+    --panel-domain)
+      NORIX_PANEL_DOMAIN="${2:-}"
+      [[ -n "${NORIX_PANEL_DOMAIN}" ]] || die "--panel-domain requires a hostname"
+      shift 2
+      ;;
+    --panel-domain=*)
+      NORIX_PANEL_DOMAIN="${1#--panel-domain=}"
+      shift
+      ;;
+    --acme-email)
+      NORIX_ACME_EMAIL="${2:-}"
+      [[ -n "${NORIX_ACME_EMAIL}" ]] || die "--acme-email requires a value"
+      shift 2
+      ;;
+    --acme-email=*)
+      NORIX_ACME_EMAIL="${1#--acme-email=}"
+      shift
+      ;;
     --yes|-y)
       NORIX_YES=1
       shift
@@ -139,6 +166,13 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "${NORIX_PANEL_DOMAIN}" && -z "${NORIX_ACME_EMAIL}" ]]; then
+  die "--panel-domain requires --acme-email (ACME account)"
+fi
+if [[ -n "${NORIX_PANEL_DOMAIN}" && -z "${NORIX_PUBLIC_URL:-}" ]]; then
+  NORIX_PUBLIC_URL="https://${NORIX_PANEL_DOMAIN}"
+fi
 
 case "$NORIX_MODE" in
   docker|bare) ;;
@@ -471,6 +505,18 @@ NORIX_INSTALL_MODE=docker
 # first-admin bootstrap over HTTP until you put TLS in front, then remove this.
 NORIX_ALLOW_INSECURE_BOOTSTRAP=1
 EOF
+  if [[ -n "${NORIX_PANEL_DOMAIN}" ]]; then
+    cat >>"$ENV_FILE" <<EOF
+NORIX_PANEL_DOMAIN=${NORIX_PANEL_DOMAIN}
+NORIX_ACME_EMAIL=${NORIX_ACME_EMAIL}
+NORIX_ACME_CA=${NORIX_ACME_CA}
+NORIX_PUBLIC_URL=https://${NORIX_PANEL_DOMAIN}
+NORIX_WEB_ORIGIN=https://${NORIX_PANEL_DOMAIN}
+CORS_ALLOWED_ORIGINS=https://${NORIX_PANEL_DOMAIN}
+# Panel Caddy terminates TLS — prefer secure bootstrap.
+NORIX_ALLOW_INSECURE_BOOTSTRAP=0
+EOF
+  fi
   chmod 600 "$ENV_FILE"
   ok "Wrote $ENV_FILE"
 }
@@ -479,7 +525,13 @@ start_stack_docker() {
   [[ -f "$SOURCE_DIR/$COMPOSE_FILE" ]] || die "missing $SOURCE_DIR/$COMPOSE_FILE"
   cd "$SOURCE_DIR"
   log "Building and starting Norix (first run may take several minutes)…"
-  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --build
+  local compose_args=(-f "$COMPOSE_FILE")
+  if [[ -n "${NORIX_PANEL_DOMAIN}" ]] || grep -q '^NORIX_PANEL_DOMAIN=.\+' "$ENV_FILE" 2>/dev/null; then
+    [[ -f deploy/norix/docker-compose.panel-tls.yml ]] || die "missing panel-tls compose overlay"
+    compose_args+=(-f deploy/norix/docker-compose.panel-tls.yml)
+    log "Panel TLS enabled (Caddy + ACME for ${NORIX_PANEL_DOMAIN:-$(grep NORIX_PANEL_DOMAIN "$ENV_FILE" | cut -d= -f2-)})"
+  fi
+  docker compose --env-file "$ENV_FILE" "${compose_args[@]}" up -d --build
   ok "Compose is up"
 }
 

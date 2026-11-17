@@ -1,0 +1,12 @@
+# Panel TLS terminator (#26) — Let's Encrypt HTTP-01 by default.
+{
+	email {$NORIX_ACME_EMAIL}
+}
+
+{$NORIX_PANEL_DOMAIN} {
+	encode gzip
+	reverse_proxy control-plane:8080 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}

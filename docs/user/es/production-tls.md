@@ -7,9 +7,12 @@ Guía completa (EN): [`../production-tls.md`](../production-tls.md).
 Resumen:
 
 1. Elige `norix.ejemplo.com` (panel) y hostnames de apps.
-2. DNS A/AAAA → VPS / edge.
-3. Pon Caddy/nginx delante del CP (`HTTP_ADDR=127.0.0.1:…`) con Let’s Encrypt.
-4. Alinea `NORIX_PUBLIC_URL` / `NORIX_WEB_ORIGIN` / CORS con `https://…`.
-5. Dominios de apps en el dashboard + ACME edge o TLS en tu proxy.
+2. DNS A/AAAA → VPS / edge; abre **:80** y **:443**.
+3. Instalador con panel HTTPS (#26):
+   `get-norix.sh --panel-domain norix.ejemplo.com --acme-email ops@ejemplo.com`
+   (Caddy + ACME HTTP-01 vía `docker-compose.panel-tls.yml`).
+4. O pon tu propio Caddy/nginx delante del CP (`HTTP_ADDR=127.0.0.1:…`).
+5. Alinea `NORIX_PUBLIC_URL` / `NORIX_WEB_ORIGIN` / CORS con `https://…`.
+6. Dominios de apps en el dashboard + ACME edge (HTTP-01 o DNS-01).
 
-Verifica: `curl -sfI https://norix.ejemplo.com/healthz`.
+Lab Pebble: `scripts/test-panel-tls-pebble.sh`. Verifica: `curl -sfI https://norix.ejemplo.com/healthz`.
