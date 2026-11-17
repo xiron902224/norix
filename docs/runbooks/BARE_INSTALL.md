@@ -38,7 +38,7 @@ bash -s -- --mode bare --port 8000 --public-url https://norix.example.com
 2. Clona/sync del repo en `/data/norix/source`
 3. Instala/arranca PostgreSQL
 4. Crea DB `norix` + roles `norix` / `norix_app` (idempotente, sin depender de `sudo`)
-5. Descarga el binario del release y verifica **SHA256SUMS** (no compila)
+5. Descarga el binario del release y verifica **SHA256SUMS** (+ **cosign** si el release trae `.cosign.bundle`; no compila)
 6. Escribe `/etc/norix/control-plane.env` (se conserva en re-runs)
 7. Activa `norix-control-plane.service` **o** nohup si `--supervise none`
 8. Espera `http://127.0.0.1:8000/healthz` y escribe `/var/lib/norix/install-state.json`
@@ -70,7 +70,7 @@ NORIX_SKIP_CHECKSUM=1 \
   bash get-norix.sh --mode bare --supervise none
 ```
 
-(En VPS normal el one-liner descarga el asset y verifica SHA256SUMS; no uses `NORIX_SKIP_CHECKSUM` en producción.)
+(En VPS normal el one-liner descarga el asset, verifica SHA256SUMS y cosign si hay bundle; no uses `NORIX_SKIP_CHECKSUM` / `NORIX_SKIP_COSIGN` en producción.)
 
 ## Proceso manual (sin el script)
 
@@ -95,11 +95,22 @@ DB gestionada (RDS, Neon, etc.): solo necesitas dos URLs con SSL según el prove
 ```bash
 TAG=v1.0.0-beta.5
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/norix-control-plane-linux-${ARCH}"
+ASSET="norix-control-plane-linux-${ARCH}"
+curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/${ASSET}"
 curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/SHA256SUMS"
+curl -fsSL -O "https://github.com/xiron902224/norix/releases/download/${TAG}/${ASSET}.cosign.bundle" || true
 sha256sum -c SHA256SUMS --ignore-missing
-sudo install -m 755 "norix-control-plane-linux-${ARCH}" /usr/local/bin/norix-control-plane
+if [[ -f "${ASSET}.cosign.bundle" ]]; then
+  cosign verify-blob \
+    --bundle "${ASSET}.cosign.bundle" \
+    --certificate-identity-regexp 'https://github.com/xiron902224/norix/\.github/workflows/release\.yml@.*' \
+    --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+    "${ASSET}"
+fi
+sudo install -m 755 "${ASSET}" /usr/local/bin/norix-control-plane
 ```
+
+Flujo “bajar → verificar → ejecutar” también en [`README.md`](../../README.md#verify-release-binaries-download--verify--run) / [`README.es.md`](../../README.es.md#verificar-binarios-del-release-bajar--verificar--ejecutar).
 
 ### 3. Env + usuario
 

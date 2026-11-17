@@ -16,6 +16,9 @@ NORIX_VERSION="${NORIX_VERSION:-}"
 NORIX_GITHUB_REPO="${NORIX_GITHUB_REPO:-xiron902224/norix}"
 NORIX_SHA256SUMS="${NORIX_SHA256SUMS:-}"
 NORIX_AGENT_ASSET_URL="${NORIX_AGENT_ASSET_URL:-}"
+NORIX_SKIP_COSIGN="${NORIX_SKIP_COSIGN:-0}"
+NORIX_COSIGN_IDENTITY_REGEXP="${NORIX_COSIGN_IDENTITY_REGEXP:-https://github.com/${NORIX_GITHUB_REPO}/\\.github/workflows/release\\.yml@.*}"
+NORIX_COSIGN_OIDC_ISSUER="${NORIX_COSIGN_OIDC_ISSUER:-https://token.actions.githubusercontent.com}"
 # When piped via curl|bash, BASH_SOURCE may be unset under `set -u`.
 REPO_ROOT=""
 if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
@@ -34,11 +37,12 @@ Options:
   --workdir PATH        Agent state directory (default: /var/lib/norix-agent)
   --install-dir PATH    Binary install directory (default: /usr/local/bin)
   --from-source         Build with cargo from this repository
-  --version TAG         Download release binary for TAG (e.g. v1.0.0-beta.5); verifies SHA256SUMS
+  --version TAG         Download release binary for TAG (e.g. v1.0.0-beta.5); verifies SHA256SUMS (+ cosign when bundle exists)
   --update              In-place upgrade: reuse agent.env / node-state (join token optional)
   --sums PATH|URL       SHA256SUMS file or URL (default: GitHub release asset for --version)
   --asset-url URL       Direct URL to norix-agent-linux-{amd64,arm64} binary
-  --skip-verify         Skip SHA256SUMS verification (not recommended)
+  --skip-verify         Skip SHA256SUMS and cosign verification (not recommended)
+  --skip-cosign         Skip cosign only (SHA256 still required)
   --supervise MODE      auto|systemd|none (default: auto)
                         auto → systemd when PID 1 is systemd, else nohup (labs/containers)
                         systemd → require systemd unit
@@ -48,7 +52,8 @@ Options:
   -h, --help            Show help
 
 Env:
-  NORIX_VERSION, NORIX_GITHUB_REPO, NORIX_SHA256SUMS, NORIX_AGENT_ASSET_URL, NORIX_SUPERVISE
+  NORIX_VERSION, NORIX_GITHUB_REPO, NORIX_SHA256SUMS, NORIX_AGENT_ASSET_URL, NORIX_SUPERVISE,
+  NORIX_SKIP_COSIGN, NORIX_COSIGN_IDENTITY_REGEXP, NORIX_COSIGN_OIDC_ISSUER
 
 Update (same host, keep enrollment):
   install-agent.sh --update --version v1.0.0-beta.5
@@ -169,6 +174,44 @@ verify_agent_checksum() {
   echo "verified ${asset_name} sha256=${got}"
 }
 
+verify_agent_cosign() {
+  local binary_path="$1" asset_name="$2"
+  [[ "$SKIP_VERIFY" -eq 1 ]] && return 0
+  if [[ "${NORIX_SKIP_COSIGN}" == "1" ]]; then
+    echo "warn: skipping cosign verification (NORIX_SKIP_COSIGN=1 / --skip-cosign)" >&2
+    return 0
+  fi
+
+  local tag bundle_url bundle
+  tag="$(resolve_version_tag)"
+  bundle_url="https://github.com/${NORIX_GITHUB_REPO}/releases/download/${tag}/${asset_name}.cosign.bundle"
+  bundle="$(mktemp)"
+  if ! curl -fsSL --connect-timeout 15 --max-time 120 -o "$bundle" "$bundle_url"; then
+    rm -f "$bundle"
+    echo "warn: no cosign bundle for ${asset_name} — continuing with SHA256 only" >&2
+    return 0
+  fi
+
+  command -v cosign >/dev/null 2>&1 || {
+    rm -f "$bundle"
+    die "cosign bundle present for ${asset_name} but cosign is not installed.
+  Install: https://docs.sigstore.dev/cosign/system_config/installation/
+  Or re-run with --skip-cosign / NORIX_SKIP_COSIGN=1 (labs only)."
+  }
+
+  echo "verifying cosign bundle for ${asset_name}"
+  if ! cosign verify-blob \
+    --bundle "$bundle" \
+    --certificate-identity-regexp "${NORIX_COSIGN_IDENTITY_REGEXP}" \
+    --certificate-oidc-issuer "${NORIX_COSIGN_OIDC_ISSUER}" \
+    "$binary_path"; then
+    rm -f "$bundle"
+    die "cosign verification failed for ${asset_name} — refusing to install"
+  fi
+  rm -f "$bundle"
+  echo "verified ${asset_name} cosign OK"
+}
+
 download_release_agent() {
   local arch asset_name url dest
   arch="$(detect_arch)"
@@ -184,6 +227,7 @@ download_release_agent() {
   echo "downloading ${url}"
   fetch_to "$url" "$dest"
   verify_agent_checksum "$dest" "$asset_name"
+  verify_agent_cosign "$dest" "$asset_name"
   install -m 0755 "$dest" "$INSTALL_DIR/norix-agent"
   rm -f "$dest"
 }
@@ -201,6 +245,7 @@ while [[ $# -gt 0 ]]; do
     --sums) NORIX_SHA256SUMS="$2"; shift 2 ;;
     --asset-url) NORIX_AGENT_ASSET_URL="$2"; shift 2 ;;
     --skip-verify) SKIP_VERIFY=1; shift ;;
+    --skip-cosign) NORIX_SKIP_COSIGN=1; shift ;;
     --supervise)
       NORIX_SUPERVISE="${2:-}"
       [[ -n "$NORIX_SUPERVISE" ]] || die "--supervise requires auto|systemd|none"

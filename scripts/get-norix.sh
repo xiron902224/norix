@@ -27,6 +27,8 @@
 #   NORIX_MIN_RAM_MB      bare preflight soft warning threshold (default: 900)
 #   NORIX_BINARY_FILE     local path to norix-control-plane binary (skip download)
 #   NORIX_SKIP_CHECKSUM   if 1, skip SHA256 when using NORIX_BINARY_FILE only
+#   NORIX_SKIP_COSIGN     if 1, skip cosign verify when a .cosign.bundle is present
+#   NORIX_COSIGN_IDENTITY_REGEXP  override certificate identity regexp (keyless)
 
 set -euo pipefail
 
@@ -42,6 +44,10 @@ NORIX_GITHUB_RAW="${NORIX_GITHUB_RAW:-https://raw.githubusercontent.com/xiron902
 NORIX_GITHUB_REPO="${NORIX_GITHUB_REPO:-xiron902224/norix}"
 NORIX_MIN_RAM_MB="${NORIX_MIN_RAM_MB:-900}"
 NORIX_YES="${NORIX_YES:-0}"
+NORIX_SKIP_COSIGN="${NORIX_SKIP_COSIGN:-0}"
+NORIX_COSIGN_OIDC_ISSUER="${NORIX_COSIGN_OIDC_ISSUER:-https://token.actions.githubusercontent.com}"
+# Keyless Sigstore identity for artifacts signed by this repo's release.yml.
+NORIX_COSIGN_IDENTITY_REGEXP="${NORIX_COSIGN_IDENTITY_REGEXP:-https://github.com/${NORIX_GITHUB_REPO}/\\.github/workflows/release\\.yml@.*}"
 
 SOURCE_DIR="${NORIX_DATA}/source"
 ENV_FILE="${SOURCE_DIR}/.env"
@@ -584,15 +590,56 @@ curl_retry() {
   curl -fsSL --connect-timeout 15 --max-time 300 --retry 5 --retry-delay 2 --retry-all-errors "$@"
 }
 
+# Verify a Sigstore cosign bundle when present (fail-closed). SHA256 is checked separately.
+verify_cosign_bundle() {
+  local binary_path="$1" asset_name="$2" bundle_url="$3" bundle_path="$4"
+  if [[ "${NORIX_SKIP_COSIGN}" == "1" ]]; then
+    warn "Skipping cosign verification (NORIX_SKIP_COSIGN=1)"
+    return 0
+  fi
+
+  local fetched=0
+  if [[ -n "$bundle_path" && -f "$bundle_path" && -s "$bundle_path" ]]; then
+    fetched=1
+  elif [[ -n "$bundle_url" ]]; then
+    if curl_retry -o "${bundle_path}" "$bundle_url" 2>/dev/null; then
+      fetched=1
+    else
+      rm -f "${bundle_path}"
+      warn "No cosign bundle for ${asset_name} — continuing with SHA256 only"
+      return 0
+    fi
+  else
+    warn "No cosign bundle URL for ${asset_name} — continuing with SHA256 only"
+    return 0
+  fi
+
+  [[ "$fetched" -eq 1 ]] || return 0
+  command -v cosign >/dev/null 2>&1 || die "cosign bundle present for ${asset_name} but cosign is not installed.
+  Install: https://docs.sigstore.dev/cosign/system_config/installation/
+  Or re-run with NORIX_SKIP_COSIGN=1 (labs only; not for production)."
+
+  log "Verifying cosign bundle for ${asset_name}"
+  if ! cosign verify-blob \
+    --bundle "$bundle_path" \
+    --certificate-identity-regexp "${NORIX_COSIGN_IDENTITY_REGEXP}" \
+    --certificate-oidc-issuer "${NORIX_COSIGN_OIDC_ISSUER}" \
+    "$binary_path"; then
+    die "cosign verification failed for ${asset_name} — refusing to install"
+  fi
+  ok "Cosign OK (${asset_name})"
+}
+
 install_control_plane_binary_bare() {
   step "Control-plane binary"
-  local arch tag asset url sums_url tmpdir dest expected actual src
+  local arch tag asset url sums_url bundle_url tmpdir dest expected actual src
   arch="$(detect_arch)"
   tag="$(resolve_version_tag)"
   asset="norix-control-plane-linux-${arch}"
   dest="/usr/local/bin/norix-control-plane"
   url="https://github.com/${NORIX_GITHUB_REPO}/releases/download/${tag}/${asset}"
   sums_url="https://github.com/${NORIX_GITHUB_REPO}/releases/download/${tag}/SHA256SUMS"
+  bundle_url="https://github.com/${NORIX_GITHUB_REPO}/releases/download/${tag}/${asset}.cosign.bundle"
 
   tmpdir="$(mktemp -d)"
   # shellcheck disable=SC2064
@@ -632,6 +679,17 @@ install_control_plane_binary_bare() {
   actual:   ${actual}"
     fi
     ok "Checksum OK (${actual:0:12}…)"
+  fi
+
+  # Cosign when the release published a bundle (fail-closed if present + cosign fails).
+  if [[ "${NORIX_SKIP_CHECKSUM:-0}" == "1" && -n "${NORIX_BINARY_FILE:-}" ]]; then
+    :
+  else
+    verify_cosign_bundle \
+      "${tmpdir}/${asset}" \
+      "$asset" \
+      "$bundle_url" \
+      "${tmpdir}/${asset}.cosign.bundle"
   fi
 
   install -m 755 "${tmpdir}/${asset}" "$dest"
