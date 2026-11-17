@@ -12,6 +12,10 @@ Report vulnerabilities **privately** to the maintainers. Do not open public issu
 | 1.0.x (GA) | Yes, once released |
 | < 1.0 / alpha | Best effort |
 
+## Workload environment variables
+
+`workloads.env_vars` are stored as an AES-256-GCM envelope (`NORIX_BUILD_SECRETS_KEY`). List/get API responses mask values (`********`). Plaintext is decrypted only when building desired state for agents/local runtime. Legacy plaintext rows are re-encrypted at control-plane startup.
+
 ## First-admin bootstrap
 
 `CreateInitialAdmin` requires a **loopback** client, **HTTPS** (trusted loopback proxy + `X-Forwarded-Proto`), or explicit `NORIX_ALLOW_INSECURE_BOOTSTRAP=1`. Docker one-click sets the opt-in for published ports; remove it after TLS. See [getting started](docs/user/getting-started.md) / [ES](docs/user/es/getting-started.md).

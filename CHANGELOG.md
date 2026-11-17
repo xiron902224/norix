@@ -6,6 +6,7 @@
 - Git SSRF: validate clone URLs (https/ssh only; block private/metadata ranges; `NORIX_GIT_SSRF_ALLOWLIST`) (#4)
 - Control plane no longer panics on legacy AES-GCM `dev-nonce` network secrets
 - First-admin bootstrap blocked on plain HTTP from non-loopback unless `NORIX_ALLOW_INSECURE_BOOTSTRAP=1` (#6)
+- Workload `env_vars` encrypted at rest (AES-GCM); API masks values; startup backfill for legacy plaintext (#8)
 
 ### Added
 - Installer/agent verify cosign bundles when present on GitHub Releases; README EN/ES download → verify → run (#5)
@@ -16,6 +17,7 @@
 - Docs: bare/agent integrity notes (EN + ES), `SECURITY.md` installer section (#5)
 - Docs EN/ES: getting-started + production-tls bootstrap rules (#6)
 - Docker one-click writes `NORIX_ALLOW_INSECURE_BOOTSTRAP=1` (remove after TLS) (#6)
+- Docs EN/ES: workload env encryption + key rotation (projects-workloads, S7 ops, ADR-003, SECURITY) (#8)
 
 ## 1.0.0-beta.5 — 2026-11-16
 

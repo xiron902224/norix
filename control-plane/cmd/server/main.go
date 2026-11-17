@@ -166,6 +166,13 @@ func main() {
 		authService = api.NewAuthService(appPool, bootstrapPool)
 		logger.Info("database connected")
 
+		if n, err := norixdb.BackfillEncryptWorkloadEnvs(ctx, bootstrapPool); err != nil {
+			logger.Error("workload env encryption backfill failed", "error", err)
+			os.Exit(1)
+		} else if n > 0 {
+			logger.Info("encrypted legacy plaintext workload env_vars", "rows", n)
+		}
+
 		backgroundCtx, cancelBackground := context.WithCancel(context.Background())
 		defer cancelBackground()
 

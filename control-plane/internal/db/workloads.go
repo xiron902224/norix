@@ -94,6 +94,10 @@ func CreateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 	if RequireKVMForRuntime(workload.Runtime) {
 		workload.RequireKVM = true
 	}
+	envJSON, err := encodeEnvironmentJSON(workload.Environment)
+	if err != nil {
+		return Workload{}, err
+	}
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return Workload{}, err
@@ -115,7 +119,7 @@ func CreateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 		          source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
 		          replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text`,
 		tenantID, workload.ProjectID, workload.Name, workload.Runtime, workload.ImageOrSource,
-		mapToJSON(workload.Environment), workload.CPUShares, workload.MemoryLimitMB, workload.Domain, workload.ContainerPort,
+		envJSON, workload.CPUShares, workload.MemoryLimitMB, workload.Domain, workload.ContainerPort,
 		workload.SourceKind, workload.GitURL, workload.GitRef, workload.DockerfilePath,
 		workload.ReplicaCount, workload.ScheduleStrategy, workload.RequireKVM, workload.PreferredZone,
 		encodeLabels(workload.AffinityLabels), encodeLabels(workload.AntiAffinityLabels),
@@ -196,7 +200,11 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 		); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal([]byte(environmentText), &workload.Environment)
+		env, envErr := decodeEnvironmentJSON(environmentText)
+		if envErr != nil {
+			return nil, envErr
+		}
+		workload.Environment = env
 		workload.AffinityLabels = decodeLabels([]byte(affinityText))
 		workload.AntiAffinityLabels = decodeLabels([]byte(antiText))
 		result = append(result, workload)
@@ -349,6 +357,10 @@ func UpdateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 	if strings.TrimSpace(workload.PreferredZone) == "" {
 		workload.PreferredZone = "default"
 	}
+	envJSON, err := encodeEnvironmentJSON(workload.Environment)
+	if err != nil {
+		return Workload{}, err
+	}
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return Workload{}, err
@@ -370,7 +382,7 @@ func UpdateWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID string, wo
 		 COALESCE(assigned_node_id::text, ''), container_id, last_error, desired_action,
 		 source_kind, git_url, git_ref, dockerfile_path, COALESCE(latest_build_id::text, ''),
 		 replica_count, schedule_strategy, require_kvm, preferred_zone, affinity_labels::text, anti_affinity_labels::text`,
-		workload.ID, workload.Name, workload.Runtime, workload.ImageOrSource, mapToJSON(workload.Environment),
+		workload.ID, workload.Name, workload.Runtime, workload.ImageOrSource, envJSON,
 		workload.CPUShares, workload.MemoryLimitMB, workload.Domain, workload.ContainerPort,
 		workload.ReplicaCount, workload.ScheduleStrategy, workload.RequireKVM, workload.PreferredZone,
 		encodeLabels(workload.AffinityLabels), encodeLabels(workload.AntiAffinityLabels), tenantID).Scan(
