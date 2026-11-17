@@ -15,6 +15,7 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 2. [Mapa del dashboard](./dashboard.md)
 3. [Proyectos y workloads](./projects-workloads.md)
 4. [Desplegar](./deploying.md)
+4b. [Historial de releases y rollback](./releases-rollback.md) — snapshots inmutables, restore en un clic
 5. [Nodos y agents](./nodes-agents.md)
 5b. [Socket Docker](./docker-socket.md) — quién monta `docker.sock`, proxy/rootless
 5c. [Autenticación del agent](./agent-auth.md) — rotar/revocar token, mTLS opcional

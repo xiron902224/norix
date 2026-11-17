@@ -225,6 +225,7 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 	if err := WithTenant(ctx, tx, organizationID); err != nil {
 		return err
 	}
+	failedWorkloadIDs := make([]string, 0)
 	for _, item := range observed {
 		status := strings.TrimSpace(item.Status)
 		if status == "" {
@@ -301,6 +302,9 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 					SELECT id FROM deployments WHERE workload_id = $1::uuid ORDER BY created_at DESC LIMIT 1
 				)`, workloadID, status)
 		}
+		if status == "failed" && workloadID != "" {
+			failedWorkloadIDs = append(failedWorkloadIDs, workloadID)
+		}
 		for _, line := range item.LogLines {
 			line = strings.TrimSpace(line)
 			if line == "" {
@@ -323,6 +327,15 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 		return err
 	}
 	_, _ = PurgeDeletingWorkloads(ctx, pool, organizationID)
+	if AutoRollbackEnabled() {
+		for _, workloadID := range failedWorkloadIDs {
+			prev, err := PreviousReleaseForAutoRollback(ctx, pool, organizationID, workloadID)
+			if err != nil {
+				continue
+			}
+			_, _, _, _ = RollbackWorkloadToRelease(ctx, pool, organizationID, prev.ID, AuditActor{}, "auto-rollback")
+		}
+	}
 	return nil
 }
 

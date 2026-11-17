@@ -33,6 +33,8 @@ const (
 	WorkloadService_AssignDomain_FullMethodName          = "/v1.WorkloadService/AssignDomain"
 	WorkloadService_ListDomains_FullMethodName           = "/v1.WorkloadService/ListDomains"
 	WorkloadService_UnassignDomain_FullMethodName        = "/v1.WorkloadService/UnassignDomain"
+	WorkloadService_ListWorkloadReleases_FullMethodName  = "/v1.WorkloadService/ListWorkloadReleases"
+	WorkloadService_RollbackWorkload_FullMethodName      = "/v1.WorkloadService/RollbackWorkload"
 )
 
 // WorkloadServiceClient is the client API for WorkloadService service.
@@ -53,6 +55,8 @@ type WorkloadServiceClient interface {
 	AssignDomain(ctx context.Context, in *AssignDomainRequest, opts ...grpc.CallOption) (*AssignDomainResponse, error)
 	ListDomains(ctx context.Context, in *ListDomainsRequest, opts ...grpc.CallOption) (*ListDomainsResponse, error)
 	UnassignDomain(ctx context.Context, in *UnassignDomainRequest, opts ...grpc.CallOption) (*UnassignDomainResponse, error)
+	ListWorkloadReleases(ctx context.Context, in *ListWorkloadReleasesRequest, opts ...grpc.CallOption) (*ListWorkloadReleasesResponse, error)
+	RollbackWorkload(ctx context.Context, in *RollbackWorkloadRequest, opts ...grpc.CallOption) (*RollbackWorkloadResponse, error)
 }
 
 type workloadServiceClient struct {
@@ -203,6 +207,26 @@ func (c *workloadServiceClient) UnassignDomain(ctx context.Context, in *Unassign
 	return out, nil
 }
 
+func (c *workloadServiceClient) ListWorkloadReleases(ctx context.Context, in *ListWorkloadReleasesRequest, opts ...grpc.CallOption) (*ListWorkloadReleasesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListWorkloadReleasesResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_ListWorkloadReleases_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) RollbackWorkload(ctx context.Context, in *RollbackWorkloadRequest, opts ...grpc.CallOption) (*RollbackWorkloadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RollbackWorkloadResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_RollbackWorkload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkloadServiceServer is the server API for WorkloadService service.
 // All implementations must embed UnimplementedWorkloadServiceServer
 // for forward compatibility.
@@ -221,6 +245,8 @@ type WorkloadServiceServer interface {
 	AssignDomain(context.Context, *AssignDomainRequest) (*AssignDomainResponse, error)
 	ListDomains(context.Context, *ListDomainsRequest) (*ListDomainsResponse, error)
 	UnassignDomain(context.Context, *UnassignDomainRequest) (*UnassignDomainResponse, error)
+	ListWorkloadReleases(context.Context, *ListWorkloadReleasesRequest) (*ListWorkloadReleasesResponse, error)
+	RollbackWorkload(context.Context, *RollbackWorkloadRequest) (*RollbackWorkloadResponse, error)
 	mustEmbedUnimplementedWorkloadServiceServer()
 }
 
@@ -272,6 +298,12 @@ func (UnimplementedWorkloadServiceServer) ListDomains(context.Context, *ListDoma
 }
 func (UnimplementedWorkloadServiceServer) UnassignDomain(context.Context, *UnassignDomainRequest) (*UnassignDomainResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UnassignDomain not implemented")
+}
+func (UnimplementedWorkloadServiceServer) ListWorkloadReleases(context.Context, *ListWorkloadReleasesRequest) (*ListWorkloadReleasesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListWorkloadReleases not implemented")
+}
+func (UnimplementedWorkloadServiceServer) RollbackWorkload(context.Context, *RollbackWorkloadRequest) (*RollbackWorkloadResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RollbackWorkload not implemented")
 }
 func (UnimplementedWorkloadServiceServer) mustEmbedUnimplementedWorkloadServiceServer() {}
 func (UnimplementedWorkloadServiceServer) testEmbeddedByValue()                         {}
@@ -546,6 +578,42 @@ func _WorkloadService_UnassignDomain_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkloadService_ListWorkloadReleases_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorkloadReleasesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).ListWorkloadReleases(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_ListWorkloadReleases_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).ListWorkloadReleases(ctx, req.(*ListWorkloadReleasesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_RollbackWorkload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RollbackWorkloadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).RollbackWorkload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_RollbackWorkload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).RollbackWorkload(ctx, req.(*RollbackWorkloadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WorkloadService_ServiceDesc is the grpc.ServiceDesc for WorkloadService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -608,6 +676,14 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnassignDomain",
 			Handler:    _WorkloadService_UnassignDomain_Handler,
+		},
+		{
+			MethodName: "ListWorkloadReleases",
+			Handler:    _WorkloadService_ListWorkloadReleases_Handler,
+		},
+		{
+			MethodName: "RollbackWorkload",
+			Handler:    _WorkloadService_RollbackWorkload_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

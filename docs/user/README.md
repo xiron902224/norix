@@ -16,6 +16,7 @@ Official documentation for **people who run apps on Norix** — after the contro
 2. [Dashboard overview](./dashboard.md) — navigation map
 3. [Projects & workloads](./projects-workloads.md)
 4. [Deploying](./deploying.md) — image, Git, Compose
+4b. [Release history & rollback](./releases-rollback.md) — immutable snapshots, one-click restore
 5. [Nodes & agents](./nodes-agents.md) — workers, join tokens, updates
 5b. [Docker socket](./docker-socket.md) — who mounts `docker.sock`, proxy/rootless
 5c. [Agent authentication](./agent-auth.md) — rotate/revoke node token, optional mTLS

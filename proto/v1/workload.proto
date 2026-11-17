@@ -231,6 +231,44 @@ message UnassignDomainRequest {
 
 message UnassignDomainResponse {}
 
+// Immutable deploy snapshot for rollback (#14).
+message WorkloadRelease {
+  string id = 1;
+  string workload_id = 2;
+  string deployment_id = 3;
+  int64 generation = 4;
+  string image_or_source = 5;
+  string image_digest = 6;
+  map<string, string> env_vars = 7; // masked in list responses
+  int32 container_port = 8;
+  int32 cpu_shares = 9;
+  int64 memory_limit_mb = 10;
+  string source = 11; // deploy | rollback | auto-rollback
+  string created_at = 12;
+}
+
+message ListWorkloadReleasesRequest {
+  string workload_id = 1;
+  int32 limit = 2;
+}
+
+message ListWorkloadReleasesResponse {
+  repeated WorkloadRelease releases = 1;
+}
+
+message RollbackWorkloadRequest {
+  string workload_id = 1;
+  string release_id = 2;
+}
+
+message RollbackWorkloadResponse {
+  string deployment_id = 1;
+  string status = 2;
+  int32 host_port = 3;
+  string assigned_node_id = 4;
+  WorkloadRelease release = 5;
+}
+
 service WorkloadService {
   rpc CreateWorkload(CreateWorkloadRequest) returns (CreateWorkloadResponse);
   rpc Deploy(DeployRequest) returns (DeployResponse);
@@ -246,6 +284,8 @@ service WorkloadService {
   rpc AssignDomain(AssignDomainRequest) returns (AssignDomainResponse);
   rpc ListDomains(ListDomainsRequest) returns (ListDomainsResponse);
   rpc UnassignDomain(UnassignDomainRequest) returns (UnassignDomainResponse);
+  rpc ListWorkloadReleases(ListWorkloadReleasesRequest) returns (ListWorkloadReleasesResponse);
+  rpc RollbackWorkload(RollbackWorkloadRequest) returns (RollbackWorkloadResponse);
 }
 
 message Project {

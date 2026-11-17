@@ -474,6 +474,74 @@ func (service WorkloadService) UnassignDomain(ctx context.Context, request *paas
 	return &paasv1.UnassignDomainResponse{}, nil
 }
 
+func (service WorkloadService) ListWorkloadReleases(ctx context.Context, request *paasv1.ListWorkloadReleasesRequest) (*paasv1.ListWorkloadReleasesResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	workloadID := strings.TrimSpace(request.GetWorkloadId())
+	if workloadID == "" {
+		return nil, invalidArgument("workload_id is required")
+	}
+	items, err := db.ListWorkloadReleases(ctx, service.pool, identity.OrganizationID, workloadID, int(request.GetLimit()))
+	if err != nil {
+		return nil, internalError("list releases", err)
+	}
+	out := make([]*paasv1.WorkloadRelease, 0, len(items))
+	for _, item := range items {
+		out = append(out, releaseToProto(item))
+	}
+	return &paasv1.ListWorkloadReleasesResponse{Releases: out}, nil
+}
+
+func (service WorkloadService) RollbackWorkload(ctx context.Context, request *paasv1.RollbackWorkloadRequest) (*paasv1.RollbackWorkloadResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	workloadID := strings.TrimSpace(request.GetWorkloadId())
+	releaseID := strings.TrimSpace(request.GetReleaseId())
+	if workloadID == "" || releaseID == "" {
+		return nil, invalidArgument("workload_id and release_id are required")
+	}
+	rel, err := db.GetWorkloadRelease(ctx, service.pool, identity.OrganizationID, releaseID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, "release not found")
+	}
+	if rel.WorkloadID != workloadID {
+		return nil, connect.NewError(connect.CodeInvalidArgument, "release does not belong to workload")
+	}
+	dep, _, recorded, err := db.RollbackWorkloadToRelease(ctx, service.pool, identity.OrganizationID, releaseID, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	}, "rollback")
+	if err != nil {
+		if mapped := placementFailedPrecondition(err); mapped != nil {
+			return nil, mapped
+		}
+		return nil, internalError("rollback workload", err)
+	}
+	return &paasv1.RollbackWorkloadResponse{
+		DeploymentId:   dep.ID,
+		Status:         dep.Status,
+		HostPort:       dep.HostPort,
+		AssignedNodeId: dep.NodeID,
+		Release:        releaseToProto(recorded),
+	}, nil
+}
+
+func releaseToProto(rel db.WorkloadRelease) *paasv1.WorkloadRelease {
+	return &paasv1.WorkloadRelease{
+		Id: rel.ID, WorkloadId: rel.WorkloadID, DeploymentId: rel.DeploymentID,
+		Generation: rel.Generation, ImageOrSource: rel.ImageOrSource, ImageDigest: rel.ImageDigest,
+		EnvVars: rel.Environment, ContainerPort: rel.ContainerPort, CpuShares: rel.CPUShares,
+		MemoryLimitMb: rel.MemoryLimitMB, Source: rel.Source,
+		CreatedAt: rel.CreatedAt.UTC().Format(time.RFC3339),
+	}
+}
+
 func domainToProto(route db.DomainRoute) *paasv1.DomainRoute {
 	return &paasv1.DomainRoute{
 		Id: route.ID, WorkloadId: route.WorkloadID, Hostname: route.Hostname,

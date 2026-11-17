@@ -14,7 +14,9 @@ import {
   GetWorkloadLogsRequestSchema,
   ListBuildsRequestSchema,
   ListProjectsRequestSchema,
+  ListWorkloadReleasesRequestSchema,
   ListWorkloadsRequestSchema,
+  RollbackWorkloadRequestSchema,
   RuntimeType,
   UpdateWorkloadRequestSchema,
   WorkloadSchema,
@@ -22,6 +24,7 @@ import {
   type ComposeServiceSpec,
   type Project,
   type Workload,
+  type WorkloadRelease,
 } from '../../../gen/v1/workload_pb'
 
 export async function listProjects(): Promise<Project[]> {
@@ -219,4 +222,19 @@ export async function getBuildLogs(buildId: string, tailLines = 200): Promise<{ 
     tailLines,
   }))
   return { build: response.build, lines: response.lines }
+}
+
+export async function listWorkloadReleases(workloadId: string, limit = 20): Promise<WorkloadRelease[]> {
+  const response = await workloadClient.listWorkloadReleases(create(ListWorkloadReleasesRequestSchema, {
+    workloadId,
+    limit,
+  }))
+  return response.releases
+}
+
+export async function rollbackWorkload(workloadId: string, releaseId: string) {
+  return workloadClient.rollbackWorkload(create(RollbackWorkloadRequestSchema, {
+    workloadId,
+    releaseId,
+  }))
 }

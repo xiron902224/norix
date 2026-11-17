@@ -24,12 +24,15 @@ import {
   getBuildLogs,
   getWorkloadLogs,
   listProjects,
+  listWorkloadReleases,
   listWorkloads,
+  rollbackWorkload,
   updateWorkload,
 } from '../services/projects-api'
 import { EnvVarsEditor, envMapToRows, envRowsToMap, type EnvRow } from './EnvVarsEditor'
+import type { WorkloadRelease } from '../../../gen/v1/workload_pb'
 
-type DetailTab = 'summary' | 'build' | 'edit'
+type DetailTab = 'summary' | 'build' | 'releases' | 'edit'
 
 function canDeployImage(workload: Workload) {
   const image = (workload.imageOrSource || '').trim()
@@ -75,8 +78,23 @@ export function ApplicationDetailPage() {
   const [editGitRef, setEditGitRef] = useState('main')
   const [editDockerfile, setEditDockerfile] = useState('Dockerfile')
   const [editEnvRows, setEditEnvRows] = useState<EnvRow[]>([])
+  const [releases, setReleases] = useState<WorkloadRelease[]>([])
+  const [releasesLoading, setReleasesLoading] = useState(false)
+  const [rollbackId, setRollbackId] = useState('')
   const tabRef = useRef(tab)
   tabRef.current = tab
+
+  async function refreshReleases() {
+    if (!workloadId) return
+    setReleasesLoading(true)
+    try {
+      setReleases(await listWorkloadReleases(workloadId))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not load releases')
+    } finally {
+      setReleasesLoading(false)
+    }
+  }
 
   function fillEdit(item: Workload) {
     setEditName(item.name)
@@ -137,6 +155,11 @@ export function ApplicationDetailPage() {
       setTab('build')
     }
   }, [workload?.status, workload?.id])
+
+  useEffect(() => {
+    if (tab !== 'releases') return
+    void refreshReleases()
+  }, [tab, workloadId, workload?.desiredGeneration, workload?.status])
 
   useEffect(() => {
     if (!workload || (tab !== 'summary' && tab !== 'build')) return
@@ -206,6 +229,24 @@ export function ApplicationDetailPage() {
       setError(cause instanceof Error ? cause.message : 'Could not deploy')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function onRollback(releaseId: string) {
+    if (!workload) return
+    if (!window.confirm('Roll back to this release? Current image/env will be replaced and redeployed.')) return
+    setError('')
+    setNotice('')
+    setRollbackId(releaseId)
+    try {
+      await rollbackWorkload(workload.id, releaseId)
+      setNotice('Rollback queued. Watching status…')
+      await refresh()
+      await refreshReleases()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not roll back')
+    } finally {
+      setRollbackId('')
     }
   }
 
@@ -369,6 +410,7 @@ export function ApplicationDetailPage() {
         {([
           ['summary', 'Summary'],
           ['build', 'Build logs'],
+          ['releases', 'Releases'],
           ['edit', 'Edit'],
         ] as const).map(([id, label]) => (
           <button
@@ -474,6 +516,50 @@ export function ApplicationDetailPage() {
               <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading build logs…</span></div>
             ) : (
               <pre className="log-view">{buildLines.join('\n')}</pre>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {tab === 'releases' ? (
+        <div className="compass-tab-panel" role="tabpanel">
+          <div className="compass-ov-card">
+            <div className="compass-ov-card-head" style={{ marginBottom: 12 }}>
+              <h2 className="compass-ov-card-title" style={{ margin: 0 }}>Release history</h2>
+              <button type="button" className="linkish" onClick={() => void refreshReleases()}>Refresh</button>
+            </div>
+            <p className="muted" style={{ marginTop: 0 }}>
+              Each deploy stores an immutable snapshot (image + env + limits). Roll back to restore and redeploy.
+            </p>
+            {releasesLoading && releases.length === 0 ? (
+              <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading releases…</span></div>
+            ) : releases.length === 0 ? (
+              <p className="muted">No releases yet. Deploy once to create history.</p>
+            ) : (
+              <ul className="release-list">
+                {releases.map((rel, index) => (
+                  <li key={rel.id} className="release-row">
+                    <div className="release-meta">
+                      <strong className="mono">gen {String(rel.generation)}</strong>
+                      <span className="muted">{rel.source || 'deploy'}</span>
+                      <span className="muted mono">{rel.createdAt || ''}</span>
+                      {index === 0 ? <span className="status-pill status-pill-running">latest</span> : null}
+                    </div>
+                    <div className="release-image mono">{rel.imageOrSource || '—'}</div>
+                    {rel.imageDigest ? <div className="muted mono">{rel.imageDigest}</div> : null}
+                    <div className="release-actions">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={index === 0 || !!rollbackId || selectedBusy || !hasOnlineNode}
+                        onClick={() => void onRollback(rel.id)}
+                      >
+                        {rollbackId === rel.id ? 'Rolling back…' : 'Roll back'}
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>

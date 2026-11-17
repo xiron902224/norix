@@ -11,6 +11,8 @@
 - Docker Compose no longer mounts `docker.sock` into the control plane; agent holds the socket (#10)
 
 ### Added
+- Immutable workload release history + one-click rollback (API/UI); retention `NORIX_RELEASE_RETENTION`; optional `NORIX_AUTO_ROLLBACK` on failed apply (#14)
+- Docs EN/ES: releases-rollback.md (#14)
 - Installer/agent verify cosign bundles when present on GitHub Releases; README EN/ES download → verify → run (#5)
 - Offline smoke `scripts/test-release-verify.sh` for SHA256 fail-closed behavior (#5)
 - Installer prints SSH-tunnel / TLS next steps for secure bootstrap (#6)
