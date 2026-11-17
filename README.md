@@ -93,7 +93,7 @@ Optional: `--port 8000`, `--public-url https://norix.example.com`. Re-runs are i
 
 Full bare walkthrough (TLS, upgrades, manual fallback): [`docs/runbooks/BARE_INSTALL.md`](docs/runbooks/BARE_INSTALL.md).
 
-Both modes print a URL like `http://YOUR_IP:8000`. Open it, create the first admin, then deploy.
+Both modes print a URL like `http://YOUR_IP:8000`. Create the **first admin** over HTTPS or via loopback/SSH tunnel (Docker one-click allows insecure bootstrap until you enable TLS — see [Getting started](docs/user/getting-started.md)).
 
 ```bash
 curl -sf http://127.0.0.1:8000/healthz

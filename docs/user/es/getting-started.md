@@ -6,6 +6,15 @@ Norix ya debe estar instalado y accesible en el navegador (p. ej. `http://TU_IP:
 
 En una instalación nueva la UI pide crear el **primer admin** (bootstrap).
 
+El bootstrap solo funciona por **HTTPS** (proxy de confianza) o desde **loopback** (`http://127.0.0.1:…`). Por HTTP público la API rechaza la creación salvo `NORIX_ALLOW_INSECURE_BOOTSTRAP=1` (labs / Docker one-click; quítalo tras TLS).
+
+```bash
+# Túnel SSH y luego abre http://127.0.0.1:8000
+ssh -L 8000:127.0.0.1:8000 user@TU_HOST
+```
+
+O TLS delante del panel — [TLS en producción](./production-tls.md).
+
 Si ya hay cuenta: **Login** (email/password u OIDC si está configurado).
 
 ## 2. Verificar el control plane

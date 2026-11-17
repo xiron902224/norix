@@ -156,6 +156,9 @@ func (service AuthService) CreateInitialAdmin(ctx context.Context, request *paas
 	if service.bootstrapPool == nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, "database is not configured")
 	}
+	if err := requireSecureBootstrap(ctx); err != nil {
+		return nil, err
+	}
 
 	exists, err := db.OwnerExists(ctx, service.bootstrapPool)
 	if err != nil {
