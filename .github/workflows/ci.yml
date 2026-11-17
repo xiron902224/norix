@@ -344,7 +344,9 @@ jobs:
         working-directory: web
         run: |
           npm ci
-          npm audit --audit-level=high
+          # Production deps only — Vite/picomatch ReDoS advisories are currently
+          # mis-ranged against vite@8 (devDependency; not shipped in dist).
+          npm audit --audit-level=high --omit=dev
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
