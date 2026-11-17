@@ -80,7 +80,7 @@ norix-agent update --version v1.0.0-beta.5
 norix-agent uninstall [--purge]
 ```
 
-Both update paths: download release → SHA256SUMS → replace binary → set `NORIX_*_VERSION` → restart (systemd or nohup).
+Both update paths: download release → SHA256SUMS (+ cosign when `.cosign.bundle` exists) → replace binary → set `NORIX_*_VERSION` → restart (systemd or nohup).
 
 ### 4. Verify
 

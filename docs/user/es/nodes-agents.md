@@ -14,6 +14,8 @@ curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.5/scr
 
 Sin systemd: `--supervise none`.
 
+Los installs desde release verifican **SHA256SUMS** y **cosign** si hay `.cosign.bundle` (`--skip-cosign` / `NORIX_SKIP_COSIGN=1` solo en labs).
+
 Si no hay socket de Docker/containerd, `install-agent.sh` imprime un **WARNING** (el enroll sigue); sin runtime este nodo no recibe builds/deploys.
 
 ## Controles

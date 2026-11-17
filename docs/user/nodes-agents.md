@@ -16,6 +16,8 @@ curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/v1.0.0-beta.5/scr
 
 Labs without systemd: add `--supervise none`.
 
+Release installs verify **SHA256SUMS** and **cosign** when a `.cosign.bundle` exists (`--skip-cosign` / `NORIX_SKIP_COSIGN=1` for labs only).
+
 If the host has no `/var/run/docker.sock` (and no containerd socket), `install-agent.sh` prints a **WARNING** and the agent logs the same — enroll still succeeds so you can add Docker later. Without a runtime this node will not receive builds/deploys.
 
 3. Confirm **online**, hostname, **Agent version**, **Docker = yes**

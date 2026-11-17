@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Fixed
+- Git SSRF: validate clone URLs (https/ssh only; block private/metadata ranges; `NORIX_GIT_SSRF_ALLOWLIST`) (#4)
+- Control plane no longer panics on legacy AES-GCM `dev-nonce` network secrets
+
+### Added
+- Installer/agent verify cosign bundles when present on GitHub Releases; README EN/ES download → verify → run (#5)
+- Offline smoke `scripts/test-release-verify.sh` for SHA256 fail-closed behavior (#5)
+
+### Changed
+- Docs: bare/agent integrity notes (EN + ES), `SECURITY.md` installer section (#5)
+
 ## 1.0.0-beta.5 — 2026-11-16
 
 ### Fixed

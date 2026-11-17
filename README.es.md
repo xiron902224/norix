@@ -32,9 +32,36 @@ Norix corre en un VPS Linux que controlas. **Un comando** instala el control pla
 | Modo | Comando | ¿Necesita Docker? |
 |---|---|---|
 | **Docker** (default) | `… \| bash` | Sí — instala Engine si falta; panel + Postgres en Compose; este host puede correr workloads vía `docker.sock` |
-| **Bare** | `… \| bash -s -- --mode bare` | No — Postgres del sistema + binario verificado (SHA256) + systemd. Añade Docker/agent después para contenedores |
+| **Bare** | `… \| bash -s -- --mode bare` | No — Postgres del sistema + binario verificado (SHA256 + cosign si hay bundle) + systemd. Añade Docker/agent después para contenedores |
 
 Hasta que exista `get.norix.dev`, el installer se sirve desde este repo de GitHub.
+
+### Verificar binarios del release (bajar → verificar → ejecutar)
+
+El installer bare y `install-agent.sh` comprueban **SHA256SUMS** y, si el release incluye `.cosign.bundle`, **cosign** (fallan si no coincide). Flujo manual:
+
+```bash
+TAG=v1.0.0-beta.5
+ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+ASSET=norix-control-plane-linux-${ARCH}
+
+curl -fsSLO "https://github.com/xiron902224/norix/releases/download/${TAG}/${ASSET}"
+curl -fsSLO "https://github.com/xiron902224/norix/releases/download/${TAG}/SHA256SUMS"
+curl -fsSLO "https://github.com/xiron902224/norix/releases/download/${TAG}/${ASSET}.cosign.bundle" || true
+
+sha256sum -c SHA256SUMS --ignore-missing   # debe pasar
+
+# Si existe el bundle (y tienes cosign instalado):
+cosign verify-blob \
+  --bundle "${ASSET}.cosign.bundle" \
+  --certificate-identity-regexp 'https://github.com/xiron902224/norix/\.github/workflows/release\.yml@.*' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+  "${ASSET}"
+
+sudo install -m 755 "${ASSET}" /usr/local/bin/norix-control-plane
+```
+
+Solo labs: `NORIX_SKIP_CHECKSUM=1` (con `NORIX_BINARY_FILE` local) o `NORIX_SKIP_COSIGN=1` / `--skip-cosign`. No usar en producción.
 
 ### Modo Docker
 
