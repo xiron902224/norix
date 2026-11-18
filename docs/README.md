@@ -11,7 +11,7 @@ Where to read / write docs in this repo. Collaborators: start at [`CONTRIBUTING.
 | **Multi-node ops** | [`runbooks/BETA1_3NODE_INSTALL.md`](./runbooks/BETA1_3NODE_INSTALL.md) |
 | **Security** | [`SECURITY.md`](../SECURITY.md) · [`threat-model-s19.md`](./threat-model-s19.md) |
 | **Upgrade / uninstall** | [`UPDATE_AND_UNINSTALL.md`](./UPDATE_AND_UNINSTALL.md) · [`UPGRADE.md`](./UPGRADE.md) |
-| **Component READMEs** | [`agent/`](../agent/README.md) · [`control-plane/`](../control-plane/README.md) · [`web/`](../web/README.md) |
+| **Component READMEs** | [`agent/`](../agent/README.md) · [`cli/`](../cli/README.md) (Rust) · [`control-plane/`](../control-plane/README.md) · [`web/`](../web/README.md) |
 | **Sprint history** | `SPRINT_*_CIERRE.md` (archive; prefer VISION / ESTADO) |
 | **ADRs** | [`adr/`](./adr/) |
 

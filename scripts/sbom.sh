@@ -32,7 +32,12 @@ fi
 )
 (
   cd "$ROOT/cli"
-  go list -m all >"$OUT/cli-modules.txt"
+  if command -v cargo >/dev/null 2>&1; then
+    cargo tree -e normal >"$OUT/cli-cargo-tree.txt" 2>/dev/null \
+      || cargo metadata --format-version 1 >"$OUT/cli-metadata.json"
+  else
+    echo "cargo not available" >"$OUT/cli-cargo-tree.txt"
+  fi
 )
 (
   cd "$ROOT/agent"
@@ -49,7 +54,7 @@ cat >"$OUT/README.md" <<'EOF'
 
 - `*.cdx.json` — CycloneDX 1.x JSON (produced when [syft](https://github.com/anchore/syft) is on PATH)
 - `*.spdx.json` — SPDX JSON (optional; syft)
-- `*-modules.txt` / `agent-cargo-tree.txt` — always-on dependency inventories
+- `*-modules.txt` / `*-cargo-tree.txt` — always-on dependency inventories (Go + Rust CLI/agent)
 
 Release workflow packs this directory as `norix-sbom.tar.gz` and includes it in GitHub Releases.
 EOF

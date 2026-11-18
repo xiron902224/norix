@@ -75,7 +75,8 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | App rollbacks / rolling updates / volumes | Beta | Named Docker volumes + sticky node (#16) |
 | Buildpacks (Railpack) | Beta | No-Dockerfile Git builds (#18) |
 | App catalog | Planned | |
-| CLI / SDKs | Experimental | Minimal |
+| CLI | Beta | Rust (`cli/`, [ADR-005](adr/ADR-005-rust-cli.md)): deploy, logs, env, domains, nodes, rollback (#28) |
+| SDKs | Fuera de este repo | TypeScript, Python, Go — repo propio; aquí solo el contrato proto |
 | User API tokens (PAT) | Planned | |
 
 > **No etiquetar Experimental como “listo”.** Wasm y micro-VM están cableados detrás de flags; no son GA.

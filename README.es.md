@@ -112,7 +112,9 @@ curl -fsSL https://raw.githubusercontent.com/xiron902224/norix/main/scripts/inst
 
 ## Cómo funciona
 
-1. **Declarar.** Proyecto/workload en el dashboard (imagen, puerto, réplicas, git…).
+El CLI de usuario `norix` está escrito en **Rust** (mismo lenguaje que el agent). Guía: [`docs/user/es/cli.md`](docs/user/es/cli.md) · decisión: [ADR-005](docs/adr/ADR-005-rust-cli.md).
+
+1. **Declarar.** Proyecto/workload en el dashboard o con el CLI (imagen, puerto, réplicas, git…).
 2. **Build (git).** Un nodo online clona, detecta Dockerfile/Compose, construye.
 3. **Schedule.** El control plane coloca réplicas (spread/binpack, zonas, KVM…).
 4. **Reconcile.** Agents aplican `run`/`stop` hasta igualar estado deseado.
