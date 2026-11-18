@@ -17,7 +17,7 @@ Operators can also use `scripts/backup-postgres.sh` / host `pg_dump` for the con
 
 ## Log retention
 
-The control-plane leader prunes `workload_logs`, `build_logs`, and `log_segments` about every 20 seconds. Each table is cut by age, by number of lines, and by total bytes. Defaults:
+The control-plane leader prunes `workload_logs`, `build_logs`, and `log_segments` about every 20 seconds. Each table is cut by age, by number of lines, and by total bytes. The workload page states these defaults above the log panels. An image deploy has runtime logs only; build logs appear after a git build. Defaults:
 
 | Variable | Default | Meaning |
 |---|---|---|

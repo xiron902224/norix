@@ -645,6 +645,7 @@ export function ApplicationDetailPage() {
                 <strong><ScrollText size={14} /> Recent runtime logs</strong>
                 <button type="button" className="linkish" onClick={() => setTab('build')}>Build logs →</button>
               </div>
+              <p className="muted">The control plane keeps the newest runtime lines (default 500, 14 days, or 32 MiB). Older rows are deleted in the background.</p>
               {logsLoading && runtimeLines.length === 0 ? (
                 <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading logs…</span></div>
               ) : (
@@ -674,6 +675,7 @@ export function ApplicationDetailPage() {
               <h2 className="compass-ov-card-title" style={{ margin: 0 }}>Build logs</h2>
               <span className="muted mono">{workload.latestBuildId ? shortId(workload.latestBuildId, 12) : 'no build'}</span>
             </div>
+            <p className="muted">Build logs exist only after a git build (default 800 lines, 14 days, or 32 MiB). An image such as nginx:alpine has no build.</p>
             {logsLoading && buildLines.length === 0 ? (
               <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading build logs…</span></div>
             ) : (

@@ -4,7 +4,7 @@ Backups, restore, alertas y exports. Haz backup **antes** de actualizar ([guía]
 
 ## Retención de logs
 
-El líder del control plane poda `workload_logs`, `build_logs` y `log_segments` cada ~20 s, por edad, por número de líneas y por bytes. Reinicia el proceso después de cambiar las variables.
+El líder del control plane poda `workload_logs`, `build_logs` y `log_segments` cada ~20 s, por edad, por número de líneas y por bytes. La ficha del workload muestra esos defaults encima de los paneles de logs. Un deploy de imagen solo tiene logs de runtime; los de build aparecen tras un build desde git. Reinicia el proceso después de cambiar las variables.
 
 | Variable | Default | Significado |
 |---|---|---|

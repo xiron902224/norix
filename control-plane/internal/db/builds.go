@@ -283,7 +283,7 @@ func AppendBuildLogLines(ctx context.Context, pool *pgxpool.Pool, tenantID, buil
 		DELETE FROM build_logs
 		WHERE build_id = $1::uuid
 		  AND id < COALESCE((
-			SELECT id FROM build_logs WHERE build_id = $1::uuid ORDER BY id DESC OFFSET $2 LIMIT 1
+			SELECT id FROM build_logs WHERE build_id = $1::uuid ORDER BY id DESC OFFSET GREATEST($2::int - 1, 0) LIMIT 1
 		  ), 0)`, buildID, BuildLogMaxLines())
 	return tx.Commit(ctx)
 }
@@ -451,7 +451,7 @@ func ApplyObservedBuild(ctx context.Context, pool *pgxpool.Pool, organizationID 
 		DELETE FROM build_logs
 		WHERE build_id = $1::uuid
 		  AND id < COALESCE((
-			SELECT id FROM build_logs WHERE build_id = $1::uuid ORDER BY id DESC OFFSET $2 LIMIT 1
+			SELECT id FROM build_logs WHERE build_id = $1::uuid ORDER BY id DESC OFFSET GREATEST($2::int - 1, 0) LIMIT 1
 		  ), 0)`, observed.ID, BuildLogMaxLines())
 
 	if status == "succeeded" && strings.TrimSpace(observed.Image) != "" {

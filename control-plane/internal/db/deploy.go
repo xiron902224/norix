@@ -434,7 +434,7 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 			DELETE FROM workload_logs
 			WHERE workload_id = $1::uuid
 			  AND id < COALESCE((
-				SELECT id FROM workload_logs WHERE workload_id = $1::uuid ORDER BY id DESC OFFSET $2 LIMIT 1
+				SELECT id FROM workload_logs WHERE workload_id = $1::uuid ORDER BY id DESC OFFSET GREATEST($2::int - 1, 0) LIMIT 1
 			  ), 0)`, workloadID, WorkloadLogMaxLines())
 		if workloadID != "" {
 			if opID, status, detail, ok := parseVolumeOpMessage(item.Message); ok {
