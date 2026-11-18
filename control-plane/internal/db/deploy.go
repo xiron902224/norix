@@ -11,39 +11,39 @@ import (
 )
 
 type DesiredWorkload struct {
-	ID                string
-	ProjectID         string
-	Name              string
-	Image             string
-	Environment       map[string]string
-	CPUShares         int32
-	MemoryLimitMB     int64
-	HostPort          int32
-	ContainerPort     int32
-	DesiredGeneration int64
-	Action            string
-	Runtime           string
-	NetworkName       string
-	NetworkAlias      string
-	UpdateStrategy    string
-	SurgeHostPort     int32
-	ReadinessPath     string
-	ProbeSpecJSON     string
-	WorkloadID            string
-	VolumeMountsJSON      string
-	VolumePendingOpJSON   string
+	ID                  string
+	ProjectID           string
+	Name                string
+	Image               string
+	Environment         map[string]string
+	CPUShares           int32
+	MemoryLimitMB       int64
+	HostPort            int32
+	ContainerPort       int32
+	DesiredGeneration   int64
+	Action              string
+	Runtime             string
+	NetworkName         string
+	NetworkAlias        string
+	UpdateStrategy      string
+	SurgeHostPort       int32
+	ReadinessPath       string
+	ProbeSpecJSON       string
+	WorkloadID          string
+	VolumeMountsJSON    string
+	VolumePendingOpJSON string
 }
 
 type ObservedWorkload struct {
-	ID                  string
-	Status              string
-	ContainerID         string
-	ObservedGeneration  int64
-	Message             string
-	HostPort            int32
-	LogLines            []string
-	Ready               bool
-	ProbeStatusJSON     string
+	ID                 string
+	Status             string
+	ContainerID        string
+	ObservedGeneration int64
+	Message            string
+	HostPort           int32
+	LogLines           []string
+	Ready              bool
+	ProbeStatusJSON    string
 }
 
 type Deployment struct {
@@ -434,8 +434,8 @@ func ApplyObservedWorkloads(ctx context.Context, pool *pgxpool.Pool, organizatio
 			DELETE FROM workload_logs
 			WHERE workload_id = $1::uuid
 			  AND id < COALESCE((
-				SELECT id FROM workload_logs WHERE workload_id = $1::uuid ORDER BY id DESC OFFSET 500 LIMIT 1
-			  ), 0)`, workloadID)
+				SELECT id FROM workload_logs WHERE workload_id = $1::uuid ORDER BY id DESC OFFSET $2 LIMIT 1
+			  ), 0)`, workloadID, WorkloadLogMaxLines())
 		if workloadID != "" {
 			if opID, status, detail, ok := parseVolumeOpMessage(item.Message); ok {
 				volumeOpResults = append(volumeOpResults, struct {

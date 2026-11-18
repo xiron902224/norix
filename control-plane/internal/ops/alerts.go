@@ -34,9 +34,12 @@ func Start(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
 }
 
 func runOnce(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
-	_ = db.RetainWorkloadLogs(ctx, pool, 500)
-	_ = db.RetainBuildLogs(ctx, pool, 800)
-	_ = db.RetainLogSegments(ctx, pool, 5000)
+	pruned, err := db.PruneStoredLogs(ctx, pool, db.LoadLogRetention())
+	if err != nil {
+		logger.Warn("log prune failed", "error", err)
+	} else if pruned.Total() > 0 {
+		logger.Info("pruned stored logs", "workload", pruned.Workload, "build", pruned.Build, "segments", pruned.Segments)
+	}
 	_ = db.RetainMetricSamples(ctx, pool, 5000)
 
 	orgs, err := db.ListOrganizationIDs(ctx, pool)
