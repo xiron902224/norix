@@ -30,3 +30,9 @@ The control-plane leader prunes `workload_logs`, `build_logs`, and `log_segments
 | `NORIX_LOG_SEGMENT_RETENTION_BYTES` | `67108864` (64 MiB) | Newest bytes kept per organization. |
 
 A non-numeric value falls back to the default. Line caps clamp into their allowed range. Byte values outside 0–10 GiB fall back to the default. The line cap also applies when the agent reports logs, so a burst cannot wait for the next prune. Restart the control plane after changing these variables.
+
+## Restore
+
+Restore replaces the `public` schema of the control-plane database with the dump. A plain `pg_dump` only contains `CREATE` statements, so loading it into a database that already has `alert_events` fails with `relation already exists` (psql exit 3).
+
+The control plane now dumps with `--clean --if-exists` and, before `psql -f`, disconnects other sessions and runs `DROP SCHEMA public CASCADE`. Restart the control plane after a restore so its pool reconnects. Old dump files (without `DROP`) restore the same way.

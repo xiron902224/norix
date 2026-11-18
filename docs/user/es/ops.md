@@ -17,3 +17,9 @@ El líder del control plane poda `workload_logs`, `build_logs` y `log_segments` 
 | `NORIX_LOG_SEGMENT_RETENTION_BYTES` | `67108864` (64 MiB) | Bytes más nuevos por organización. |
 
 Un valor no numérico vuelve al default. El tope de líneas se recorta a su rango. Un tope de bytes fuera de 0–10 GiB vuelve al default. El tope de líneas también se aplica cuando el agente reporta logs.
+
+## Restaurar
+
+Restaurar sustituye el esquema `public` de la base del control plane. Un `pg_dump` plano solo trae `CREATE`, así que cargarlo encima de una base que ya tiene `alert_events` falla con `relation already exists` (psql exit 3).
+
+El control plane vuelca con `--clean --if-exists` y, antes de `psql -f`, corta las otras sesiones y hace `DROP SCHEMA public CASCADE`. Reinicia el control plane después de restaurar. Los dumps viejos, sin `DROP`, se restauran igual.

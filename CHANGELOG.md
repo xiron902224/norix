@@ -11,6 +11,8 @@
 - Persistent named volumes for workloads: declare mounts, sticky node placement, drain warnings, Backup/Delete API + UI, docs EN/ES (#16)
 
 ### Fixed
+- Backup restore no longer fails with `relation "alert_events" already exists`. The dump uses `--clean --if-exists`, and restore drops schema `public` before loading the file.
+- The inventory node `control-plane` is not advertised as a Docker worker unless embedded runtime is on, so deploys are not stuck on a node that never runs containers.
 - First-admin bootstrap and the login rate limit read the client IP from Connect v2 `CallInfo.PeerAddr`, so loopback HTTP is accepted again (#6)
 - Agent node tokens can be rotated (heartbeat delivery) and revoked from UI/API; optional mTLS fingerprint (#13)
 - Git SSRF: validate clone URLs (https/ssh only; block private/metadata ranges; `NORIX_GIT_SSRF_ALLOWLIST`) (#4)
