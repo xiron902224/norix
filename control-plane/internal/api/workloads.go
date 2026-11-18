@@ -58,20 +58,20 @@ func workloadFromProto(workload *paasv1.Workload) (db.Workload, error) {
 		replicas = 1
 	}
 	return db.Workload{
-		ID:             workload.GetId(),
-		ProjectID:      workload.GetProjectId(),
-		Name:           strings.TrimSpace(workload.GetName()),
-		Runtime:        runtime,
-		ImageOrSource:  workload.GetImageOrSource(),
-		Environment:    workload.GetEnvVars(),
-		CPUShares:      workload.GetCpuShares(),
-		MemoryLimitMB:  workload.GetMemoryLimitMb(),
-		Domain:         strings.TrimSpace(workload.GetDomain()),
-		ContainerPort:  workload.GetContainerPort(),
-		SourceKind:     sourceKind,
-		GitURL:         gitURL,
-		GitRef:         strings.TrimSpace(workload.GetGitRef()),
-		DockerfilePath: strings.TrimSpace(workload.GetDockerfilePath()),
+		ID:                 workload.GetId(),
+		ProjectID:          workload.GetProjectId(),
+		Name:               strings.TrimSpace(workload.GetName()),
+		Runtime:            runtime,
+		ImageOrSource:      workload.GetImageOrSource(),
+		Environment:        workload.GetEnvVars(),
+		CPUShares:          workload.GetCpuShares(),
+		MemoryLimitMB:      workload.GetMemoryLimitMb(),
+		Domain:             strings.TrimSpace(workload.GetDomain()),
+		ContainerPort:      workload.GetContainerPort(),
+		SourceKind:         sourceKind,
+		GitURL:             gitURL,
+		GitRef:             strings.TrimSpace(workload.GetGitRef()),
+		DockerfilePath:     strings.TrimSpace(workload.GetDockerfilePath()),
 		ReplicaCount:       replicas,
 		ScheduleStrategy:   strategy,
 		RequireKVM:         workload.GetRequireKvm() || db.RequireKVMForRuntime(runtime),
@@ -156,7 +156,7 @@ func workloadToProto(workload db.Workload) *paasv1.Workload {
 		StackId: workload.StackID, ComposeService: workload.ComposeService, ComposeSpecJson: workload.ComposeSpecJSON,
 		UpdateStrategy: workload.UpdateStrategy, MaxSurge: workload.MaxSurge, MaxUnavailable: workload.MaxUnavailable,
 		ProbeSpecJson: db.ProbeSpecJSON(workload.ProbeSpec), Ready: workload.Ready, ProbeStatusJson: workload.ProbeStatusJSON,
-		VolumeMounts: volumeMountsToProto(workload.VolumeMounts),
+		VolumeMounts:        volumeMountsToProto(workload.VolumeMounts),
 		VolumePendingOpJson: workload.VolumePendingOpJSON, VolumeBackupsJson: workload.VolumeBackupsJSON,
 	}
 }
@@ -274,6 +274,35 @@ func (service WorkloadService) DeleteWorkload(ctx context.Context, request *paas
 		return nil, internalError("delete workload", err)
 	}
 	return &paasv1.DeleteWorkloadResponse{}, nil
+}
+
+func (service WorkloadService) StopWorkload(ctx context.Context, request *paasv1.StopWorkloadRequest) (*paasv1.StopWorkloadResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	if request.GetWorkloadId() == "" {
+		return nil, invalidArgument("workload id is required")
+	}
+	if service.pool == nil {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "database is not configured")
+	}
+	if err := db.StopWorkload(ctx, service.pool, identity.OrganizationID, request.GetWorkloadId(), db.AuditActor{
+		UserID: identity.UserID,
+		Email:  identity.Email,
+	}); err != nil {
+		if strings.Contains(err.Error(), "workload not found") {
+			return nil, connect.NewError(connect.CodeNotFound, "workload not found")
+		}
+		if strings.Contains(err.Error(), "cannot be stopped") {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, err.Error())
+		}
+		return nil, internalError("stop workload", err)
+	}
+	return &paasv1.StopWorkloadResponse{Status: "stopped"}, nil
 }
 
 func (service WorkloadService) Deploy(ctx context.Context, request *paasv1.DeployRequest) (*paasv1.DeployResponse, error) {

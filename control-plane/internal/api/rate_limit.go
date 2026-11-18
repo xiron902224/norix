@@ -41,10 +41,9 @@ func (limiter *RateLimiter) Interceptor() connect.ServerInterceptor {
 				if !ok {
 					return next(ctx, spec, stream)
 				}
-				transport, ok := callInfo.TransportInfo.(interface{ RemoteAddr() string })
-				key := "unknown"
-				if ok && transport.RemoteAddr() != "" {
-					key = transport.RemoteAddr()
+				key := callInfo.PeerAddr
+				if key == "" {
+					key = "unknown"
 				}
 				if !limiter.allow(key, limiter.limit) {
 					return connect.NewError(connect.CodeResourceExhausted, "too many login or bootstrap attempts")
@@ -95,6 +94,8 @@ func isAuthenticatedMutateProcedure(procedure string) bool {
 		"/v1.WorkloadService/CreateWorkload",
 		"/v1.WorkloadService/UpdateWorkload",
 		"/v1.WorkloadService/DeleteWorkload",
+		"/v1.WorkloadService/StopWorkload",
+		"/v1.WorkloadService/Deploy",
 		"/v1.WorkloadService/DeployWorkload",
 		"/v1.WorkloadService/CreateBuild",
 		"/v1.WorkloadService/AssignDomain",

@@ -49,6 +49,9 @@ const (
 	// WorkloadServiceDeleteWorkloadProcedure is the procedure name of the WorkloadService's
 	// DeleteWorkload RPC.
 	WorkloadServiceDeleteWorkloadProcedure = "/v1.WorkloadService/DeleteWorkload"
+	// WorkloadServiceStopWorkloadProcedure is the procedure name of the WorkloadService's StopWorkload
+	// RPC.
+	WorkloadServiceStopWorkloadProcedure = "/v1.WorkloadService/StopWorkload"
 	// WorkloadServiceGetWorkloadLogsProcedure is the procedure name of the WorkloadService's
 	// GetWorkloadLogs RPC.
 	WorkloadServiceGetWorkloadLogsProcedure = "/v1.WorkloadService/GetWorkloadLogs"
@@ -149,6 +152,13 @@ var (
 			Procedure:  WorkloadServiceDeleteWorkloadProcedure,
 		}
 	})
+	workloadServiceStopWorkloadSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("StopWorkload"),
+			Procedure:  WorkloadServiceStopWorkloadProcedure,
+		}
+	})
 	workloadServiceGetWorkloadLogsSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -238,6 +248,7 @@ type WorkloadServiceClient interface {
 	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
+	StopWorkload(context.Context, *v1.StopWorkloadRequest) (*v1.StopWorkloadResponse, error)
 	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
 	ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error)
 	GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error)
@@ -267,6 +278,7 @@ type WorkloadServiceHandler interface {
 	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
+	StopWorkload(context.Context, *v1.StopWorkloadRequest) (*v1.StopWorkloadResponse, error)
 	GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error)
 	ListBuilds(context.Context, *v1.ListBuildsRequest) (*v1.ListBuildsResponse, error)
 	GetBuildLogs(context.Context, *v1.GetBuildLogsRequest) (*v1.GetBuildLogsResponse, error)
@@ -292,6 +304,7 @@ func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceH
 		connect.Method{Spec: workloadServiceListWorkloadsSpec(), Handler: adapter.listWorkloads},
 		connect.Method{Spec: workloadServiceUpdateWorkloadSpec(), Handler: adapter.updateWorkload},
 		connect.Method{Spec: workloadServiceDeleteWorkloadSpec(), Handler: adapter.deleteWorkload},
+		connect.Method{Spec: workloadServiceStopWorkloadSpec(), Handler: adapter.stopWorkload},
 		connect.Method{Spec: workloadServiceGetWorkloadLogsSpec(), Handler: adapter.getWorkloadLogs},
 		connect.Method{Spec: workloadServiceListBuildsSpec(), Handler: adapter.listBuilds},
 		connect.Method{Spec: workloadServiceGetBuildLogsSpec(), Handler: adapter.getBuildLogs},
@@ -339,6 +352,10 @@ func (UnimplementedWorkloadServiceHandler) UpdateWorkload(context.Context, *v1.U
 
 func (UnimplementedWorkloadServiceHandler) DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeleteWorkload is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) StopWorkload(context.Context, *v1.StopWorkloadRequest) (*v1.StopWorkloadResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.StopWorkload is not implemented")
 }
 
 func (UnimplementedWorkloadServiceHandler) GetWorkloadLogs(context.Context, *v1.GetWorkloadLogsRequest) (*v1.GetWorkloadLogsResponse, error) {
@@ -448,6 +465,14 @@ func (c *workloadServiceClient) UpdateWorkload(ctx context.Context, req *v1.Upda
 func (c *workloadServiceClient) DeleteWorkload(ctx context.Context, req *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error) {
 	var res v1.DeleteWorkloadResponse
 	if err := c.client.CallUnary(ctx, workloadServiceDeleteWorkloadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) StopWorkload(ctx context.Context, req *v1.StopWorkloadRequest) (*v1.StopWorkloadResponse, error) {
+	var res v1.StopWorkloadResponse
+	if err := c.client.CallUnary(ctx, workloadServiceStopWorkloadSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -633,6 +658,18 @@ func (h workloadServiceHandler) deleteWorkload(ctx context.Context, _ connect.Sp
 		return err
 	}
 	res, err := h.svc.DeleteWorkload(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) stopWorkload(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.StopWorkloadRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.StopWorkload(ctx, &req)
 	if err != nil {
 		return err
 	}

@@ -30,6 +30,14 @@ export NORIX_GIT_SSRF_ALLOWLIST=git.interno.example,10.10.0.0/16
 
 (En control-plane y agent. Detalle en la [guía EN](../deploying.md#git-url-ssrf-controls).)
 
+## Parar y reiniciar
+
+En la página de la aplicación:
+
+- **Stop** conserva el workload y pide al agent que borre el contenedor. **Start** lo vuelve a desplegar.
+- **Restart** y **Redeploy** encolan otro deploy (generación + 1). El agent recrea el contenedor.
+- **Pause** no está. Parar sin borrar la fila es **Stop**.
+
 ## Después
 
 Puerto publicado o [dominio](./domains.md) con TLS.

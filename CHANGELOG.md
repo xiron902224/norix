@@ -3,12 +3,14 @@
 ## Unreleased
 
 ### Added
+- Workload **Stop** and **Restart** on the application page. Stop keeps the row and asks the agent to remove the container; Restart redeploys (new generation). Pause is not a runtime state.
 - Rust CLI (`norix`): deploy, logs -f, env, domains, nodes, releases, rollback, completions, `--output json`; ADR-005; replaces Go stub (#28)
 - Managed databases actually provision Postgres/MySQL/Redis containers via the agent (named volume, connection URI, docker-exec backups) (#20)
 - Git builds without Dockerfile fall back to Railpack (Node/Go/Python/static markers); examples + CI; docs EN/ES (#18)
 - Persistent named volumes for workloads: declare mounts, sticky node placement, drain warnings, Backup/Delete API + UI, docs EN/ES (#16)
 
 ### Fixed
+- First-admin bootstrap and the login rate limit read the client IP from Connect v2 `CallInfo.PeerAddr`, so loopback HTTP is accepted again (#6)
 - Agent node tokens can be rotated (heartbeat delivery) and revoked from UI/API; optional mTLS fingerprint (#13)
 - Git SSRF: validate clone URLs (https/ssh only; block private/metadata ranges; `NORIX_GIT_SSRF_ALLOWLIST`) (#4)
 - Control plane no longer panics on legacy AES-GCM `dev-nonce` network secrets

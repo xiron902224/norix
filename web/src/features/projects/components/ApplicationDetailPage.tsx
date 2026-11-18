@@ -23,6 +23,7 @@ import {
   deleteWorkloadVolume,
   deployFromGit,
   deployWorkload,
+  stopWorkload,
   getBuildLogs,
   getWorkloadLogs,
   listProjects,
@@ -51,6 +52,7 @@ function needsStart(workload: Workload) {
 function deployLabel(workload: Workload, busy: boolean) {
   if (busy) return '…'
   if (needsStart(workload)) return 'Start'
+  if (workload.status === 'deploying' || workload.status === 'running') return 'Redeploy'
   return 'Deploy'
 }
 
@@ -235,6 +237,23 @@ export function ApplicationDetailPage() {
     || busy
     || gitBusy
   )
+  const deployLocked = busy || gitBusy || workload?.status === 'building'
+
+  async function onStop() {
+    if (!workload) return
+    setError('')
+    setNotice('')
+    setBusy(true)
+    try {
+      await stopWorkload(workload.id)
+      setNotice('Stop queued. The agent removes the container on the next heartbeat. Start brings it back.')
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not stop')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function onDeploy() {
     if (!workload) return
@@ -443,9 +462,24 @@ export function ApplicationDetailPage() {
                 Rebuild
               </Button>
             ) : null}
+            {['running', 'deploying', 'failed'].includes(workload.status || '') ? (
+              <Button type="button" variant="secondary" disabled={busy || gitBusy} onClick={() => void onStop()}>
+                Stop
+              </Button>
+            ) : null}
+            {workload.status === 'running' ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!hasOnlineNode || deployLocked || !canDeployImage(workload)}
+                onClick={() => void onDeploy()}
+              >
+                Restart
+              </Button>
+            ) : null}
             <Button
               type="button"
-              disabled={!hasOnlineNode || selectedBusy || !canDeployImage(workload)}
+              disabled={!hasOnlineNode || deployLocked || !canDeployImage(workload)}
               onClick={() => void onDeploy()}
             >
               <Rocket size={14} /> {deployLabel(workload, busy)}
