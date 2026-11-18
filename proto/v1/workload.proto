@@ -205,6 +205,84 @@ message DeployComposeStackResponse {
   repeated Workload workloads = 2;
 }
 
+// Compose stack deployed as a unit by the agent with `docker compose up` (#143).
+message ComposeStackService {
+  string name = 1;
+  string state = 2;   // running | exited | restarting | created | paused | dead
+  string health = 3;  // healthy | unhealthy | starting | ""
+  int32 exit_code = 4;
+  string image = 5;
+  string ports = 6;
+}
+
+message ComposeStack {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string git_url = 4;
+  string git_ref = 5;
+  string compose_path = 6;
+  string assigned_node_id = 7;
+  string desired_action = 8; // up | stop | down | none
+  int64 desired_generation = 9;
+  int64 observed_generation = 10;
+  // pending | deploying | running | degraded | stopped | failed | removing
+  string status = 11;
+  string message = 12;
+  repeated ComposeStackService services = 13;
+  string compose_project = 14;
+  string created_at = 15;
+  string updated_at = 16;
+}
+
+message CreateComposeStackRequest {
+  string project_id = 1;
+  string name = 2;
+  string git_url = 3;
+  string git_ref = 4;
+  string compose_path = 5;
+}
+
+message CreateComposeStackResponse {
+  ComposeStack stack = 1;
+}
+
+message ListComposeStacksRequest {
+  string project_id = 1;
+}
+
+message ListComposeStacksResponse {
+  repeated ComposeStack stacks = 1;
+}
+
+message GetComposeStackRequest {
+  string id = 1;
+  // Optional service filter for logs; empty = all services.
+  string service = 2;
+  int32 tail_lines = 3;
+}
+
+message ComposeStackLogLine {
+  string service = 1;
+  string line = 2;
+  string created_at = 3;
+}
+
+message GetComposeStackResponse {
+  ComposeStack stack = 1;
+  repeated ComposeStackLogLine logs = 2;
+}
+
+message ComposeStackActionRequest {
+  string id = 1;
+  // start | stop | redeploy | delete
+  string action = 2;
+}
+
+message ComposeStackActionResponse {
+  ComposeStack stack = 1;
+}
+
 message ListBuildsRequest {
   string workload_id = 1;
 }
@@ -312,6 +390,10 @@ service WorkloadService {
   rpc DeployFromGit(DeployFromGitRequest) returns (DeployFromGitResponse);
   rpc AnalyzeComposeFromGit(AnalyzeComposeFromGitRequest) returns (AnalyzeComposeFromGitResponse);
   rpc DeployComposeStack(DeployComposeStackRequest) returns (DeployComposeStackResponse);
+  rpc CreateComposeStack(CreateComposeStackRequest) returns (CreateComposeStackResponse);
+  rpc ListComposeStacks(ListComposeStacksRequest) returns (ListComposeStacksResponse);
+  rpc GetComposeStack(GetComposeStackRequest) returns (GetComposeStackResponse);
+  rpc ComposeStackAction(ComposeStackActionRequest) returns (ComposeStackActionResponse);
   rpc ListWorkloads(ListWorkloadsRequest) returns (ListWorkloadsResponse);
   rpc UpdateWorkload(UpdateWorkloadRequest) returns (UpdateWorkloadResponse);
   rpc DeleteWorkload(DeleteWorkloadRequest) returns (DeleteWorkloadResponse);

@@ -228,6 +228,21 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 	if err != nil {
 		return nil, internalError("list desired managed databases", err)
 	}
+	if _, err := db.ClaimComposeStacksForNode(ctx, service.pool, node.OrganizationID, node.ID); err != nil {
+		return nil, internalError("claim compose stacks", err)
+	}
+	stacks, err := db.ListDesiredComposeStacksForNode(ctx, service.pool, node.OrganizationID, node.ID)
+	if err != nil {
+		return nil, internalError("list desired compose stacks", err)
+	}
+	desiredStacks := make([]*paasv1.DesiredComposeStack, 0, len(stacks))
+	for _, stack := range stacks {
+		desiredStacks = append(desiredStacks, &paasv1.DesiredComposeStack{
+			Id: stack.ID, ProjectId: stack.ProjectID, Name: stack.Name, GitUrl: stack.GitURL, GitRef: stack.GitRef,
+			ComposePath: stack.ComposePath, ComposeProject: stack.ComposeProject(),
+			Action: stack.DesiredAction, Generation: stack.DesiredGeneration,
+		})
+	}
 	desiredManaged := make([]*paasv1.DesiredManagedDatabase, 0, len(desiredDBs))
 	for _, item := range desiredDBs {
 		desiredManaged = append(desiredManaged, &paasv1.DesiredManagedDatabase{
@@ -240,10 +255,47 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 	return &paasv1.HeartbeatResponse{
 		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds,
 		DesiredEdge: desiredEdge, DesiredNetwork: desiredNetwork, DesiredWasm: desiredWasm,
-		DesiredAgentVersion: desiredAgentVersion,
-		RotatedNodeToken:    rotatedToken,
+		DesiredAgentVersion:     desiredAgentVersion,
+		RotatedNodeToken:        rotatedToken,
 		DesiredManagedDatabases: desiredManaged,
+		DesiredComposeStacks:    desiredStacks,
 	}, nil
+}
+
+func (service AgentService) ReportComposeStack(ctx context.Context, request *paasv1.ReportComposeStackRequest) (*paasv1.ReportComposeStackResponse, error) {
+	node, ok := NodeFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "node credential required")
+	}
+	if nodeID := strings.TrimSpace(request.GetNodeId()); nodeID != "" && nodeID != node.ID {
+		return nil, connect.NewError(connect.CodePermissionDenied, "node_id does not match credential")
+	}
+	observed := request.GetStack()
+	if observed == nil || strings.TrimSpace(observed.GetId()) == "" {
+		return nil, invalidArgument("stack id is required")
+	}
+	services := make([]db.ComposeStackService, 0, len(observed.GetServices()))
+	for _, svc := range observed.GetServices() {
+		services = append(services, db.ComposeStackService{
+			Name: svc.GetName(), State: svc.GetState(), Health: svc.GetHealth(),
+			ExitCode: svc.GetExitCode(), Image: svc.GetImage(), Ports: svc.GetPorts(),
+		})
+	}
+	logs := make([]db.ComposeStackLog, 0, len(observed.GetLogLines()))
+	for _, line := range observed.GetLogLines() {
+		logs = append(logs, db.ComposeStackLog{Service: line.GetService(), Line: line.GetLine()})
+	}
+	err := db.ApplyObservedComposeStack(ctx, service.pool, node.OrganizationID, node.ID, db.ObservedComposeStack{
+		ID: observed.GetId(), Status: observed.GetStatus(), ObservedGeneration: observed.GetObservedGeneration(),
+		Message: observed.GetMessage(), Services: services, Logs: logs,
+	})
+	if errors.Is(err, db.ErrComposeStackNotFound) {
+		return nil, connect.NewError(connect.CodeNotFound, "compose stack not assigned to this node")
+	}
+	if err != nil {
+		return nil, internalError("apply observed compose stack", err)
+	}
+	return &paasv1.ReportComposeStackResponse{}, nil
 }
 
 func (service AgentService) ReportWasm(ctx context.Context, request *paasv1.ReportWasmRequest) (*paasv1.ReportWasmResponse, error) {
@@ -565,9 +617,9 @@ func (service AgentService) ConnectStream(ctx context.Context, stream paasv1conn
 			items = append(items, desiredWorkloadToProto(item))
 		}
 		if err := stream.Send(&paasv1.ConnectStreamResponse{
-			NodeId:            node.ID,
-			DesiredWorkloads:  items,
-			Command:           "reconcile",
+			NodeId:           node.ID,
+			DesiredWorkloads: items,
+			Command:          "reconcile",
 		}); err != nil {
 			return err
 		}
@@ -607,24 +659,24 @@ func nodeToProto(node db.Node) *paasv1.Node {
 		zone = "default"
 	}
 	return &paasv1.Node{
-		Id:             node.ID,
-		OrganizationId: node.OrganizationID,
-		Name:           node.Name,
-		Status:         node.Status,
-		LastSeenAt:     lastSeen,
-		IsLocal:        node.IsLocal,
-		CpuUsagePercent: node.CPUUsagePercent,
-		MemoryFreeMb:    node.MemoryFreeMB,
-		DiskFreeMb:      node.DiskFreeMB,
-		Role:            role,
-		Cordoned:        node.Cordoned,
-		Draining:        node.Draining,
-		Zone:            zone,
-		Labels:          node.Labels,
-		ReportedWorkloadIds:      node.ReportedWorkloadIDs,
-		DesiredAgentVersion:      node.DesiredAgentVersion,
-		CredentialRotatePending:  node.CredentialRotatePending,
-		ClientCertConfigured:     node.ClientCertConfigured,
+		Id:                      node.ID,
+		OrganizationId:          node.OrganizationID,
+		Name:                    node.Name,
+		Status:                  node.Status,
+		LastSeenAt:              lastSeen,
+		IsLocal:                 node.IsLocal,
+		CpuUsagePercent:         node.CPUUsagePercent,
+		MemoryFreeMb:            node.MemoryFreeMB,
+		DiskFreeMb:              node.DiskFreeMB,
+		Role:                    role,
+		Cordoned:                node.Cordoned,
+		Draining:                node.Draining,
+		Zone:                    zone,
+		Labels:                  node.Labels,
+		ReportedWorkloadIds:     node.ReportedWorkloadIDs,
+		DesiredAgentVersion:     node.DesiredAgentVersion,
+		CredentialRotatePending: node.CredentialRotatePending,
+		ClientCertConfigured:    node.ClientCertConfigured,
 		Capabilities: &paasv1.NodeCapabilities{
 			CpuCores:         node.Capabilities.CPUCores,
 			MemoryTotalMb:    node.Capabilities.MemoryTotalMB,
@@ -729,7 +781,7 @@ func desiredWorkloadToProto(item db.DesiredWorkload) *paasv1.DesiredWorkload {
 		DesiredGeneration: item.DesiredGeneration, Action: item.Action, Runtime: runtime,
 		NetworkName: item.NetworkName, NetworkAlias: item.NetworkAlias,
 		UpdateStrategy: item.UpdateStrategy, SurgeHostPort: item.SurgeHostPort, ReadinessPath: item.ReadinessPath,
-		ProbeSpecJson: item.ProbeSpecJSON,
+		ProbeSpecJson:    item.ProbeSpecJSON,
 		VolumeMountsJson: item.VolumeMountsJSON, VolumePendingOpJson: item.VolumePendingOpJSON,
 		WorkloadId: item.WorkloadID,
 	}

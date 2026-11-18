@@ -42,6 +42,9 @@ const (
 	AgentServiceReportNetworkProcedure = "/v1.AgentService/ReportNetwork"
 	// AgentServiceReportWasmProcedure is the procedure name of the AgentService's ReportWasm RPC.
 	AgentServiceReportWasmProcedure = "/v1.AgentService/ReportWasm"
+	// AgentServiceReportComposeStackProcedure is the procedure name of the AgentService's
+	// ReportComposeStack RPC.
+	AgentServiceReportComposeStackProcedure = "/v1.AgentService/ReportComposeStack"
 	// AgentServiceGetNetworkStatusProcedure is the procedure name of the AgentService's
 	// GetNetworkStatus RPC.
 	AgentServiceGetNetworkStatusProcedure = "/v1.AgentService/GetNetworkStatus"
@@ -131,6 +134,13 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ReportWasm"),
 			Procedure:  AgentServiceReportWasmProcedure,
+		}
+	})
+	agentServiceReportComposeStackSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("ReportComposeStack"),
+			Procedure:  AgentServiceReportComposeStackProcedure,
 		}
 	})
 	agentServiceGetNetworkStatusSpec = sync.OnceValue(func() connect.Spec {
@@ -229,6 +239,7 @@ type AgentServiceClient interface {
 	ReportEdge(context.Context, *v1.ReportEdgeRequest) (*v1.ReportEdgeResponse, error)
 	ReportNetwork(context.Context, *v1.ReportNetworkRequest) (*v1.ReportNetworkResponse, error)
 	ReportWasm(context.Context, *v1.ReportWasmRequest) (*v1.ReportWasmResponse, error)
+	ReportComposeStack(context.Context, *v1.ReportComposeStackRequest) (*v1.ReportComposeStackResponse, error)
 	GetNetworkStatus(context.Context, *v1.GetNetworkStatusRequest) (*v1.GetNetworkStatusResponse, error)
 	UpsertEgressPolicy(context.Context, *v1.UpsertEgressPolicyRequest) (*v1.UpsertEgressPolicyResponse, error)
 	ListEgressPolicies(context.Context, *v1.ListEgressPoliciesRequest) (*v1.ListEgressPoliciesResponse, error)
@@ -296,6 +307,7 @@ type AgentServiceHandler interface {
 	ReportEdge(context.Context, *v1.ReportEdgeRequest) (*v1.ReportEdgeResponse, error)
 	ReportNetwork(context.Context, *v1.ReportNetworkRequest) (*v1.ReportNetworkResponse, error)
 	ReportWasm(context.Context, *v1.ReportWasmRequest) (*v1.ReportWasmResponse, error)
+	ReportComposeStack(context.Context, *v1.ReportComposeStackRequest) (*v1.ReportComposeStackResponse, error)
 	GetNetworkStatus(context.Context, *v1.GetNetworkStatusRequest) (*v1.GetNetworkStatusResponse, error)
 	UpsertEgressPolicy(context.Context, *v1.UpsertEgressPolicyRequest) (*v1.UpsertEgressPolicyResponse, error)
 	ListEgressPolicies(context.Context, *v1.ListEgressPoliciesRequest) (*v1.ListEgressPoliciesResponse, error)
@@ -322,6 +334,7 @@ func RegisterAgentServiceHandler(server *connect.Server, svc AgentServiceHandler
 		connect.Method{Spec: agentServiceReportEdgeSpec(), Handler: adapter.reportEdge},
 		connect.Method{Spec: agentServiceReportNetworkSpec(), Handler: adapter.reportNetwork},
 		connect.Method{Spec: agentServiceReportWasmSpec(), Handler: adapter.reportWasm},
+		connect.Method{Spec: agentServiceReportComposeStackSpec(), Handler: adapter.reportComposeStack},
 		connect.Method{Spec: agentServiceGetNetworkStatusSpec(), Handler: adapter.getNetworkStatus},
 		connect.Method{Spec: agentServiceUpsertEgressPolicySpec(), Handler: adapter.upsertEgressPolicy},
 		connect.Method{Spec: agentServiceListEgressPoliciesSpec(), Handler: adapter.listEgressPolicies},
@@ -395,6 +408,10 @@ func (UnimplementedAgentServiceHandler) ReportNetwork(context.Context, *v1.Repor
 
 func (UnimplementedAgentServiceHandler) ReportWasm(context.Context, *v1.ReportWasmRequest) (*v1.ReportWasmResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ReportWasm is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) ReportComposeStack(context.Context, *v1.ReportComposeStackRequest) (*v1.ReportComposeStackResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.ReportComposeStack is not implemented")
 }
 
 func (UnimplementedAgentServiceHandler) GetNetworkStatus(context.Context, *v1.GetNetworkStatusRequest) (*v1.GetNetworkStatusResponse, error) {
@@ -508,6 +525,14 @@ func (c *agentServiceClient) ReportNetwork(ctx context.Context, req *v1.ReportNe
 func (c *agentServiceClient) ReportWasm(ctx context.Context, req *v1.ReportWasmRequest) (*v1.ReportWasmResponse, error) {
 	var res v1.ReportWasmResponse
 	if err := c.client.CallUnary(ctx, agentServiceReportWasmSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) ReportComposeStack(ctx context.Context, req *v1.ReportComposeStackRequest) (*v1.ReportComposeStackResponse, error) {
+	var res v1.ReportComposeStackResponse
+	if err := c.client.CallUnary(ctx, agentServiceReportComposeStackSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -701,6 +726,18 @@ func (h agentServiceHandler) reportWasm(ctx context.Context, _ connect.Spec, str
 		return err
 	}
 	res, err := h.svc.ReportWasm(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) reportComposeStack(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReportComposeStackRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReportComposeStack(ctx, &req)
 	if err != nil {
 		return err
 	}

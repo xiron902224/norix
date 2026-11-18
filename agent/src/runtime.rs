@@ -356,7 +356,7 @@ impl Runtime {
         })
     }
 
-    fn bin(&self) -> &'static str {
+    pub(crate) fn bin(&self) -> &'static str {
         match self.engine {
             Engine::Docker => "docker",
             Engine::Nerdctl => "nerdctl",

@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Compose stacks run as one unit: the agent clones the repo and runs `docker compose -p norix-<id> up -d --build --remove-orphans` in the background (heartbeats keep flowing). It reports per-service state, health and exit code, plus per-service logs. Start/Stop/Redeploy/Delete act on the whole stack, and Delete keeps named volumes. New `compose_stacks` / `compose_stack_logs` tables with forced RLS (migration 000033). `NORIX_COMPOSE_UP_TIMEOUT_SECS` sets the agent timeout. The old per-service split remains as "legacy" (#143).
 - Log retention by age, line count, and bytes (`NORIX_LOG_RETENTION_DAYS`, `NORIX_*_MAX_LINES`, `NORIX_*_RETENTION_BYTES`). The leader prunes `workload_logs`, `build_logs`, and `log_segments` (#25).
 - Workload **Stop** and **Restart** on the application page. Stop keeps the row and asks the agent to remove the container; Restart redeploys (new generation). Pause is not a runtime state.
 - Rust CLI (`norix`): deploy, logs -f, env, domains, nodes, releases, rollback, completions, `--output json`; ADR-005; replaces Go stub (#28)
@@ -11,6 +12,7 @@
 - Persistent named volumes for workloads: declare mounts, sticky node placement, drain warnings, Backup/Delete API + UI, docs EN/ES (#16)
 
 ### Fixed
+- `ReportWasm` is authenticated with the node token like the other agent reports. Before, the control plane treated it as a user call and rejected it.
 - Backup restore no longer fails with `relation "alert_events" already exists`. The dump uses `--clean --if-exists`, and restore drops schema `public` before loading the file.
 - The inventory node `control-plane` is not advertised as a Docker worker unless embedded runtime is on, so deploys are not stuck on a node that never runs containers.
 - First-admin bootstrap and the login rate limit read the client IP from Connect v2 `CallInfo.PeerAddr`, so loopback HTTP is accepted again (#6)

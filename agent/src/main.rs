@@ -1,6 +1,7 @@
 mod build;
 mod capabilities;
 mod client;
+mod compose;
 mod config;
 mod edge;
 mod gitssrf;
@@ -125,6 +126,9 @@ async fn main() -> Result<()> {
             None
         }
     };
+    let compose_stacks = runtime
+        .as_ref()
+        .map(|rt| compose::ComposeStacks::new(rt.bin(), &config.workdir));
     let mut state = load_or_enroll(&client, &config, &caps).await?;
     info!(node_id = %state.node_id, "agent enrolled");
 
@@ -184,6 +188,11 @@ async fn main() -> Result<()> {
                                 if let Err(error) = update::apply_desired_version(&config, target).await {
                                     warn!(%error, "agent self-update failed");
                                 }
+                            }
+                        }
+                        if let Some(stacks) = compose_stacks.as_ref() {
+                            if !desired.desired_compose_stacks.is_empty() {
+                                stacks.reconcile(&client, &state, &desired.desired_compose_stacks);
                             }
                         }
                         if let Some(runtime) = runtime.as_ref() {

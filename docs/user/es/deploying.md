@@ -30,6 +30,10 @@ export NORIX_GIT_SSRF_ALLOWLIST=git.interno.example,10.10.0.0/16
 
 (En control-plane y agent. Detalle en la [guía EN](../deploying.md#git-url-ssrf-controls).)
 
+## Stacks Compose
+
+Un `docker-compose.yml` de Git corre como una unidad con `docker compose up` en un agente, con volúmenes, comandos, healthchecks y jobs de una sola ejecución. Ver [Stacks Compose](./compose-stacks.md).
+
 ## Parar y reiniciar
 
 En la página de la aplicación:

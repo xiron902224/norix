@@ -15,6 +15,7 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 2. [Mapa del dashboard](./dashboard.md)
 3. [Proyectos y workloads](./projects-workloads.md)
 4. [Desplegar](./deploying.md)
+4a. [Stacks Compose](./compose-stacks.md) — el compose entero como una unidad con `docker compose`
 4b. [Historial de releases y rollback](./releases-rollback.md) — snapshots inmutables, restore en un clic
 4c. [Updates rolling](./rolling-updates.md) — start-before-stop, maxSurge / maxUnavailable
 4d. [Probes](./probes.md) — liveness / readiness HTTP·TCP·exec
