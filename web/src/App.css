@@ -2828,7 +2828,12 @@ a.ghost-button {
 }
 
 .log-view-compact {
+  flex: none;
+  display: block;
+  min-height: 8rem;
   max-height: 220px;
+  height: auto;
+  margin-top: 0.65rem;
   font-size: 0.75rem;
 }
 
