@@ -19,7 +19,6 @@ import {
   RevealWorkloadEnvRequestSchema,
   RollbackWorkloadRequestSchema,
   StopWorkloadRequestSchema,
-  StopWorkloadRequestSchema,
   RuntimeType,
   UpdateWorkloadRequestSchema,
   WorkloadSchema,
@@ -180,10 +179,6 @@ export async function deleteWorkloadVolume(workloadId: string, volumeName: strin
     confirm: true,
   }))
   return { opId: response.opId, status: response.status }
-}
-
-export async function stopWorkload(id: string): Promise<void> {
-  await workloadClient.stopWorkload(create(StopWorkloadRequestSchema, { workloadId: id }))
 }
 
 export async function stopWorkload(id: string): Promise<void> {

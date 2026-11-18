@@ -24,7 +24,6 @@ import {
   deployFromGit,
   deployWorkload,
   stopWorkload,
-  stopWorkload,
   getBuildLogs,
   getWorkloadLogs,
   listProjects,
@@ -239,22 +238,6 @@ export function ApplicationDetailPage() {
     || gitBusy
   )
   const deployLocked = busy || gitBusy || workload?.status === 'building'
-
-  async function onStop() {
-    if (!workload) return
-    setError('')
-    setNotice('')
-    setBusy(true)
-    try {
-      await stopWorkload(workload.id)
-      setNotice('Stop queued. The agent removes the container on the next heartbeat. Start brings it back.')
-      await refresh()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not stop')
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function onStop() {
     if (!workload) return
