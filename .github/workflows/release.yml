@@ -87,18 +87,6 @@ jobs:
             workdir: control-plane
             binary: norix-control-plane
             embed_web: true
-          - component: cli
-            goarch: amd64
-            package: .
-            workdir: cli
-            binary: norix-cli
-            embed_web: false
-          - component: cli
-            goarch: arm64
-            package: .
-            workdir: cli
-            binary: norix-cli
-            embed_web: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -107,9 +95,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: |
-            control-plane/go.sum
-            cli/go.sum
+          cache-dependency-path: control-plane/go.sum
 
       - name: Set up Node (embed web)
         if: matrix.embed_web
@@ -139,19 +125,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "${GITHUB_WORKSPACE}/dist"
-          if [[ "${{ matrix.component }}" == "cli" ]]; then
-            OUT="norix-cli-linux-${{ matrix.goarch }}"
-          else
-            OUT="norix-control-plane-linux-${{ matrix.goarch }}"
-          fi
+          OUT="norix-control-plane-linux-${{ matrix.goarch }}"
           VER="${{ needs.meta.outputs.version }}"
           printf '%s\n' "$VER" > VERSION
-          if [[ "${{ matrix.component }}" == "control-plane" ]]; then
-            printf '%s\n' "$VER" > internal/version/VERSION
-            LDFLAGS="-s -w -X github.com/xiron902224/norix/control-plane/internal/version.BuildVersion=${VER}"
-          else
-            LDFLAGS="-s -w"
-          fi
+          printf '%s\n' "$VER" > internal/version/VERSION
+          LDFLAGS="-s -w -X github.com/xiron902224/norix/control-plane/internal/version.BuildVersion=${VER}"
           go build -trimpath -ldflags="${LDFLAGS}" \
             -o "${GITHUB_WORKSPACE}/dist/${OUT}" ${{ matrix.package }}
           chmod +x "${GITHUB_WORKSPACE}/dist/${OUT}"
@@ -194,7 +172,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: agent
-          key: release-${{ matrix.target }}
+          key: release-agent-${{ matrix.target }}
 
       - name: Build agent release
         run: |
@@ -212,6 +190,55 @@ jobs:
           path: dist/norix-agent-linux-${{ matrix.goarch }}
           if-no-files-found: error
 
+  build-cli:
+    name: Build CLI (${{ matrix.target }})
+    needs: meta
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            goarch: amd64
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            goarch: arm64
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: cli
+          key: release-cli-${{ matrix.target }}
+
+      - name: Build CLI release
+        run: |
+          set -euo pipefail
+          cargo build --release --target "${{ matrix.target }}"
+          mkdir -p "${GITHUB_WORKSPACE}/dist"
+          OUT="norix-cli-linux-${{ matrix.goarch }}"
+          cp "target/${{ matrix.target }}/release/norix" "${GITHUB_WORKSPACE}/dist/${OUT}"
+          chmod +x "${GITHUB_WORKSPACE}/dist/${OUT}"
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-linux-${{ matrix.goarch }}
+          path: dist/norix-cli-linux-${{ matrix.goarch }}
+          if-no-files-found: error
+
   sbom:
     name: Generate SBOM
     needs: meta
@@ -224,9 +251,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: |
-            control-plane/go.sum
-            cli/go.sum
+          cache-dependency-path: control-plane/go.sum
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
@@ -258,7 +283,7 @@ jobs:
 
   publish:
     name: Sign, checksum, and publish Release
-    needs: [meta, build-go, build-agent, sbom]
+    needs: [meta, build-go, build-agent, build-cli, sbom]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

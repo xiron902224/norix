@@ -23,6 +23,7 @@ Official documentation for **people who run apps on Norix** — after the contro
 5. [Nodes & agents](./nodes-agents.md) — workers, join tokens, updates
 5b. [Docker socket](./docker-socket.md) — who mounts `docker.sock`, proxy/rootless
 5c. [Agent authentication](./agent-auth.md) — rotate/revoke node token, optional mTLS
+5d. [CLI (`norix`)](./cli.md) — Rust CLI: deploy, logs, nodes, rollback
 6. [Domains & TLS](./domains.md)
 7. [Production TLS](./production-tls.md) — domain → DNS → certs → HTTPS panel + apps
 8. [Databases](./databases.md)

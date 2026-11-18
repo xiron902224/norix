@@ -150,7 +150,8 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 ## Interfaces
 
 - **Web dashboard** — projects, workloads, nodes (cordon/drain/zones), domains, ops.
-- **Connect RPC / protobuf API** — `proto/v1` shared by Go, TypeScript, and the Rust agent.
+- **Connect RPC / protobuf API** — `proto/v1` shared by Go, TypeScript, the Rust agent, and the Rust CLI.
+- **Rust CLI (`norix`)** — deploy, logs, nodes, rollback against the same API ([user guide](docs/user/cli.md), [ADR-005](docs/adr/ADR-005-rust-cli.md)).
 - **Rust agent** — enroll, heartbeat, build, reconcile, edge/mesh apply.
 - **Embedded local runtime** — opt-in (`NORIX_EMBEDDED_RUNTIME=1` + socket mount); default Docker mode uses the **agent** for reconcile ([#10](https://github.com/xiron902224/norix/issues/10)).
 
@@ -194,6 +195,7 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 | `control-plane/` | Go Connect server, migrations, scheduler, local runtime |
 | `web/` | React + Vite dashboard (embedded in prod builds) |
 | `agent/` | Rust node agent |
+| `cli/` | Rust CLI (`norix`) — [ADR-005](docs/adr/ADR-005-rust-cli.md) |
 | `deploy/norix/` | Compose prod/dev stacks |
 | `scripts/get-norix.sh` | Installer (`--mode docker\|bare`) |
 | `scripts/install-agent.sh` | Worker join (systemd or nohup) |

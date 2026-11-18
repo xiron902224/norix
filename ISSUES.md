@@ -73,7 +73,9 @@ Plus **good first issue** labels for docs and small defaults.
 
 ## Stage 1 — Table stakes (→ rc.1)
 
-[#14](https://github.com/xiron902224/norix/issues/14) rollback · [#15](https://github.com/xiron902224/norix/issues/15) rolling · [#16](https://github.com/xiron902224/norix/issues/16) volumes · [#17](https://github.com/xiron902224/norix/issues/17) probes · [#18](https://github.com/xiron902224/norix/issues/18) buildpacks · [#20](https://github.com/xiron902224/norix/issues/20) managed DBs · [#22](https://github.com/xiron902224/norix/issues/22) PAT · [#23](https://github.com/xiron902224/norix/issues/23) env UX · [#26](https://github.com/xiron902224/norix/issues/26) HTTPS OOTB · [#28](https://github.com/xiron902224/norix/issues/28) CLI · [#29](https://github.com/xiron902224/norix/issues/29) SDKs · [#31](https://github.com/xiron902224/norix/issues/31) TLS guide.
+[#14](https://github.com/xiron902224/norix/issues/14) rollback · [#15](https://github.com/xiron902224/norix/issues/15) rolling · [#16](https://github.com/xiron902224/norix/issues/16) volumes · [#17](https://github.com/xiron902224/norix/issues/17) probes · [#18](https://github.com/xiron902224/norix/issues/18) buildpacks · [#20](https://github.com/xiron902224/norix/issues/20) managed DBs · [#22](https://github.com/xiron902224/norix/issues/22) PAT · [#23](https://github.com/xiron902224/norix/issues/23) env UX · [#26](https://github.com/xiron902224/norix/issues/26) HTTPS OOTB · [#28](https://github.com/xiron902224/norix/issues/28) CLI · SDKs (repo propio, fuera de este repo; antes [#29](https://github.com/xiron902224/norix/issues/29)) · [#31](https://github.com/xiron902224/norix/issues/31) TLS guide.
+
+**Roadmap (2026-11-17):** beta.6 absorbe beta.6–8 (Trust, Lifecycle, HTTPS, Platform). beta.9 pasa a **rc.1**. Los SDKs salen de este repo.
 
 ---
 

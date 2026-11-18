@@ -17,7 +17,7 @@ Production install (VPS): [README Install](README.md#install). This file is for 
 | Docker | Postgres (and optional full stack) |
 | Go | Match CI (see `.github/workflows/ci.yml` / `go.mod`) |
 | Node.js 22 + npm | Dashboard |
-| Rust 1.88 | Agent (`rustup toolchain install 1.88.0`) |
+| Rust 1.88 | Agent + CLI (`agent/`, `cli/`; `rustup toolchain install 1.88.0`). CLI is Rust — [ADR-005](docs/adr/ADR-005-rust-cli.md) |
 | `buf` (optional) | Proto lint/generate — required if you touch `proto/` |
 | `curl` | Smoke checks |
 
@@ -121,6 +121,9 @@ cd web && npm ci && npm run lint && npm run build
 # Agent
 cd agent && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
 
+# CLI (Rust, ADR-005)
+cd cli && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+
 # Protos (if you change proto/)
 make proto-lint
 buf breaking --against ".git#ref=origin/main"
@@ -143,6 +146,7 @@ Branch protection requires these job **`name:`** values from [`.github/workflows
 | PostgreSQL migrations and RLS |
 | Build Web Dashboard |
 | Build Rust Agent |
+| Build Rust CLI |
 | Security vulnerability scans |
 | Build Control Plane (Go) |
 

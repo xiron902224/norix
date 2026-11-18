@@ -17,7 +17,7 @@ Instalación en VPS: [Instalar](README.es.md#instalar). Este archivo es para qui
 | Docker | Postgres |
 | Go | Como en CI / `go.mod` |
 | Node.js 22 + npm | Dashboard |
-| Rust 1.88 | Agent |
+| Rust 1.88 | Agent + CLI (`cli/`, ADR-005) |
 | `buf` (opcional) | Solo si tocas `proto/` |
 
 ## Gitflow (solo `main`)
@@ -93,6 +93,7 @@ make build && ./control-plane/bin/norix-control-plane
 cd control-plane && go test ./...
 cd web && npm ci && npm run lint && npm run build
 cd agent && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+cd cli && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
 curl -sf http://127.0.0.1:8080/healthz
 ```
 
