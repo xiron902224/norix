@@ -27,6 +27,7 @@ const (
 	WorkloadService_ListWorkloads_FullMethodName         = "/v1.WorkloadService/ListWorkloads"
 	WorkloadService_UpdateWorkload_FullMethodName        = "/v1.WorkloadService/UpdateWorkload"
 	WorkloadService_DeleteWorkload_FullMethodName        = "/v1.WorkloadService/DeleteWorkload"
+	WorkloadService_StopWorkload_FullMethodName          = "/v1.WorkloadService/StopWorkload"
 	WorkloadService_GetWorkloadLogs_FullMethodName       = "/v1.WorkloadService/GetWorkloadLogs"
 	WorkloadService_ListBuilds_FullMethodName            = "/v1.WorkloadService/ListBuilds"
 	WorkloadService_GetBuildLogs_FullMethodName          = "/v1.WorkloadService/GetBuildLogs"
@@ -52,6 +53,7 @@ type WorkloadServiceClient interface {
 	ListWorkloads(ctx context.Context, in *ListWorkloadsRequest, opts ...grpc.CallOption) (*ListWorkloadsResponse, error)
 	UpdateWorkload(ctx context.Context, in *UpdateWorkloadRequest, opts ...grpc.CallOption) (*UpdateWorkloadResponse, error)
 	DeleteWorkload(ctx context.Context, in *DeleteWorkloadRequest, opts ...grpc.CallOption) (*DeleteWorkloadResponse, error)
+	StopWorkload(ctx context.Context, in *StopWorkloadRequest, opts ...grpc.CallOption) (*StopWorkloadResponse, error)
 	GetWorkloadLogs(ctx context.Context, in *GetWorkloadLogsRequest, opts ...grpc.CallOption) (*GetWorkloadLogsResponse, error)
 	ListBuilds(ctx context.Context, in *ListBuildsRequest, opts ...grpc.CallOption) (*ListBuildsResponse, error)
 	GetBuildLogs(ctx context.Context, in *GetBuildLogsRequest, opts ...grpc.CallOption) (*GetBuildLogsResponse, error)
@@ -147,6 +149,16 @@ func (c *workloadServiceClient) DeleteWorkload(ctx context.Context, in *DeleteWo
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteWorkloadResponse)
 	err := c.cc.Invoke(ctx, WorkloadService_DeleteWorkload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) StopWorkload(ctx context.Context, in *StopWorkloadRequest, opts ...grpc.CallOption) (*StopWorkloadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StopWorkloadResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_StopWorkload_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -275,6 +287,7 @@ type WorkloadServiceServer interface {
 	ListWorkloads(context.Context, *ListWorkloadsRequest) (*ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *UpdateWorkloadRequest) (*UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *DeleteWorkloadRequest) (*DeleteWorkloadResponse, error)
+	StopWorkload(context.Context, *StopWorkloadRequest) (*StopWorkloadResponse, error)
 	GetWorkloadLogs(context.Context, *GetWorkloadLogsRequest) (*GetWorkloadLogsResponse, error)
 	ListBuilds(context.Context, *ListBuildsRequest) (*ListBuildsResponse, error)
 	GetBuildLogs(context.Context, *GetBuildLogsRequest) (*GetBuildLogsResponse, error)
@@ -319,6 +332,9 @@ func (UnimplementedWorkloadServiceServer) UpdateWorkload(context.Context, *Updat
 }
 func (UnimplementedWorkloadServiceServer) DeleteWorkload(context.Context, *DeleteWorkloadRequest) (*DeleteWorkloadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteWorkload not implemented")
+}
+func (UnimplementedWorkloadServiceServer) StopWorkload(context.Context, *StopWorkloadRequest) (*StopWorkloadResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StopWorkload not implemented")
 }
 func (UnimplementedWorkloadServiceServer) GetWorkloadLogs(context.Context, *GetWorkloadLogsRequest) (*GetWorkloadLogsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetWorkloadLogs not implemented")
@@ -514,6 +530,24 @@ func _WorkloadService_DeleteWorkload_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WorkloadServiceServer).DeleteWorkload(ctx, req.(*DeleteWorkloadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_StopWorkload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopWorkloadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).StopWorkload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_StopWorkload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).StopWorkload(ctx, req.(*StopWorkloadRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -754,6 +788,10 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteWorkload",
 			Handler:    _WorkloadService_DeleteWorkload_Handler,
+		},
+		{
+			MethodName: "StopWorkload",
+			Handler:    _WorkloadService_StopWorkload_Handler,
 		},
 		{
 			MethodName: "GetWorkloadLogs",

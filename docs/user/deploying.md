@@ -14,6 +14,14 @@ If no online node has Docker or containerd, deploys fail with `no online node wi
 3. **Deploy**
 4. Wait until status is running; check logs if needed
 
+## Stop and restart
+
+On the application page:
+
+- **Stop** keeps the workload and tells the agent to remove the container. **Start** deploys it again.
+- **Restart** and **Redeploy** queue another deploy (generation + 1). The agent recreates the container.
+- **Pause** is not implemented. Stop is the way to halt a container without deleting the row.
+
 ## Deploy from Git
 
 1. Provide Git URL (+ ref/branch)

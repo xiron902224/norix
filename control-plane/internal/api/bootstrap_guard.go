@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 )
 
 // AllowInsecureBootstrapEnv opts into first-admin bootstrap over plain HTTP
@@ -85,14 +86,12 @@ func requireSecureBootstrap(ctx context.Context) error {
 	if !ok {
 		return connect.NewError(connect.CodeFailedPrecondition, bootstrapInsecureHint)
 	}
-	remoteAddr := ""
+	// Connect v2 puts the TCP peer on CallInfo.PeerAddr. TransportInfo is
+	// *connecthttp.ServerInfo and does not expose RemoteAddr().
+	remoteAddr := callInfo.PeerAddr
 	tlsActive := false
-	if transport, ok := callInfo.TransportInfo.(interface{ RemoteAddr() string }); ok {
-		remoteAddr = transport.RemoteAddr()
-	}
-	// connect may expose TLS via typed transport; treat missing as plain HTTP.
-	if transport, ok := callInfo.TransportInfo.(interface{ TLS() bool }); ok {
-		tlsActive = transport.TLS()
+	if info, ok := connecthttp.ServerInfoForContext(ctx); ok && info.TLS() != nil {
+		tlsActive = true
 	}
 	if BootstrapTransportAllowed(remoteAddr, callInfo.RequestHeader(), tlsActive) {
 		return nil

@@ -6,54 +6,55 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Workload struct {
-	ID                 string
-	OrganizationID     string
-	ProjectID          string
-	Name               string
-	Runtime            string
-	ImageOrSource      string
-	Environment        map[string]string
-	CPUShares          int32
-	MemoryLimitMB      int64
-	Domain             string
-	Status             string
-	DesiredGeneration  int64
-	ObservedGeneration int64
-	HostPort           int32
-	ContainerPort      int32
-	AssignedNodeID     string
-	ContainerID        string
-	LastError          string
-	DesiredAction      string
-	SourceKind         string
-	GitURL             string
-	GitRef             string
-	DockerfilePath     string
-	LatestBuildID      string
-	ReplicaCount       int32
-	ScheduleStrategy   string
-	RequireKVM         bool
-	PreferredZone      string
-	AffinityLabels     map[string]string
-	AntiAffinityLabels map[string]string
-	IsolationMode      string
-	ExecutionRuntime   string
-	StackID            string
-	ComposeService     string
-	ComposeSpecJSON    string
-	UpdateStrategy     string // rolling | recreate
-	MaxSurge           int32
-	MaxUnavailable     int32
-	ProbeSpec          ProbeSpec
-	Ready              bool
-	ProbeStatusJSON    string
-	VolumeMounts       []VolumeMount
+	ID                  string
+	OrganizationID      string
+	ProjectID           string
+	Name                string
+	Runtime             string
+	ImageOrSource       string
+	Environment         map[string]string
+	CPUShares           int32
+	MemoryLimitMB       int64
+	Domain              string
+	Status              string
+	DesiredGeneration   int64
+	ObservedGeneration  int64
+	HostPort            int32
+	ContainerPort       int32
+	AssignedNodeID      string
+	ContainerID         string
+	LastError           string
+	DesiredAction       string
+	SourceKind          string
+	GitURL              string
+	GitRef              string
+	DockerfilePath      string
+	LatestBuildID       string
+	ReplicaCount        int32
+	ScheduleStrategy    string
+	RequireKVM          bool
+	PreferredZone       string
+	AffinityLabels      map[string]string
+	AntiAffinityLabels  map[string]string
+	IsolationMode       string
+	ExecutionRuntime    string
+	StackID             string
+	ComposeService      string
+	ComposeSpecJSON     string
+	UpdateStrategy      string // rolling | recreate
+	MaxSurge            int32
+	MaxUnavailable      int32
+	ProbeSpec           ProbeSpec
+	Ready               bool
+	ProbeStatusJSON     string
+	VolumeMounts        []VolumeMount
 	VolumePendingOpJSON string
-	VolumeBackupsJSON  string
+	VolumeBackupsJSON   string
 }
 
 // NormalizeUpdateStrategy returns rolling|recreate and clamped surge/unavailable.
@@ -264,6 +265,63 @@ func ListWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID, projectID 
 		result = append(result, workload)
 	}
 	return result, rows.Err()
+}
+
+// StopWorkload asks the assigned agent to remove the container and keeps the row.
+// Start/Deploy brings it back. This is not a delete and not a Docker pause.
+func StopWorkload(ctx context.Context, pool *pgxpool.Pool, tenantID, workloadID string, actor AuditActor) error {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if err := WithTenant(ctx, tx, tenantID); err != nil {
+		return err
+	}
+	var status string
+	err = tx.QueryRow(ctx, `SELECT status FROM workloads WHERE id = $1::uuid`, workloadID).Scan(&status)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return fmt.Errorf("workload not found")
+		}
+		return err
+	}
+	switch status {
+	case "deleting", "building":
+		return fmt.Errorf("workload cannot be stopped from %s", status)
+	}
+	tag, err := tx.Exec(ctx, `
+		UPDATE workload_replicas SET
+			desired_action = 'stop',
+			desired_generation = desired_generation + 1,
+			status = 'stopped',
+			updated_at = NOW()
+		WHERE workload_id = $1::uuid`, workloadID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() > 0 {
+		if err := syncParentFromPrimary(ctx, tx, workloadID); err != nil {
+			return err
+		}
+	} else if _, err := tx.Exec(ctx, `
+		UPDATE workloads SET
+			status = 'stopped',
+			desired_action = 'stop',
+			desired_generation = desired_generation + 1,
+			updated_at = NOW()
+		WHERE id = $1::uuid AND status <> 'deleting'`, workloadID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE workloads SET last_error = '', updated_at = NOW()
+		WHERE id = $1::uuid`, workloadID); err != nil {
+		return err
+	}
+	if err := writeAudit(ctx, tx, tenantID, "workload.stop", "workload", workloadID, actor, nil); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 // DeleteWorkload soft-deletes: asks agents to stop containers, then PurgeDeletingWorkloads

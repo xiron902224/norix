@@ -91,6 +91,14 @@ message DeleteWorkloadRequest {
   string id = 1;
 }
 
+message StopWorkloadRequest {
+  string workload_id = 1;
+}
+
+message StopWorkloadResponse {
+  string status = 1;
+}
+
 message DeleteWorkloadResponse {}
 
 message CreateWorkloadRequest {
@@ -307,6 +315,7 @@ service WorkloadService {
   rpc ListWorkloads(ListWorkloadsRequest) returns (ListWorkloadsResponse);
   rpc UpdateWorkload(UpdateWorkloadRequest) returns (UpdateWorkloadResponse);
   rpc DeleteWorkload(DeleteWorkloadRequest) returns (DeleteWorkloadResponse);
+  rpc StopWorkload(StopWorkloadRequest) returns (StopWorkloadResponse);
   rpc GetWorkloadLogs(GetWorkloadLogsRequest) returns (GetWorkloadLogsResponse);
   rpc ListBuilds(ListBuildsRequest) returns (ListBuildsResponse);
   rpc GetBuildLogs(GetBuildLogsRequest) returns (GetBuildLogsResponse);

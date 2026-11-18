@@ -60,6 +60,11 @@ enum Commands {
         #[command(subcommand)]
         command: WorkloadsCmd,
     },
+    /// Ask the agent to remove the container; the workload row stays
+    Stop {
+        #[arg(long)]
+        workload_id: String,
+    },
     /// Create (optional) and deploy a workload image
     Deploy {
         #[arg(long)]
@@ -191,6 +196,14 @@ fn run() -> Result<()> {
             let body = client.connect_json(
                 "/v1.WorkloadService/ListWorkloads",
                 &json!({ "projectId": project }),
+            )?;
+            print_value(cli.output, &body)?;
+        }
+        Commands::Stop { workload_id } => {
+            client.require_token()?;
+            let body = client.connect_json(
+                "/v1.WorkloadService/StopWorkload",
+                &json!({ "workloadId": workload_id }),
             )?;
             print_value(cli.output, &body)?;
         }
