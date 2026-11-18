@@ -116,8 +116,8 @@ jobs:
           -- Migrations through 000024 (000023 desired_agent_version; 000024 env_vars encryption comment).
           DO $$
           BEGIN
-            IF NOT (SELECT version = 31 AND NOT dirty FROM schema_migrations) THEN
-              RAISE EXCEPTION 'expected schema_migrations version=31 dirty=false';
+            IF NOT (SELECT version = 32 AND NOT dirty FROM schema_migrations) THEN
+              RAISE EXCEPTION 'expected schema_migrations version=32 dirty=false';
             END IF;
             IF (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename IN (
               'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
@@ -199,7 +199,7 @@ jobs:
         env:
           NORIX_TEST_DATABASE_URL: postgres://norix:ci-postgres-password@127.0.0.1:5432/norix?sslmode=disable
           NORIX_TEST_APP_DATABASE_URL: postgres://norix_app:ci-app-password@127.0.0.1:5432/norix?sslmode=disable
-        run: go test ./internal/db -run TestRLSCrossTenantIsolation -count=1
+        run: go test ./internal/db -run 'TestRLSCrossTenantIsolation|TestPruneStoredLogs' -count=1
 
   upgrade-smoke:
     name: Upgrade smoke (N-1 → N)

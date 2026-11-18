@@ -363,37 +363,3 @@ func MarkAlertsDelivered(ctx context.Context, pool *pgxpool.Pool, tenantID strin
 	}
 	return tx.Commit(ctx)
 }
-
-func RetainWorkloadLogs(ctx context.Context, pool *pgxpool.Pool, keep int) error {
-	if keep <= 0 {
-		keep = 500
-	}
-	_, err := pool.Exec(ctx, `
-		DELETE FROM workload_logs wl
-		USING (
-			SELECT workload_id, id FROM (
-				SELECT workload_id, id,
-				       ROW_NUMBER() OVER (PARTITION BY workload_id ORDER BY id DESC) AS rn
-				FROM workload_logs
-			) ranked WHERE rn > $1
-		) old
-		WHERE wl.id = old.id`, keep)
-	return err
-}
-
-func RetainBuildLogs(ctx context.Context, pool *pgxpool.Pool, keep int) error {
-	if keep <= 0 {
-		keep = 800
-	}
-	_, err := pool.Exec(ctx, `
-		DELETE FROM build_logs bl
-		USING (
-			SELECT build_id, id FROM (
-				SELECT build_id, id,
-				       ROW_NUMBER() OVER (PARTITION BY build_id ORDER BY id DESC) AS rn
-				FROM build_logs
-			) ranked WHERE rn > $1
-		) old
-		WHERE bl.id = old.id`, keep)
-	return err
-}

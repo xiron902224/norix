@@ -187,18 +187,20 @@ export function ApplicationDetailPage() {
     void refreshReleases()
   }, [tab, workloadId, workload?.desiredGeneration, workload?.status])
 
+  const workloadIdForLogs = workload?.id ?? ''
+  const latestBuildId = workload?.latestBuildId ?? ''
+
   useEffect(() => {
-    if (!workload || (tab !== 'summary' && tab !== 'build')) return
+    if (!workloadIdForLogs || (tab !== 'summary' && tab !== 'build')) return
     let cancelled = false
     const tick = async () => {
       try {
         if (tab === 'build') {
-          const buildId = workload.latestBuildId
-          if (!buildId) {
+          if (!latestBuildId) {
             if (!cancelled) setBuildLines(['No build yet. Deploy from git to produce build logs.'])
             return
           }
-          const result = await getBuildLogs(buildId, 300)
+          const result = await getBuildLogs(latestBuildId, 300)
           if (cancelled) return
           const header = result.build
             ? [`build ${result.build.id} · ${result.build.status} · image ${result.build.image || '—'}`, '']
@@ -208,9 +210,9 @@ export function ApplicationDetailPage() {
             ...(result.lines.length ? result.lines : ['No build log lines yet. Waiting for builder…']),
           ])
         } else {
-          const lines = await getWorkloadLogs(workload.id, 80)
+          const lines = await getWorkloadLogs(workloadIdForLogs, 80)
           if (cancelled) return
-          setRuntimeLines(lines.length ? lines : [])
+          setRuntimeLines(lines.length ? lines : ['No runtime log lines yet.'])
         }
       } catch (cause) {
         if (cancelled) return
@@ -221,14 +223,13 @@ export function ApplicationDetailPage() {
         if (!cancelled) setLogsLoading(false)
       }
     }
-    setLogsLoading(true)
     void tick()
     const timer = window.setInterval(() => { void tick() }, 1500)
     return () => {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [tab, workload])
+  }, [tab, workloadIdForLogs, latestBuildId])
 
   const hasOnlineNode = onlineNodes > 0
   const selectedBusy = !!workload && (
@@ -645,13 +646,12 @@ export function ApplicationDetailPage() {
                 <strong><ScrollText size={14} /> Recent runtime logs</strong>
                 <button type="button" className="linkish" onClick={() => setTab('build')}>Build logs →</button>
               </div>
-              {logsLoading && runtimeLines.length === 0 ? (
-                <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading logs…</span></div>
-              ) : (
-                <pre className="log-view log-view-compact">
-                  {runtimeLines.length ? runtimeLines.slice(-40).join('\n') : 'No runtime log lines yet.'}
-                </pre>
-              )}
+              <p className="muted">The control plane keeps the newest runtime lines (default 500, 14 days, or 32 MiB). Older rows are deleted in the background.</p>
+              <pre className="log-view log-view-compact">
+                {runtimeLines.length
+                  ? runtimeLines.slice(-40).join('\n')
+                  : (logsLoading ? 'Loading logs…' : 'No runtime log lines yet.')}
+              </pre>
             </div>
 
             <div className="compass-danger-zone">
@@ -674,6 +674,7 @@ export function ApplicationDetailPage() {
               <h2 className="compass-ov-card-title" style={{ margin: 0 }}>Build logs</h2>
               <span className="muted mono">{workload.latestBuildId ? shortId(workload.latestBuildId, 12) : 'no build'}</span>
             </div>
+            <p className="muted">Build logs exist only after a git build (default 800 lines, 14 days, or 32 MiB). An image such as nginx:alpine has no build.</p>
             {logsLoading && buildLines.length === 0 ? (
               <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading build logs…</span></div>
             ) : (

@@ -13,12 +13,12 @@ import (
 )
 
 type MetricSample struct {
-	ID       int64
-	NodeID   string
-	Name     string
-	Labels   map[string]string
-	Value    float64
-	TS       time.Time
+	ID     int64
+	NodeID string
+	Name   string
+	Labels map[string]string
+	Value  float64
+	TS     time.Time
 }
 
 type LogSegment struct {
@@ -256,19 +256,6 @@ func FilterLogSegmentsContains(segments []LogSegment, contains string) []LogSegm
 		}
 	}
 	return out
-}
-
-// RetainLogSegments keeps the newest N rows globally (ops retention).
-func RetainLogSegments(ctx context.Context, pool *pgxpool.Pool, keep int) error {
-	if keep < 100 {
-		keep = 100
-	}
-	_, err := pool.Exec(ctx, `
-		DELETE FROM log_segments
-		WHERE id NOT IN (
-			SELECT id FROM log_segments ORDER BY ts DESC, id DESC LIMIT $1
-		)`, keep)
-	return err
 }
 
 // RetainMetricSamples keeps the newest N metric samples.
