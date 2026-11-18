@@ -13,7 +13,7 @@ import { PageHero } from '../../../shared/ui/PageHero'
 import { MetricStrip } from '../../../shared/ui/MetricStrip'
 import { StatusPill } from '../../../shared/ui/StatusPill'
 import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
-import { shortId, workloadHint } from '../../../shared/lib/format'
+import { nodeCanRunContainers, shortId, workloadHint } from '../../../shared/lib/format'
 import { DeployProgressSteps } from './DeployProgressSteps'
 import type { Project, Workload } from '../../../gen/v1/workload_pb'
 import { listNodes } from '../../nodes/services/nodes-api'
@@ -147,7 +147,7 @@ export function ApplicationDetailPage() {
     setProject(foundProject)
     setWorkload(foundWorkload)
     setTotalNodes(nodes.length)
-    setOnlineNodes(nodes.filter((node) => node.status === 'online').length)
+    setOnlineNodes(nodes.filter((node) => nodeCanRunContainers(node)).length)
     // Don't clobber the Edit form while the user is typing (env values especially).
     if (foundWorkload && tabRef.current !== 'edit') fillEdit(foundWorkload)
     if (!foundProject) setError('Project not found')

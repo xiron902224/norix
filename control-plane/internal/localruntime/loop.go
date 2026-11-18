@@ -48,6 +48,10 @@ func touchLoop(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
 	defer ticker.Stop()
 	for {
 		caps := db.DetectHostCapabilities()
+		// The inventory row is not a worker. Leaving the host docker socket
+		// set makes the scheduler place workloads here, and nothing runs them.
+		caps.DockerSocket = false
+		caps.ContainerdSocket = false
 		orgs, err := db.ListOrganizationIDs(ctx, pool)
 		if err != nil {
 			logger.Error("list organizations for local node", "error", err)

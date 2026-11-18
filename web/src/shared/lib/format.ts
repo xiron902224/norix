@@ -22,11 +22,19 @@ export function relativeAge(value: string | undefined) {
   return formatWhen(value)
 }
 
+export function nodeCanRunContainers(node: {
+  status?: string
+  capabilities?: { dockerSocket?: boolean; containerdSocket?: boolean }
+}) {
+  const caps = node.capabilities
+  return node.status === 'online' && !!(caps?.dockerSocket || caps?.containerdSocket)
+}
+
 export function workloadHint(status: string, observed: bigint | number, desired: bigint | number, hasOnlineNode: boolean) {
   const obs = Number(observed)
   const des = Number(desired)
   if (!hasOnlineNode && (status === 'deploying' || des > obs)) {
-    return 'Waiting for an online agent heartbeat to reconcile this deploy.'
+    return 'Waiting for an agent with Docker. The control-plane inventory node does not run containers.'
   }
   if (status === 'deploying' && des > obs) {
     return 'Desired state queued — agent should pull/run on the next heartbeat (~10s).'

@@ -8,7 +8,7 @@ import { MetricStrip } from '../../../shared/ui/MetricStrip'
 import { ResourceTable, type ResourceRow } from '../../../shared/ui/ResourceTable'
 import { CreateModal, Modal } from '../../../shared/ui/Modal'
 import { ActivityBanner } from '../../../shared/ui/ActivityBanner'
-import { shortId } from '../../../shared/lib/format'
+import { nodeCanRunContainers, shortId } from '../../../shared/lib/format'
 import type { ComposeServiceSpec, Project, Workload } from '../../../gen/v1/workload_pb'
 import { listNodes } from '../../nodes/services/nodes-api'
 import {
@@ -62,7 +62,7 @@ export function ProjectDetailPage() {
       const [items, nodes] = await Promise.all([listWorkloads(projectId), listNodes()])
       setWorkloads(visibleWorkloads(items))
       setTotalNodes(nodes.length)
-      setOnlineNodes(nodes.filter((node) => node.status === 'online').length)
+      setOnlineNodes(nodes.filter((node) => nodeCanRunContainers(node)).length)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load workloads')
     } finally {
@@ -91,7 +91,7 @@ export function ProjectDetailPage() {
         }
         setWorkloads(visibleWorkloads(items))
         setTotalNodes(nodes.length)
-        setOnlineNodes(nodes.filter((node) => node.status === 'online').length)
+        setOnlineNodes(nodes.filter((node) => nodeCanRunContainers(node)).length)
       } catch (cause) {
         if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not load workloads')
       } finally {
@@ -105,7 +105,7 @@ export function ProjectDetailPage() {
           if (cancelled) return
           setWorkloads(visibleWorkloads(items))
           setTotalNodes(nodes.length)
-          setOnlineNodes(nodes.filter((node) => node.status === 'online').length)
+          setOnlineNodes(nodes.filter((node) => nodeCanRunContainers(node)).length)
         })
         .catch(() => { /* keep */ })
     }, 4000)
@@ -340,7 +340,7 @@ export function ProjectDetailPage() {
       {deploying > 0 ? (
         <ActivityBanner
           title={`Deploying ${deploying} application${deploying === 1 ? '' : 's'}`}
-          detail="Desired state queued; the agent reconciles in ~5–10s."
+          detail="Desired state queued. A worker with Docker reconciles on the next heartbeat (~10s). The inventory node does not."
         />
       ) : null}
       {!hasOnlineNode ? (

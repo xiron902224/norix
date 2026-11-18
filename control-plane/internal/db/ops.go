@@ -34,6 +34,18 @@ type AlertEvent struct {
 	CreatedAt    time.Time
 }
 
+// pgDumpArgs writes a plain SQL dump that drops objects before creating them.
+func pgDumpArgs(dsn, path string) []string {
+	return []string{"--no-owner", "--no-acl", "--clean", "--if-exists", "--dbname=" + dsn, "--file=" + path}
+}
+
+// publicSchemaResetSQL drops the live schema so a dump that only has CREATE
+// statements can be applied again. pg_dump without --clean hits
+// "relation already exists" (psql exit 3) on the second restore.
+func publicSchemaResetSQL() string {
+	return `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid(); DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public AUTHORIZATION CURRENT_USER; GRANT ALL ON SCHEMA public TO PUBLIC;`
+}
+
 func BackupDir() string {
 	if value := strings.TrimSpace(os.Getenv("NORIX_BACKUP_DIR")); value != "" {
 		return value
@@ -81,7 +93,7 @@ func CreatePostgresBackup(ctx context.Context, pool *pgxpool.Pool, tenantID, cre
 	var size int64
 
 	if bin, err := pgTool("NORIX_PG_DUMP", "pg_dump"); err == nil {
-		cmd := exec.CommandContext(ctx, bin, "--no-owner", "--no-acl", "--dbname="+dsn, "--file="+path)
+		cmd := exec.CommandContext(ctx, bin, pgDumpArgs(dsn, path)...)
 		output, runErr := cmd.CombinedOutput()
 		message = strings.TrimSpace(string(output))
 		if runErr != nil {
@@ -95,7 +107,7 @@ func CreatePostgresBackup(ctx context.Context, pool *pgxpool.Pool, tenantID, cre
 			return Backup{}, createErr
 		}
 		container := postgresDockerContainer()
-		cmd := exec.CommandContext(ctx, "docker", "exec", "-i", container, "pg_dump", "-U", "norix", "--no-owner", "--no-acl", "norix")
+		cmd := exec.CommandContext(ctx, "docker", "exec", "-i", container, "pg_dump", "-U", "norix", "--no-owner", "--no-acl", "--clean", "--if-exists", "norix")
 		cmd.Stdout = outFile
 		var stderr strings.Builder
 		cmd.Stderr = &stderr
@@ -224,7 +236,7 @@ func RestorePostgresBackup(ctx context.Context, pool *pgxpool.Pool, tenantID, ba
 	var restoreErr error
 
 	if bin, err := pgTool("NORIX_PSQL", "psql"); err == nil {
-		cmd := exec.CommandContext(ctx, bin, dsn, "-v", "ON_ERROR_STOP=1", "-f", path)
+		cmd := exec.CommandContext(ctx, bin, dsn, "-v", "ON_ERROR_STOP=1", "-c", publicSchemaResetSQL(), "-f", path)
 		output, err := cmd.CombinedOutput()
 		message = strings.TrimSpace(string(output))
 		restoreErr = err
@@ -237,7 +249,7 @@ func RestorePostgresBackup(ctx context.Context, pool *pgxpool.Pool, tenantID, ba
 			restoreErr = copyErr
 			message = strings.TrimSpace(string(out))
 		} else {
-			cmd := exec.CommandContext(ctx, "docker", "exec", "-i", container, "psql", "-U", "norix", "-d", "norix", "-v", "ON_ERROR_STOP=1", "-f", remote)
+			cmd := exec.CommandContext(ctx, "docker", "exec", "-i", container, "psql", "-U", "norix", "-d", "norix", "-v", "ON_ERROR_STOP=1", "-c", publicSchemaResetSQL(), "-f", remote)
 			output, err := cmd.CombinedOutput()
 			message = strings.TrimSpace(string(output))
 			restoreErr = err
