@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +21,24 @@ import (
 
 // BuildLogFn streams live lines to the control plane while a build runs.
 type BuildLogFn func(buildID, line string)
+
+const (
+	defaultBuildConcurrency = 2
+	maxBuildConcurrency     = 8
+)
+
+// buildConcurrency is how many builds the embedded runtime runs at once (#24).
+// NORIX_BUILD_CONCURRENCY sets it. Invalid values use the default. Values are clamped to 1..8.
+func buildConcurrency() int {
+	n, err := strconv.Atoi(strings.TrimSpace(os.Getenv("NORIX_BUILD_CONCURRENCY")))
+	if err != nil || n < 1 {
+		return defaultBuildConcurrency
+	}
+	if n > maxBuildConcurrency {
+		return maxBuildConcurrency
+	}
+	return n
+}
 
 func (runtime *Runtime) RunBuilds(ctx context.Context, builds []db.DesiredBuild, onLog BuildLogFn) []db.ObservedBuild {
 	observed := make([]db.ObservedBuild, 0, len(builds))

@@ -603,7 +603,7 @@ func ReclaimPendingBuilds(ctx context.Context, pool *pgxpool.Pool, organizationI
 		SET assigned_node_id = $1::uuid,
 		    status = 'pending',
 		    updated_at = NOW()
-		WHERE status IN ('pending', 'building')
+		WHERE status IN ('pending', 'building', 'queued')
 		  AND (
 			assigned_node_id IS NULL
 			OR assigned_node_id IN (

@@ -12,6 +12,8 @@
 
 - `norix doctor` (Rust CLI) and `scripts/install.sh preflight`: read-only checks for Docker, Compose v2, overlay, ports, disk, RAM, KVM, DNS (`--domain`). Each non-pass result prints a fix. `up` runs the preflight first; `NORIX_SKIP_PREFLIGHT=1` skips it (#34).
 
+- Parallel builds per node (`NORIX_BUILD_CONCURRENCY`, default 2). Builds over the limit show `queued` in the Build tab. `NORIX_BUILD_TIMEOUT_SECS` caps each build and kills its children. `NORIX_BUILDKIT_CPUS`/`NORIX_BUILDKIT_MEMORY` limit the shared BuildKit container. Concurrent Railpack builds no longer race to start BuildKit (#24).
+
 ### Changed
 - Compose stacks: `norix.override.json` is replaced by `norix.override.yml` (generated YAML). Bind mounts must stay inside the checkout or in `NORIX_COMPOSE_BIND_ALLOWLIST`. A failed `git fetch` keeps the checkout instead of deleting it (#147).
 

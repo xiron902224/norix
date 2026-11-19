@@ -1,31 +1,122 @@
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use tokio::fs;
 use tokio::process::Command;
+use tokio::sync::{Mutex, OwnedSemaphorePermit, Semaphore};
 use tracing::info;
 
 use crate::client::{DesiredBuild, ObservedBuild};
 use crate::gitssrf;
 use crate::runtime::Runtime;
 
-impl Runtime {
-    pub async fn run_builds(&self, builds: &[DesiredBuild]) -> Vec<ObservedBuild> {
-        let mut observed = Vec::with_capacity(builds.len());
-        for build in builds {
-            match self.run_build(build).await {
-                Ok(value) => observed.push(value),
-                Err(error) => observed.push(ObservedBuild {
-                    id: build.id.clone(),
-                    status: "failed".into(),
-                    image: String::new(),
-                    message: error.to_string(),
-                    log_lines: vec![error.to_string()],
-                }),
-            }
+/// Default number of builds that run at the same time on one node (#24).
+pub const DEFAULT_BUILD_CONCURRENCY: usize = 2;
+const MAX_BUILD_CONCURRENCY: usize = 8;
+/// Default wall-clock limit for one build, in seconds.
+pub const DEFAULT_BUILD_TIMEOUT_SECS: u64 = 3600;
+const MIN_BUILD_TIMEOUT_SECS: u64 = 60;
+const MAX_BUILD_TIMEOUT_SECS: u64 = 21600;
+
+/// Limits how many builds run at once on this node. Builds beyond the limit wait
+/// for a slot and report `queued` while they wait.
+pub struct BuildSlots {
+    semaphore: Arc<Semaphore>,
+    limit: usize,
+    timeout: Duration,
+}
+
+impl BuildSlots {
+    pub fn new(limit: usize, timeout: Duration) -> Self {
+        let limit = limit.max(1);
+        Self {
+            semaphore: Arc::new(Semaphore::new(limit)),
+            limit,
+            timeout,
         }
-        observed
+    }
+
+    pub fn limit(&self) -> usize {
+        self.limit
+    }
+
+    pub fn busy(&self) -> usize {
+        self.limit - self.semaphore.available_permits()
+    }
+
+    pub fn timeout(&self) -> Duration {
+        self.timeout
+    }
+
+    pub fn try_acquire(&self) -> Option<OwnedSemaphorePermit> {
+        self.semaphore.clone().try_acquire_owned().ok()
+    }
+
+    pub async fn acquire(&self) -> OwnedSemaphorePermit {
+        // The semaphore is never closed, so acquiring cannot fail.
+        self.semaphore
+            .clone()
+            .acquire_owned()
+            .await
+            .expect("build semaphore is never closed")
+    }
+}
+
+/// The process-wide build slots, configured from `NORIX_BUILD_CONCURRENCY` and
+/// `NORIX_BUILD_TIMEOUT_SECS` on first use.
+pub fn slots() -> &'static BuildSlots {
+    static SLOTS: OnceLock<BuildSlots> = OnceLock::new();
+    SLOTS.get_or_init(|| {
+        BuildSlots::new(
+            parse_concurrency(std::env::var("NORIX_BUILD_CONCURRENCY").ok().as_deref()),
+            parse_timeout(std::env::var("NORIX_BUILD_TIMEOUT_SECS").ok().as_deref()),
+        )
+    })
+}
+
+/// Parses the concurrency. Missing or invalid values use the default. Values are clamped to 1..=8.
+pub fn parse_concurrency(raw: Option<&str>) -> usize {
+    raw.and_then(|v| v.trim().parse::<usize>().ok())
+        .map(|v| v.clamp(1, MAX_BUILD_CONCURRENCY))
+        .unwrap_or(DEFAULT_BUILD_CONCURRENCY)
+}
+
+/// Parses the timeout in seconds. Values are clamped to 60..=21600.
+pub fn parse_timeout(raw: Option<&str>) -> Duration {
+    let secs = raw
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .map(|v| v.clamp(MIN_BUILD_TIMEOUT_SECS, MAX_BUILD_TIMEOUT_SECS))
+        .unwrap_or(DEFAULT_BUILD_TIMEOUT_SECS);
+    Duration::from_secs(secs)
+}
+
+/// One BuildKit daemon container is shared by all Railpack builds. Starting it is
+/// check-then-act, so two builds must not do it at the same time.
+fn buildkit_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
+impl Runtime {
+    /// Runs one build under the timeout. Failures become a `failed` report, never an error.
+    pub async fn run_build_with_timeout(&self, build: &DesiredBuild) -> ObservedBuild {
+        let limit = slots().timeout();
+        let failed = |message: String| ObservedBuild {
+            id: build.id.clone(),
+            status: "failed".into(),
+            image: String::new(),
+            message: message.clone(),
+            log_lines: vec![message],
+        };
+        match tokio::time::timeout(limit, self.run_build(build)).await {
+            Ok(Ok(value)) => value,
+            Ok(Err(error)) => failed(error.to_string()),
+            // The future is dropped here. kill_on_drop stops the git and docker children.
+            Err(_) => failed(format!("build timed out after {}s", limit.as_secs())),
+        }
     }
 
     async fn run_build(&self, build: &DesiredBuild) -> Result<ObservedBuild> {
@@ -145,6 +236,7 @@ impl Runtime {
             .env("DOCKER_BUILDKIT", "1")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
+            .kill_on_drop(true)
             .output()
             .await
             .context("run railpack")?;
@@ -452,24 +544,26 @@ async fn ensure_buildkit_host(logs: &mut Vec<String>) -> Result<String> {
         }
     }
     const NAME: &str = "norix-buildkit";
+    let _guard = buildkit_lock().lock().await;
     let (ok, out) = run_capture("docker", &["inspect", "-f", "{{.State.Running}}", NAME]).await;
     let running = ok && out.trim() == "true";
     if !running {
         logs.push(format!("starting BuildKit container {NAME}"));
         let _ = run_capture("docker", &["rm", "-f", NAME]).await;
-        let (started, start_out) = run_capture(
-            "docker",
-            &[
-                "run",
-                "--rm",
-                "--privileged",
-                "-d",
-                "--name",
-                NAME,
-                "moby/buildkit:buildx-stable-1",
-            ],
-        )
-        .await;
+        let mut args = vec!["run", "--rm", "--privileged", "-d", "--name", NAME];
+        // Optional limits for the shared BuildKit daemon, for example NORIX_BUILDKIT_CPUS=2
+        // and NORIX_BUILDKIT_MEMORY=4g. They apply when the container starts. docker build
+        // runs in the Docker daemon and is not limited here.
+        let cpus = std::env::var("NORIX_BUILDKIT_CPUS").unwrap_or_default();
+        let memory = std::env::var("NORIX_BUILDKIT_MEMORY").unwrap_or_default();
+        if !cpus.trim().is_empty() {
+            args.extend(["--cpus", cpus.trim()]);
+        }
+        if !memory.trim().is_empty() {
+            args.extend(["--memory", memory.trim()]);
+        }
+        args.push("moby/buildkit:buildx-stable-1");
+        let (started, start_out) = run_capture("docker", &args).await;
         if !started {
             bail!("start buildkit failed: {start_out}");
         }
@@ -485,6 +579,7 @@ async fn run_capture(program: &str, args: &[&str]) -> (bool, String) {
         .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
+        .kill_on_drop(true)
         .output()
         .await;
     match output {
@@ -505,4 +600,54 @@ fn truncate_lines(output: &str, max: usize) -> Vec<String> {
         .take(max)
         .map(str::to_string)
         .collect()
+}
+
+#[cfg(test)]
+mod slot_tests {
+    use super::*;
+
+    #[test]
+    fn concurrency_defaults_and_clamps() {
+        assert_eq!(parse_concurrency(None), DEFAULT_BUILD_CONCURRENCY);
+        assert_eq!(parse_concurrency(Some("nope")), DEFAULT_BUILD_CONCURRENCY);
+        assert_eq!(parse_concurrency(Some("0")), 1);
+        assert_eq!(parse_concurrency(Some(" 4 ")), 4);
+        assert_eq!(parse_concurrency(Some("99")), MAX_BUILD_CONCURRENCY);
+    }
+
+    #[test]
+    fn timeout_defaults_and_clamps() {
+        assert_eq!(
+            parse_timeout(None),
+            Duration::from_secs(DEFAULT_BUILD_TIMEOUT_SECS)
+        );
+        assert_eq!(
+            parse_timeout(Some("5")),
+            Duration::from_secs(MIN_BUILD_TIMEOUT_SECS)
+        );
+        assert_eq!(parse_timeout(Some("900")), Duration::from_secs(900));
+        assert_eq!(
+            parse_timeout(Some("999999")),
+            Duration::from_secs(MAX_BUILD_TIMEOUT_SECS)
+        );
+    }
+
+    #[test]
+    fn slots_block_past_the_limit_and_release_on_drop() {
+        let slots = BuildSlots::new(2, Duration::from_secs(60));
+        let first = slots.try_acquire().expect("first slot");
+        let second = slots.try_acquire().expect("second slot");
+        assert_eq!(slots.busy(), 2);
+        assert!(slots.try_acquire().is_none(), "third build must wait");
+        drop(first);
+        assert_eq!(slots.busy(), 1);
+        assert!(slots.try_acquire().is_some());
+        drop(second);
+    }
+
+    #[test]
+    fn zero_limit_is_raised_to_one() {
+        let slots = BuildSlots::new(0, Duration::from_secs(60));
+        assert_eq!(slots.limit(), 1);
+    }
 }

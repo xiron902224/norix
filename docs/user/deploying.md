@@ -49,6 +49,18 @@ Examples without Dockerfiles: [`examples/`](../../examples/). Build logs stream 
 
 Build nodes need Docker. Progress and logs appear under builds / workload logs in the UI.
 
+### Build concurrency and limits (#24)
+
+Builds run in parallel on each node, up to `NORIX_BUILD_CONCURRENCY` (default `2`, clamped to 1–8) on the agent and on the embedded runtime. A build over the limit waits and shows `queued` in the **Build** tab, with a log line such as `queued: 2 of 2 build slots busy`.
+
+| Variable | Default | Effect |
+|---|---|---|
+| `NORIX_BUILD_CONCURRENCY` | `2` | Builds that run at once on one node |
+| `NORIX_BUILD_TIMEOUT_SECS` | `3600` | Wall-clock limit per build (60–21600). On timeout the build fails and its git/docker children are killed |
+| `NORIX_BUILDKIT_CPUS` / `NORIX_BUILDKIT_MEMORY` | unset | CPU and memory limits (for example `2` and `4g`) for the shared BuildKit container used by Railpack. They apply when Norix starts that container |
+
+`docker build` runs in the Docker daemon and is not limited by these variables. Use Docker's own limits for that path.
+
 ### Git URL SSRF controls
 
 Norix validates Git remotes before clone (control plane and agent):
