@@ -25,9 +25,54 @@ use tokio::time::{sleep, Instant};
 use tracing::{info, warn};
 
 use crate::capabilities::detect;
-use crate::client::{AgentClient, NodeState};
+use crate::client::{AgentClient, DesiredBuild, NodeState, ObservedBuild};
 use crate::config::Config;
 use crate::runtime::{is_container_runtime, is_microvm_runtime, Runtime};
+
+/// Runs one build. While it waits for a slot it reports `queued`, so the control plane
+/// can show the queue. When it finishes it reports the result (#24).
+async fn run_build_task(
+    runtime: &Runtime,
+    client: &AgentClient,
+    state: &NodeState,
+    build: &DesiredBuild,
+) {
+    let slots = build::slots();
+    let permit = match slots.try_acquire() {
+        Some(permit) => permit,
+        None => {
+            let waiting = ObservedBuild {
+                id: build.id.clone(),
+                status: "queued".into(),
+                image: String::new(),
+                message: "waiting for a build slot".into(),
+                log_lines: vec![format!(
+                    "queued: {} of {} build slots busy",
+                    slots.busy(),
+                    slots.limit()
+                )],
+            };
+            report_build_result(client, state, &waiting).await;
+            slots.acquire().await
+        }
+    };
+    let observed = runtime.run_build_with_timeout(build).await;
+    drop(permit);
+    report_build_result(client, state, &observed).await;
+}
+
+async fn report_build_result(client: &AgentClient, state: &NodeState, observed: &ObservedBuild) {
+    if let Err(error) = retry_operation(
+        "report_build",
+        || client.report_build(state, observed),
+        3,
+        Duration::from_millis(250),
+    )
+    .await
+    {
+        warn!(%error, build_id = %observed.id, "report build failed after retries");
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -201,25 +246,20 @@ async fn main() -> Result<()> {
                                 // A git build can take many minutes. Running it inside the
                                 // heartbeat loop marked the node offline and froze every
                                 // other action (deletes, image deploys) until it finished.
-                                info!(count = desired.desired_builds.len(), "running desired builds");
-                                let runtime = runtime.clone();
-                                let client = client.clone();
-                                let state = state.clone();
-                                let builds = desired.desired_builds.clone();
-                                tokio::spawn(async move {
-                                    for observed in runtime.run_builds(&builds).await {
-                                        if let Err(error) = retry_operation(
-                                            "report_build",
-                                            || client.report_build(&state, &observed),
-                                            3,
-                                            Duration::from_millis(250),
-                                        )
-                                        .await
-                                        {
-                                            warn!(%error, build_id = %observed.id, "report build failed after retries");
-                                        }
-                                    }
-                                });
+                                // Each build gets its own task. build::slots() limits how many run at once (#24).
+                                info!(
+                                    count = desired.desired_builds.len(),
+                                    limit = build::slots().limit(),
+                                    "scheduling desired builds"
+                                );
+                                for build in desired.desired_builds.clone() {
+                                    let runtime = runtime.clone();
+                                    let client = client.clone();
+                                    let state = state.clone();
+                                    tokio::spawn(async move {
+                                        run_build_task(&runtime, &client, &state, &build).await;
+                                    });
+                                }
                             }
                             if !desired.desired_workloads.is_empty() {
                                 info!(count = desired.desired_workloads.len(), "reconciling desired workloads");

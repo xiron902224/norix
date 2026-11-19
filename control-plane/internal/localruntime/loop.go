@@ -3,6 +3,7 @@ package localruntime
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -160,21 +161,30 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, runtime *Runtime, logger *
 		} else if len(builds) > 0 {
 			logger.Info("running local builds", "org", orgID, "count", len(builds))
 			buildCtx, cancel := context.WithTimeout(ctx, 20*time.Minute)
-			// Apply each build as it finishes so sibling compose services can
-			// deploy instead of waiting on the slowest image in the batch.
+			// Builds run in parallel, up to NORIX_BUILD_CONCURRENCY (#24). Each build is
+			// applied as soon as it finishes so sibling compose services can deploy early.
+			slots := make(chan struct{}, buildConcurrency())
+			var wg sync.WaitGroup
 			for _, build := range builds {
-				observedBuilds := runtime.RunBuilds(buildCtx, []db.DesiredBuild{build}, func(buildID, line string) {
-					if err := db.AppendBuildLogLines(ctx, pool, orgID, buildID, []string{line}); err != nil {
-						logger.Debug("append build log", "build", buildID, "error", err)
+				slots <- struct{}{}
+				wg.Add(1)
+				go func(build db.DesiredBuild) {
+					defer wg.Done()
+					defer func() { <-slots }()
+					observedBuilds := runtime.RunBuilds(buildCtx, []db.DesiredBuild{build}, func(buildID, line string) {
+						if err := db.AppendBuildLogLines(ctx, pool, orgID, buildID, []string{line}); err != nil {
+							logger.Debug("append build log", "build", buildID, "error", err)
+						}
+					})
+					for _, observedBuild := range observedBuilds {
+						observedBuild.LogLines = nil
+						if err := db.ApplyObservedBuild(ctx, pool, orgID, observedBuild, db.AuditActor{Email: "local-runtime"}); err != nil {
+							logger.Warn("apply observed build", "org", orgID, "build", observedBuild.ID, "error", err)
+						}
 					}
-				})
-				for _, observedBuild := range observedBuilds {
-					observedBuild.LogLines = nil
-					if err := db.ApplyObservedBuild(ctx, pool, orgID, observedBuild, db.AuditActor{Email: "local-runtime"}); err != nil {
-						logger.Warn("apply observed build", "org", orgID, "build", observedBuild.ID, "error", err)
-					}
-				}
+				}(build)
 			}
+			wg.Wait()
 			cancel()
 		}
 	}

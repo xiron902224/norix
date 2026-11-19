@@ -373,7 +373,9 @@ impl Runtime {
         command
             .args(args)
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+            .stderr(Stdio::piped())
+            // A build that hits its timeout drops this future; the child must not outlive it.
+            .kill_on_drop(true);
         if let Some(path) = dir {
             command.current_dir(path);
         }

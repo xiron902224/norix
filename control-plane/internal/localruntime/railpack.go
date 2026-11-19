@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/xiron902224/norix/control-plane/internal/db"
@@ -34,11 +35,16 @@ func detectRailpackSource(cloneDir string) (kind, reason string, ok bool) {
 	return "", "", false
 }
 
+var buildKitMu sync.Mutex
+
 func ensureBuildKitHost(ctx context.Context, appendLog func(string)) (string, error) {
 	if host := strings.TrimSpace(os.Getenv("BUILDKIT_HOST")); host != "" {
 		appendLog(fmt.Sprintf("using BUILDKIT_HOST=%s", host))
 		return host, nil
 	}
+	// Parallel builds share one BuildKit container. Inspect-then-run must not race (#24).
+	buildKitMu.Lock()
+	defer buildKitMu.Unlock()
 	const name = "norix-buildkit"
 	inspect := exec.CommandContext(ctx, "docker", "inspect", "-f", "{{.State.Running}}", name)
 	out, err := inspect.CombinedOutput()
@@ -46,8 +52,16 @@ func ensureBuildKitHost(ctx context.Context, appendLog func(string)) (string, er
 	if !running {
 		appendLog("starting BuildKit container " + name)
 		_ = exec.CommandContext(ctx, "docker", "rm", "-f", name).Run()
-		start := exec.CommandContext(ctx, "docker", "run", "--rm", "--privileged", "-d",
-			"--name", name, "moby/buildkit:buildx-stable-1")
+		// Optional limits for the shared daemon: NORIX_BUILDKIT_CPUS, NORIX_BUILDKIT_MEMORY.
+		runArgs := []string{"run", "--rm", "--privileged", "-d"}
+		if v := strings.TrimSpace(os.Getenv("NORIX_BUILDKIT_CPUS")); v != "" {
+			runArgs = append(runArgs, "--cpus", v)
+		}
+		if v := strings.TrimSpace(os.Getenv("NORIX_BUILDKIT_MEMORY")); v != "" {
+			runArgs = append(runArgs, "--memory", v)
+		}
+		runArgs = append(runArgs, "--name", name, "moby/buildkit:buildx-stable-1")
+		start := exec.CommandContext(ctx, "docker", runArgs...)
 		if startOut, startErr := start.CombinedOutput(); startErr != nil {
 			return "", fmt.Errorf("start buildkit: %w (%s)", startErr, strings.TrimSpace(string(startOut)))
 		}
