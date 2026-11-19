@@ -22,9 +22,12 @@ require_command() {
 
 usage() {
     cat <<'EOF'
-Usage: scripts/install.sh [up|upgrade|uninstall|checksums|verify-release|status] [options]
+Usage: scripts/install.sh [up|preflight|upgrade|uninstall|checksums|verify-release|status] [options]
 
-  up              Start postgres + edge (caddy/pebble); create ~/.norix/.env if missing
+  preflight       Read-only host checks (Docker, Compose, ports, disk, RAM, KVM); same as norix doctor
+  up              Run preflight, then start postgres + edge (caddy/pebble); create ~/.norix/.env if missing
+                  NORIX_SKIP_PREFLIGHT=1 skips the checks; NORIX_PREFLIGHT_PORTS sets the ports
+                  (default 5432,14000,8088,8443,2019: what up publishes on 127.0.0.1)
   upgrade         Pull images and recreate services (preserves volumes)
   uninstall       Stop and remove containers (keeps volumes unless NORIX_PURGE=1)
   checksums       Print SHA256 of key binaries/scripts for release verification
@@ -152,6 +155,85 @@ require_docker() {
     docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is required"
 }
 
+# Read-only host checks, the same ones as `norix doctor` (#34).
+# Hard failures stop the install. Soft findings only warn.
+# NORIX_PREFLIGHT_PORTS overrides the ports. The default is what `up` publishes
+# on 127.0.0.1: postgres 5432, pebble 14000, edge 8088/8443 and admin 2019.
+# NORIX_SKIP_PREFLIGHT=1 skips the checks entirely.
+preflight() {
+    local failed=0
+    local ports="${NORIX_PREFLIGHT_PORTS:-5432,14000,8088,8443,2019}"
+    local port avail_kib mem_kib
+
+    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+        log "[PASS] docker: engine $(docker info --format '{{.ServerVersion}}' 2>/dev/null)"
+    else
+        log "[FAIL] docker: not installed, or the daemon is not reachable for this user"
+        log "       fix: install Docker Engine (https://docs.docker.com/engine/install/) and add your user to the docker group"
+        failed=1
+    fi
+
+    if docker compose version --short 2>/dev/null | grep -Eq '^v?[2-9]\.'; then
+        log "[PASS] docker compose: $(docker compose version --short 2>/dev/null)"
+    else
+        log "[FAIL] docker compose: v2 is required"
+        log "       fix: install the docker-compose-plugin package"
+        failed=1
+    fi
+
+    if grep -qw overlay /proc/filesystems 2>/dev/null; then
+        log "[PASS] kernel overlay: available"
+    else
+        log "[FAIL] kernel overlay: not available"
+        log "       fix: sudo modprobe overlay (Docker's default storage driver)"
+        failed=1
+    fi
+
+    IFS=',' read -r -a port_list <<<"${ports}"
+    for port in "${port_list[@]}"; do
+        if docker ps --format '{{.Ports}}' 2>/dev/null | grep -Eq "[:.]${port}->"; then
+            log "[PASS] port ${port}: published by a running container (re-run is fine)"
+        elif (exec 3<>"/dev/tcp/127.0.0.1/${port}") 2>/dev/null; then
+            log "[FAIL] port ${port}: already in use"
+            log "       fix: stop the process that owns it (ss -ltnp) or set NORIX_PREFLIGHT_PORTS"
+            failed=1
+        else
+            log "[PASS] port ${port}: free"
+        fi
+    done
+
+    avail_kib="$(df -Pk /var/lib/docker 2>/dev/null | awk 'NR==2 {print $4}')"
+    [[ -n "${avail_kib}" ]] || avail_kib="$(df -Pk / 2>/dev/null | awk 'NR==2 {print $4}')"
+    if [[ -z "${avail_kib}" ]]; then
+        log "[WARN] disk: could not read free space"
+        log "       fix: run df -h and confirm there is room for images and the build cache"
+    elif (( avail_kib / 1024 / 1024 >= 10 )); then
+        log "[PASS] disk: $(( avail_kib / 1024 / 1024 )) GiB free"
+    else
+        log "[WARN] disk: $(( avail_kib / 1024 / 1024 )) GiB free, 10 GiB recommended"
+        log "       fix: free disk space; images and build cache need room"
+    fi
+
+    mem_kib="$(awk '/MemAvailable/ {print $2}' /proc/meminfo 2>/dev/null || true)"
+    if [[ -n "${mem_kib}" ]] && (( mem_kib / 1024 >= 2048 )); then
+        log "[PASS] memory: $(( mem_kib / 1024 )) MiB available"
+    else
+        log "[WARN] memory: under 2 GiB available, or not measurable"
+        log "       fix: add RAM or stop other workloads before running builds"
+    fi
+
+    if [[ -r /dev/kvm && -w /dev/kvm ]]; then
+        log "[PASS] kvm: /dev/kvm is accessible"
+    else
+        log "[WARN] kvm: /dev/kvm not accessible (optional; needed for the micro-VM runtime)"
+    fi
+
+    if (( failed )); then
+        die "preflight failed; fix the [FAIL] items above (or set NORIX_SKIP_PREFLIGHT=1)"
+    fi
+    log "Preflight passed"
+}
+
 ensure_home() {
     if [[ -e "${NORIX_HOME}" && ! -d "${NORIX_HOME}" ]]; then
         die "NORIX_HOME exists but is not a directory: ${NORIX_HOME}"
@@ -191,7 +273,15 @@ case "${COMMAND}" in
     -h|--help|help)
         usage
         ;;
+    preflight)
+        preflight
+        ;;
     up|install)
+        if [[ "${NORIX_SKIP_PREFLIGHT:-}" == "1" ]]; then
+            log "Skipping preflight (NORIX_SKIP_PREFLIGHT=1)"
+        else
+            preflight
+        fi
         require_docker
         ensure_home
         ensure_env

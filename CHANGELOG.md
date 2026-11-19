@@ -10,6 +10,8 @@
 
 - Example apps: `examples/compose-multi-service` (db, api, web) is a Compose stack example. CI starts it with `docker compose up --wait` and checks that api reaches db over the service alias (#35).
 
+- `norix doctor` (Rust CLI) and `scripts/install.sh preflight`: read-only checks for Docker, Compose v2, overlay, ports, disk, RAM, KVM, DNS (`--domain`). Each non-pass result prints a fix. `up` runs the preflight first; `NORIX_SKIP_PREFLIGHT=1` skips it (#34).
+
 ### Changed
 - Compose stacks: `norix.override.json` is replaced by `norix.override.yml` (generated YAML). Bind mounts must stay inside the checkout or in `NORIX_COMPOSE_BIND_ALLOWLIST`. A failed `git fetch` keeps the checkout instead of deleting it (#147).
 

@@ -13,6 +13,7 @@ Guía completa (EN): [`../troubleshooting.md`](../troubleshooting.md).
 | Micro-VM / KVM | Experimental; hace falta `/dev/kvm` en el nodo |
 | Versiones de agent distintas | **Update agent** o `norix-agent update` |
 | Badge de versión vacío (Vite local) | Proxy `/status` |
+| Antes de instalar | `norix doctor` o `scripts/install.sh preflight` (#34) |
 
 ```bash
 norix-control-plane check
