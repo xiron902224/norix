@@ -6,6 +6,7 @@ import (
 	"path"
 	"strings"
 	"time"
+	"unicode"
 
 	"connectrpc.com/connect/v2"
 	"github.com/xiron902224/norix/control-plane/internal/db"
@@ -29,17 +30,18 @@ func validateComposePath(raw string) (string, error) {
 	return clean, nil
 }
 
-// validateStackName allows names that are readable in the UI and in audit logs.
+// validateStackName allows a display name. The docker compose project is
+// derived from the stack id, so spaces and letters outside ASCII are safe.
 func validateStackName(raw string) (string, error) {
 	name := strings.TrimSpace(raw)
-	if name == "" || len(name) > 63 {
+	if name == "" || len([]rune(name)) > 63 {
 		return "", errors.New("stack name must be 1-63 characters")
 	}
 	for _, ch := range name {
-		ok := (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '_'
-		if !ok {
-			return "", errors.New("stack name may only contain letters, digits, '-' and '_'")
+		if unicode.IsLetter(ch) || unicode.IsDigit(ch) || ch == ' ' || ch == '-' || ch == '_' || ch == '.' {
+			continue
 		}
+		return "", errors.New("stack name may only contain letters, digits, spaces, '-', '_' and '.'")
 	}
 	return name, nil
 }

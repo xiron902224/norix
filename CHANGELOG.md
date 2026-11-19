@@ -12,6 +12,8 @@
 - Persistent named volumes for workloads: declare mounts, sticky node placement, drain warnings, Backup/Delete API + UI, docs EN/ES (#16)
 
 ### Fixed
+- A git build no longer blocks the agent heartbeat. Deletes, compose actions and image deploys keep flowing while `docker build` runs, and a workload stays `building` (Build logs tab) until the image exists.
+- Compose stack display names may include spaces, dots, and letters outside ASCII (`Infra de abogados`). The Docker Compose project name still comes from the stack id.
 - `ReportWasm` is authenticated with the node token like the other agent reports. Before, the control plane treated it as a user call and rejected it.
 - Backup restore no longer fails with `relation "alert_events" already exists`. The dump uses `--clean --if-exists`, and restore drops schema `public` before loading the file.
 - The inventory node `control-plane` is not advertised as a Docker worker unless embedded runtime is on, so deploys are not stuck on a node that never runs containers.

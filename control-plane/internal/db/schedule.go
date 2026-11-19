@@ -439,7 +439,7 @@ func syncParentFromPrimary(ctx context.Context, tx pgx.Tx, workloadID string) er
 			assigned_node_id = wr.assigned_node_id,
 			host_port = wr.host_port,
 			container_port = wr.container_port,
-			status = CASE WHEN w.status = 'deleting' THEN 'deleting' ELSE wr.status END,
+			status = CASE WHEN w.status IN ('deleting', 'building') THEN w.status ELSE wr.status END,
 			desired_generation = wr.desired_generation,
 			observed_generation = wr.observed_generation,
 			desired_action = CASE WHEN w.status = 'deleting' THEN 'stop' ELSE wr.desired_action END,
@@ -711,7 +711,9 @@ func RescheduleOrphanReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID 
 		FROM workload_replicas wr
 		JOIN workloads w ON w.id = wr.workload_id
 		LEFT JOIN nodes n ON n.id = wr.assigned_node_id
-		WHERE (
+		WHERE w.status <> 'building'
+		  AND w.image_or_source <> 'pending-build'
+		  AND (
 			wr.assigned_node_id IS NULL
 			OR n.id IS NULL
 			OR n.status <> 'online'
@@ -737,13 +739,13 @@ func RescheduleOrphanReplicas(ctx context.Context, pool *pgxpool.Pool, tenantID 
 		return 0, err
 	}
 	type orphan struct {
-		ID, WorkloadID, NodeID string
-		Index                  int32
-		HostPort, ContainerPort int32
+		ID, WorkloadID, NodeID             string
+		Index                              int32
+		HostPort, ContainerPort            int32
 		DesiredAction, Status, ContainerID string
-		NodeStatus             string
-		NodeDraining           bool
-		HasVolumes             bool
+		NodeStatus                         string
+		NodeDraining                       bool
+		HasVolumes                         bool
 	}
 	orphans := make([]orphan, 0)
 	for rows.Next() {

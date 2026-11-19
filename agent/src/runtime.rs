@@ -12,6 +12,7 @@ enum Engine {
     Nerdctl,
 }
 
+#[derive(Clone)]
 pub struct Runtime {
     engine: Engine,
 }

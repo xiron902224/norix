@@ -197,19 +197,28 @@ async fn main() -> Result<()> {
                         }
                         if let Some(runtime) = runtime.as_ref() {
                             if !desired.desired_builds.is_empty() {
+                                // A git build can take many minutes. Running it inside the
+                                // heartbeat loop marked the node offline and froze every
+                                // other action (deletes, image deploys) until it finished.
                                 info!(count = desired.desired_builds.len(), "running desired builds");
-                                for observed in runtime.run_builds(&desired.desired_builds).await {
-                                    if let Err(error) = retry_operation(
-                                        "report_build",
-                                        || client.report_build(&state, &observed),
-                                        3,
-                                        Duration::from_millis(250),
-                                    )
-                                    .await
-                                    {
-                                        warn!(%error, build_id = %observed.id, "report build failed after retries");
+                                let runtime = runtime.clone();
+                                let client = client.clone();
+                                let state = state.clone();
+                                let builds = desired.desired_builds.clone();
+                                tokio::spawn(async move {
+                                    for observed in runtime.run_builds(&builds).await {
+                                        if let Err(error) = retry_operation(
+                                            "report_build",
+                                            || client.report_build(&state, &observed),
+                                            3,
+                                            Duration::from_millis(250),
+                                        )
+                                        .await
+                                        {
+                                            warn!(%error, build_id = %observed.id, "report build failed after retries");
+                                        }
                                     }
-                                }
+                                });
                             }
                             if !desired.desired_workloads.is_empty() {
                                 info!(count = desired.desired_workloads.len(), "reconciling desired workloads");

@@ -23,12 +23,15 @@ func TestValidateComposePath(t *testing.T) {
 }
 
 func TestValidateStackName(t *testing.T) {
-	for _, good := range []string{"infra", "api_v2", "Dexi-1"} {
+	for _, good := range []string{"infra", "api_v2", "Dexi-1", "rodo example", "Infra de abogados", "  todo.app  "} {
 		if _, err := validateStackName(good); err != nil {
 			t.Fatalf("validateStackName(%q): %v", good, err)
 		}
 	}
-	for _, bad := range []string{"", "with space", "semi;colon", "x/y"} {
+	if got, err := validateStackName("  rodo example  "); err != nil || got != "rodo example" {
+		t.Fatalf("trimmed name = %q, %v", got, err)
+	}
+	for _, bad := range []string{"", "semi;colon", "x/y", "a\nb", "../x"} {
 		if _, err := validateStackName(bad); err == nil {
 			t.Fatalf("validateStackName(%q) must fail", bad)
 		}
