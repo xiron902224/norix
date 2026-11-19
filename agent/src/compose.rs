@@ -2,23 +2,33 @@
 //!
 //! Each stack lives in `<workdir>/stacks/<id>/`: `src/` is the git checkout
 //! (kept between deploys so relative bind mounts keep their data),
-//! `norix.override.json` adds Norix labels, `generation` is the last applied
+//! `norix.override.yml` joins the project network, drops host ports of internal
+//! services and labels everything, `stack.env` is the `.env` for interpolation
+//! (written 0600 and removed after each apply), `generated.json` keeps generated
+//! secrets, `model.json` keeps ports and volumes, `generation` is the last applied
 //! generation and `last_error` the last failed apply.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
-use serde_json::{json, Value};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tokio::fs;
 use tokio::process::Command;
 use tracing::{info, warn};
 
 use crate::client::{
-    AgentClient, DesiredComposeStack, NodeState, ObservedComposeLogLine, ObservedComposeService,
-    ObservedComposeStack,
+    AgentClient, ComposeVolume, DesiredComposeStack, NodeState, ObservedComposeLogLine,
+    ObservedComposeService, ObservedComposeStack,
+};
+use crate::compose_model::{
+    self, bind_allowlist_from_env, bind_rejected, build_override_yaml, format_env,
+    generated_secret_names, parse_compose_config, project_network_name, redact_secrets,
+    required_var_names,
 };
 use crate::gitssrf;
 
@@ -108,11 +118,17 @@ impl ComposeStacks {
                         message: format!("applying {} ({})", stack.action, stack.compose_path),
                         services: vec![],
                         log_lines: vec![],
+                        ..Default::default()
                     },
                 )
                 .await;
             let mut logs = Vec::new();
-            let result = self.apply(stack, &dir, &mut logs).await;
+            let outcome = self.apply(stack, &dir, &mut logs).await;
+            let generated: HashMap<String, String> = outcome
+                .as_ref()
+                .map(|values| values.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+                .unwrap_or_default();
+            let result: Result<()> = outcome.map(|_| ());
             let log_lines = logs
                 .into_iter()
                 .rev()
@@ -134,6 +150,7 @@ impl ComposeStacks {
                         message: String::new(),
                         services: vec![],
                         log_lines,
+                        ..Default::default()
                     },
                     Err(error) => ObservedComposeStack {
                         id: stack.id.clone(),
@@ -142,6 +159,7 @@ impl ComposeStacks {
                         message: format!("{error:#}"),
                         services: vec![],
                         log_lines,
+                        ..Default::default()
                     },
                 };
             }
@@ -158,6 +176,7 @@ impl ComposeStacks {
             let _ = fs::write(dir.join("generation"), stack.generation.to_string()).await;
             info!(stack_id = %stack.id, action = %stack.action, ok = result.is_ok(), "compose stack applied");
             let mut observed = self.observe(stack, &dir).await;
+            observed.generated_env = generated;
             observed.log_lines.splice(0..0, log_lines);
             return observed;
         }
@@ -177,7 +196,7 @@ impl ComposeStacks {
         stack: &DesiredComposeStack,
         dir: &Path,
         logs: &mut Vec<String>,
-    ) -> Result<()> {
+    ) -> Result<BTreeMap<String, String>> {
         match stack.action.as_str() {
             "up" => self.up(stack, dir, logs).await,
             "stop" => {
@@ -194,39 +213,67 @@ impl ComposeStacks {
                 if !ok {
                     bail!("docker compose stop failed");
                 }
-                Ok(())
+                Ok(BTreeMap::new())
             }
             "down" => {
-                let (ok, out) = self
-                    .compose(
+                let src = dir.join("src");
+                let override_path = dir.join("norix.override.yml");
+                let compose_file = safe_compose_file(&src, &stack.compose_path).ok();
+                let mut files: Vec<&Path> = Vec::new();
+                if let Some(file) = compose_file.as_deref() {
+                    files.push(file);
+                }
+                if override_path.exists() {
+                    files.push(override_path.as_path());
+                }
+                let env_path = dir.join("stack.env");
+                let env: BTreeMap<String, String> = stack.env.clone().into_iter().collect();
+                let secrets = secret_values(&env);
+                let _ = fs::create_dir_all(dir).await;
+                write_private_file(&env_path, format_env(&env).as_bytes()).await?;
+                let mut args = vec!["down", "--remove-orphans"];
+                if stack.purge_volumes {
+                    args.push("--volumes");
+                }
+                let project_dir = compose_file.as_deref().and_then(Path::parent);
+                let files_opt = (!files.is_empty()).then_some(files.as_slice());
+                let result = self
+                    .compose_with_env(
                         &stack.compose_project,
-                        None,
-                        &["down", "--remove-orphans"],
-                        None,
+                        files_opt,
+                        Some(&env_path),
+                        &args,
+                        project_dir,
                         OBSERVE_TIMEOUT * 4,
                     )
-                    .await?;
-                logs.extend(tail_lines(&out, MAX_LOG_LINES));
+                    .await;
+                let _ = fs::remove_file(&env_path).await;
+                let (ok, out) = result?;
+                logs.extend(tail_lines(&redact_secrets(&out, &secrets), MAX_LOG_LINES));
                 if !ok {
                     bail!("docker compose down failed");
                 }
-                let _ = fs::remove_dir_all(dir).await;
+                // Without purge, named volumes and the checkout (bind data) stay (#147).
+                if stack.purge_volumes {
+                    let _ = fs::remove_dir_all(dir).await;
+                }
                 self.log_cursor
                     .lock()
                     .expect("compose log cursor lock")
                     .remove(&stack.id);
-                Ok(())
+                Ok(BTreeMap::new())
             }
             other => bail!("unsupported compose action {other}"),
         }
     }
 
+    /// Applies a stack: writes the `.env`, runs `up`, and always removes the `.env` after.
     async fn up(
         &self,
         stack: &DesiredComposeStack,
         dir: &Path,
         logs: &mut Vec<String>,
-    ) -> Result<()> {
+    ) -> Result<BTreeMap<String, String>> {
         gitssrf::validate_git_url(&stack.git_url)?;
         fs::create_dir_all(dir).await.context("create stack dir")?;
         let src = dir.join("src");
@@ -234,53 +281,233 @@ impl ComposeStacks {
         let compose_file = safe_compose_file(&src, &stack.compose_path)?;
         let project_dir = compose_file.parent().unwrap_or(&src).to_path_buf();
 
+        // #145: values come from Norix. A secret generated once is reused from disk, so a
+        // lost report never rotates a password that already initialised a database.
+        let text = fs::read_to_string(&compose_file).await.unwrap_or_default();
+        let saved = read_generated_env(dir).await;
+        let mut env: BTreeMap<String, String> = stack.env.clone().into_iter().collect();
+        for name in generated_secret_names(&text) {
+            if env.contains_key(&name) {
+                continue;
+            }
+            let value = match saved.get(&name) {
+                Some(value) => value.clone(),
+                None if name.starts_with("SERVICE_BASE64_") => {
+                    compose_model::generate_base64_secret()?
+                }
+                None => compose_model::generate_password()?,
+            };
+            env.insert(name, value);
+        }
+        let missing: Vec<String> = required_var_names(&text)
+            .into_iter()
+            .filter(|name| !env.contains_key(name))
+            .collect();
+        if !missing.is_empty() {
+            bail!("missing required stack variables: {}", missing.join(", "));
+        }
+        // Only names Norix does not already store go back to the control plane.
+        let generated: BTreeMap<String, String> = generated_secret_names(&text)
+            .into_iter()
+            .filter(|name| !stack.env.contains_key(name))
+            .filter_map(|name| env.get(&name).map(|value| (name.clone(), value.clone())))
+            .collect();
+        write_generated_env(dir, &generated).await?;
+
+        let env_path = dir.join("stack.env");
+        write_private_file(&env_path, format_env(&env).as_bytes()).await?;
+        let result = self
+            .up_with_env(
+                stack,
+                dir,
+                &src,
+                &compose_file,
+                &project_dir,
+                &env_path,
+                &env,
+                logs,
+            )
+            .await;
+        let _ = fs::remove_file(&env_path).await;
+        result?;
+        Ok(generated)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn up_with_env(
+        &self,
+        stack: &DesiredComposeStack,
+        dir: &Path,
+        src: &Path,
+        compose_file: &Path,
+        project_dir: &Path,
+        env_path: &Path,
+        env: &BTreeMap<String, String>,
+        logs: &mut Vec<String>,
+    ) -> Result<()> {
+        let secrets = secret_values(env);
         let (ok, out) = self
-            .compose(
+            .compose_with_env(
                 &stack.compose_project,
-                Some(&[compose_file.as_path()]),
-                &["config", "--services"],
-                Some(&project_dir),
+                Some(&[compose_file]),
+                Some(env_path),
+                &["config", "--format", "json"],
+                Some(project_dir),
                 OBSERVE_TIMEOUT,
             )
             .await?;
         if !ok {
-            logs.extend(tail_lines(&out, 40));
-            bail!("docker compose config failed: {}", last_line(&out));
+            logs.extend(tail_lines(&redact_secrets(&out, &secrets), 40));
+            bail!(
+                "docker compose config failed: {}",
+                last_line(&redact_secrets(&out, &secrets))
+            );
         }
-        let services: Vec<String> = out
-            .lines()
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(String::from)
-            .collect();
-        if services.is_empty() {
-            bail!("compose file {} has no services", stack.compose_path);
+        let model = parse_compose_config(&out)?;
+
+        // #147: a bind mount must stay inside the checkout or an explicitly allowed path.
+        let allowlist = bind_allowlist_from_env(
+            &std::env::var("NORIX_COMPOSE_BIND_ALLOWLIST").unwrap_or_default(),
+        );
+        for volume in model.volumes.iter().filter(|v| v.kind == "bind") {
+            if bind_rejected(&volume.source, src, &allowlist) {
+                bail!(
+                    "bind mount {} is outside the repository (agent NORIX_COMPOSE_BIND_ALLOWLIST)",
+                    volume.source
+                );
+            }
         }
-        let override_path = dir.join("norix.override.json");
-        let override_doc = build_override(&services, &stack.id, &stack.project_id);
-        fs::write(&override_path, serde_json::to_vec_pretty(&override_doc)?)
+
+        // #144: one network per project; external networks the file declares must exist.
+        let project_network = project_network_name(&stack.project_id)?;
+        self.ensure_network(
+            &project_network,
+            &[("norix.project_id", stack.project_id.as_str())],
+        )
+        .await?;
+        for name in &model.external_networks {
+            self.ensure_network(name, &[]).await?;
+        }
+
+        let override_yaml = build_override_yaml(
+            &model,
+            &stack.id,
+            &stack.project_id,
+            &stack.compose_project,
+            &stack.public_services,
+        )?;
+        let override_path = dir.join("norix.override.yml");
+        fs::write(&override_path, override_yaml)
             .await
             .context("write compose override")?;
+        let stored = StoredModel {
+            ports: model
+                .services
+                .iter()
+                .filter(|svc| svc.container_port > 0)
+                .map(|svc| (svc.name.clone(), svc.container_port))
+                .collect(),
+            volumes: model.volumes.clone(),
+        };
+        fs::write(dir.join("model.json"), serde_json::to_vec(&stored)?)
+            .await
+            .context("write stack model")?;
 
         logs.push(format!(
-            "docker compose -p {} up -d --build --remove-orphans ({} services)",
+            "docker compose -p {} up -d --build --remove-orphans ({} services, network {})",
             stack.compose_project,
-            services.len()
+            model.services.len(),
+            project_network
         ));
         let (ok, out) = self
-            .compose(
+            .compose_with_env(
                 &stack.compose_project,
-                Some(&[compose_file.as_path(), override_path.as_path()]),
+                Some(&[compose_file, override_path.as_path()]),
+                Some(env_path),
                 &["up", "-d", "--build", "--remove-orphans"],
-                Some(&project_dir),
+                Some(project_dir),
                 Duration::from_secs(up_timeout_secs()),
             )
             .await?;
-        logs.extend(tail_lines(&out, MAX_LOG_LINES));
+        logs.extend(tail_lines(&redact_secrets(&out, &secrets), MAX_LOG_LINES));
         if !ok {
-            bail!("docker compose up failed: {}", last_line(&out));
+            bail!(
+                "docker compose up failed: {}",
+                last_line(&redact_secrets(&out, &secrets))
+            );
+        }
+        if !stack.domains.is_empty() {
+            self.connect_edge(&project_network, logs).await;
         }
         Ok(())
+    }
+
+    /// Creates a Docker network if it is missing. A concurrent create is not an error.
+    async fn ensure_network(&self, name: &str, labels: &[(&str, &str)]) -> Result<()> {
+        let (ok, _) = self
+            .run_bin(&["network", "inspect", name], OBSERVE_TIMEOUT)
+            .await?;
+        if ok {
+            return Ok(());
+        }
+        let label_args: Vec<String> = labels.iter().map(|(k, v)| format!("{k}={v}")).collect();
+        let mut args: Vec<&str> = vec!["network", "create"];
+        for label in &label_args {
+            args.push("--label");
+            args.push(label);
+        }
+        args.push(name);
+        let (ok, out) = self.run_bin(&args, OBSERVE_TIMEOUT).await?;
+        if ok {
+            return Ok(());
+        }
+        let (exists, _) = self
+            .run_bin(&["network", "inspect", name], OBSERVE_TIMEOUT)
+            .await?;
+        if exists {
+            return Ok(());
+        }
+        bail!("create network {name}: {}", last_line(&out))
+    }
+
+    /// Connects the local Caddy container to the project network so it can dial
+    /// `<project>-<service>:<port>` (#146). Best effort: the route is retried on the next edge plan.
+    async fn connect_edge(&self, network: &str, logs: &mut Vec<String>) {
+        let ids = match self
+            .run_bin(
+                &[
+                    "ps",
+                    "-q",
+                    "--filter",
+                    "label=com.docker.compose.service=caddy",
+                ],
+                OBSERVE_TIMEOUT,
+            )
+            .await
+        {
+            Ok((true, out)) => out
+                .lines()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+                .map(String::from)
+                .collect::<Vec<_>>(),
+            _ => Vec::new(),
+        };
+        if ids.is_empty() {
+            logs.push("no local caddy container found; domains need an edge on this node".into());
+            return;
+        }
+        for id in ids {
+            match self
+                .run_bin(&["network", "connect", network, &id], OBSERVE_TIMEOUT)
+                .await
+            {
+                Ok((true, _)) => logs.push(format!("edge {id} joined {network}")),
+                Ok((false, out)) if out.contains("already exists") => {}
+                Ok((false, out)) => logs.push(format!("edge join failed: {}", last_line(&out))),
+                Err(error) => logs.push(format!("edge join failed: {error:#}")),
+            }
+        }
     }
 
     async fn observe(&self, stack: &DesiredComposeStack, dir: &Path) -> ObservedComposeStack {
@@ -304,6 +531,11 @@ impl ComposeStacks {
             Ok((false, out)) => observed.message = last_line(&out),
             Err(error) => observed.message = format!("{error:#}"),
         }
+        let stored = read_stored_model(dir).await;
+        for svc in observed.services.iter_mut() {
+            svc.container_port = stored.ports.get(&svc.name).copied().unwrap_or(0);
+        }
+        observed.volumes = stored.volumes;
         observed.status = derive_status(&stack.action, &observed.services).into();
         if let Ok(error) = fs::read_to_string(dir.join("last_error")).await {
             if !error.trim().is_empty() {
@@ -313,6 +545,18 @@ impl ComposeStacks {
         }
         observed.log_lines = self.collect_logs(stack).await;
         observed
+    }
+
+    async fn run_bin(&self, args: &[&str], timeout: Duration) -> Result<(bool, String)> {
+        let mut command = Command::new(self.bin);
+        command.args(args).kill_on_drop(true);
+        let output = tokio::time::timeout(timeout, command.output())
+            .await
+            .with_context(|| format!("{} {} timed out", self.bin, args.join(" ")))?
+            .with_context(|| format!("{} {}", self.bin, args.join(" ")))?;
+        let mut text = String::from_utf8_lossy(&output.stdout).to_string();
+        text.push_str(&String::from_utf8_lossy(&output.stderr));
+        Ok((output.status.success(), text))
     }
 
     async fn collect_logs(&self, stack: &DesiredComposeStack) -> Vec<ObservedComposeLogLine> {
@@ -381,8 +625,25 @@ impl ComposeStacks {
         cwd: Option<&Path>,
         timeout: Duration,
     ) -> Result<(bool, String)> {
+        self.compose_with_env(project, files, None, args, cwd, timeout)
+            .await
+    }
+
+    /// Runs `docker compose`. `env_file` feeds `${VAR}` interpolation and build args (#145).
+    async fn compose_with_env(
+        &self,
+        project: &str,
+        files: Option<&[&Path]>,
+        env_file: Option<&Path>,
+        args: &[&str],
+        cwd: Option<&Path>,
+        timeout: Duration,
+    ) -> Result<(bool, String)> {
         let mut command = Command::new(self.bin);
         command.arg("compose").arg("-p").arg(project);
+        if let Some(env_file) = env_file {
+            command.arg("--env-file").arg(env_file);
+        }
         if let Some(files) = files {
             for file in files {
                 command.arg("-f").arg(file);
@@ -414,6 +675,68 @@ impl ComposeStacks {
         }
         Ok((output.status.success(), text))
     }
+}
+
+/// What the agent learned from the last apply: host-independent container ports and volumes.
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct StoredModel {
+    #[serde(default)]
+    ports: BTreeMap<String, i32>,
+    #[serde(default)]
+    volumes: Vec<ComposeVolume>,
+}
+
+async fn read_stored_model(dir: &Path) -> StoredModel {
+    fs::read(dir.join("model.json"))
+        .await
+        .ok()
+        .and_then(|raw| serde_json::from_slice(&raw).ok())
+        .unwrap_or_default()
+}
+
+/// Generated secrets are kept on disk too (0600), so a lost report does not rotate them.
+async fn read_generated_env(dir: &Path) -> BTreeMap<String, String> {
+    fs::read(dir.join("generated.json"))
+        .await
+        .ok()
+        .and_then(|raw| serde_json::from_slice(&raw).ok())
+        .unwrap_or_default()
+}
+
+async fn write_generated_env(dir: &Path, values: &BTreeMap<String, String>) -> Result<()> {
+    if values.is_empty() {
+        return Ok(());
+    }
+    let mut merged = read_generated_env(dir).await;
+    merged.extend(values.iter().map(|(k, v)| (k.clone(), v.clone())));
+    let raw = serde_json::to_vec(&merged)?;
+    write_private_file(&dir.join("generated.json"), &raw).await
+}
+
+/// Writes a file readable only by the agent user. Used for `.env` and generated secrets.
+async fn write_private_file(path: &Path, contents: &[u8]) -> Result<()> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let path = path.to_path_buf();
+    let contents = contents.to_vec();
+    tokio::task::spawn_blocking(move || -> Result<()> {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(&path)
+            .with_context(|| format!("open {}", path.display()))?;
+        file.write_all(&contents)
+            .with_context(|| format!("write {}", path.display()))?;
+        Ok(())
+    })
+    .await
+    .context("write private file task")?
+}
+
+/// Values that must never reach logs (length filter matches `redact_secrets`).
+fn secret_values(env: &BTreeMap<String, String>) -> Vec<String> {
+    env.values().filter(|v| v.len() >= 6).cloned().collect()
 }
 
 fn up_timeout_secs() -> u64 {
@@ -462,8 +785,8 @@ async fn sync_checkout(
                 }
             }
         }
-        logs.push("fetch failed; recloning".into());
-        let _ = fs::remove_dir_all(src).await;
+        // Never delete the checkout here: relative bind mounts keep their data inside it (#147).
+        bail!("git fetch failed for {git_ref}; fix the repository and redeploy (checkout kept)");
     }
     let src_str = src.to_string_lossy().to_string();
     let (ok, out) = run_git(&[
@@ -474,7 +797,9 @@ async fn sync_checkout(
     if ok {
         return Ok(());
     }
-    let _ = fs::remove_dir_all(src).await;
+    if src.exists() {
+        bail!("git clone failed: {}", last_line(&out));
+    }
     let (ok, out) = run_git(&["clone", "--depth", "1", git_url, &src_str]).await;
     logs.extend(tail_lines(&out, 20));
     if !ok {
@@ -574,23 +899,6 @@ pub fn safe_compose_file(src: &Path, compose_path: &str) -> Result<PathBuf> {
     Ok(resolved)
 }
 
-/// Override document (JSON is valid YAML for compose) that labels every service.
-pub fn build_override(services: &[String], stack_id: &str, project_id: &str) -> Value {
-    let mut map = serde_json::Map::new();
-    for name in services {
-        map.insert(
-            name.clone(),
-            json!({
-                "labels": {
-                    "norix.stack_id": stack_id,
-                    "norix.project_id": project_id,
-                }
-            }),
-        );
-    }
-    json!({ "services": map })
-}
-
 /// Parses `docker compose ps --format json` (NDJSON in recent releases, a JSON array in older ones).
 pub fn parse_ps_output(raw: &str) -> Vec<ObservedComposeService> {
     let trimmed = raw.trim();
@@ -636,6 +944,7 @@ pub fn parse_ps_output(raw: &str) -> Vec<ObservedComposeService> {
                 exit_code,
                 image,
                 ports,
+                container_port: 0,
             })
         })
         .collect();
@@ -783,6 +1092,7 @@ mod tests {
             exit_code,
             image: String::new(),
             ports: String::new(),
+            container_port: 0,
         }
     }
 
@@ -839,10 +1149,22 @@ mod tests {
     }
 
     #[test]
-    fn override_labels_every_service() {
-        let doc = build_override(&["api".into(), "worker".into()], "s1", "p1");
-        assert_eq!(doc["services"]["worker"]["labels"]["norix.stack_id"], "s1");
-        assert_eq!(doc["services"]["api"]["labels"]["norix.project_id"], "p1");
+    fn override_labels_every_service_and_resets_internal_ports() {
+        let model = parse_compose_config(
+            r#"{"services":{"api":{"ports":[{"target":8080}]},"db":{"ports":[{"target":5432,"published":"5432"}]}}}"#,
+        )
+        .unwrap();
+        let yaml = build_override_yaml(
+            &model,
+            "s1",
+            "3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+            "norix-3f2504e04f89",
+            &["api".into()],
+        )
+        .unwrap();
+        assert!(yaml.contains("norix.stack_id: \"s1\""));
+        assert!(yaml.contains("norix-3f2504e04f89-db"));
+        assert_eq!(yaml.matches("ports: !reset []").count(), 1);
     }
 
     #[test]

@@ -3,6 +3,15 @@
 ## Unreleased
 
 ### Added
+- Compose stacks share a project network (`norix-p-<project id>`). Every service gets the aliases `<service>` and `<compose project>-<service>`, and `external: true` networks keep their aliases (#144).
+- Compose stack variables: set `NAME=value` in the form or in Settings. Values are write-only and stored encrypted, and `${VAR}`, `${VAR:-default}` and `${VAR:?}` interpolate through `--env-file`. `SERVICE_PASSWORD_*` and `SERVICE_BASE64_*` secrets are generated once and reused (#145).
+- Compose stacks: services are internal by default (host ports removed with `!reset`). **Public services** keeps them. **Domains** route `service=hostname` through Caddy with HTTPS/WSS (#146).
+- Compose stacks: the card lists named and bind volumes. Delete keeps volumes by default; **Purge volumes on delete** runs `down --volumes` and removes the checkout (#147).
+
+### Changed
+- Compose stacks: `norix.override.json` is replaced by `norix.override.yml` (generated YAML). Bind mounts must stay inside the checkout or in `NORIX_COMPOSE_BIND_ALLOWLIST`. A failed `git fetch` keeps the checkout instead of deleting it (#147).
+
+### Added
 - Compose stacks run as one unit: the agent clones the repo and runs `docker compose -p norix-<id> up -d --build --remove-orphans` in the background (heartbeats keep flowing). It reports per-service state, health and exit code, plus per-service logs. Start/Stop/Redeploy/Delete act on the whole stack, and Delete keeps named volumes. New `compose_stacks` / `compose_stack_logs` tables with forced RLS (migration 000033). `NORIX_COMPOSE_UP_TIMEOUT_SECS` sets the agent timeout. The old per-service split remains as "legacy" (#143).
 - Log retention by age, line count, and bytes (`NORIX_LOG_RETENTION_DAYS`, `NORIX_*_MAX_LINES`, `NORIX_*_RETENTION_BYTES`). The leader prunes `workload_logs`, `build_logs`, and `log_segments` (#25).
 - Workload **Stop** and **Restart** on the application page. Stop keeps the row and asks the agent to remove the container; Restart redeploys (new generation). Pause is not a runtime state.

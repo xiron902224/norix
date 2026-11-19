@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -82,6 +83,11 @@ func (runtime *Runtime) ApplyEdge(ctx context.Context, plan db.DesiredEdgePlan) 
 	// Health-check upserted upstreams; rollback if any fail.
 	for _, route := range plan.Routes {
 		if route.Action != "upsert" || route.Upstream == "" {
+			continue
+		}
+		if !agentCanProbeUpstream(route.Upstream) {
+			routeStatuses[route.DomainID] = "active"
+			logs = append(logs, fmt.Sprintf("skip health check for %s → %s (project network)", route.Hostname, route.Upstream))
 			continue
 		}
 		if err := healthCheck(ctx, healthUpstreamURL(route.Upstream)); err != nil {
@@ -292,6 +298,24 @@ func loadCaddyConfig(ctx context.Context, admin, configJSON string) error {
 
 func healthUpstreamURL(upstream string) string {
 	return strings.Replace(upstream, "host.docker.internal", "127.0.0.1", 1)
+}
+
+// agentCanProbeUpstream is false for Docker DNS names on a project network.
+// The agent process is not on that network, so a failed probe must not roll
+// back every other route (#146).
+func agentCanProbeUpstream(upstream string) bool {
+	host := strings.TrimPrefix(strings.TrimPrefix(upstream, "http://"), "https://")
+	if i := strings.Index(host, "/"); i >= 0 {
+		host = host[:i]
+	}
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	switch host {
+	case "localhost", "127.0.0.1", "::1", "host.docker.internal":
+		return true
+	}
+	return net.ParseIP(host) != nil
 }
 
 // CaddyMissingHosts reports whether the live Caddy config lacks any of the

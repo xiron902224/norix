@@ -20,7 +20,9 @@ import {
   deployFromGit,
   listProjects,
   listWorkloads,
+  type ComposeStackSettings,
 } from '../services/projects-api'
+import { parseDomainLines, parseServiceList, parseVariableLines } from '../services/compose-stack-form'
 import { EnvVarsEditor, envRowsToMap, type EnvRow } from './EnvVarsEditor'
 import { ComposeStacksPanel } from './ComposeStacksPanel'
 
@@ -49,6 +51,7 @@ export function ProjectDetailPage() {
   const [composeGitUrl, setComposeGitUrl] = useState('')
   const [composeGitRef, setComposeGitRef] = useState('main')
   const [composeStackName, setComposeStackName] = useState('')
+  const [composeSettings, setComposeSettings] = useState<ComposeStackSettings>({})
   const [composeAnalyzing, setComposeAnalyzing] = useState(false)
   const [stackRefresh, setStackRefresh] = useState(0)
   const [createEnvRows, setCreateEnvRows] = useState<EnvRow[]>([])
@@ -188,12 +191,15 @@ export function ProjectDetailPage() {
     }
   }
 
-  async function onCreateStack(input: { name: string; gitUrl: string; gitRef: string; composePath: string }) {
+  async function onCreateStack(
+    input: { name: string; gitUrl: string; gitRef: string; composePath: string },
+    settings: ComposeStackSettings = {},
+  ) {
     setCreating(true)
     setError('')
     setNotice('')
     try {
-      const stack = await createComposeStack({ projectId, ...input })
+      const stack = await createComposeStack({ projectId, ...input, ...settings })
       setModalMode(null)
       setStackRefresh((value) => value + 1)
       setNotice(`Stack ${stack?.name ?? input.name} queued. An agent with Docker runs docker compose up on its next heartbeat.`)
@@ -212,8 +218,20 @@ export function ProjectDetailPage() {
     const composePath = String(form.get('composePath') || 'docker-compose.yml')
     const stackName = String(form.get('stackName') ?? '')
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null
+    let settings: ComposeStackSettings
+    try {
+      settings = {
+        publicServices: parseServiceList(String(form.get('publicServices') ?? '')),
+        domains: parseDomainLines(String(form.get('domains') ?? '')),
+        variables: parseVariableLines(String(form.get('variables') ?? ''), true),
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Invalid stack settings')
+      return
+    }
+    setComposeSettings(settings)
     if (submitter?.value === 'deploy') {
-      await onCreateStack({ name: stackName, gitUrl, gitRef, composePath })
+      await onCreateStack({ name: stackName, gitUrl, gitRef, composePath }, settings)
       return
     }
     setComposeAnalyzing(true)
@@ -487,7 +505,7 @@ export function ProjectDetailPage() {
             <Button
               type="button"
               disabled={creating}
-              onClick={() => void onCreateStack({ name: composeStackName, gitUrl: composeGitUrl, gitRef: composeGitRef, composePath: composeFile })}
+              onClick={() => void onCreateStack({ name: composeStackName, gitUrl: composeGitUrl, gitRef: composeGitRef, composePath: composeFile }, composeSettings)}
             >
               {creating ? 'Deploying…' : 'Deploy stack'}
             </Button>
@@ -505,6 +523,15 @@ export function ProjectDetailPage() {
             <FormField id="compose-url" name="gitUrl" label="Git URL" required placeholder="https://github.com/ajeetraina/todo-app-nodejs-docker.git" />
             <FormField id="compose-ref" name="gitRef" label="Ref" defaultValue="main" />
             <FormField id="compose-path" name="composePath" label="Compose file" defaultValue="docker-compose.yml" placeholder="docker-compose.yml" />
+            <FormField id="compose-public" name="publicServices" label="Public services (host ports; comma-separated, optional)" placeholder="web" />
+            <label htmlFor="compose-domains">
+              Domains (one service=hostname per line, optional)
+              <textarea id="compose-domains" name="domains" rows={2} placeholder="web=app.example.com" />
+            </label>
+            <label htmlFor="compose-variables">
+              Variables (NAME=value per line, optional; values are stored encrypted and never shown again)
+              <textarea id="compose-variables" name="variables" rows={3} placeholder="DATABASE_PASSWORD=change-me" />
+            </label>
             <div className="page-actions">
               <Button type="submit" variant="secondary" value="analyze" disabled={composeAnalyzing || creating}>{composeAnalyzing ? 'Analyzing…' : 'Analyze compose'}</Button>
               <Button type="submit" value="deploy" disabled={composeAnalyzing || creating}>{creating ? 'Deploying…' : 'Deploy stack'}</Button>

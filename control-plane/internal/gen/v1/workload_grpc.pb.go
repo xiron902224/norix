@@ -27,6 +27,7 @@ const (
 	WorkloadService_CreateComposeStack_FullMethodName    = "/v1.WorkloadService/CreateComposeStack"
 	WorkloadService_ListComposeStacks_FullMethodName     = "/v1.WorkloadService/ListComposeStacks"
 	WorkloadService_GetComposeStack_FullMethodName       = "/v1.WorkloadService/GetComposeStack"
+	WorkloadService_UpdateComposeStack_FullMethodName    = "/v1.WorkloadService/UpdateComposeStack"
 	WorkloadService_ComposeStackAction_FullMethodName    = "/v1.WorkloadService/ComposeStackAction"
 	WorkloadService_ListWorkloads_FullMethodName         = "/v1.WorkloadService/ListWorkloads"
 	WorkloadService_UpdateWorkload_FullMethodName        = "/v1.WorkloadService/UpdateWorkload"
@@ -57,6 +58,7 @@ type WorkloadServiceClient interface {
 	CreateComposeStack(ctx context.Context, in *CreateComposeStackRequest, opts ...grpc.CallOption) (*CreateComposeStackResponse, error)
 	ListComposeStacks(ctx context.Context, in *ListComposeStacksRequest, opts ...grpc.CallOption) (*ListComposeStacksResponse, error)
 	GetComposeStack(ctx context.Context, in *GetComposeStackRequest, opts ...grpc.CallOption) (*GetComposeStackResponse, error)
+	UpdateComposeStack(ctx context.Context, in *UpdateComposeStackRequest, opts ...grpc.CallOption) (*UpdateComposeStackResponse, error)
 	ComposeStackAction(ctx context.Context, in *ComposeStackActionRequest, opts ...grpc.CallOption) (*ComposeStackActionResponse, error)
 	ListWorkloads(ctx context.Context, in *ListWorkloadsRequest, opts ...grpc.CallOption) (*ListWorkloadsResponse, error)
 	UpdateWorkload(ctx context.Context, in *UpdateWorkloadRequest, opts ...grpc.CallOption) (*UpdateWorkloadResponse, error)
@@ -157,6 +159,16 @@ func (c *workloadServiceClient) GetComposeStack(ctx context.Context, in *GetComp
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetComposeStackResponse)
 	err := c.cc.Invoke(ctx, WorkloadService_GetComposeStack_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) UpdateComposeStack(ctx context.Context, in *UpdateComposeStackRequest, opts ...grpc.CallOption) (*UpdateComposeStackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateComposeStackResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_UpdateComposeStack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -335,6 +347,7 @@ type WorkloadServiceServer interface {
 	CreateComposeStack(context.Context, *CreateComposeStackRequest) (*CreateComposeStackResponse, error)
 	ListComposeStacks(context.Context, *ListComposeStacksRequest) (*ListComposeStacksResponse, error)
 	GetComposeStack(context.Context, *GetComposeStackRequest) (*GetComposeStackResponse, error)
+	UpdateComposeStack(context.Context, *UpdateComposeStackRequest) (*UpdateComposeStackResponse, error)
 	ComposeStackAction(context.Context, *ComposeStackActionRequest) (*ComposeStackActionResponse, error)
 	ListWorkloads(context.Context, *ListWorkloadsRequest) (*ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *UpdateWorkloadRequest) (*UpdateWorkloadResponse, error)
@@ -384,6 +397,9 @@ func (UnimplementedWorkloadServiceServer) ListComposeStacks(context.Context, *Li
 }
 func (UnimplementedWorkloadServiceServer) GetComposeStack(context.Context, *GetComposeStackRequest) (*GetComposeStackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetComposeStack not implemented")
+}
+func (UnimplementedWorkloadServiceServer) UpdateComposeStack(context.Context, *UpdateComposeStackRequest) (*UpdateComposeStackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateComposeStack not implemented")
 }
 func (UnimplementedWorkloadServiceServer) ComposeStackAction(context.Context, *ComposeStackActionRequest) (*ComposeStackActionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ComposeStackAction not implemented")
@@ -594,6 +610,24 @@ func _WorkloadService_GetComposeStack_Handler(srv interface{}, ctx context.Conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WorkloadServiceServer).GetComposeStack(ctx, req.(*GetComposeStackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_UpdateComposeStack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateComposeStackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).UpdateComposeStack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_UpdateComposeStack_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).UpdateComposeStack(ctx, req.(*UpdateComposeStackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -924,6 +958,10 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetComposeStack",
 			Handler:    _WorkloadService_GetComposeStack_Handler,
+		},
+		{
+			MethodName: "UpdateComposeStack",
+			Handler:    _WorkloadService_UpdateComposeStack_Handler,
 		},
 		{
 			MethodName: "ComposeStackAction",

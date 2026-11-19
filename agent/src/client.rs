@@ -394,6 +394,15 @@ pub struct DesiredComposeStack {
     pub action: String,
     #[serde(default, deserialize_with = "deserialize_i64")]
     pub generation: i64,
+    #[serde(default)]
+    pub public_services: Vec<String>,
+    /// Decrypted by the control plane for this node only. Never log the values.
+    #[serde(default)]
+    pub env: HashMap<String, String>,
+    #[serde(default)]
+    pub domains: HashMap<String, String>,
+    #[serde(default)]
+    pub purge_volumes: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Default)]
@@ -405,6 +414,16 @@ pub struct ObservedComposeService {
     pub exit_code: i32,
     pub image: String,
     pub ports: String,
+    #[serde(default)]
+    pub container_port: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ComposeVolume {
+    pub name: String,
+    pub kind: String,
+    pub source: String,
 }
 
 #[derive(Debug, Clone, Serialize, Default)]
@@ -423,6 +442,10 @@ pub struct ObservedComposeStack {
     pub message: String,
     pub services: Vec<ObservedComposeService>,
     pub log_lines: Vec<ObservedComposeLogLine>,
+    #[serde(default)]
+    pub generated_env: HashMap<String, String>,
+    #[serde(default)]
+    pub volumes: Vec<ComposeVolume>,
 }
 
 #[derive(Debug, Clone, Default)]
