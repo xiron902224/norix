@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Norix compose example</title>
+  </head>
+  <body>
+    <h1>Norix multi-service compose</h1>
+    <p>The web service calls <code>/api/</code>, which reaches the api service and its database.</p>
+    <pre id="out">loading…</pre>
+    <script>
+      fetch('/api/')
+        .then((r) => r.text())
+        .then((t) => { document.getElementById('out').textContent = t })
+        .catch((e) => { document.getElementById('out').textContent = String(e) })
+    </script>
+  </body>
+</html>

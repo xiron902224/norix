@@ -7,5 +7,8 @@
 | [`hello-node`](./hello-node/) | **Railpack** | 8080 |
 | [`hello-python`](./hello-python/) | **Railpack** | 8080 |
 | [`hello-static`](./hello-static/) | **Railpack** | 80 / framework default |
+| [`compose-multi-service`](./compose-multi-service/) | **Compose** (`docker-compose.yml`): `db` + `api` internal, `web` public | 8081 → 80 |
+
+The compose example is a Norix **compose stack**, not a single workload. See its [README](./compose-multi-service/README.md) for the variables and public services it needs. CI starts it with `docker compose up --wait` and checks that `api` reaches `db` (#35).
 
 Railpack examples have **no** Dockerfile. Point **Build & deploy from git** at the folder (or a fork) and leave Dockerfile path as `Dockerfile` — Norix falls back to Railpack when markers like `package.json` / `go.mod` / `requirements.txt` / `index.html` are present. Requires `railpack` + BuildKit on the builder node ([docs](../docs/user/deploying.md#railpack-no-dockerfile)).

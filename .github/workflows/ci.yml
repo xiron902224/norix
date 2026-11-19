@@ -439,10 +439,37 @@ jobs:
             echo "::endgroup::"
           done
 
+  compose-example:
+    name: Compose example (#35)
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate, start, and probe the multi-service stack
+        env:
+          # CI-only value. Norix sets DB_PASSWORD in the stack Variables.
+          DB_PASSWORD: ci-only-not-a-secret
+        run: |
+          set -euo pipefail
+          compose="examples/compose-multi-service/docker-compose.yml"
+          docker compose -f "$compose" config --quiet
+          docker compose -f "$compose" up -d --build --wait
+          body="$(curl -fsS --retry 5 --retry-all-errors http://127.0.0.1:8081/api/)"
+          echo "$body"
+          echo "$body" | grep -q '"db":"reachable"'
+
+      - name: Tear down
+        if: always()
+        env:
+          DB_PASSWORD: ci-only-not-a-secret
+        run: docker compose -f examples/compose-multi-service/docker-compose.yml down -v
+
   build-control-plane:
     name: Build Control Plane (Go)
     runs-on: ubuntu-latest
-    needs: [validate-protos, database-integration, build-web, build-agent, security-audit, railpack-examples]
+    needs: [validate-protos, database-integration, build-web, build-agent, security-audit, railpack-examples, compose-example]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
