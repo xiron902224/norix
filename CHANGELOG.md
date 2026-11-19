@@ -8,6 +8,8 @@
 - Compose stacks: services are internal by default (host ports removed with `!reset`). **Public services** keeps them. **Domains** route `service=hostname` through Caddy with HTTPS/WSS (#146).
 - Compose stacks: the card lists named and bind volumes. Delete keeps volumes by default; **Purge volumes on delete** runs `down --volumes` and removes the checkout (#147).
 
+- Example apps: `examples/compose-multi-service` (db, api, web) is a Compose stack example. CI starts it with `docker compose up --wait` and checks that api reaches db over the service alias (#35).
+
 ### Changed
 - Compose stacks: `norix.override.json` is replaced by `norix.override.yml` (generated YAML). Bind mounts must stay inside the checkout or in `NORIX_COMPOSE_BIND_ALLOWLIST`. A failed `git fetch` keeps the checkout instead of deleting it (#147).
 
