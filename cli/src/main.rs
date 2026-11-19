@@ -1,5 +1,6 @@
 mod client;
 mod config;
+mod doctor;
 mod output;
 
 use std::io::{self, Write};
@@ -119,6 +120,18 @@ enum Commands {
         #[arg(long, default_value_t = 20)]
         limit: i32,
     },
+    /// Check this host for Norix prerequisites (read-only; #34)
+    Doctor {
+        /// Ports Norix must bind (comma-separated)
+        #[arg(long, value_delimiter = ',', default_value = "80,443,8080")]
+        ports: Vec<u16>,
+        /// Also check that this hostname resolves
+        #[arg(long)]
+        domain: Option<String>,
+        /// Path used for the free-disk check
+        #[arg(long, default_value = "/")]
+        disk_path: String,
+    },
     /// Print shell completions
     Completions {
         #[arg(value_enum)]
@@ -152,6 +165,22 @@ fn run() -> Result<()> {
         let mut cmd = Cli::command();
         generate(shell, &mut cmd, "norix", &mut io::stdout());
         return Ok(());
+    }
+    // Doctor runs on the host only, so it works before a token or control plane exists.
+    if let Commands::Doctor {
+        ports,
+        domain,
+        disk_path,
+    } = &cli.command
+    {
+        return doctor::run(
+            cli.output,
+            &doctor::Options {
+                ports: ports.clone(),
+                domain: domain.clone(),
+                disk_path: disk_path.clone(),
+            },
+        );
     }
 
     let token = cli
@@ -353,7 +382,7 @@ fn run() -> Result<()> {
             )?;
             print_value(cli.output, &body)?;
         }
-        Commands::Completions { .. } => unreachable!(),
+        Commands::Completions { .. } | Commands::Doctor { .. } => unreachable!(),
     }
     Ok(())
 }

@@ -11,6 +11,21 @@
 | Agents on different versions | Partial upgrades | Nodes → **Update agent**, or `norix-agent update --version …` |
 | Dashboard login loop | Wrong `NORIX_WEB_ORIGIN` / cookies / HTTPS mismatch | Align public URL and CORS with how you open the UI |
 
+## Check the host first (#34)
+
+Run the read-only checks before you install. They never change the machine:
+
+```bash
+norix doctor                              # Docker, Compose v2, overlay, ports 80,443,8080, disk, RAM, KVM
+norix doctor --ports 80,443,8080 --domain panel.example.com   # also checks DNS
+norix --output json doctor                # machine-readable report; non-zero exit on any FAIL
+scripts/install.sh preflight              # same core checks, from the installer
+```
+
+- `FAIL` stops the install. `WARN` does not: RAM, disk and KVM only limit what you can run.
+- A port used by a running Norix container passes. That makes re-running the installer safe.
+- Skip the installer's checks with `NORIX_SKIP_PREFLIGHT=1`. Its default ports are the ones `up` publishes on 127.0.0.1 (5432, 14000, 8088, 8443, 2019); change them with `NORIX_PREFLIGHT_PORTS`.
+
 ## Installer failures
 
 **Docker mode (`get-norix.sh`)**
