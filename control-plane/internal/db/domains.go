@@ -322,6 +322,13 @@ func getDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 	if err := rows.Err(); err != nil {
 		return DesiredEdgePlan{}, err
 	}
+	composeRoutes, composePending, err := ComposeEdgeRoutes(ctx, tx, nodeID)
+	if err != nil {
+		return DesiredEdgePlan{}, err
+	}
+	if composePending {
+		needsApply = true
+	}
 	if !needsApply {
 		return DesiredEdgePlan{}, tx.Commit(ctx)
 	}
@@ -358,6 +365,12 @@ func getDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 		route.Action = "upsert"
 		route.Upstream = fmt.Sprintf("http://%s:%d", EdgeUpstreamHost(), item.hostPort)
 		plan.Routes = append(plan.Routes, route)
+	}
+	plan.Routes = append(plan.Routes, composeRoutes...)
+	if composePending {
+		if err := clearComposeEdgePending(ctx, tx, nodeID); err != nil {
+			return DesiredEdgePlan{}, err
+		}
 	}
 	if len(plan.Routes) == 0 {
 		return DesiredEdgePlan{}, tx.Commit(ctx)

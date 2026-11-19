@@ -19,12 +19,13 @@ const maxStackLogLinesPerReport = 200
 
 // ComposeStackService is one service as last seen by `docker compose ps`.
 type ComposeStackService struct {
-	Name     string `json:"name"`
-	State    string `json:"state"`
-	Health   string `json:"health,omitempty"`
-	ExitCode int32  `json:"exit_code"`
-	Image    string `json:"image,omitempty"`
-	Ports    string `json:"ports,omitempty"`
+	Name          string `json:"name"`
+	State         string `json:"state"`
+	Health        string `json:"health,omitempty"`
+	ExitCode      int32  `json:"exit_code"`
+	Image         string `json:"image,omitempty"`
+	Ports         string `json:"ports,omitempty"`
+	ContainerPort int32  `json:"container_port,omitempty"`
 }
 
 // ComposeStack is a compose file applied as a unit on one node (#143).
@@ -43,8 +44,15 @@ type ComposeStack struct {
 	Status             string
 	Message            string
 	Services           []ComposeStackService
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	PublicServices     []string
+	Domains            map[string]string
+	VariableNames      []string
+	Volumes            []ComposeVolume
+	PurgeVolumes       bool
+	// Env is decrypted for the assigned agent only. Never copy it into API responses or logs.
+	Env       map[string]string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // ComposeProject is the `docker compose -p` name; stable and unique per stack.
@@ -70,11 +78,14 @@ type ComposeStackLog struct {
 
 // CreateComposeStackInput is what the API accepts to create a stack.
 type CreateComposeStackInput struct {
-	ProjectID   string
-	Name        string
-	GitURL      string
-	GitRef      string
-	ComposePath string
+	ProjectID      string
+	Name           string
+	GitURL         string
+	GitRef         string
+	ComposePath    string
+	PublicServices []string
+	Domains        map[string]string
+	Variables      map[string]string
 }
 
 // ObservedComposeStack is an agent report for one stack.
@@ -85,20 +96,24 @@ type ObservedComposeStack struct {
 	Message            string
 	Services           []ComposeStackService
 	Logs               []ComposeStackLog
+	GeneratedEnv       map[string]string
+	Volumes            []ComposeVolume
 }
 
 const composeStackColumns = `
 	id::text, organization_id::text, project_id::text, name, git_url, git_ref, compose_path,
 	COALESCE(assigned_node_id::text, ''), desired_action, desired_generation, observed_generation,
-	status, message, services::text, created_at, updated_at`
+	status, message, services::text, created_at, updated_at,
+	public_services::text, domains::text, volumes::text, purge_volumes`
 
 func scanComposeStack(row pgx.Row) (ComposeStack, error) {
 	var item ComposeStack
-	var services string
+	var services, publicJSON, domainsJSON, volumesJSON string
 	err := row.Scan(
 		&item.ID, &item.OrganizationID, &item.ProjectID, &item.Name, &item.GitURL, &item.GitRef, &item.ComposePath,
 		&item.AssignedNodeID, &item.DesiredAction, &item.DesiredGeneration, &item.ObservedGeneration,
 		&item.Status, &item.Message, &services, &item.CreatedAt, &item.UpdatedAt,
+		&publicJSON, &domainsJSON, &volumesJSON, &item.PurgeVolumes,
 	)
 	if err != nil {
 		return ComposeStack{}, err
@@ -108,6 +123,18 @@ func scanComposeStack(row pgx.Row) (ComposeStack, error) {
 	}
 	if item.Services == nil {
 		item.Services = []ComposeStackService{}
+	}
+	_ = json.Unmarshal([]byte(publicJSON), &item.PublicServices)
+	if item.PublicServices == nil {
+		item.PublicServices = []string{}
+	}
+	_ = json.Unmarshal([]byte(domainsJSON), &item.Domains)
+	if item.Domains == nil {
+		item.Domains = map[string]string{}
+	}
+	_ = json.Unmarshal([]byte(volumesJSON), &item.Volumes)
+	if item.Volumes == nil {
+		item.Volumes = []ComposeVolume{}
 	}
 	return item, nil
 }
@@ -150,7 +177,22 @@ func CreateComposeStack(ctx context.Context, pool *pgxpool.Pool, tenantID string
 			}
 			return err
 		}
-		out = item
+		if err := writeStackSpec(ctx, tx, item.ID, in.PublicServices, in.Domains); err != nil {
+			return err
+		}
+		if err := upsertStackVariables(ctx, tx, tenantID, item.ID, in.Variables); err != nil {
+			return err
+		}
+		rescanned, err := scanComposeStack(tx.QueryRow(ctx, `
+			SELECT `+composeStackColumns+` FROM compose_stacks WHERE id = $1::uuid`, item.ID))
+		if err != nil {
+			return err
+		}
+		items := []ComposeStack{rescanned}
+		if err := fillStackExtras(ctx, tx, items, false); err != nil {
+			return err
+		}
+		out = items[0]
 		return writeAudit(ctx, tx, tenantID, "compose_stack.create", "compose_stack", item.ID, actor, map[string]string{
 			"name": item.Name, "git_url": item.GitURL, "git_ref": item.GitRef, "compose_path": item.ComposePath,
 		})
@@ -178,7 +220,10 @@ func ListComposeStacks(ctx context.Context, pool *pgxpool.Pool, tenantID, projec
 			}
 			out = append(out, item)
 		}
-		return rows.Err()
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		return fillStackExtras(ctx, tx, out, false)
 	})
 	return out, err
 }
@@ -193,8 +238,15 @@ func GetComposeStack(ctx context.Context, pool *pgxpool.Pool, tenantID, stackID 
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrComposeStackNotFound
 		}
-		out = item
-		return err
+		if err != nil {
+			return err
+		}
+		items := []ComposeStack{item}
+		if err := fillStackExtras(ctx, tx, items, false); err != nil {
+			return err
+		}
+		out = items[0]
+		return nil
 	})
 	return out, err
 }
@@ -246,7 +298,7 @@ func ComposeStackActionDesired(action string) (string, error) {
 
 // SetComposeStackAction bumps the generation so the agent re-applies the stack.
 // Deleting a stack that never reached a node removes the row directly.
-func SetComposeStackAction(ctx context.Context, pool *pgxpool.Pool, tenantID, stackID, action string, actor AuditActor) (ComposeStack, error) {
+func SetComposeStackAction(ctx context.Context, pool *pgxpool.Pool, tenantID, stackID, action string, purge bool, actor AuditActor) (ComposeStack, error) {
 	desired, err := ComposeStackActionDesired(action)
 	if err != nil {
 		return ComposeStack{}, err
@@ -275,17 +327,25 @@ func SetComposeStackAction(ctx context.Context, pool *pgxpool.Pool, tenantID, st
 				desired_generation = desired_generation + 1,
 				status = $4,
 				message = '',
+				purge_volumes = $5,
+				edge_pending = TRUE,
 				updated_at = NOW()
 			WHERE id = $1::uuid AND organization_id = $2::uuid
-			RETURNING `+composeStackColumns, stackID, tenantID, desired, status))
+			RETURNING `+composeStackColumns, stackID, tenantID, desired, status, desired == "down" && purge))
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrComposeStackNotFound
 		}
 		if err != nil {
 			return err
 		}
-		out = item
-		return writeAudit(ctx, tx, tenantID, "compose_stack."+strings.ToLower(strings.TrimSpace(action)), "compose_stack", stackID, actor, nil)
+		items := []ComposeStack{item}
+		if err := fillStackExtras(ctx, tx, items, false); err != nil {
+			return err
+		}
+		out = items[0]
+		return writeAudit(ctx, tx, tenantID, "compose_stack."+strings.ToLower(strings.TrimSpace(action)), "compose_stack", stackID, actor, map[string]string{
+			"purge_volumes": fmt.Sprintf("%t", desired == "down" && purge),
+		})
 	})
 	return out, err
 }
@@ -341,7 +401,47 @@ func ListDesiredComposeStacksForNode(ctx context.Context, pool *pgxpool.Pool, te
 			}
 			out = append(out, item)
 		}
-		return rows.Err()
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		return fillStackExtras(ctx, tx, out, true)
+	})
+	return out, err
+}
+
+// UpdateComposeStackSpec replaces public services and domains and merges variables.
+// A stack that should be up is queued again so the agent rewrites the override.
+func UpdateComposeStackSpec(ctx context.Context, pool *pgxpool.Pool, tenantID, stackID string, public []string, domains, variables map[string]string, actor AuditActor) (ComposeStack, error) {
+	var out ComposeStack
+	err := withTenantTx(ctx, pool, tenantID, func(tx pgx.Tx) error {
+		if err := writeStackSpec(ctx, tx, stackID, public, domains); err != nil {
+			return err
+		}
+		if err := upsertStackVariables(ctx, tx, tenantID, stackID, variables); err != nil {
+			return err
+		}
+		item, err := scanComposeStack(tx.QueryRow(ctx, `
+			UPDATE compose_stacks SET
+				desired_generation = CASE WHEN desired_action = 'up' THEN desired_generation + 1 ELSE desired_generation END,
+				status = CASE WHEN desired_action = 'up' THEN 'pending' ELSE status END,
+				edge_pending = TRUE,
+				updated_at = NOW()
+			WHERE id = $1::uuid AND organization_id = $2::uuid
+			RETURNING `+composeStackColumns, stackID, tenantID))
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrComposeStackNotFound
+		}
+		if err != nil {
+			return err
+		}
+		items := []ComposeStack{item}
+		if err := fillStackExtras(ctx, tx, items, false); err != nil {
+			return err
+		}
+		out = items[0]
+		return writeAudit(ctx, tx, tenantID, "compose_stack.update", "compose_stack", stackID, actor, map[string]string{
+			"variables": fmt.Sprintf("%d", len(variables)),
+		})
 	})
 	return out, err
 }
@@ -395,17 +495,31 @@ func ApplyObservedComposeStack(ctx context.Context, pool *pgxpool.Pool, tenantID
 		if err != nil {
 			return err
 		}
+		volumes := observed.Volumes
+		if volumes == nil {
+			volumes = []ComposeVolume{}
+		}
+		volumesJSON, err := json.Marshal(volumes)
+		if err != nil {
+			return err
+		}
 		status := ResolveObservedStatus(desiredAction, desiredGeneration, observed)
 		if _, err := tx.Exec(ctx, `
 			UPDATE compose_stacks SET
 				status = $2,
 				message = $3,
+				-- A new container port or service set changes the edge upstream (#146).
+				edge_pending = edge_pending OR (domains <> '{}'::jsonb AND services IS DISTINCT FROM $4::jsonb),
 				services = $4::jsonb,
+				volumes = $6::jsonb,
 				observed_generation = GREATEST(observed_generation, $5),
 				updated_at = NOW()
 			WHERE id = $1::uuid`,
-			observed.ID, status, truncate(observed.Message, 2000), string(encoded), observed.ObservedGeneration,
+			observed.ID, status, truncate(observed.Message, 2000), string(encoded), observed.ObservedGeneration, string(volumesJSON),
 		); err != nil {
+			return err
+		}
+		if err := persistGeneratedStackEnv(ctx, tx, tenantID, observed.ID, observed.GeneratedEnv); err != nil {
 			return err
 		}
 		logs := observed.Logs

@@ -2746,8 +2746,13 @@ type DesiredComposeStack struct {
 	ComposeProject string                 `protobuf:"bytes,7,opt,name=compose_project,json=composeProject,proto3" json:"compose_project,omitempty"` // docker compose -p value
 	Action         string                 `protobuf:"bytes,8,opt,name=action,proto3" json:"action,omitempty"`                                       // up | stop | down
 	Generation     int64                  `protobuf:"varint,9,opt,name=generation,proto3" json:"generation,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	PublicServices []string               `protobuf:"bytes,10,rep,name=public_services,json=publicServices,proto3" json:"public_services,omitempty"`
+	// Decrypted only for the assigned node. The agent must not log values (#145).
+	Env           map[string]string `protobuf:"bytes,11,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Domains       map[string]string `protobuf:"bytes,12,rep,name=domains,proto3" json:"domains,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	PurgeVolumes  bool              `protobuf:"varint,13,opt,name=purge_volumes,json=purgeVolumes,proto3" json:"purge_volumes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DesiredComposeStack) Reset() {
@@ -2843,6 +2848,34 @@ func (x *DesiredComposeStack) GetGeneration() int64 {
 	return 0
 }
 
+func (x *DesiredComposeStack) GetPublicServices() []string {
+	if x != nil {
+		return x.PublicServices
+	}
+	return nil
+}
+
+func (x *DesiredComposeStack) GetEnv() map[string]string {
+	if x != nil {
+		return x.Env
+	}
+	return nil
+}
+
+func (x *DesiredComposeStack) GetDomains() map[string]string {
+	if x != nil {
+		return x.Domains
+	}
+	return nil
+}
+
+func (x *DesiredComposeStack) GetPurgeVolumes() bool {
+	if x != nil {
+		return x.PurgeVolumes
+	}
+	return false
+}
+
 type ObservedComposeService struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -2851,6 +2884,7 @@ type ObservedComposeService struct {
 	ExitCode      int32                  `protobuf:"varint,4,opt,name=exit_code,json=exitCode,proto3" json:"exit_code,omitempty"`
 	Image         string                 `protobuf:"bytes,5,opt,name=image,proto3" json:"image,omitempty"`
 	Ports         string                 `protobuf:"bytes,6,opt,name=ports,proto3" json:"ports,omitempty"`
+	ContainerPort int32                  `protobuf:"varint,7,opt,name=container_port,json=containerPort,proto3" json:"container_port,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2927,6 +2961,13 @@ func (x *ObservedComposeService) GetPorts() string {
 	return ""
 }
 
+func (x *ObservedComposeService) GetContainerPort() int32 {
+	if x != nil {
+		return x.ContainerPort
+	}
+	return 0
+}
+
 type ObservedComposeLogLine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Service       string                 `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
@@ -2988,8 +3029,11 @@ type ObservedComposeStack struct {
 	Message            string                    `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
 	Services           []*ObservedComposeService `protobuf:"bytes,5,rep,name=services,proto3" json:"services,omitempty"`
 	LogLines           []*ObservedComposeLogLine `protobuf:"bytes,6,rep,name=log_lines,json=logLines,proto3" json:"log_lines,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Newly generated SERVICE_PASSWORD_* / SERVICE_BASE64_* values. Persist once (#145).
+	GeneratedEnv  map[string]string `protobuf:"bytes,7,rep,name=generated_env,json=generatedEnv,proto3" json:"generated_env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Volumes       []*ComposeVolume  `protobuf:"bytes,8,rep,name=volumes,proto3" json:"volumes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ObservedComposeStack) Reset() {
@@ -3060,6 +3104,20 @@ func (x *ObservedComposeStack) GetServices() []*ObservedComposeService {
 func (x *ObservedComposeStack) GetLogLines() []*ObservedComposeLogLine {
 	if x != nil {
 		return x.LogLines
+	}
+	return nil
+}
+
+func (x *ObservedComposeStack) GetGeneratedEnv() map[string]string {
+	if x != nil {
+		return x.GeneratedEnv
+	}
+	return nil
+}
+
+func (x *ObservedComposeStack) GetVolumes() []*ComposeVolume {
+	if x != nil {
+		return x.Volumes
 	}
 	return nil
 }
@@ -4741,7 +4799,7 @@ var File_v1_agent_proto protoreflect.FileDescriptor
 
 const file_v1_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x0ev1/agent.proto\x12\x02v1\"\x87\x02\n" +
+	"\x0ev1/agent.proto\x12\x02v1\x1a\x11v1/workload.proto\"\x87\x02\n" +
 	"\x10NodeCapabilities\x12\x1b\n" +
 	"\tcpu_cores\x18\x01 \x01(\x05R\bcpuCores\x12&\n" +
 	"\x0fmemory_total_mb\x18\x02 \x01(\x03R\rmemoryTotalMb\x12#\n" +
@@ -5015,7 +5073,7 @@ const file_v1_agent_proto_rawDesc = "" +
 	"generation\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x18\n" +
 	"\amessage\x18\x03 \x01(\tR\amessage\x12\x1b\n" +
-	"\tlog_lines\x18\x04 \x03(\tR\blogLines\"\x8e\x02\n" +
+	"\tlog_lines\x18\x04 \x03(\tR\blogLines\"\xc4\x04\n" +
 	"\x13DesiredComposeStack\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -5028,24 +5086,41 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\x06action\x18\b \x01(\tR\x06action\x12\x1e\n" +
 	"\n" +
 	"generation\x18\t \x01(\x03R\n" +
-	"generation\"\xa3\x01\n" +
+	"generation\x12'\n" +
+	"\x0fpublic_services\x18\n" +
+	" \x03(\tR\x0epublicServices\x122\n" +
+	"\x03env\x18\v \x03(\v2 .v1.DesiredComposeStack.EnvEntryR\x03env\x12>\n" +
+	"\adomains\x18\f \x03(\v2$.v1.DesiredComposeStack.DomainsEntryR\adomains\x12#\n" +
+	"\rpurge_volumes\x18\r \x01(\bR\fpurgeVolumes\x1a6\n" +
+	"\bEnvEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a:\n" +
+	"\fDomainsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xca\x01\n" +
 	"\x16ObservedComposeService\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x16\n" +
 	"\x06health\x18\x03 \x01(\tR\x06health\x12\x1b\n" +
 	"\texit_code\x18\x04 \x01(\x05R\bexitCode\x12\x14\n" +
 	"\x05image\x18\x05 \x01(\tR\x05image\x12\x14\n" +
-	"\x05ports\x18\x06 \x01(\tR\x05ports\"F\n" +
+	"\x05ports\x18\x06 \x01(\tR\x05ports\x12%\n" +
+	"\x0econtainer_port\x18\a \x01(\x05R\rcontainerPort\"F\n" +
 	"\x16ObservedComposeLogLine\x12\x18\n" +
 	"\aservice\x18\x01 \x01(\tR\aservice\x12\x12\n" +
-	"\x04line\x18\x02 \x01(\tR\x04line\"\xfa\x01\n" +
+	"\x04line\x18\x02 \x01(\tR\x04line\"\xb9\x03\n" +
 	"\x14ObservedComposeStack\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12/\n" +
 	"\x13observed_generation\x18\x03 \x01(\x03R\x12observedGeneration\x12\x18\n" +
 	"\amessage\x18\x04 \x01(\tR\amessage\x126\n" +
 	"\bservices\x18\x05 \x03(\v2\x1a.v1.ObservedComposeServiceR\bservices\x127\n" +
-	"\tlog_lines\x18\x06 \x03(\v2\x1a.v1.ObservedComposeLogLineR\blogLines\"d\n" +
+	"\tlog_lines\x18\x06 \x03(\v2\x1a.v1.ObservedComposeLogLineR\blogLines\x12O\n" +
+	"\rgenerated_env\x18\a \x03(\v2*.v1.ObservedComposeStack.GeneratedEnvEntryR\fgeneratedEnv\x12+\n" +
+	"\avolumes\x18\b \x03(\v2\x11.v1.ComposeVolumeR\avolumes\x1a?\n" +
+	"\x11GeneratedEnvEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"d\n" +
 	"\x19ReportComposeStackRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12.\n" +
 	"\x05stack\x18\x02 \x01(\v2\x18.v1.ObservedComposeStackR\x05stack\"\x1c\n" +
@@ -5200,7 +5275,7 @@ func file_v1_agent_proto_rawDescGZIP() []byte {
 	return file_v1_agent_proto_rawDescData
 }
 
-var file_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 75)
+var file_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 78)
 var file_v1_agent_proto_goTypes = []any{
 	(*NodeCapabilities)(nil),           // 0: v1.NodeCapabilities
 	(*NodeHeartbeat)(nil),              // 1: v1.NodeHeartbeat
@@ -5277,6 +5352,10 @@ var file_v1_agent_proto_goTypes = []any{
 	nil,                                // 72: v1.DesiredManagedDatabase.EnvVarsEntry
 	nil,                                // 73: v1.DesiredBuild.BuildArgsEntry
 	nil,                                // 74: v1.ObservedEdge.RouteStatusesEntry
+	nil,                                // 75: v1.DesiredComposeStack.EnvEntry
+	nil,                                // 76: v1.DesiredComposeStack.DomainsEntry
+	nil,                                // 77: v1.ObservedComposeStack.GeneratedEnvEntry
+	(*ComposeVolume)(nil),              // 78: v1.ComposeVolume
 }
 var file_v1_agent_proto_depIdxs = []int32{
 	0,  // 0: v1.Node.capabilities:type_name -> v1.NodeCapabilities
@@ -5299,77 +5378,81 @@ var file_v1_agent_proto_depIdxs = []int32{
 	29, // 17: v1.DesiredNetworkPlan.peers:type_name -> v1.DesiredNetworkPeer
 	30, // 18: v1.DesiredNetworkPlan.dns_records:type_name -> v1.DesiredNetworkDNSRecord
 	31, // 19: v1.DesiredNetworkPlan.certificates:type_name -> v1.DesiredNetworkCertificate
-	35, // 20: v1.ObservedComposeStack.services:type_name -> v1.ObservedComposeService
-	36, // 21: v1.ObservedComposeStack.log_lines:type_name -> v1.ObservedComposeLogLine
-	37, // 22: v1.ReportComposeStackRequest.stack:type_name -> v1.ObservedComposeStack
-	13, // 23: v1.HeartbeatResponse.desired_workloads:type_name -> v1.DesiredWorkload
-	24, // 24: v1.HeartbeatResponse.desired_builds:type_name -> v1.DesiredBuild
-	27, // 25: v1.HeartbeatResponse.desired_edge:type_name -> v1.DesiredEdgePlan
-	32, // 26: v1.HeartbeatResponse.desired_network:type_name -> v1.DesiredNetworkPlan
-	15, // 27: v1.HeartbeatResponse.desired_wasm:type_name -> v1.DesiredWasmPlan
-	22, // 28: v1.HeartbeatResponse.desired_managed_databases:type_name -> v1.DesiredManagedDatabase
-	34, // 29: v1.HeartbeatResponse.desired_compose_stacks:type_name -> v1.DesiredComposeStack
-	2,  // 30: v1.RotateNodeTokenResponse.node:type_name -> v1.Node
-	2,  // 31: v1.RevokeNodeTokenResponse.node:type_name -> v1.Node
-	2,  // 32: v1.SetNodeClientCertResponse.node:type_name -> v1.Node
-	2,  // 33: v1.UpdateNodeAgentResponse.node:type_name -> v1.Node
-	20, // 34: v1.ReportObservedRequest.workloads:type_name -> v1.ObservedWorkload
-	25, // 35: v1.ReportBuildRequest.build:type_name -> v1.ObservedBuild
-	28, // 36: v1.ReportEdgeRequest.edge:type_name -> v1.ObservedEdge
-	33, // 37: v1.ReportNetworkRequest.network:type_name -> v1.ObservedNetwork
-	58, // 38: v1.GetNetworkStatusResponse.nodes:type_name -> v1.NodeNetworkStatus
-	30, // 39: v1.GetNetworkStatusResponse.records:type_name -> v1.DesiredNetworkDNSRecord
-	63, // 40: v1.ListEgressPoliciesResponse.policies:type_name -> v1.EgressPolicy
-	2,  // 41: v1.ListNodesResponse.nodes:type_name -> v1.Node
-	1,  // 42: v1.ConnectStreamRequest.heartbeat:type_name -> v1.NodeHeartbeat
-	13, // 43: v1.ConnectStreamResponse.desired_workloads:type_name -> v1.DesiredWorkload
-	9,  // 44: v1.AgentService.CreateJoinToken:input_type -> v1.CreateJoinTokenRequest
-	11, // 45: v1.AgentService.EnrollNode:input_type -> v1.EnrollNodeRequest
-	21, // 46: v1.AgentService.Heartbeat:input_type -> v1.HeartbeatRequest
-	49, // 47: v1.AgentService.ReportObserved:input_type -> v1.ReportObservedRequest
-	51, // 48: v1.AgentService.ReportBuild:input_type -> v1.ReportBuildRequest
-	53, // 49: v1.AgentService.ReportEdge:input_type -> v1.ReportEdgeRequest
-	55, // 50: v1.AgentService.ReportNetwork:input_type -> v1.ReportNetworkRequest
-	18, // 51: v1.AgentService.ReportWasm:input_type -> v1.ReportWasmRequest
-	38, // 52: v1.AgentService.ReportComposeStack:input_type -> v1.ReportComposeStackRequest
-	57, // 53: v1.AgentService.GetNetworkStatus:input_type -> v1.GetNetworkStatusRequest
-	60, // 54: v1.AgentService.UpsertEgressPolicy:input_type -> v1.UpsertEgressPolicyRequest
-	62, // 55: v1.AgentService.ListEgressPolicies:input_type -> v1.ListEgressPoliciesRequest
-	65, // 56: v1.AgentService.ListNodes:input_type -> v1.ListNodesRequest
-	3,  // 57: v1.AgentService.CordonNode:input_type -> v1.CordonNodeRequest
-	5,  // 58: v1.AgentService.DrainNode:input_type -> v1.DrainNodeRequest
-	7,  // 59: v1.AgentService.UpdateNodeSchedule:input_type -> v1.UpdateNodeScheduleRequest
-	47, // 60: v1.AgentService.UpdateNodeAgent:input_type -> v1.UpdateNodeAgentRequest
-	41, // 61: v1.AgentService.RotateNodeToken:input_type -> v1.RotateNodeTokenRequest
-	43, // 62: v1.AgentService.RevokeNodeToken:input_type -> v1.RevokeNodeTokenRequest
-	45, // 63: v1.AgentService.SetNodeClientCert:input_type -> v1.SetNodeClientCertRequest
-	67, // 64: v1.AgentService.ConnectStream:input_type -> v1.ConnectStreamRequest
-	10, // 65: v1.AgentService.CreateJoinToken:output_type -> v1.CreateJoinTokenResponse
-	12, // 66: v1.AgentService.EnrollNode:output_type -> v1.EnrollNodeResponse
-	40, // 67: v1.AgentService.Heartbeat:output_type -> v1.HeartbeatResponse
-	50, // 68: v1.AgentService.ReportObserved:output_type -> v1.ReportObservedResponse
-	52, // 69: v1.AgentService.ReportBuild:output_type -> v1.ReportBuildResponse
-	54, // 70: v1.AgentService.ReportEdge:output_type -> v1.ReportEdgeResponse
-	56, // 71: v1.AgentService.ReportNetwork:output_type -> v1.ReportNetworkResponse
-	19, // 72: v1.AgentService.ReportWasm:output_type -> v1.ReportWasmResponse
-	39, // 73: v1.AgentService.ReportComposeStack:output_type -> v1.ReportComposeStackResponse
-	59, // 74: v1.AgentService.GetNetworkStatus:output_type -> v1.GetNetworkStatusResponse
-	61, // 75: v1.AgentService.UpsertEgressPolicy:output_type -> v1.UpsertEgressPolicyResponse
-	64, // 76: v1.AgentService.ListEgressPolicies:output_type -> v1.ListEgressPoliciesResponse
-	66, // 77: v1.AgentService.ListNodes:output_type -> v1.ListNodesResponse
-	4,  // 78: v1.AgentService.CordonNode:output_type -> v1.CordonNodeResponse
-	6,  // 79: v1.AgentService.DrainNode:output_type -> v1.DrainNodeResponse
-	8,  // 80: v1.AgentService.UpdateNodeSchedule:output_type -> v1.UpdateNodeScheduleResponse
-	48, // 81: v1.AgentService.UpdateNodeAgent:output_type -> v1.UpdateNodeAgentResponse
-	42, // 82: v1.AgentService.RotateNodeToken:output_type -> v1.RotateNodeTokenResponse
-	44, // 83: v1.AgentService.RevokeNodeToken:output_type -> v1.RevokeNodeTokenResponse
-	46, // 84: v1.AgentService.SetNodeClientCert:output_type -> v1.SetNodeClientCertResponse
-	68, // 85: v1.AgentService.ConnectStream:output_type -> v1.ConnectStreamResponse
-	65, // [65:86] is the sub-list for method output_type
-	44, // [44:65] is the sub-list for method input_type
-	44, // [44:44] is the sub-list for extension type_name
-	44, // [44:44] is the sub-list for extension extendee
-	0,  // [0:44] is the sub-list for field type_name
+	75, // 20: v1.DesiredComposeStack.env:type_name -> v1.DesiredComposeStack.EnvEntry
+	76, // 21: v1.DesiredComposeStack.domains:type_name -> v1.DesiredComposeStack.DomainsEntry
+	35, // 22: v1.ObservedComposeStack.services:type_name -> v1.ObservedComposeService
+	36, // 23: v1.ObservedComposeStack.log_lines:type_name -> v1.ObservedComposeLogLine
+	77, // 24: v1.ObservedComposeStack.generated_env:type_name -> v1.ObservedComposeStack.GeneratedEnvEntry
+	78, // 25: v1.ObservedComposeStack.volumes:type_name -> v1.ComposeVolume
+	37, // 26: v1.ReportComposeStackRequest.stack:type_name -> v1.ObservedComposeStack
+	13, // 27: v1.HeartbeatResponse.desired_workloads:type_name -> v1.DesiredWorkload
+	24, // 28: v1.HeartbeatResponse.desired_builds:type_name -> v1.DesiredBuild
+	27, // 29: v1.HeartbeatResponse.desired_edge:type_name -> v1.DesiredEdgePlan
+	32, // 30: v1.HeartbeatResponse.desired_network:type_name -> v1.DesiredNetworkPlan
+	15, // 31: v1.HeartbeatResponse.desired_wasm:type_name -> v1.DesiredWasmPlan
+	22, // 32: v1.HeartbeatResponse.desired_managed_databases:type_name -> v1.DesiredManagedDatabase
+	34, // 33: v1.HeartbeatResponse.desired_compose_stacks:type_name -> v1.DesiredComposeStack
+	2,  // 34: v1.RotateNodeTokenResponse.node:type_name -> v1.Node
+	2,  // 35: v1.RevokeNodeTokenResponse.node:type_name -> v1.Node
+	2,  // 36: v1.SetNodeClientCertResponse.node:type_name -> v1.Node
+	2,  // 37: v1.UpdateNodeAgentResponse.node:type_name -> v1.Node
+	20, // 38: v1.ReportObservedRequest.workloads:type_name -> v1.ObservedWorkload
+	25, // 39: v1.ReportBuildRequest.build:type_name -> v1.ObservedBuild
+	28, // 40: v1.ReportEdgeRequest.edge:type_name -> v1.ObservedEdge
+	33, // 41: v1.ReportNetworkRequest.network:type_name -> v1.ObservedNetwork
+	58, // 42: v1.GetNetworkStatusResponse.nodes:type_name -> v1.NodeNetworkStatus
+	30, // 43: v1.GetNetworkStatusResponse.records:type_name -> v1.DesiredNetworkDNSRecord
+	63, // 44: v1.ListEgressPoliciesResponse.policies:type_name -> v1.EgressPolicy
+	2,  // 45: v1.ListNodesResponse.nodes:type_name -> v1.Node
+	1,  // 46: v1.ConnectStreamRequest.heartbeat:type_name -> v1.NodeHeartbeat
+	13, // 47: v1.ConnectStreamResponse.desired_workloads:type_name -> v1.DesiredWorkload
+	9,  // 48: v1.AgentService.CreateJoinToken:input_type -> v1.CreateJoinTokenRequest
+	11, // 49: v1.AgentService.EnrollNode:input_type -> v1.EnrollNodeRequest
+	21, // 50: v1.AgentService.Heartbeat:input_type -> v1.HeartbeatRequest
+	49, // 51: v1.AgentService.ReportObserved:input_type -> v1.ReportObservedRequest
+	51, // 52: v1.AgentService.ReportBuild:input_type -> v1.ReportBuildRequest
+	53, // 53: v1.AgentService.ReportEdge:input_type -> v1.ReportEdgeRequest
+	55, // 54: v1.AgentService.ReportNetwork:input_type -> v1.ReportNetworkRequest
+	18, // 55: v1.AgentService.ReportWasm:input_type -> v1.ReportWasmRequest
+	38, // 56: v1.AgentService.ReportComposeStack:input_type -> v1.ReportComposeStackRequest
+	57, // 57: v1.AgentService.GetNetworkStatus:input_type -> v1.GetNetworkStatusRequest
+	60, // 58: v1.AgentService.UpsertEgressPolicy:input_type -> v1.UpsertEgressPolicyRequest
+	62, // 59: v1.AgentService.ListEgressPolicies:input_type -> v1.ListEgressPoliciesRequest
+	65, // 60: v1.AgentService.ListNodes:input_type -> v1.ListNodesRequest
+	3,  // 61: v1.AgentService.CordonNode:input_type -> v1.CordonNodeRequest
+	5,  // 62: v1.AgentService.DrainNode:input_type -> v1.DrainNodeRequest
+	7,  // 63: v1.AgentService.UpdateNodeSchedule:input_type -> v1.UpdateNodeScheduleRequest
+	47, // 64: v1.AgentService.UpdateNodeAgent:input_type -> v1.UpdateNodeAgentRequest
+	41, // 65: v1.AgentService.RotateNodeToken:input_type -> v1.RotateNodeTokenRequest
+	43, // 66: v1.AgentService.RevokeNodeToken:input_type -> v1.RevokeNodeTokenRequest
+	45, // 67: v1.AgentService.SetNodeClientCert:input_type -> v1.SetNodeClientCertRequest
+	67, // 68: v1.AgentService.ConnectStream:input_type -> v1.ConnectStreamRequest
+	10, // 69: v1.AgentService.CreateJoinToken:output_type -> v1.CreateJoinTokenResponse
+	12, // 70: v1.AgentService.EnrollNode:output_type -> v1.EnrollNodeResponse
+	40, // 71: v1.AgentService.Heartbeat:output_type -> v1.HeartbeatResponse
+	50, // 72: v1.AgentService.ReportObserved:output_type -> v1.ReportObservedResponse
+	52, // 73: v1.AgentService.ReportBuild:output_type -> v1.ReportBuildResponse
+	54, // 74: v1.AgentService.ReportEdge:output_type -> v1.ReportEdgeResponse
+	56, // 75: v1.AgentService.ReportNetwork:output_type -> v1.ReportNetworkResponse
+	19, // 76: v1.AgentService.ReportWasm:output_type -> v1.ReportWasmResponse
+	39, // 77: v1.AgentService.ReportComposeStack:output_type -> v1.ReportComposeStackResponse
+	59, // 78: v1.AgentService.GetNetworkStatus:output_type -> v1.GetNetworkStatusResponse
+	61, // 79: v1.AgentService.UpsertEgressPolicy:output_type -> v1.UpsertEgressPolicyResponse
+	64, // 80: v1.AgentService.ListEgressPolicies:output_type -> v1.ListEgressPoliciesResponse
+	66, // 81: v1.AgentService.ListNodes:output_type -> v1.ListNodesResponse
+	4,  // 82: v1.AgentService.CordonNode:output_type -> v1.CordonNodeResponse
+	6,  // 83: v1.AgentService.DrainNode:output_type -> v1.DrainNodeResponse
+	8,  // 84: v1.AgentService.UpdateNodeSchedule:output_type -> v1.UpdateNodeScheduleResponse
+	48, // 85: v1.AgentService.UpdateNodeAgent:output_type -> v1.UpdateNodeAgentResponse
+	42, // 86: v1.AgentService.RotateNodeToken:output_type -> v1.RotateNodeTokenResponse
+	44, // 87: v1.AgentService.RevokeNodeToken:output_type -> v1.RevokeNodeTokenResponse
+	46, // 88: v1.AgentService.SetNodeClientCert:output_type -> v1.SetNodeClientCertResponse
+	68, // 89: v1.AgentService.ConnectStream:output_type -> v1.ConnectStreamResponse
+	69, // [69:90] is the sub-list for method output_type
+	48, // [48:69] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_v1_agent_proto_init() }
@@ -5377,13 +5460,14 @@ func file_v1_agent_proto_init() {
 	if File_v1_agent_proto != nil {
 		return
 	}
+	file_v1_workload_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_agent_proto_rawDesc), len(file_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   75,
+			NumMessages:   78,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -94,6 +94,14 @@ pub async fn apply_edge(plan: &DesiredEdgePlan) -> ObservedEdge {
         if route.action != "upsert" || route.upstream.is_empty() {
             continue;
         }
+        if !agent_can_probe_upstream(&route.upstream) {
+            logs.push(format!(
+                "skip health check for {} → {} (project network)",
+                route.hostname, route.upstream
+            ));
+            route_statuses.insert(route.domain_id.clone(), "active".into());
+            continue;
+        }
         let health_url = route.upstream.replace("host.docker.internal", "127.0.0.1");
         if let Err(error) = health_check(&client, &health_url).await {
             warn!(hostname = %route.hostname, %error, "edge health check failed");
@@ -279,6 +287,21 @@ async fn load_config(client: &Client, admin: &str, config: &str) -> Result<()> {
         bail!("load status {status}: {}", body.trim());
     }
     Ok(())
+}
+
+/// Docker DNS names on the project network are not resolvable from the agent.
+fn agent_can_probe_upstream(upstream: &str) -> bool {
+    let host = upstream
+        .trim_start_matches("https://")
+        .trim_start_matches("http://")
+        .split('/')
+        .next()
+        .unwrap_or("");
+    let host = host.rsplit_once(':').map(|(h, _)| h).unwrap_or(host);
+    matches!(
+        host,
+        "localhost" | "127.0.0.1" | "::1" | "host.docker.internal"
+    ) || host.parse::<std::net::IpAddr>().is_ok()
 }
 
 async fn health_check(client: &Client, upstream: &str) -> Result<()> {

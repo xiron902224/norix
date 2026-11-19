@@ -7,6 +7,7 @@ import {
   CreateComposeStackRequestSchema,
   GetComposeStackRequestSchema,
   ListComposeStacksRequestSchema,
+  UpdateComposeStackRequestSchema,
   type ComposeStack,
   type ComposeStackLogLine,
   CreateProjectRequestSchema,
@@ -225,19 +226,45 @@ export async function deployFromGit(input: {
 
 export type ComposeStackAction = 'start' | 'stop' | 'redeploy' | 'delete'
 
+export interface ComposeStackSettings {
+  /** Services that keep a published host port. Everything else stays internal (#146). */
+  publicServices?: string[]
+  /** service → hostname. Routed through Caddy with HTTPS/WSS (#146). */
+  domains?: Record<string, string>
+  /** NAME → value. Write-only: values are never returned by the API (#145). */
+  variables?: Record<string, string>
+}
+
 export async function createComposeStack(input: {
   projectId: string
   name: string
   gitUrl: string
   gitRef?: string
   composePath?: string
-}): Promise<ComposeStack | undefined> {
+} & ComposeStackSettings): Promise<ComposeStack | undefined> {
   const response = await workloadClient.createComposeStack(create(CreateComposeStackRequestSchema, {
     projectId: input.projectId,
     name: input.name,
     gitUrl: input.gitUrl,
     gitRef: input.gitRef ?? 'main',
     composePath: input.composePath ?? 'docker-compose.yml',
+    publicServices: input.publicServices ?? [],
+    domains: input.domains ?? {},
+    variables: input.variables ?? {},
+  }))
+  return response.stack
+}
+
+/**
+ * Replaces public services and domains. Variables are upserted: a non-empty
+ * value sets it, an empty value deletes it (#145).
+ */
+export async function updateComposeStack(input: { id: string } & ComposeStackSettings): Promise<ComposeStack | undefined> {
+  const response = await workloadClient.updateComposeStack(create(UpdateComposeStackRequestSchema, {
+    id: input.id,
+    publicServices: input.publicServices ?? [],
+    domains: input.domains ?? {},
+    variables: input.variables ?? {},
   }))
   return response.stack
 }
@@ -255,8 +282,13 @@ export async function getComposeStack(id: string, service = '', tailLines = 300)
   return { stack: response.stack, logs: response.logs }
 }
 
-export async function composeStackAction(id: string, action: ComposeStackAction): Promise<ComposeStack | undefined> {
-  const response = await workloadClient.composeStackAction(create(ComposeStackActionRequestSchema, { id, action }))
+export async function composeStackAction(id: string, action: ComposeStackAction, purgeVolumes = false): Promise<ComposeStack | undefined> {
+  const response = await workloadClient.composeStackAction(create(ComposeStackActionRequestSchema, {
+    id,
+    action,
+    // Only honoured for delete: removes named volumes and the checkout (#147).
+    purgeVolumes: action === 'delete' && purgeVolumes,
+  }))
   return response.stack
 }
 

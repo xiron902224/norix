@@ -1886,13 +1886,15 @@ func (x *DeployComposeStackResponse) GetWorkloads() []*Workload {
 
 // Compose stack deployed as a unit by the agent with `docker compose up` (#143).
 type ComposeStackService struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`   // running | exited | restarting | created | paused | dead
-	Health        string                 `protobuf:"bytes,3,opt,name=health,proto3" json:"health,omitempty"` // healthy | unhealthy | starting | ""
-	ExitCode      int32                  `protobuf:"varint,4,opt,name=exit_code,json=exitCode,proto3" json:"exit_code,omitempty"`
-	Image         string                 `protobuf:"bytes,5,opt,name=image,proto3" json:"image,omitempty"`
-	Ports         string                 `protobuf:"bytes,6,opt,name=ports,proto3" json:"ports,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Name     string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	State    string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`   // running | exited | restarting | created | paused | dead
+	Health   string                 `protobuf:"bytes,3,opt,name=health,proto3" json:"health,omitempty"` // healthy | unhealthy | starting | ""
+	ExitCode int32                  `protobuf:"varint,4,opt,name=exit_code,json=exitCode,proto3" json:"exit_code,omitempty"`
+	Image    string                 `protobuf:"bytes,5,opt,name=image,proto3" json:"image,omitempty"`
+	Ports    string                 `protobuf:"bytes,6,opt,name=ports,proto3" json:"ports,omitempty"`
+	// Container port the edge dials on the project network (#146). 0 = unknown.
+	ContainerPort int32 `protobuf:"varint,7,opt,name=container_port,json=containerPort,proto3" json:"container_port,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1969,6 +1971,73 @@ func (x *ComposeStackService) GetPorts() string {
 	return ""
 }
 
+func (x *ComposeStackService) GetContainerPort() int32 {
+	if x != nil {
+		return x.ContainerPort
+	}
+	return 0
+}
+
+type ComposeVolume struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"` // named | bind
+	Source        string                 `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ComposeVolume) Reset() {
+	*x = ComposeVolume{}
+	mi := &file_v1_workload_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComposeVolume) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComposeVolume) ProtoMessage() {}
+
+func (x *ComposeVolume) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComposeVolume.ProtoReflect.Descriptor instead.
+func (*ComposeVolume) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ComposeVolume) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ComposeVolume) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *ComposeVolume) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
 type ComposeStack struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1988,13 +2057,21 @@ type ComposeStack struct {
 	ComposeProject string                 `protobuf:"bytes,14,opt,name=compose_project,json=composeProject,proto3" json:"compose_project,omitempty"`
 	CreatedAt      string                 `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt      string                 `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Services that keep a published host port. Everyone else is internal (#146).
+	PublicServices []string `protobuf:"bytes,17,rep,name=public_services,json=publicServices,proto3" json:"public_services,omitempty"`
+	// service name → hostname. The edge dials the service on the project network.
+	Domains map[string]string `protobuf:"bytes,18,rep,name=domains,proto3" json:"domains,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Names only. Values stay encrypted and are never returned (#145).
+	VariableNames []string         `protobuf:"bytes,19,rep,name=variable_names,json=variableNames,proto3" json:"variable_names,omitempty"`
+	Volumes       []*ComposeVolume `protobuf:"bytes,20,rep,name=volumes,proto3" json:"volumes,omitempty"`
+	PurgeVolumes  bool             `protobuf:"varint,21,opt,name=purge_volumes,json=purgeVolumes,proto3" json:"purge_volumes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComposeStack) Reset() {
 	*x = ComposeStack{}
-	mi := &file_v1_workload_proto_msgTypes[26]
+	mi := &file_v1_workload_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2006,7 +2083,7 @@ func (x *ComposeStack) String() string {
 func (*ComposeStack) ProtoMessage() {}
 
 func (x *ComposeStack) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[26]
+	mi := &file_v1_workload_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2019,7 +2096,7 @@ func (x *ComposeStack) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComposeStack.ProtoReflect.Descriptor instead.
 func (*ComposeStack) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{26}
+	return file_v1_workload_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ComposeStack) GetId() string {
@@ -2134,20 +2211,59 @@ func (x *ComposeStack) GetUpdatedAt() string {
 	return ""
 }
 
+func (x *ComposeStack) GetPublicServices() []string {
+	if x != nil {
+		return x.PublicServices
+	}
+	return nil
+}
+
+func (x *ComposeStack) GetDomains() map[string]string {
+	if x != nil {
+		return x.Domains
+	}
+	return nil
+}
+
+func (x *ComposeStack) GetVariableNames() []string {
+	if x != nil {
+		return x.VariableNames
+	}
+	return nil
+}
+
+func (x *ComposeStack) GetVolumes() []*ComposeVolume {
+	if x != nil {
+		return x.Volumes
+	}
+	return nil
+}
+
+func (x *ComposeStack) GetPurgeVolumes() bool {
+	if x != nil {
+		return x.PurgeVolumes
+	}
+	return false
+}
+
 type CreateComposeStackRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	GitUrl        string                 `protobuf:"bytes,3,opt,name=git_url,json=gitUrl,proto3" json:"git_url,omitempty"`
-	GitRef        string                 `protobuf:"bytes,4,opt,name=git_ref,json=gitRef,proto3" json:"git_ref,omitempty"`
-	ComposePath   string                 `protobuf:"bytes,5,opt,name=compose_path,json=composePath,proto3" json:"compose_path,omitempty"`
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId      string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	GitUrl         string                 `protobuf:"bytes,3,opt,name=git_url,json=gitUrl,proto3" json:"git_url,omitempty"`
+	GitRef         string                 `protobuf:"bytes,4,opt,name=git_ref,json=gitRef,proto3" json:"git_ref,omitempty"`
+	ComposePath    string                 `protobuf:"bytes,5,opt,name=compose_path,json=composePath,proto3" json:"compose_path,omitempty"`
+	PublicServices []string               `protobuf:"bytes,6,rep,name=public_services,json=publicServices,proto3" json:"public_services,omitempty"`
+	Domains        map[string]string      `protobuf:"bytes,7,rep,name=domains,proto3" json:"domains,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Plaintext on the wire once; stored encrypted. Never logged.
+	Variables     map[string]string `protobuf:"bytes,8,rep,name=variables,proto3" json:"variables,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateComposeStackRequest) Reset() {
 	*x = CreateComposeStackRequest{}
-	mi := &file_v1_workload_proto_msgTypes[27]
+	mi := &file_v1_workload_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2159,7 +2275,7 @@ func (x *CreateComposeStackRequest) String() string {
 func (*CreateComposeStackRequest) ProtoMessage() {}
 
 func (x *CreateComposeStackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[27]
+	mi := &file_v1_workload_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2172,7 +2288,7 @@ func (x *CreateComposeStackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateComposeStackRequest.ProtoReflect.Descriptor instead.
 func (*CreateComposeStackRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{27}
+	return file_v1_workload_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *CreateComposeStackRequest) GetProjectId() string {
@@ -2210,6 +2326,140 @@ func (x *CreateComposeStackRequest) GetComposePath() string {
 	return ""
 }
 
+func (x *CreateComposeStackRequest) GetPublicServices() []string {
+	if x != nil {
+		return x.PublicServices
+	}
+	return nil
+}
+
+func (x *CreateComposeStackRequest) GetDomains() map[string]string {
+	if x != nil {
+		return x.Domains
+	}
+	return nil
+}
+
+func (x *CreateComposeStackRequest) GetVariables() map[string]string {
+	if x != nil {
+		return x.Variables
+	}
+	return nil
+}
+
+type UpdateComposeStackRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	PublicServices []string               `protobuf:"bytes,2,rep,name=public_services,json=publicServices,proto3" json:"public_services,omitempty"`
+	Domains        map[string]string      `protobuf:"bytes,3,rep,name=domains,proto3" json:"domains,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Non-empty value sets the variable. Empty value deletes it.
+	Variables     map[string]string `protobuf:"bytes,4,rep,name=variables,proto3" json:"variables,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateComposeStackRequest) Reset() {
+	*x = UpdateComposeStackRequest{}
+	mi := &file_v1_workload_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateComposeStackRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateComposeStackRequest) ProtoMessage() {}
+
+func (x *UpdateComposeStackRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateComposeStackRequest.ProtoReflect.Descriptor instead.
+func (*UpdateComposeStackRequest) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *UpdateComposeStackRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateComposeStackRequest) GetPublicServices() []string {
+	if x != nil {
+		return x.PublicServices
+	}
+	return nil
+}
+
+func (x *UpdateComposeStackRequest) GetDomains() map[string]string {
+	if x != nil {
+		return x.Domains
+	}
+	return nil
+}
+
+func (x *UpdateComposeStackRequest) GetVariables() map[string]string {
+	if x != nil {
+		return x.Variables
+	}
+	return nil
+}
+
+type UpdateComposeStackResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stack         *ComposeStack          `protobuf:"bytes,1,opt,name=stack,proto3" json:"stack,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateComposeStackResponse) Reset() {
+	*x = UpdateComposeStackResponse{}
+	mi := &file_v1_workload_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateComposeStackResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateComposeStackResponse) ProtoMessage() {}
+
+func (x *UpdateComposeStackResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateComposeStackResponse.ProtoReflect.Descriptor instead.
+func (*UpdateComposeStackResponse) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *UpdateComposeStackResponse) GetStack() *ComposeStack {
+	if x != nil {
+		return x.Stack
+	}
+	return nil
+}
+
 type CreateComposeStackResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Stack         *ComposeStack          `protobuf:"bytes,1,opt,name=stack,proto3" json:"stack,omitempty"`
@@ -2219,7 +2469,7 @@ type CreateComposeStackResponse struct {
 
 func (x *CreateComposeStackResponse) Reset() {
 	*x = CreateComposeStackResponse{}
-	mi := &file_v1_workload_proto_msgTypes[28]
+	mi := &file_v1_workload_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2231,7 +2481,7 @@ func (x *CreateComposeStackResponse) String() string {
 func (*CreateComposeStackResponse) ProtoMessage() {}
 
 func (x *CreateComposeStackResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[28]
+	mi := &file_v1_workload_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2244,7 +2494,7 @@ func (x *CreateComposeStackResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateComposeStackResponse.ProtoReflect.Descriptor instead.
 func (*CreateComposeStackResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{28}
+	return file_v1_workload_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *CreateComposeStackResponse) GetStack() *ComposeStack {
@@ -2263,7 +2513,7 @@ type ListComposeStacksRequest struct {
 
 func (x *ListComposeStacksRequest) Reset() {
 	*x = ListComposeStacksRequest{}
-	mi := &file_v1_workload_proto_msgTypes[29]
+	mi := &file_v1_workload_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2275,7 +2525,7 @@ func (x *ListComposeStacksRequest) String() string {
 func (*ListComposeStacksRequest) ProtoMessage() {}
 
 func (x *ListComposeStacksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[29]
+	mi := &file_v1_workload_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2288,7 +2538,7 @@ func (x *ListComposeStacksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListComposeStacksRequest.ProtoReflect.Descriptor instead.
 func (*ListComposeStacksRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{29}
+	return file_v1_workload_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ListComposeStacksRequest) GetProjectId() string {
@@ -2307,7 +2557,7 @@ type ListComposeStacksResponse struct {
 
 func (x *ListComposeStacksResponse) Reset() {
 	*x = ListComposeStacksResponse{}
-	mi := &file_v1_workload_proto_msgTypes[30]
+	mi := &file_v1_workload_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2319,7 +2569,7 @@ func (x *ListComposeStacksResponse) String() string {
 func (*ListComposeStacksResponse) ProtoMessage() {}
 
 func (x *ListComposeStacksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[30]
+	mi := &file_v1_workload_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2332,7 +2582,7 @@ func (x *ListComposeStacksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListComposeStacksResponse.ProtoReflect.Descriptor instead.
 func (*ListComposeStacksResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{30}
+	return file_v1_workload_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ListComposeStacksResponse) GetStacks() []*ComposeStack {
@@ -2354,7 +2604,7 @@ type GetComposeStackRequest struct {
 
 func (x *GetComposeStackRequest) Reset() {
 	*x = GetComposeStackRequest{}
-	mi := &file_v1_workload_proto_msgTypes[31]
+	mi := &file_v1_workload_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2366,7 +2616,7 @@ func (x *GetComposeStackRequest) String() string {
 func (*GetComposeStackRequest) ProtoMessage() {}
 
 func (x *GetComposeStackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[31]
+	mi := &file_v1_workload_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2379,7 +2629,7 @@ func (x *GetComposeStackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetComposeStackRequest.ProtoReflect.Descriptor instead.
 func (*GetComposeStackRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{31}
+	return file_v1_workload_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *GetComposeStackRequest) GetId() string {
@@ -2414,7 +2664,7 @@ type ComposeStackLogLine struct {
 
 func (x *ComposeStackLogLine) Reset() {
 	*x = ComposeStackLogLine{}
-	mi := &file_v1_workload_proto_msgTypes[32]
+	mi := &file_v1_workload_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2426,7 +2676,7 @@ func (x *ComposeStackLogLine) String() string {
 func (*ComposeStackLogLine) ProtoMessage() {}
 
 func (x *ComposeStackLogLine) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[32]
+	mi := &file_v1_workload_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2439,7 +2689,7 @@ func (x *ComposeStackLogLine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComposeStackLogLine.ProtoReflect.Descriptor instead.
 func (*ComposeStackLogLine) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{32}
+	return file_v1_workload_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ComposeStackLogLine) GetService() string {
@@ -2473,7 +2723,7 @@ type GetComposeStackResponse struct {
 
 func (x *GetComposeStackResponse) Reset() {
 	*x = GetComposeStackResponse{}
-	mi := &file_v1_workload_proto_msgTypes[33]
+	mi := &file_v1_workload_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2485,7 +2735,7 @@ func (x *GetComposeStackResponse) String() string {
 func (*GetComposeStackResponse) ProtoMessage() {}
 
 func (x *GetComposeStackResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[33]
+	mi := &file_v1_workload_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2498,7 +2748,7 @@ func (x *GetComposeStackResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetComposeStackResponse.ProtoReflect.Descriptor instead.
 func (*GetComposeStackResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{33}
+	return file_v1_workload_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetComposeStackResponse) GetStack() *ComposeStack {
@@ -2519,14 +2769,16 @@ type ComposeStackActionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// start | stop | redeploy | delete
-	Action        string `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	Action string `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	// Delete only. Removes named volumes and the checkout (#147).
+	PurgeVolumes  bool `protobuf:"varint,3,opt,name=purge_volumes,json=purgeVolumes,proto3" json:"purge_volumes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComposeStackActionRequest) Reset() {
 	*x = ComposeStackActionRequest{}
-	mi := &file_v1_workload_proto_msgTypes[34]
+	mi := &file_v1_workload_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2538,7 +2790,7 @@ func (x *ComposeStackActionRequest) String() string {
 func (*ComposeStackActionRequest) ProtoMessage() {}
 
 func (x *ComposeStackActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[34]
+	mi := &file_v1_workload_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2551,7 +2803,7 @@ func (x *ComposeStackActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComposeStackActionRequest.ProtoReflect.Descriptor instead.
 func (*ComposeStackActionRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{34}
+	return file_v1_workload_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ComposeStackActionRequest) GetId() string {
@@ -2568,6 +2820,13 @@ func (x *ComposeStackActionRequest) GetAction() string {
 	return ""
 }
 
+func (x *ComposeStackActionRequest) GetPurgeVolumes() bool {
+	if x != nil {
+		return x.PurgeVolumes
+	}
+	return false
+}
+
 type ComposeStackActionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Stack         *ComposeStack          `protobuf:"bytes,1,opt,name=stack,proto3" json:"stack,omitempty"`
@@ -2577,7 +2836,7 @@ type ComposeStackActionResponse struct {
 
 func (x *ComposeStackActionResponse) Reset() {
 	*x = ComposeStackActionResponse{}
-	mi := &file_v1_workload_proto_msgTypes[35]
+	mi := &file_v1_workload_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2589,7 +2848,7 @@ func (x *ComposeStackActionResponse) String() string {
 func (*ComposeStackActionResponse) ProtoMessage() {}
 
 func (x *ComposeStackActionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[35]
+	mi := &file_v1_workload_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2602,7 +2861,7 @@ func (x *ComposeStackActionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComposeStackActionResponse.ProtoReflect.Descriptor instead.
 func (*ComposeStackActionResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{35}
+	return file_v1_workload_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ComposeStackActionResponse) GetStack() *ComposeStack {
@@ -2621,7 +2880,7 @@ type ListBuildsRequest struct {
 
 func (x *ListBuildsRequest) Reset() {
 	*x = ListBuildsRequest{}
-	mi := &file_v1_workload_proto_msgTypes[36]
+	mi := &file_v1_workload_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2633,7 +2892,7 @@ func (x *ListBuildsRequest) String() string {
 func (*ListBuildsRequest) ProtoMessage() {}
 
 func (x *ListBuildsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[36]
+	mi := &file_v1_workload_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2646,7 +2905,7 @@ func (x *ListBuildsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBuildsRequest.ProtoReflect.Descriptor instead.
 func (*ListBuildsRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{36}
+	return file_v1_workload_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ListBuildsRequest) GetWorkloadId() string {
@@ -2665,7 +2924,7 @@ type ListBuildsResponse struct {
 
 func (x *ListBuildsResponse) Reset() {
 	*x = ListBuildsResponse{}
-	mi := &file_v1_workload_proto_msgTypes[37]
+	mi := &file_v1_workload_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2677,7 +2936,7 @@ func (x *ListBuildsResponse) String() string {
 func (*ListBuildsResponse) ProtoMessage() {}
 
 func (x *ListBuildsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[37]
+	mi := &file_v1_workload_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2690,7 +2949,7 @@ func (x *ListBuildsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBuildsResponse.ProtoReflect.Descriptor instead.
 func (*ListBuildsResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{37}
+	return file_v1_workload_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *ListBuildsResponse) GetBuilds() []*Build {
@@ -2710,7 +2969,7 @@ type GetBuildLogsRequest struct {
 
 func (x *GetBuildLogsRequest) Reset() {
 	*x = GetBuildLogsRequest{}
-	mi := &file_v1_workload_proto_msgTypes[38]
+	mi := &file_v1_workload_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2722,7 +2981,7 @@ func (x *GetBuildLogsRequest) String() string {
 func (*GetBuildLogsRequest) ProtoMessage() {}
 
 func (x *GetBuildLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[38]
+	mi := &file_v1_workload_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2735,7 +2994,7 @@ func (x *GetBuildLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBuildLogsRequest.ProtoReflect.Descriptor instead.
 func (*GetBuildLogsRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{38}
+	return file_v1_workload_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetBuildLogsRequest) GetBuildId() string {
@@ -2762,7 +3021,7 @@ type GetBuildLogsResponse struct {
 
 func (x *GetBuildLogsResponse) Reset() {
 	*x = GetBuildLogsResponse{}
-	mi := &file_v1_workload_proto_msgTypes[39]
+	mi := &file_v1_workload_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2774,7 +3033,7 @@ func (x *GetBuildLogsResponse) String() string {
 func (*GetBuildLogsResponse) ProtoMessage() {}
 
 func (x *GetBuildLogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[39]
+	mi := &file_v1_workload_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2787,7 +3046,7 @@ func (x *GetBuildLogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBuildLogsResponse.ProtoReflect.Descriptor instead.
 func (*GetBuildLogsResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{39}
+	return file_v1_workload_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *GetBuildLogsResponse) GetBuild() *Build {
@@ -2820,7 +3079,7 @@ type DomainRoute struct {
 
 func (x *DomainRoute) Reset() {
 	*x = DomainRoute{}
-	mi := &file_v1_workload_proto_msgTypes[40]
+	mi := &file_v1_workload_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2832,7 +3091,7 @@ func (x *DomainRoute) String() string {
 func (*DomainRoute) ProtoMessage() {}
 
 func (x *DomainRoute) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[40]
+	mi := &file_v1_workload_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2845,7 +3104,7 @@ func (x *DomainRoute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DomainRoute.ProtoReflect.Descriptor instead.
 func (*DomainRoute) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{40}
+	return file_v1_workload_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *DomainRoute) GetId() string {
@@ -2916,7 +3175,7 @@ type AssignDomainRequest struct {
 
 func (x *AssignDomainRequest) Reset() {
 	*x = AssignDomainRequest{}
-	mi := &file_v1_workload_proto_msgTypes[41]
+	mi := &file_v1_workload_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2928,7 +3187,7 @@ func (x *AssignDomainRequest) String() string {
 func (*AssignDomainRequest) ProtoMessage() {}
 
 func (x *AssignDomainRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[41]
+	mi := &file_v1_workload_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2941,7 +3200,7 @@ func (x *AssignDomainRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssignDomainRequest.ProtoReflect.Descriptor instead.
 func (*AssignDomainRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{41}
+	return file_v1_workload_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *AssignDomainRequest) GetWorkloadId() string {
@@ -2974,7 +3233,7 @@ type AssignDomainResponse struct {
 
 func (x *AssignDomainResponse) Reset() {
 	*x = AssignDomainResponse{}
-	mi := &file_v1_workload_proto_msgTypes[42]
+	mi := &file_v1_workload_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2986,7 +3245,7 @@ func (x *AssignDomainResponse) String() string {
 func (*AssignDomainResponse) ProtoMessage() {}
 
 func (x *AssignDomainResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[42]
+	mi := &file_v1_workload_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2999,7 +3258,7 @@ func (x *AssignDomainResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssignDomainResponse.ProtoReflect.Descriptor instead.
 func (*AssignDomainResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{42}
+	return file_v1_workload_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *AssignDomainResponse) GetRoute() *DomainRoute {
@@ -3018,7 +3277,7 @@ type ListDomainsRequest struct {
 
 func (x *ListDomainsRequest) Reset() {
 	*x = ListDomainsRequest{}
-	mi := &file_v1_workload_proto_msgTypes[43]
+	mi := &file_v1_workload_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3030,7 +3289,7 @@ func (x *ListDomainsRequest) String() string {
 func (*ListDomainsRequest) ProtoMessage() {}
 
 func (x *ListDomainsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[43]
+	mi := &file_v1_workload_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3043,7 +3302,7 @@ func (x *ListDomainsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDomainsRequest.ProtoReflect.Descriptor instead.
 func (*ListDomainsRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{43}
+	return file_v1_workload_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ListDomainsRequest) GetProjectId() string {
@@ -3062,7 +3321,7 @@ type ListDomainsResponse struct {
 
 func (x *ListDomainsResponse) Reset() {
 	*x = ListDomainsResponse{}
-	mi := &file_v1_workload_proto_msgTypes[44]
+	mi := &file_v1_workload_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3074,7 +3333,7 @@ func (x *ListDomainsResponse) String() string {
 func (*ListDomainsResponse) ProtoMessage() {}
 
 func (x *ListDomainsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[44]
+	mi := &file_v1_workload_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3087,7 +3346,7 @@ func (x *ListDomainsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDomainsResponse.ProtoReflect.Descriptor instead.
 func (*ListDomainsResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{44}
+	return file_v1_workload_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ListDomainsResponse) GetRoutes() []*DomainRoute {
@@ -3106,7 +3365,7 @@ type UnassignDomainRequest struct {
 
 func (x *UnassignDomainRequest) Reset() {
 	*x = UnassignDomainRequest{}
-	mi := &file_v1_workload_proto_msgTypes[45]
+	mi := &file_v1_workload_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3118,7 +3377,7 @@ func (x *UnassignDomainRequest) String() string {
 func (*UnassignDomainRequest) ProtoMessage() {}
 
 func (x *UnassignDomainRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[45]
+	mi := &file_v1_workload_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3131,7 +3390,7 @@ func (x *UnassignDomainRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnassignDomainRequest.ProtoReflect.Descriptor instead.
 func (*UnassignDomainRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{45}
+	return file_v1_workload_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *UnassignDomainRequest) GetId() string {
@@ -3149,7 +3408,7 @@ type UnassignDomainResponse struct {
 
 func (x *UnassignDomainResponse) Reset() {
 	*x = UnassignDomainResponse{}
-	mi := &file_v1_workload_proto_msgTypes[46]
+	mi := &file_v1_workload_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3161,7 +3420,7 @@ func (x *UnassignDomainResponse) String() string {
 func (*UnassignDomainResponse) ProtoMessage() {}
 
 func (x *UnassignDomainResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[46]
+	mi := &file_v1_workload_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3174,7 +3433,7 @@ func (x *UnassignDomainResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnassignDomainResponse.ProtoReflect.Descriptor instead.
 func (*UnassignDomainResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{46}
+	return file_v1_workload_proto_rawDescGZIP(), []int{49}
 }
 
 // Immutable deploy snapshot for rollback (#14).
@@ -3198,7 +3457,7 @@ type WorkloadRelease struct {
 
 func (x *WorkloadRelease) Reset() {
 	*x = WorkloadRelease{}
-	mi := &file_v1_workload_proto_msgTypes[47]
+	mi := &file_v1_workload_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3210,7 +3469,7 @@ func (x *WorkloadRelease) String() string {
 func (*WorkloadRelease) ProtoMessage() {}
 
 func (x *WorkloadRelease) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[47]
+	mi := &file_v1_workload_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3223,7 +3482,7 @@ func (x *WorkloadRelease) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkloadRelease.ProtoReflect.Descriptor instead.
 func (*WorkloadRelease) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{47}
+	return file_v1_workload_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *WorkloadRelease) GetId() string {
@@ -3320,7 +3579,7 @@ type ListWorkloadReleasesRequest struct {
 
 func (x *ListWorkloadReleasesRequest) Reset() {
 	*x = ListWorkloadReleasesRequest{}
-	mi := &file_v1_workload_proto_msgTypes[48]
+	mi := &file_v1_workload_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3332,7 +3591,7 @@ func (x *ListWorkloadReleasesRequest) String() string {
 func (*ListWorkloadReleasesRequest) ProtoMessage() {}
 
 func (x *ListWorkloadReleasesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[48]
+	mi := &file_v1_workload_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3345,7 +3604,7 @@ func (x *ListWorkloadReleasesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWorkloadReleasesRequest.ProtoReflect.Descriptor instead.
 func (*ListWorkloadReleasesRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{48}
+	return file_v1_workload_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ListWorkloadReleasesRequest) GetWorkloadId() string {
@@ -3371,7 +3630,7 @@ type ListWorkloadReleasesResponse struct {
 
 func (x *ListWorkloadReleasesResponse) Reset() {
 	*x = ListWorkloadReleasesResponse{}
-	mi := &file_v1_workload_proto_msgTypes[49]
+	mi := &file_v1_workload_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3383,7 +3642,7 @@ func (x *ListWorkloadReleasesResponse) String() string {
 func (*ListWorkloadReleasesResponse) ProtoMessage() {}
 
 func (x *ListWorkloadReleasesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[49]
+	mi := &file_v1_workload_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3396,7 +3655,7 @@ func (x *ListWorkloadReleasesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWorkloadReleasesResponse.ProtoReflect.Descriptor instead.
 func (*ListWorkloadReleasesResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{49}
+	return file_v1_workload_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ListWorkloadReleasesResponse) GetReleases() []*WorkloadRelease {
@@ -3416,7 +3675,7 @@ type RollbackWorkloadRequest struct {
 
 func (x *RollbackWorkloadRequest) Reset() {
 	*x = RollbackWorkloadRequest{}
-	mi := &file_v1_workload_proto_msgTypes[50]
+	mi := &file_v1_workload_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3428,7 +3687,7 @@ func (x *RollbackWorkloadRequest) String() string {
 func (*RollbackWorkloadRequest) ProtoMessage() {}
 
 func (x *RollbackWorkloadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[50]
+	mi := &file_v1_workload_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3441,7 +3700,7 @@ func (x *RollbackWorkloadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RollbackWorkloadRequest.ProtoReflect.Descriptor instead.
 func (*RollbackWorkloadRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{50}
+	return file_v1_workload_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *RollbackWorkloadRequest) GetWorkloadId() string {
@@ -3471,7 +3730,7 @@ type RollbackWorkloadResponse struct {
 
 func (x *RollbackWorkloadResponse) Reset() {
 	*x = RollbackWorkloadResponse{}
-	mi := &file_v1_workload_proto_msgTypes[51]
+	mi := &file_v1_workload_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3483,7 +3742,7 @@ func (x *RollbackWorkloadResponse) String() string {
 func (*RollbackWorkloadResponse) ProtoMessage() {}
 
 func (x *RollbackWorkloadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[51]
+	mi := &file_v1_workload_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3496,7 +3755,7 @@ func (x *RollbackWorkloadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RollbackWorkloadResponse.ProtoReflect.Descriptor instead.
 func (*RollbackWorkloadResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{51}
+	return file_v1_workload_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *RollbackWorkloadResponse) GetDeploymentId() string {
@@ -3544,7 +3803,7 @@ type RevealWorkloadEnvRequest struct {
 
 func (x *RevealWorkloadEnvRequest) Reset() {
 	*x = RevealWorkloadEnvRequest{}
-	mi := &file_v1_workload_proto_msgTypes[52]
+	mi := &file_v1_workload_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3556,7 +3815,7 @@ func (x *RevealWorkloadEnvRequest) String() string {
 func (*RevealWorkloadEnvRequest) ProtoMessage() {}
 
 func (x *RevealWorkloadEnvRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[52]
+	mi := &file_v1_workload_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3569,7 +3828,7 @@ func (x *RevealWorkloadEnvRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevealWorkloadEnvRequest.ProtoReflect.Descriptor instead.
 func (*RevealWorkloadEnvRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{52}
+	return file_v1_workload_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *RevealWorkloadEnvRequest) GetWorkloadId() string {
@@ -3588,7 +3847,7 @@ type RevealWorkloadEnvResponse struct {
 
 func (x *RevealWorkloadEnvResponse) Reset() {
 	*x = RevealWorkloadEnvResponse{}
-	mi := &file_v1_workload_proto_msgTypes[53]
+	mi := &file_v1_workload_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3600,7 +3859,7 @@ func (x *RevealWorkloadEnvResponse) String() string {
 func (*RevealWorkloadEnvResponse) ProtoMessage() {}
 
 func (x *RevealWorkloadEnvResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[53]
+	mi := &file_v1_workload_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3613,7 +3872,7 @@ func (x *RevealWorkloadEnvResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevealWorkloadEnvResponse.ProtoReflect.Descriptor instead.
 func (*RevealWorkloadEnvResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{53}
+	return file_v1_workload_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *RevealWorkloadEnvResponse) GetEnvVars() map[string]string {
@@ -3633,7 +3892,7 @@ type BackupWorkloadVolumeRequest struct {
 
 func (x *BackupWorkloadVolumeRequest) Reset() {
 	*x = BackupWorkloadVolumeRequest{}
-	mi := &file_v1_workload_proto_msgTypes[54]
+	mi := &file_v1_workload_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3645,7 +3904,7 @@ func (x *BackupWorkloadVolumeRequest) String() string {
 func (*BackupWorkloadVolumeRequest) ProtoMessage() {}
 
 func (x *BackupWorkloadVolumeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[54]
+	mi := &file_v1_workload_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3658,7 +3917,7 @@ func (x *BackupWorkloadVolumeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BackupWorkloadVolumeRequest.ProtoReflect.Descriptor instead.
 func (*BackupWorkloadVolumeRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{54}
+	return file_v1_workload_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *BackupWorkloadVolumeRequest) GetWorkloadId() string {
@@ -3685,7 +3944,7 @@ type BackupWorkloadVolumeResponse struct {
 
 func (x *BackupWorkloadVolumeResponse) Reset() {
 	*x = BackupWorkloadVolumeResponse{}
-	mi := &file_v1_workload_proto_msgTypes[55]
+	mi := &file_v1_workload_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3697,7 +3956,7 @@ func (x *BackupWorkloadVolumeResponse) String() string {
 func (*BackupWorkloadVolumeResponse) ProtoMessage() {}
 
 func (x *BackupWorkloadVolumeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[55]
+	mi := &file_v1_workload_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3710,7 +3969,7 @@ func (x *BackupWorkloadVolumeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BackupWorkloadVolumeResponse.ProtoReflect.Descriptor instead.
 func (*BackupWorkloadVolumeResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{55}
+	return file_v1_workload_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *BackupWorkloadVolumeResponse) GetOpId() string {
@@ -3739,7 +3998,7 @@ type DeleteWorkloadVolumeRequest struct {
 
 func (x *DeleteWorkloadVolumeRequest) Reset() {
 	*x = DeleteWorkloadVolumeRequest{}
-	mi := &file_v1_workload_proto_msgTypes[56]
+	mi := &file_v1_workload_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3751,7 +4010,7 @@ func (x *DeleteWorkloadVolumeRequest) String() string {
 func (*DeleteWorkloadVolumeRequest) ProtoMessage() {}
 
 func (x *DeleteWorkloadVolumeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[56]
+	mi := &file_v1_workload_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3764,7 +4023,7 @@ func (x *DeleteWorkloadVolumeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteWorkloadVolumeRequest.ProtoReflect.Descriptor instead.
 func (*DeleteWorkloadVolumeRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{56}
+	return file_v1_workload_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *DeleteWorkloadVolumeRequest) GetWorkloadId() string {
@@ -3798,7 +4057,7 @@ type DeleteWorkloadVolumeResponse struct {
 
 func (x *DeleteWorkloadVolumeResponse) Reset() {
 	*x = DeleteWorkloadVolumeResponse{}
-	mi := &file_v1_workload_proto_msgTypes[57]
+	mi := &file_v1_workload_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3810,7 +4069,7 @@ func (x *DeleteWorkloadVolumeResponse) String() string {
 func (*DeleteWorkloadVolumeResponse) ProtoMessage() {}
 
 func (x *DeleteWorkloadVolumeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[57]
+	mi := &file_v1_workload_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3823,7 +4082,7 @@ func (x *DeleteWorkloadVolumeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteWorkloadVolumeResponse.ProtoReflect.Descriptor instead.
 func (*DeleteWorkloadVolumeResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{57}
+	return file_v1_workload_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *DeleteWorkloadVolumeResponse) GetOpId() string {
@@ -3851,7 +4110,7 @@ type Project struct {
 
 func (x *Project) Reset() {
 	*x = Project{}
-	mi := &file_v1_workload_proto_msgTypes[58]
+	mi := &file_v1_workload_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3863,7 +4122,7 @@ func (x *Project) String() string {
 func (*Project) ProtoMessage() {}
 
 func (x *Project) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[58]
+	mi := &file_v1_workload_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3876,7 +4135,7 @@ func (x *Project) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Project.ProtoReflect.Descriptor instead.
 func (*Project) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{58}
+	return file_v1_workload_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *Project) GetId() string {
@@ -3909,7 +4168,7 @@ type CreateProjectRequest struct {
 
 func (x *CreateProjectRequest) Reset() {
 	*x = CreateProjectRequest{}
-	mi := &file_v1_workload_proto_msgTypes[59]
+	mi := &file_v1_workload_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3921,7 +4180,7 @@ func (x *CreateProjectRequest) String() string {
 func (*CreateProjectRequest) ProtoMessage() {}
 
 func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[59]
+	mi := &file_v1_workload_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3934,7 +4193,7 @@ func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
 func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{59}
+	return file_v1_workload_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *CreateProjectRequest) GetName() string {
@@ -3953,7 +4212,7 @@ type CreateProjectResponse struct {
 
 func (x *CreateProjectResponse) Reset() {
 	*x = CreateProjectResponse{}
-	mi := &file_v1_workload_proto_msgTypes[60]
+	mi := &file_v1_workload_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3965,7 +4224,7 @@ func (x *CreateProjectResponse) String() string {
 func (*CreateProjectResponse) ProtoMessage() {}
 
 func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[60]
+	mi := &file_v1_workload_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3978,7 +4237,7 @@ func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectResponse.ProtoReflect.Descriptor instead.
 func (*CreateProjectResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{60}
+	return file_v1_workload_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *CreateProjectResponse) GetProject() *Project {
@@ -3996,7 +4255,7 @@ type ListProjectsRequest struct {
 
 func (x *ListProjectsRequest) Reset() {
 	*x = ListProjectsRequest{}
-	mi := &file_v1_workload_proto_msgTypes[61]
+	mi := &file_v1_workload_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4008,7 +4267,7 @@ func (x *ListProjectsRequest) String() string {
 func (*ListProjectsRequest) ProtoMessage() {}
 
 func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[61]
+	mi := &file_v1_workload_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4021,7 +4280,7 @@ func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{61}
+	return file_v1_workload_proto_rawDescGZIP(), []int{64}
 }
 
 type ListProjectsResponse struct {
@@ -4033,7 +4292,7 @@ type ListProjectsResponse struct {
 
 func (x *ListProjectsResponse) Reset() {
 	*x = ListProjectsResponse{}
-	mi := &file_v1_workload_proto_msgTypes[62]
+	mi := &file_v1_workload_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4045,7 +4304,7 @@ func (x *ListProjectsResponse) String() string {
 func (*ListProjectsResponse) ProtoMessage() {}
 
 func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[62]
+	mi := &file_v1_workload_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4058,7 +4317,7 @@ func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{62}
+	return file_v1_workload_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *ListProjectsResponse) GetProjects() []*Project {
@@ -4077,7 +4336,7 @@ type DeleteProjectRequest struct {
 
 func (x *DeleteProjectRequest) Reset() {
 	*x = DeleteProjectRequest{}
-	mi := &file_v1_workload_proto_msgTypes[63]
+	mi := &file_v1_workload_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4089,7 +4348,7 @@ func (x *DeleteProjectRequest) String() string {
 func (*DeleteProjectRequest) ProtoMessage() {}
 
 func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[63]
+	mi := &file_v1_workload_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4102,7 +4361,7 @@ func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectRequest.ProtoReflect.Descriptor instead.
 func (*DeleteProjectRequest) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{63}
+	return file_v1_workload_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *DeleteProjectRequest) GetId() string {
@@ -4120,7 +4379,7 @@ type DeleteProjectResponse struct {
 
 func (x *DeleteProjectResponse) Reset() {
 	*x = DeleteProjectResponse{}
-	mi := &file_v1_workload_proto_msgTypes[64]
+	mi := &file_v1_workload_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4132,7 +4391,7 @@ func (x *DeleteProjectResponse) String() string {
 func (*DeleteProjectResponse) ProtoMessage() {}
 
 func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_workload_proto_msgTypes[64]
+	mi := &file_v1_workload_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4145,7 +4404,7 @@ func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectResponse.ProtoReflect.Descriptor instead.
 func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
-	return file_v1_workload_proto_rawDescGZIP(), []int{64}
+	return file_v1_workload_proto_rawDescGZIP(), []int{67}
 }
 
 var File_v1_workload_proto protoreflect.FileDescriptor
@@ -4328,14 +4587,19 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\bservices\x18\x06 \x03(\v2\x16.v1.ComposeServiceSpecR\bservices\"c\n" +
 	"\x1aDeployComposeStackResponse\x12\x19\n" +
 	"\bstack_id\x18\x01 \x01(\tR\astackId\x12*\n" +
-	"\tworkloads\x18\x02 \x03(\v2\f.v1.WorkloadR\tworkloads\"\xa0\x01\n" +
+	"\tworkloads\x18\x02 \x03(\v2\f.v1.WorkloadR\tworkloads\"\xc7\x01\n" +
 	"\x13ComposeStackService\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x16\n" +
 	"\x06health\x18\x03 \x01(\tR\x06health\x12\x1b\n" +
 	"\texit_code\x18\x04 \x01(\x05R\bexitCode\x12\x14\n" +
 	"\x05image\x18\x05 \x01(\tR\x05image\x12\x14\n" +
-	"\x05ports\x18\x06 \x01(\tR\x05ports\"\xa5\x04\n" +
+	"\x05ports\x18\x06 \x01(\tR\x05ports\x12%\n" +
+	"\x0econtainer_port\x18\a \x01(\x05R\rcontainerPort\"O\n" +
+	"\rComposeVolume\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x16\n" +
+	"\x06source\x18\x03 \x01(\tR\x06source\"\xbc\x06\n" +
 	"\fComposeStack\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -4356,14 +4620,44 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x0f \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x10 \x01(\tR\tupdatedAt\"\xa3\x01\n" +
+	"updated_at\x18\x10 \x01(\tR\tupdatedAt\x12'\n" +
+	"\x0fpublic_services\x18\x11 \x03(\tR\x0epublicServices\x127\n" +
+	"\adomains\x18\x12 \x03(\v2\x1d.v1.ComposeStack.DomainsEntryR\adomains\x12%\n" +
+	"\x0evariable_names\x18\x13 \x03(\tR\rvariableNames\x12+\n" +
+	"\avolumes\x18\x14 \x03(\v2\x11.v1.ComposeVolumeR\avolumes\x12#\n" +
+	"\rpurge_volumes\x18\x15 \x01(\bR\fpurgeVolumes\x1a:\n" +
+	"\fDomainsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd8\x03\n" +
 	"\x19CreateComposeStackRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
 	"\agit_url\x18\x03 \x01(\tR\x06gitUrl\x12\x17\n" +
 	"\agit_ref\x18\x04 \x01(\tR\x06gitRef\x12!\n" +
-	"\fcompose_path\x18\x05 \x01(\tR\vcomposePath\"D\n" +
+	"\fcompose_path\x18\x05 \x01(\tR\vcomposePath\x12'\n" +
+	"\x0fpublic_services\x18\x06 \x03(\tR\x0epublicServices\x12D\n" +
+	"\adomains\x18\a \x03(\v2*.v1.CreateComposeStackRequest.DomainsEntryR\adomains\x12J\n" +
+	"\tvariables\x18\b \x03(\v2,.v1.CreateComposeStackRequest.VariablesEntryR\tvariables\x1a:\n" +
+	"\fDomainsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a<\n" +
+	"\x0eVariablesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xe0\x02\n" +
+	"\x19UpdateComposeStackRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
+	"\x0fpublic_services\x18\x02 \x03(\tR\x0epublicServices\x12D\n" +
+	"\adomains\x18\x03 \x03(\v2*.v1.UpdateComposeStackRequest.DomainsEntryR\adomains\x12J\n" +
+	"\tvariables\x18\x04 \x03(\v2,.v1.UpdateComposeStackRequest.VariablesEntryR\tvariables\x1a:\n" +
+	"\fDomainsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a<\n" +
+	"\x0eVariablesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"D\n" +
+	"\x1aUpdateComposeStackResponse\x12&\n" +
+	"\x05stack\x18\x01 \x01(\v2\x10.v1.ComposeStackR\x05stack\"D\n" +
 	"\x1aCreateComposeStackResponse\x12&\n" +
 	"\x05stack\x18\x01 \x01(\v2\x10.v1.ComposeStackR\x05stack\"9\n" +
 	"\x18ListComposeStacksRequest\x12\x1d\n" +
@@ -4383,10 +4677,11 @@ const file_v1_workload_proto_rawDesc = "" +
 	"created_at\x18\x03 \x01(\tR\tcreatedAt\"n\n" +
 	"\x17GetComposeStackResponse\x12&\n" +
 	"\x05stack\x18\x01 \x01(\v2\x10.v1.ComposeStackR\x05stack\x12+\n" +
-	"\x04logs\x18\x02 \x03(\v2\x17.v1.ComposeStackLogLineR\x04logs\"C\n" +
+	"\x04logs\x18\x02 \x03(\v2\x17.v1.ComposeStackLogLineR\x04logs\"h\n" +
 	"\x19ComposeStackActionRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action\"D\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\x12#\n" +
+	"\rpurge_volumes\x18\x03 \x01(\bR\fpurgeVolumes\"D\n" +
 	"\x1aComposeStackActionResponse\x12&\n" +
 	"\x05stack\x18\x01 \x01(\v2\x10.v1.ComposeStackR\x05stack\"4\n" +
 	"\x11ListBuildsRequest\x12\x1f\n" +
@@ -4511,7 +4806,7 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\x1bRUNTIME_TYPE_DOCKER_COMPOSE\x10\x02\x12\x18\n" +
 	"\x14RUNTIME_TYPE_MICROVM\x10\x03\x12\x15\n" +
 	"\x11RUNTIME_TYPE_WASM\x10\x04\x12\x1c\n" +
-	"\x18RUNTIME_TYPE_STATIC_SITE\x10\x052\xb1\x0e\n" +
+	"\x18RUNTIME_TYPE_STATIC_SITE\x10\x052\x86\x0f\n" +
 	"\x0fWorkloadService\x12G\n" +
 	"\x0eCreateWorkload\x12\x19.v1.CreateWorkloadRequest\x1a\x1a.v1.CreateWorkloadResponse\x12/\n" +
 	"\x06Deploy\x12\x11.v1.DeployRequest\x1a\x12.v1.DeployResponse\x12D\n" +
@@ -4521,6 +4816,7 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\x12CreateComposeStack\x12\x1d.v1.CreateComposeStackRequest\x1a\x1e.v1.CreateComposeStackResponse\x12P\n" +
 	"\x11ListComposeStacks\x12\x1c.v1.ListComposeStacksRequest\x1a\x1d.v1.ListComposeStacksResponse\x12J\n" +
 	"\x0fGetComposeStack\x12\x1a.v1.GetComposeStackRequest\x1a\x1b.v1.GetComposeStackResponse\x12S\n" +
+	"\x12UpdateComposeStack\x12\x1d.v1.UpdateComposeStackRequest\x1a\x1e.v1.UpdateComposeStackResponse\x12S\n" +
 	"\x12ComposeStackAction\x12\x1d.v1.ComposeStackActionRequest\x1a\x1e.v1.ComposeStackActionResponse\x12D\n" +
 	"\rListWorkloads\x12\x18.v1.ListWorkloadsRequest\x1a\x19.v1.ListWorkloadsResponse\x12G\n" +
 	"\x0eUpdateWorkload\x12\x19.v1.UpdateWorkloadRequest\x1a\x1a.v1.UpdateWorkloadResponse\x12G\n" +
@@ -4557,7 +4853,7 @@ func file_v1_workload_proto_rawDescGZIP() []byte {
 }
 
 var file_v1_workload_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 72)
+var file_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 80)
 var file_v1_workload_proto_goTypes = []any{
 	(RuntimeType)(0),                      // 0: v1.RuntimeType
 	(*Workload)(nil),                      // 1: v1.Workload
@@ -4586,58 +4882,66 @@ var file_v1_workload_proto_goTypes = []any{
 	(*DeployComposeStackRequest)(nil),     // 24: v1.DeployComposeStackRequest
 	(*DeployComposeStackResponse)(nil),    // 25: v1.DeployComposeStackResponse
 	(*ComposeStackService)(nil),           // 26: v1.ComposeStackService
-	(*ComposeStack)(nil),                  // 27: v1.ComposeStack
-	(*CreateComposeStackRequest)(nil),     // 28: v1.CreateComposeStackRequest
-	(*CreateComposeStackResponse)(nil),    // 29: v1.CreateComposeStackResponse
-	(*ListComposeStacksRequest)(nil),      // 30: v1.ListComposeStacksRequest
-	(*ListComposeStacksResponse)(nil),     // 31: v1.ListComposeStacksResponse
-	(*GetComposeStackRequest)(nil),        // 32: v1.GetComposeStackRequest
-	(*ComposeStackLogLine)(nil),           // 33: v1.ComposeStackLogLine
-	(*GetComposeStackResponse)(nil),       // 34: v1.GetComposeStackResponse
-	(*ComposeStackActionRequest)(nil),     // 35: v1.ComposeStackActionRequest
-	(*ComposeStackActionResponse)(nil),    // 36: v1.ComposeStackActionResponse
-	(*ListBuildsRequest)(nil),             // 37: v1.ListBuildsRequest
-	(*ListBuildsResponse)(nil),            // 38: v1.ListBuildsResponse
-	(*GetBuildLogsRequest)(nil),           // 39: v1.GetBuildLogsRequest
-	(*GetBuildLogsResponse)(nil),          // 40: v1.GetBuildLogsResponse
-	(*DomainRoute)(nil),                   // 41: v1.DomainRoute
-	(*AssignDomainRequest)(nil),           // 42: v1.AssignDomainRequest
-	(*AssignDomainResponse)(nil),          // 43: v1.AssignDomainResponse
-	(*ListDomainsRequest)(nil),            // 44: v1.ListDomainsRequest
-	(*ListDomainsResponse)(nil),           // 45: v1.ListDomainsResponse
-	(*UnassignDomainRequest)(nil),         // 46: v1.UnassignDomainRequest
-	(*UnassignDomainResponse)(nil),        // 47: v1.UnassignDomainResponse
-	(*WorkloadRelease)(nil),               // 48: v1.WorkloadRelease
-	(*ListWorkloadReleasesRequest)(nil),   // 49: v1.ListWorkloadReleasesRequest
-	(*ListWorkloadReleasesResponse)(nil),  // 50: v1.ListWorkloadReleasesResponse
-	(*RollbackWorkloadRequest)(nil),       // 51: v1.RollbackWorkloadRequest
-	(*RollbackWorkloadResponse)(nil),      // 52: v1.RollbackWorkloadResponse
-	(*RevealWorkloadEnvRequest)(nil),      // 53: v1.RevealWorkloadEnvRequest
-	(*RevealWorkloadEnvResponse)(nil),     // 54: v1.RevealWorkloadEnvResponse
-	(*BackupWorkloadVolumeRequest)(nil),   // 55: v1.BackupWorkloadVolumeRequest
-	(*BackupWorkloadVolumeResponse)(nil),  // 56: v1.BackupWorkloadVolumeResponse
-	(*DeleteWorkloadVolumeRequest)(nil),   // 57: v1.DeleteWorkloadVolumeRequest
-	(*DeleteWorkloadVolumeResponse)(nil),  // 58: v1.DeleteWorkloadVolumeResponse
-	(*Project)(nil),                       // 59: v1.Project
-	(*CreateProjectRequest)(nil),          // 60: v1.CreateProjectRequest
-	(*CreateProjectResponse)(nil),         // 61: v1.CreateProjectResponse
-	(*ListProjectsRequest)(nil),           // 62: v1.ListProjectsRequest
-	(*ListProjectsResponse)(nil),          // 63: v1.ListProjectsResponse
-	(*DeleteProjectRequest)(nil),          // 64: v1.DeleteProjectRequest
-	(*DeleteProjectResponse)(nil),         // 65: v1.DeleteProjectResponse
-	nil,                                   // 66: v1.Workload.EnvVarsEntry
-	nil,                                   // 67: v1.Workload.AffinityLabelsEntry
-	nil,                                   // 68: v1.Workload.AntiAffinityLabelsEntry
-	nil,                                   // 69: v1.DeployFromGitRequest.BuildSecretsEntry
-	nil,                                   // 70: v1.ComposeServiceSpec.EnvironmentEntry
-	nil,                                   // 71: v1.WorkloadRelease.EnvVarsEntry
-	nil,                                   // 72: v1.RevealWorkloadEnvResponse.EnvVarsEntry
+	(*ComposeVolume)(nil),                 // 27: v1.ComposeVolume
+	(*ComposeStack)(nil),                  // 28: v1.ComposeStack
+	(*CreateComposeStackRequest)(nil),     // 29: v1.CreateComposeStackRequest
+	(*UpdateComposeStackRequest)(nil),     // 30: v1.UpdateComposeStackRequest
+	(*UpdateComposeStackResponse)(nil),    // 31: v1.UpdateComposeStackResponse
+	(*CreateComposeStackResponse)(nil),    // 32: v1.CreateComposeStackResponse
+	(*ListComposeStacksRequest)(nil),      // 33: v1.ListComposeStacksRequest
+	(*ListComposeStacksResponse)(nil),     // 34: v1.ListComposeStacksResponse
+	(*GetComposeStackRequest)(nil),        // 35: v1.GetComposeStackRequest
+	(*ComposeStackLogLine)(nil),           // 36: v1.ComposeStackLogLine
+	(*GetComposeStackResponse)(nil),       // 37: v1.GetComposeStackResponse
+	(*ComposeStackActionRequest)(nil),     // 38: v1.ComposeStackActionRequest
+	(*ComposeStackActionResponse)(nil),    // 39: v1.ComposeStackActionResponse
+	(*ListBuildsRequest)(nil),             // 40: v1.ListBuildsRequest
+	(*ListBuildsResponse)(nil),            // 41: v1.ListBuildsResponse
+	(*GetBuildLogsRequest)(nil),           // 42: v1.GetBuildLogsRequest
+	(*GetBuildLogsResponse)(nil),          // 43: v1.GetBuildLogsResponse
+	(*DomainRoute)(nil),                   // 44: v1.DomainRoute
+	(*AssignDomainRequest)(nil),           // 45: v1.AssignDomainRequest
+	(*AssignDomainResponse)(nil),          // 46: v1.AssignDomainResponse
+	(*ListDomainsRequest)(nil),            // 47: v1.ListDomainsRequest
+	(*ListDomainsResponse)(nil),           // 48: v1.ListDomainsResponse
+	(*UnassignDomainRequest)(nil),         // 49: v1.UnassignDomainRequest
+	(*UnassignDomainResponse)(nil),        // 50: v1.UnassignDomainResponse
+	(*WorkloadRelease)(nil),               // 51: v1.WorkloadRelease
+	(*ListWorkloadReleasesRequest)(nil),   // 52: v1.ListWorkloadReleasesRequest
+	(*ListWorkloadReleasesResponse)(nil),  // 53: v1.ListWorkloadReleasesResponse
+	(*RollbackWorkloadRequest)(nil),       // 54: v1.RollbackWorkloadRequest
+	(*RollbackWorkloadResponse)(nil),      // 55: v1.RollbackWorkloadResponse
+	(*RevealWorkloadEnvRequest)(nil),      // 56: v1.RevealWorkloadEnvRequest
+	(*RevealWorkloadEnvResponse)(nil),     // 57: v1.RevealWorkloadEnvResponse
+	(*BackupWorkloadVolumeRequest)(nil),   // 58: v1.BackupWorkloadVolumeRequest
+	(*BackupWorkloadVolumeResponse)(nil),  // 59: v1.BackupWorkloadVolumeResponse
+	(*DeleteWorkloadVolumeRequest)(nil),   // 60: v1.DeleteWorkloadVolumeRequest
+	(*DeleteWorkloadVolumeResponse)(nil),  // 61: v1.DeleteWorkloadVolumeResponse
+	(*Project)(nil),                       // 62: v1.Project
+	(*CreateProjectRequest)(nil),          // 63: v1.CreateProjectRequest
+	(*CreateProjectResponse)(nil),         // 64: v1.CreateProjectResponse
+	(*ListProjectsRequest)(nil),           // 65: v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),          // 66: v1.ListProjectsResponse
+	(*DeleteProjectRequest)(nil),          // 67: v1.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),         // 68: v1.DeleteProjectResponse
+	nil,                                   // 69: v1.Workload.EnvVarsEntry
+	nil,                                   // 70: v1.Workload.AffinityLabelsEntry
+	nil,                                   // 71: v1.Workload.AntiAffinityLabelsEntry
+	nil,                                   // 72: v1.DeployFromGitRequest.BuildSecretsEntry
+	nil,                                   // 73: v1.ComposeServiceSpec.EnvironmentEntry
+	nil,                                   // 74: v1.ComposeStack.DomainsEntry
+	nil,                                   // 75: v1.CreateComposeStackRequest.DomainsEntry
+	nil,                                   // 76: v1.CreateComposeStackRequest.VariablesEntry
+	nil,                                   // 77: v1.UpdateComposeStackRequest.DomainsEntry
+	nil,                                   // 78: v1.UpdateComposeStackRequest.VariablesEntry
+	nil,                                   // 79: v1.WorkloadRelease.EnvVarsEntry
+	nil,                                   // 80: v1.RevealWorkloadEnvResponse.EnvVarsEntry
 }
 var file_v1_workload_proto_depIdxs = []int32{
 	0,  // 0: v1.Workload.runtime:type_name -> v1.RuntimeType
-	66, // 1: v1.Workload.env_vars:type_name -> v1.Workload.EnvVarsEntry
-	67, // 2: v1.Workload.affinity_labels:type_name -> v1.Workload.AffinityLabelsEntry
-	68, // 3: v1.Workload.anti_affinity_labels:type_name -> v1.Workload.AntiAffinityLabelsEntry
+	69, // 1: v1.Workload.env_vars:type_name -> v1.Workload.EnvVarsEntry
+	70, // 2: v1.Workload.affinity_labels:type_name -> v1.Workload.AffinityLabelsEntry
+	71, // 3: v1.Workload.anti_affinity_labels:type_name -> v1.Workload.AntiAffinityLabelsEntry
 	2,  // 4: v1.Workload.volume_mounts:type_name -> v1.VolumeMount
 	1,  // 5: v1.ListWorkloadsResponse.workloads:type_name -> v1.Workload
 	1,  // 6: v1.UpdateWorkloadRequest.workload:type_name -> v1.Workload
@@ -4645,87 +4949,96 @@ var file_v1_workload_proto_depIdxs = []int32{
 	1,  // 8: v1.CreateWorkloadRequest.workload:type_name -> v1.Workload
 	1,  // 9: v1.CreateWorkloadResponse.workload:type_name -> v1.Workload
 	1,  // 10: v1.DeployRequest.workload:type_name -> v1.Workload
-	69, // 11: v1.DeployFromGitRequest.build_secrets:type_name -> v1.DeployFromGitRequest.BuildSecretsEntry
+	72, // 11: v1.DeployFromGitRequest.build_secrets:type_name -> v1.DeployFromGitRequest.BuildSecretsEntry
 	20, // 12: v1.ComposeServiceSpec.published_ports:type_name -> v1.ComposePortMap
-	70, // 13: v1.ComposeServiceSpec.environment:type_name -> v1.ComposeServiceSpec.EnvironmentEntry
+	73, // 13: v1.ComposeServiceSpec.environment:type_name -> v1.ComposeServiceSpec.EnvironmentEntry
 	21, // 14: v1.AnalyzeComposeFromGitResponse.services:type_name -> v1.ComposeServiceSpec
 	21, // 15: v1.DeployComposeStackRequest.services:type_name -> v1.ComposeServiceSpec
 	1,  // 16: v1.DeployComposeStackResponse.workloads:type_name -> v1.Workload
 	26, // 17: v1.ComposeStack.services:type_name -> v1.ComposeStackService
-	27, // 18: v1.CreateComposeStackResponse.stack:type_name -> v1.ComposeStack
-	27, // 19: v1.ListComposeStacksResponse.stacks:type_name -> v1.ComposeStack
-	27, // 20: v1.GetComposeStackResponse.stack:type_name -> v1.ComposeStack
-	33, // 21: v1.GetComposeStackResponse.logs:type_name -> v1.ComposeStackLogLine
-	27, // 22: v1.ComposeStackActionResponse.stack:type_name -> v1.ComposeStack
-	17, // 23: v1.ListBuildsResponse.builds:type_name -> v1.Build
-	17, // 24: v1.GetBuildLogsResponse.build:type_name -> v1.Build
-	41, // 25: v1.AssignDomainResponse.route:type_name -> v1.DomainRoute
-	41, // 26: v1.ListDomainsResponse.routes:type_name -> v1.DomainRoute
-	71, // 27: v1.WorkloadRelease.env_vars:type_name -> v1.WorkloadRelease.EnvVarsEntry
-	48, // 28: v1.ListWorkloadReleasesResponse.releases:type_name -> v1.WorkloadRelease
-	48, // 29: v1.RollbackWorkloadResponse.release:type_name -> v1.WorkloadRelease
-	72, // 30: v1.RevealWorkloadEnvResponse.env_vars:type_name -> v1.RevealWorkloadEnvResponse.EnvVarsEntry
-	59, // 31: v1.CreateProjectResponse.project:type_name -> v1.Project
-	59, // 32: v1.ListProjectsResponse.projects:type_name -> v1.Project
-	11, // 33: v1.WorkloadService.CreateWorkload:input_type -> v1.CreateWorkloadRequest
-	13, // 34: v1.WorkloadService.Deploy:input_type -> v1.DeployRequest
-	18, // 35: v1.WorkloadService.DeployFromGit:input_type -> v1.DeployFromGitRequest
-	22, // 36: v1.WorkloadService.AnalyzeComposeFromGit:input_type -> v1.AnalyzeComposeFromGitRequest
-	24, // 37: v1.WorkloadService.DeployComposeStack:input_type -> v1.DeployComposeStackRequest
-	28, // 38: v1.WorkloadService.CreateComposeStack:input_type -> v1.CreateComposeStackRequest
-	30, // 39: v1.WorkloadService.ListComposeStacks:input_type -> v1.ListComposeStacksRequest
-	32, // 40: v1.WorkloadService.GetComposeStack:input_type -> v1.GetComposeStackRequest
-	35, // 41: v1.WorkloadService.ComposeStackAction:input_type -> v1.ComposeStackActionRequest
-	3,  // 42: v1.WorkloadService.ListWorkloads:input_type -> v1.ListWorkloadsRequest
-	5,  // 43: v1.WorkloadService.UpdateWorkload:input_type -> v1.UpdateWorkloadRequest
-	7,  // 44: v1.WorkloadService.DeleteWorkload:input_type -> v1.DeleteWorkloadRequest
-	8,  // 45: v1.WorkloadService.StopWorkload:input_type -> v1.StopWorkloadRequest
-	15, // 46: v1.WorkloadService.GetWorkloadLogs:input_type -> v1.GetWorkloadLogsRequest
-	37, // 47: v1.WorkloadService.ListBuilds:input_type -> v1.ListBuildsRequest
-	39, // 48: v1.WorkloadService.GetBuildLogs:input_type -> v1.GetBuildLogsRequest
-	42, // 49: v1.WorkloadService.AssignDomain:input_type -> v1.AssignDomainRequest
-	44, // 50: v1.WorkloadService.ListDomains:input_type -> v1.ListDomainsRequest
-	46, // 51: v1.WorkloadService.UnassignDomain:input_type -> v1.UnassignDomainRequest
-	49, // 52: v1.WorkloadService.ListWorkloadReleases:input_type -> v1.ListWorkloadReleasesRequest
-	51, // 53: v1.WorkloadService.RollbackWorkload:input_type -> v1.RollbackWorkloadRequest
-	53, // 54: v1.WorkloadService.RevealWorkloadEnv:input_type -> v1.RevealWorkloadEnvRequest
-	55, // 55: v1.WorkloadService.BackupWorkloadVolume:input_type -> v1.BackupWorkloadVolumeRequest
-	57, // 56: v1.WorkloadService.DeleteWorkloadVolume:input_type -> v1.DeleteWorkloadVolumeRequest
-	60, // 57: v1.ProjectService.CreateProject:input_type -> v1.CreateProjectRequest
-	62, // 58: v1.ProjectService.ListProjects:input_type -> v1.ListProjectsRequest
-	64, // 59: v1.ProjectService.DeleteProject:input_type -> v1.DeleteProjectRequest
-	12, // 60: v1.WorkloadService.CreateWorkload:output_type -> v1.CreateWorkloadResponse
-	14, // 61: v1.WorkloadService.Deploy:output_type -> v1.DeployResponse
-	19, // 62: v1.WorkloadService.DeployFromGit:output_type -> v1.DeployFromGitResponse
-	23, // 63: v1.WorkloadService.AnalyzeComposeFromGit:output_type -> v1.AnalyzeComposeFromGitResponse
-	25, // 64: v1.WorkloadService.DeployComposeStack:output_type -> v1.DeployComposeStackResponse
-	29, // 65: v1.WorkloadService.CreateComposeStack:output_type -> v1.CreateComposeStackResponse
-	31, // 66: v1.WorkloadService.ListComposeStacks:output_type -> v1.ListComposeStacksResponse
-	34, // 67: v1.WorkloadService.GetComposeStack:output_type -> v1.GetComposeStackResponse
-	36, // 68: v1.WorkloadService.ComposeStackAction:output_type -> v1.ComposeStackActionResponse
-	4,  // 69: v1.WorkloadService.ListWorkloads:output_type -> v1.ListWorkloadsResponse
-	6,  // 70: v1.WorkloadService.UpdateWorkload:output_type -> v1.UpdateWorkloadResponse
-	10, // 71: v1.WorkloadService.DeleteWorkload:output_type -> v1.DeleteWorkloadResponse
-	9,  // 72: v1.WorkloadService.StopWorkload:output_type -> v1.StopWorkloadResponse
-	16, // 73: v1.WorkloadService.GetWorkloadLogs:output_type -> v1.GetWorkloadLogsResponse
-	38, // 74: v1.WorkloadService.ListBuilds:output_type -> v1.ListBuildsResponse
-	40, // 75: v1.WorkloadService.GetBuildLogs:output_type -> v1.GetBuildLogsResponse
-	43, // 76: v1.WorkloadService.AssignDomain:output_type -> v1.AssignDomainResponse
-	45, // 77: v1.WorkloadService.ListDomains:output_type -> v1.ListDomainsResponse
-	47, // 78: v1.WorkloadService.UnassignDomain:output_type -> v1.UnassignDomainResponse
-	50, // 79: v1.WorkloadService.ListWorkloadReleases:output_type -> v1.ListWorkloadReleasesResponse
-	52, // 80: v1.WorkloadService.RollbackWorkload:output_type -> v1.RollbackWorkloadResponse
-	54, // 81: v1.WorkloadService.RevealWorkloadEnv:output_type -> v1.RevealWorkloadEnvResponse
-	56, // 82: v1.WorkloadService.BackupWorkloadVolume:output_type -> v1.BackupWorkloadVolumeResponse
-	58, // 83: v1.WorkloadService.DeleteWorkloadVolume:output_type -> v1.DeleteWorkloadVolumeResponse
-	61, // 84: v1.ProjectService.CreateProject:output_type -> v1.CreateProjectResponse
-	63, // 85: v1.ProjectService.ListProjects:output_type -> v1.ListProjectsResponse
-	65, // 86: v1.ProjectService.DeleteProject:output_type -> v1.DeleteProjectResponse
-	60, // [60:87] is the sub-list for method output_type
-	33, // [33:60] is the sub-list for method input_type
-	33, // [33:33] is the sub-list for extension type_name
-	33, // [33:33] is the sub-list for extension extendee
-	0,  // [0:33] is the sub-list for field type_name
+	74, // 18: v1.ComposeStack.domains:type_name -> v1.ComposeStack.DomainsEntry
+	27, // 19: v1.ComposeStack.volumes:type_name -> v1.ComposeVolume
+	75, // 20: v1.CreateComposeStackRequest.domains:type_name -> v1.CreateComposeStackRequest.DomainsEntry
+	76, // 21: v1.CreateComposeStackRequest.variables:type_name -> v1.CreateComposeStackRequest.VariablesEntry
+	77, // 22: v1.UpdateComposeStackRequest.domains:type_name -> v1.UpdateComposeStackRequest.DomainsEntry
+	78, // 23: v1.UpdateComposeStackRequest.variables:type_name -> v1.UpdateComposeStackRequest.VariablesEntry
+	28, // 24: v1.UpdateComposeStackResponse.stack:type_name -> v1.ComposeStack
+	28, // 25: v1.CreateComposeStackResponse.stack:type_name -> v1.ComposeStack
+	28, // 26: v1.ListComposeStacksResponse.stacks:type_name -> v1.ComposeStack
+	28, // 27: v1.GetComposeStackResponse.stack:type_name -> v1.ComposeStack
+	36, // 28: v1.GetComposeStackResponse.logs:type_name -> v1.ComposeStackLogLine
+	28, // 29: v1.ComposeStackActionResponse.stack:type_name -> v1.ComposeStack
+	17, // 30: v1.ListBuildsResponse.builds:type_name -> v1.Build
+	17, // 31: v1.GetBuildLogsResponse.build:type_name -> v1.Build
+	44, // 32: v1.AssignDomainResponse.route:type_name -> v1.DomainRoute
+	44, // 33: v1.ListDomainsResponse.routes:type_name -> v1.DomainRoute
+	79, // 34: v1.WorkloadRelease.env_vars:type_name -> v1.WorkloadRelease.EnvVarsEntry
+	51, // 35: v1.ListWorkloadReleasesResponse.releases:type_name -> v1.WorkloadRelease
+	51, // 36: v1.RollbackWorkloadResponse.release:type_name -> v1.WorkloadRelease
+	80, // 37: v1.RevealWorkloadEnvResponse.env_vars:type_name -> v1.RevealWorkloadEnvResponse.EnvVarsEntry
+	62, // 38: v1.CreateProjectResponse.project:type_name -> v1.Project
+	62, // 39: v1.ListProjectsResponse.projects:type_name -> v1.Project
+	11, // 40: v1.WorkloadService.CreateWorkload:input_type -> v1.CreateWorkloadRequest
+	13, // 41: v1.WorkloadService.Deploy:input_type -> v1.DeployRequest
+	18, // 42: v1.WorkloadService.DeployFromGit:input_type -> v1.DeployFromGitRequest
+	22, // 43: v1.WorkloadService.AnalyzeComposeFromGit:input_type -> v1.AnalyzeComposeFromGitRequest
+	24, // 44: v1.WorkloadService.DeployComposeStack:input_type -> v1.DeployComposeStackRequest
+	29, // 45: v1.WorkloadService.CreateComposeStack:input_type -> v1.CreateComposeStackRequest
+	33, // 46: v1.WorkloadService.ListComposeStacks:input_type -> v1.ListComposeStacksRequest
+	35, // 47: v1.WorkloadService.GetComposeStack:input_type -> v1.GetComposeStackRequest
+	30, // 48: v1.WorkloadService.UpdateComposeStack:input_type -> v1.UpdateComposeStackRequest
+	38, // 49: v1.WorkloadService.ComposeStackAction:input_type -> v1.ComposeStackActionRequest
+	3,  // 50: v1.WorkloadService.ListWorkloads:input_type -> v1.ListWorkloadsRequest
+	5,  // 51: v1.WorkloadService.UpdateWorkload:input_type -> v1.UpdateWorkloadRequest
+	7,  // 52: v1.WorkloadService.DeleteWorkload:input_type -> v1.DeleteWorkloadRequest
+	8,  // 53: v1.WorkloadService.StopWorkload:input_type -> v1.StopWorkloadRequest
+	15, // 54: v1.WorkloadService.GetWorkloadLogs:input_type -> v1.GetWorkloadLogsRequest
+	40, // 55: v1.WorkloadService.ListBuilds:input_type -> v1.ListBuildsRequest
+	42, // 56: v1.WorkloadService.GetBuildLogs:input_type -> v1.GetBuildLogsRequest
+	45, // 57: v1.WorkloadService.AssignDomain:input_type -> v1.AssignDomainRequest
+	47, // 58: v1.WorkloadService.ListDomains:input_type -> v1.ListDomainsRequest
+	49, // 59: v1.WorkloadService.UnassignDomain:input_type -> v1.UnassignDomainRequest
+	52, // 60: v1.WorkloadService.ListWorkloadReleases:input_type -> v1.ListWorkloadReleasesRequest
+	54, // 61: v1.WorkloadService.RollbackWorkload:input_type -> v1.RollbackWorkloadRequest
+	56, // 62: v1.WorkloadService.RevealWorkloadEnv:input_type -> v1.RevealWorkloadEnvRequest
+	58, // 63: v1.WorkloadService.BackupWorkloadVolume:input_type -> v1.BackupWorkloadVolumeRequest
+	60, // 64: v1.WorkloadService.DeleteWorkloadVolume:input_type -> v1.DeleteWorkloadVolumeRequest
+	63, // 65: v1.ProjectService.CreateProject:input_type -> v1.CreateProjectRequest
+	65, // 66: v1.ProjectService.ListProjects:input_type -> v1.ListProjectsRequest
+	67, // 67: v1.ProjectService.DeleteProject:input_type -> v1.DeleteProjectRequest
+	12, // 68: v1.WorkloadService.CreateWorkload:output_type -> v1.CreateWorkloadResponse
+	14, // 69: v1.WorkloadService.Deploy:output_type -> v1.DeployResponse
+	19, // 70: v1.WorkloadService.DeployFromGit:output_type -> v1.DeployFromGitResponse
+	23, // 71: v1.WorkloadService.AnalyzeComposeFromGit:output_type -> v1.AnalyzeComposeFromGitResponse
+	25, // 72: v1.WorkloadService.DeployComposeStack:output_type -> v1.DeployComposeStackResponse
+	32, // 73: v1.WorkloadService.CreateComposeStack:output_type -> v1.CreateComposeStackResponse
+	34, // 74: v1.WorkloadService.ListComposeStacks:output_type -> v1.ListComposeStacksResponse
+	37, // 75: v1.WorkloadService.GetComposeStack:output_type -> v1.GetComposeStackResponse
+	31, // 76: v1.WorkloadService.UpdateComposeStack:output_type -> v1.UpdateComposeStackResponse
+	39, // 77: v1.WorkloadService.ComposeStackAction:output_type -> v1.ComposeStackActionResponse
+	4,  // 78: v1.WorkloadService.ListWorkloads:output_type -> v1.ListWorkloadsResponse
+	6,  // 79: v1.WorkloadService.UpdateWorkload:output_type -> v1.UpdateWorkloadResponse
+	10, // 80: v1.WorkloadService.DeleteWorkload:output_type -> v1.DeleteWorkloadResponse
+	9,  // 81: v1.WorkloadService.StopWorkload:output_type -> v1.StopWorkloadResponse
+	16, // 82: v1.WorkloadService.GetWorkloadLogs:output_type -> v1.GetWorkloadLogsResponse
+	41, // 83: v1.WorkloadService.ListBuilds:output_type -> v1.ListBuildsResponse
+	43, // 84: v1.WorkloadService.GetBuildLogs:output_type -> v1.GetBuildLogsResponse
+	46, // 85: v1.WorkloadService.AssignDomain:output_type -> v1.AssignDomainResponse
+	48, // 86: v1.WorkloadService.ListDomains:output_type -> v1.ListDomainsResponse
+	50, // 87: v1.WorkloadService.UnassignDomain:output_type -> v1.UnassignDomainResponse
+	53, // 88: v1.WorkloadService.ListWorkloadReleases:output_type -> v1.ListWorkloadReleasesResponse
+	55, // 89: v1.WorkloadService.RollbackWorkload:output_type -> v1.RollbackWorkloadResponse
+	57, // 90: v1.WorkloadService.RevealWorkloadEnv:output_type -> v1.RevealWorkloadEnvResponse
+	59, // 91: v1.WorkloadService.BackupWorkloadVolume:output_type -> v1.BackupWorkloadVolumeResponse
+	61, // 92: v1.WorkloadService.DeleteWorkloadVolume:output_type -> v1.DeleteWorkloadVolumeResponse
+	64, // 93: v1.ProjectService.CreateProject:output_type -> v1.CreateProjectResponse
+	66, // 94: v1.ProjectService.ListProjects:output_type -> v1.ListProjectsResponse
+	68, // 95: v1.ProjectService.DeleteProject:output_type -> v1.DeleteProjectResponse
+	68, // [68:96] is the sub-list for method output_type
+	40, // [40:68] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_v1_workload_proto_init() }
@@ -4739,7 +5052,7 @@ func file_v1_workload_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_workload_proto_rawDesc), len(file_v1_workload_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   72,
+			NumMessages:   80,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

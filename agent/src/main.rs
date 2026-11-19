@@ -2,6 +2,7 @@ mod build;
 mod capabilities;
 mod client;
 mod compose;
+mod compose_model;
 mod config;
 mod edge;
 mod gitssrf;

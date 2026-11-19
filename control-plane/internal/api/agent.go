@@ -241,6 +241,8 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 			Id: stack.ID, ProjectId: stack.ProjectID, Name: stack.Name, GitUrl: stack.GitURL, GitRef: stack.GitRef,
 			ComposePath: stack.ComposePath, ComposeProject: stack.ComposeProject(),
 			Action: stack.DesiredAction, Generation: stack.DesiredGeneration,
+			PublicServices: stack.PublicServices, Env: stack.Env, Domains: stack.Domains,
+			PurgeVolumes: stack.PurgeVolumes,
 		})
 	}
 	desiredManaged := make([]*paasv1.DesiredManagedDatabase, 0, len(desiredDBs))
@@ -279,7 +281,12 @@ func (service AgentService) ReportComposeStack(ctx context.Context, request *paa
 		services = append(services, db.ComposeStackService{
 			Name: svc.GetName(), State: svc.GetState(), Health: svc.GetHealth(),
 			ExitCode: svc.GetExitCode(), Image: svc.GetImage(), Ports: svc.GetPorts(),
+			ContainerPort: svc.GetContainerPort(),
 		})
+	}
+	volumes := make([]db.ComposeVolume, 0, len(observed.GetVolumes()))
+	for _, volume := range observed.GetVolumes() {
+		volumes = append(volumes, db.ComposeVolume{Name: volume.GetName(), Kind: volume.GetKind(), Source: volume.GetSource()})
 	}
 	logs := make([]db.ComposeStackLog, 0, len(observed.GetLogLines()))
 	for _, line := range observed.GetLogLines() {
@@ -288,6 +295,7 @@ func (service AgentService) ReportComposeStack(ctx context.Context, request *paa
 	err := db.ApplyObservedComposeStack(ctx, service.pool, node.OrganizationID, node.ID, db.ObservedComposeStack{
 		ID: observed.GetId(), Status: observed.GetStatus(), ObservedGeneration: observed.GetObservedGeneration(),
 		Message: observed.GetMessage(), Services: services, Logs: logs,
+		GeneratedEnv: observed.GetGeneratedEnv(), Volumes: volumes,
 	})
 	if errors.Is(err, db.ErrComposeStackNotFound) {
 		return nil, connect.NewError(connect.CodeNotFound, "compose stack not assigned to this node")

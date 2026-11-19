@@ -213,6 +213,14 @@ message ComposeStackService {
   int32 exit_code = 4;
   string image = 5;
   string ports = 6;
+  // Container port the edge dials on the project network (#146). 0 = unknown.
+  int32 container_port = 7;
+}
+
+message ComposeVolume {
+  string name = 1;
+  string kind = 2; // named | bind
+  string source = 3;
 }
 
 message ComposeStack {
@@ -233,6 +241,14 @@ message ComposeStack {
   string compose_project = 14;
   string created_at = 15;
   string updated_at = 16;
+  // Services that keep a published host port. Everyone else is internal (#146).
+  repeated string public_services = 17;
+  // service name → hostname. The edge dials the service on the project network.
+  map<string, string> domains = 18;
+  // Names only. Values stay encrypted and are never returned (#145).
+  repeated string variable_names = 19;
+  repeated ComposeVolume volumes = 20;
+  bool purge_volumes = 21;
 }
 
 message CreateComposeStackRequest {
@@ -241,6 +257,22 @@ message CreateComposeStackRequest {
   string git_url = 3;
   string git_ref = 4;
   string compose_path = 5;
+  repeated string public_services = 6;
+  map<string, string> domains = 7;
+  // Plaintext on the wire once; stored encrypted. Never logged.
+  map<string, string> variables = 8;
+}
+
+message UpdateComposeStackRequest {
+  string id = 1;
+  repeated string public_services = 2;
+  map<string, string> domains = 3;
+  // Non-empty value sets the variable. Empty value deletes it.
+  map<string, string> variables = 4;
+}
+
+message UpdateComposeStackResponse {
+  ComposeStack stack = 1;
 }
 
 message CreateComposeStackResponse {
@@ -277,6 +309,8 @@ message ComposeStackActionRequest {
   string id = 1;
   // start | stop | redeploy | delete
   string action = 2;
+  // Delete only. Removes named volumes and the checkout (#147).
+  bool purge_volumes = 3;
 }
 
 message ComposeStackActionResponse {
@@ -393,6 +427,7 @@ service WorkloadService {
   rpc CreateComposeStack(CreateComposeStackRequest) returns (CreateComposeStackResponse);
   rpc ListComposeStacks(ListComposeStacksRequest) returns (ListComposeStacksResponse);
   rpc GetComposeStack(GetComposeStackRequest) returns (GetComposeStackResponse);
+  rpc UpdateComposeStack(UpdateComposeStackRequest) returns (UpdateComposeStackResponse);
   rpc ComposeStackAction(ComposeStackActionRequest) returns (ComposeStackActionResponse);
   rpc ListWorkloads(ListWorkloadsRequest) returns (ListWorkloadsResponse);
   rpc UpdateWorkload(UpdateWorkloadRequest) returns (UpdateWorkloadResponse);

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package v1;
 
+import "v1/workload.proto";
+
 option go_package = "github.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1";
 
 message NodeCapabilities {
@@ -317,6 +319,11 @@ message DesiredComposeStack {
   string compose_project = 7; // docker compose -p value
   string action = 8;          // up | stop | down
   int64 generation = 9;
+  repeated string public_services = 10;
+  // Decrypted only for the assigned node. The agent must not log values (#145).
+  map<string, string> env = 11;
+  map<string, string> domains = 12;
+  bool purge_volumes = 13;
 }
 
 message ObservedComposeService {
@@ -326,6 +333,7 @@ message ObservedComposeService {
   int32 exit_code = 4;
   string image = 5;
   string ports = 6;
+  int32 container_port = 7;
 }
 
 message ObservedComposeLogLine {
@@ -341,6 +349,9 @@ message ObservedComposeStack {
   string message = 4;
   repeated ObservedComposeService services = 5;
   repeated ObservedComposeLogLine log_lines = 6;
+  // Newly generated SERVICE_PASSWORD_* / SERVICE_BASE64_* values. Persist once (#145).
+  map<string, string> generated_env = 7;
+  repeated ComposeVolume volumes = 8;
 }
 
 message ReportComposeStackRequest {
