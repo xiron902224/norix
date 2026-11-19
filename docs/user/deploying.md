@@ -81,7 +81,7 @@ Requests without a valid signature receive **401**.
 
 ## Compose stacks
 
-Where supported, analyze/deploy Compose from Git creates multiple services under a stack. Prefer the UI flow under the project/workload for Compose when available.
+A `docker-compose.yml` from Git runs as one unit with `docker compose up` on an agent: volumes, commands, healthchecks and one-shot jobs included. See [Compose stacks](./compose-stacks.md).
 
 ## After deploy
 

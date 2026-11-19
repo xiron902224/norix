@@ -40,11 +40,12 @@ type LogPruneCounts struct {
 	Workload int64
 	Build    int64
 	Segments int64
+	Stack    int64
 }
 
 // Total is the sum of deleted rows.
 func (c LogPruneCounts) Total() int64 {
-	return c.Workload + c.Build + c.Segments
+	return c.Workload + c.Build + c.Segments + c.Stack
 }
 
 // LoadLogRetention reads NORIX_LOG_* . Empty or invalid values fall back to defaults.
@@ -82,6 +83,9 @@ func PruneStoredLogs(ctx context.Context, exec sqlExec, policy LogRetention) (Lo
 		return counts, err
 	}
 	if counts.Segments, err = pruneTable(ctx, exec, policy.Days, policy.SegmentLines, policy.SegmentBytes, segmentLogPrune); err != nil {
+		return counts, err
+	}
+	if counts.Stack, err = pruneTable(ctx, exec, policy.Days, policy.WorkloadLines, policy.WorkloadBytes, stackLogPrune); err != nil {
 		return counts, err
 	}
 	return counts, nil
@@ -171,6 +175,32 @@ var (
 				WHERE running > $1
 			) old
 			WHERE ls.id = old.id`,
+	}
+	stackLogPrune = pruneSQL{
+		ageSQL: `
+			DELETE FROM compose_stack_logs
+			WHERE created_at < NOW() - make_interval(days => $1::int)`,
+		linesSQL: `
+			DELETE FROM compose_stack_logs sl
+			USING (
+				SELECT id FROM (
+					SELECT id,
+					       ROW_NUMBER() OVER (PARTITION BY stack_id, service ORDER BY id DESC) AS rn
+					FROM compose_stack_logs
+				) ranked WHERE rn > $1
+			) old
+			WHERE sl.id = old.id`,
+		bytesSQL: `
+			DELETE FROM compose_stack_logs sl
+			USING (
+				SELECT id FROM (
+					SELECT id,
+					       SUM(octet_length(line)) OVER (PARTITION BY stack_id, service ORDER BY id DESC) AS running
+					FROM compose_stack_logs
+				) sized
+				WHERE running > $1
+			) old
+			WHERE sl.id = old.id`,
 	}
 )
 

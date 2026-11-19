@@ -371,6 +371,60 @@ pub struct ObservedWasm {
     pub functions: Vec<ObservedWasmFunction>,
 }
 
+/// Compose stack applied as a unit (#143).
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DesiredComposeStack {
+    pub id: String,
+    #[serde(default)]
+    pub project_id: String,
+    #[allow(dead_code)]
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub git_url: String,
+    #[serde(default)]
+    pub git_ref: String,
+    #[serde(default)]
+    pub compose_path: String,
+    #[serde(default)]
+    pub compose_project: String,
+    /// up | stop | down
+    #[serde(default)]
+    pub action: String,
+    #[serde(default, deserialize_with = "deserialize_i64")]
+    pub generation: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedComposeService {
+    pub name: String,
+    pub state: String,
+    pub health: String,
+    pub exit_code: i32,
+    pub image: String,
+    pub ports: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedComposeLogLine {
+    pub service: String,
+    pub line: String,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ObservedComposeStack {
+    pub id: String,
+    pub status: String,
+    pub observed_generation: i64,
+    pub message: String,
+    pub services: Vec<ObservedComposeService>,
+    pub log_lines: Vec<ObservedComposeLogLine>,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct HeartbeatResult {
     pub desired_workloads: Vec<DesiredWorkload>,
@@ -382,6 +436,7 @@ pub struct HeartbeatResult {
     /// One-shot replacement bearer after UI/API RotateNodeToken (#13).
     pub rotated_node_token: Option<String>,
     pub desired_managed_databases: Vec<DesiredManagedDatabase>,
+    pub desired_compose_stacks: Vec<DesiredComposeStack>,
 }
 
 #[derive(Deserialize)]
@@ -406,6 +461,8 @@ struct HeartbeatResponse {
     rotated_node_token: Option<String>,
     #[serde(default)]
     desired_managed_databases: Vec<DesiredManagedDatabase>,
+    #[serde(default)]
+    desired_compose_stacks: Vec<DesiredComposeStack>,
 }
 
 #[derive(Serialize)]
@@ -514,6 +571,7 @@ impl AgentClient {
                     .map(|v| v.trim().to_string())
                     .filter(|v| !v.is_empty()),
                 desired_managed_databases: parsed.desired_managed_databases,
+                desired_compose_stacks: parsed.desired_compose_stacks,
             }),
             Err(error) => {
                 let mut result = HeartbeatResult::default();
@@ -574,6 +632,20 @@ impl AgentClient {
                     if let Ok(parsed) = serde_json::from_value::<DesiredWasmPlan>(wasm.clone()) {
                         if !parsed.functions.is_empty() {
                             result.desired_wasm = Some(parsed);
+                        }
+                    }
+                }
+                if let Some(items) = response
+                    .get("desiredComposeStacks")
+                    .or_else(|| response.get("desired_compose_stacks"))
+                    .and_then(|value| value.as_array())
+                {
+                    for item in items {
+                        match serde_json::from_value::<DesiredComposeStack>(item.clone()) {
+                            Ok(stack) => result.desired_compose_stacks.push(stack),
+                            Err(item_error) => {
+                                tracing::warn!(%item_error, "skip undecodable desired compose stack");
+                            }
                         }
                     }
                 }
@@ -664,6 +736,30 @@ impl AgentClient {
         };
         self.post_json(
             "/v1.AgentService/ReportObserved",
+            Some(&state.node_token),
+            &body,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn report_compose_stack(
+        &self,
+        state: &NodeState,
+        stack: &ObservedComposeStack,
+    ) -> Result<()> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body<'a> {
+            node_id: &'a str,
+            stack: &'a ObservedComposeStack,
+        }
+        let body = Body {
+            node_id: &state.node_id,
+            stack,
+        };
+        self.post_json(
+            "/v1.AgentService/ReportComposeStack",
             Some(&state.node_token),
             &body,
         )

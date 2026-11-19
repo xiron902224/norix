@@ -1,6 +1,7 @@
 mod build;
 mod capabilities;
 mod client;
+mod compose;
 mod config;
 mod edge;
 mod gitssrf;
@@ -125,6 +126,9 @@ async fn main() -> Result<()> {
             None
         }
     };
+    let compose_stacks = runtime
+        .as_ref()
+        .map(|rt| compose::ComposeStacks::new(rt.bin(), &config.workdir));
     let mut state = load_or_enroll(&client, &config, &caps).await?;
     info!(node_id = %state.node_id, "agent enrolled");
 
@@ -186,21 +190,35 @@ async fn main() -> Result<()> {
                                 }
                             }
                         }
+                        if let Some(stacks) = compose_stacks.as_ref() {
+                            if !desired.desired_compose_stacks.is_empty() {
+                                stacks.reconcile(&client, &state, &desired.desired_compose_stacks);
+                            }
+                        }
                         if let Some(runtime) = runtime.as_ref() {
                             if !desired.desired_builds.is_empty() {
+                                // A git build can take many minutes. Running it inside the
+                                // heartbeat loop marked the node offline and froze every
+                                // other action (deletes, image deploys) until it finished.
                                 info!(count = desired.desired_builds.len(), "running desired builds");
-                                for observed in runtime.run_builds(&desired.desired_builds).await {
-                                    if let Err(error) = retry_operation(
-                                        "report_build",
-                                        || client.report_build(&state, &observed),
-                                        3,
-                                        Duration::from_millis(250),
-                                    )
-                                    .await
-                                    {
-                                        warn!(%error, build_id = %observed.id, "report build failed after retries");
+                                let runtime = runtime.clone();
+                                let client = client.clone();
+                                let state = state.clone();
+                                let builds = desired.desired_builds.clone();
+                                tokio::spawn(async move {
+                                    for observed in runtime.run_builds(&builds).await {
+                                        if let Err(error) = retry_operation(
+                                            "report_build",
+                                            || client.report_build(&state, &observed),
+                                            3,
+                                            Duration::from_millis(250),
+                                        )
+                                        .await
+                                        {
+                                            warn!(%error, build_id = %observed.id, "report build failed after retries");
+                                        }
                                     }
-                                }
+                                });
                             }
                             if !desired.desired_workloads.is_empty() {
                                 info!(count = desired.desired_workloads.len(), "reconciling desired workloads");

@@ -306,6 +306,50 @@ message ObservedNetwork {
   repeated string log_lines = 4;
 }
 
+// Compose stack the agent applies with `docker compose` (#143).
+message DesiredComposeStack {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string git_url = 4;
+  string git_ref = 5;
+  string compose_path = 6;
+  string compose_project = 7; // docker compose -p value
+  string action = 8;          // up | stop | down
+  int64 generation = 9;
+}
+
+message ObservedComposeService {
+  string name = 1;
+  string state = 2;
+  string health = 3;
+  int32 exit_code = 4;
+  string image = 5;
+  string ports = 6;
+}
+
+message ObservedComposeLogLine {
+  string service = 1;
+  string line = 2;
+}
+
+message ObservedComposeStack {
+  string id = 1;
+  // deploying | running | degraded | stopped | failed | removed
+  string status = 2;
+  int64 observed_generation = 3;
+  string message = 4;
+  repeated ObservedComposeService services = 5;
+  repeated ObservedComposeLogLine log_lines = 6;
+}
+
+message ReportComposeStackRequest {
+  string node_id = 1;
+  ObservedComposeStack stack = 2;
+}
+
+message ReportComposeStackResponse {}
+
 message HeartbeatResponse {
   string node_id = 1;
   repeated DesiredWorkload desired_workloads = 2;
@@ -318,6 +362,7 @@ message HeartbeatResponse {
   // One-shot replacement node bearer after RotateNodeToken (#13). Agent must persist it.
   string rotated_node_token = 8;
   repeated DesiredManagedDatabase desired_managed_databases = 9;
+  repeated DesiredComposeStack desired_compose_stacks = 10;
 }
 
 message RotateNodeTokenRequest {
@@ -466,6 +511,7 @@ service AgentService {
   rpc ReportEdge(ReportEdgeRequest) returns (ReportEdgeResponse);
   rpc ReportNetwork(ReportNetworkRequest) returns (ReportNetworkResponse);
   rpc ReportWasm(ReportWasmRequest) returns (ReportWasmResponse);
+  rpc ReportComposeStack(ReportComposeStackRequest) returns (ReportComposeStackResponse);
   rpc GetNetworkStatus(GetNetworkStatusRequest) returns (GetNetworkStatusResponse);
   rpc UpsertEgressPolicy(UpsertEgressPolicyRequest) returns (UpsertEgressPolicyResponse);
   rpc ListEgressPolicies(ListEgressPoliciesRequest) returns (ListEgressPoliciesResponse);

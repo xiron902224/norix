@@ -16,6 +16,7 @@ Official documentation for **people who run apps on Norix** — after the contro
 2. [Dashboard overview](./dashboard.md) — navigation map
 3. [Projects & workloads](./projects-workloads.md)
 4. [Deploying](./deploying.md) — image, Git, Compose
+4a. [Compose stacks](./compose-stacks.md) — whole compose file as one unit via `docker compose`
 4b. [Release history & rollback](./releases-rollback.md) — immutable snapshots, one-click restore
 4c. [Rolling updates](./rolling-updates.md) — start-before-stop, maxSurge / maxUnavailable
 4d. [Probes](./probes.md) — liveness / readiness HTTP·TCP·exec

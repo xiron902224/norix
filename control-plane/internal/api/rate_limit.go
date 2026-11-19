@@ -95,6 +95,8 @@ func isAuthenticatedMutateProcedure(procedure string) bool {
 		"/v1.WorkloadService/UpdateWorkload",
 		"/v1.WorkloadService/DeleteWorkload",
 		"/v1.WorkloadService/StopWorkload",
+		"/v1.WorkloadService/CreateComposeStack",
+		"/v1.WorkloadService/ComposeStackAction",
 		"/v1.WorkloadService/Deploy",
 		"/v1.WorkloadService/DeployWorkload",
 		"/v1.WorkloadService/CreateBuild",

@@ -3,6 +3,12 @@ import { projectClient, workloadClient } from '../../../api/clients'
 import {
   AnalyzeComposeFromGitRequestSchema,
   ComposeServiceSpecSchema,
+  ComposeStackActionRequestSchema,
+  CreateComposeStackRequestSchema,
+  GetComposeStackRequestSchema,
+  ListComposeStacksRequestSchema,
+  type ComposeStack,
+  type ComposeStackLogLine,
   CreateProjectRequestSchema,
   CreateWorkloadRequestSchema,
   DeleteProjectRequestSchema,
@@ -215,6 +221,43 @@ export async function deployFromGit(input: {
     dockerfilePath: input.dockerfilePath ?? 'Dockerfile',
     containerPort: input.containerPort ?? 80,
   }))
+}
+
+export type ComposeStackAction = 'start' | 'stop' | 'redeploy' | 'delete'
+
+export async function createComposeStack(input: {
+  projectId: string
+  name: string
+  gitUrl: string
+  gitRef?: string
+  composePath?: string
+}): Promise<ComposeStack | undefined> {
+  const response = await workloadClient.createComposeStack(create(CreateComposeStackRequestSchema, {
+    projectId: input.projectId,
+    name: input.name,
+    gitUrl: input.gitUrl,
+    gitRef: input.gitRef ?? 'main',
+    composePath: input.composePath ?? 'docker-compose.yml',
+  }))
+  return response.stack
+}
+
+export async function listComposeStacks(projectId: string): Promise<ComposeStack[]> {
+  const response = await workloadClient.listComposeStacks(create(ListComposeStacksRequestSchema, { projectId }))
+  return response.stacks
+}
+
+export async function getComposeStack(id: string, service = '', tailLines = 300): Promise<{
+  stack?: ComposeStack
+  logs: ComposeStackLogLine[]
+}> {
+  const response = await workloadClient.getComposeStack(create(GetComposeStackRequestSchema, { id, service, tailLines }))
+  return { stack: response.stack, logs: response.logs }
+}
+
+export async function composeStackAction(id: string, action: ComposeStackAction): Promise<ComposeStack | undefined> {
+  const response = await workloadClient.composeStackAction(create(ComposeStackActionRequestSchema, { id, action }))
+  return response.stack
 }
 
 export async function analyzeComposeFromGit(input: {

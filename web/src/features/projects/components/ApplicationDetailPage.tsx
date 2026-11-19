@@ -177,10 +177,10 @@ export function ApplicationDetailPage() {
 
   useEffect(() => {
     if (!workload) return
-    if (workload.status === 'building' && tab !== 'build') {
+    if ((workload.status === 'building' || workload.imageOrSource === 'pending-build') && tab !== 'build') {
       setTab('build')
     }
-  }, [workload?.status, workload?.id])
+  }, [workload?.status, workload?.id, workload?.imageOrSource])
 
   useEffect(() => {
     if (tab !== 'releases') return
@@ -674,7 +674,11 @@ export function ApplicationDetailPage() {
               <h2 className="compass-ov-card-title" style={{ margin: 0 }}>Build logs</h2>
               <span className="muted mono">{workload.latestBuildId ? shortId(workload.latestBuildId, 12) : 'no build'}</span>
             </div>
-            <p className="muted">Build logs exist only after a git build (default 800 lines, 14 days, or 32 MiB). An image such as nginx:alpine has no build.</p>
+            <p className="muted">
+              {workload.status === 'building' || workload.imageOrSource === 'pending-build'
+                ? 'The agent is building this image. The log lines appear here when the build finishes. An image deploy (mysql, traefik) has no build.'
+                : 'Build logs exist only after a git build (default 800 lines, 14 days, or 32 MiB). An image such as nginx:alpine has no build.'}
+            </p>
             {logsLoading && buildLines.length === 0 ? (
               <div className="loading-row"><span className="spinner" aria-hidden /><span>Loading build logs…</span></div>
             ) : (

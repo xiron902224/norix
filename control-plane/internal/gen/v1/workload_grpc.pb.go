@@ -24,6 +24,10 @@ const (
 	WorkloadService_DeployFromGit_FullMethodName         = "/v1.WorkloadService/DeployFromGit"
 	WorkloadService_AnalyzeComposeFromGit_FullMethodName = "/v1.WorkloadService/AnalyzeComposeFromGit"
 	WorkloadService_DeployComposeStack_FullMethodName    = "/v1.WorkloadService/DeployComposeStack"
+	WorkloadService_CreateComposeStack_FullMethodName    = "/v1.WorkloadService/CreateComposeStack"
+	WorkloadService_ListComposeStacks_FullMethodName     = "/v1.WorkloadService/ListComposeStacks"
+	WorkloadService_GetComposeStack_FullMethodName       = "/v1.WorkloadService/GetComposeStack"
+	WorkloadService_ComposeStackAction_FullMethodName    = "/v1.WorkloadService/ComposeStackAction"
 	WorkloadService_ListWorkloads_FullMethodName         = "/v1.WorkloadService/ListWorkloads"
 	WorkloadService_UpdateWorkload_FullMethodName        = "/v1.WorkloadService/UpdateWorkload"
 	WorkloadService_DeleteWorkload_FullMethodName        = "/v1.WorkloadService/DeleteWorkload"
@@ -50,6 +54,10 @@ type WorkloadServiceClient interface {
 	DeployFromGit(ctx context.Context, in *DeployFromGitRequest, opts ...grpc.CallOption) (*DeployFromGitResponse, error)
 	AnalyzeComposeFromGit(ctx context.Context, in *AnalyzeComposeFromGitRequest, opts ...grpc.CallOption) (*AnalyzeComposeFromGitResponse, error)
 	DeployComposeStack(ctx context.Context, in *DeployComposeStackRequest, opts ...grpc.CallOption) (*DeployComposeStackResponse, error)
+	CreateComposeStack(ctx context.Context, in *CreateComposeStackRequest, opts ...grpc.CallOption) (*CreateComposeStackResponse, error)
+	ListComposeStacks(ctx context.Context, in *ListComposeStacksRequest, opts ...grpc.CallOption) (*ListComposeStacksResponse, error)
+	GetComposeStack(ctx context.Context, in *GetComposeStackRequest, opts ...grpc.CallOption) (*GetComposeStackResponse, error)
+	ComposeStackAction(ctx context.Context, in *ComposeStackActionRequest, opts ...grpc.CallOption) (*ComposeStackActionResponse, error)
 	ListWorkloads(ctx context.Context, in *ListWorkloadsRequest, opts ...grpc.CallOption) (*ListWorkloadsResponse, error)
 	UpdateWorkload(ctx context.Context, in *UpdateWorkloadRequest, opts ...grpc.CallOption) (*UpdateWorkloadResponse, error)
 	DeleteWorkload(ctx context.Context, in *DeleteWorkloadRequest, opts ...grpc.CallOption) (*DeleteWorkloadResponse, error)
@@ -119,6 +127,46 @@ func (c *workloadServiceClient) DeployComposeStack(ctx context.Context, in *Depl
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeployComposeStackResponse)
 	err := c.cc.Invoke(ctx, WorkloadService_DeployComposeStack_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) CreateComposeStack(ctx context.Context, in *CreateComposeStackRequest, opts ...grpc.CallOption) (*CreateComposeStackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateComposeStackResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_CreateComposeStack_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) ListComposeStacks(ctx context.Context, in *ListComposeStacksRequest, opts ...grpc.CallOption) (*ListComposeStacksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListComposeStacksResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_ListComposeStacks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) GetComposeStack(ctx context.Context, in *GetComposeStackRequest, opts ...grpc.CallOption) (*GetComposeStackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetComposeStackResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_GetComposeStack_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workloadServiceClient) ComposeStackAction(ctx context.Context, in *ComposeStackActionRequest, opts ...grpc.CallOption) (*ComposeStackActionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ComposeStackActionResponse)
+	err := c.cc.Invoke(ctx, WorkloadService_ComposeStackAction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -284,6 +332,10 @@ type WorkloadServiceServer interface {
 	DeployFromGit(context.Context, *DeployFromGitRequest) (*DeployFromGitResponse, error)
 	AnalyzeComposeFromGit(context.Context, *AnalyzeComposeFromGitRequest) (*AnalyzeComposeFromGitResponse, error)
 	DeployComposeStack(context.Context, *DeployComposeStackRequest) (*DeployComposeStackResponse, error)
+	CreateComposeStack(context.Context, *CreateComposeStackRequest) (*CreateComposeStackResponse, error)
+	ListComposeStacks(context.Context, *ListComposeStacksRequest) (*ListComposeStacksResponse, error)
+	GetComposeStack(context.Context, *GetComposeStackRequest) (*GetComposeStackResponse, error)
+	ComposeStackAction(context.Context, *ComposeStackActionRequest) (*ComposeStackActionResponse, error)
 	ListWorkloads(context.Context, *ListWorkloadsRequest) (*ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *UpdateWorkloadRequest) (*UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *DeleteWorkloadRequest) (*DeleteWorkloadResponse, error)
@@ -323,6 +375,18 @@ func (UnimplementedWorkloadServiceServer) AnalyzeComposeFromGit(context.Context,
 }
 func (UnimplementedWorkloadServiceServer) DeployComposeStack(context.Context, *DeployComposeStackRequest) (*DeployComposeStackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeployComposeStack not implemented")
+}
+func (UnimplementedWorkloadServiceServer) CreateComposeStack(context.Context, *CreateComposeStackRequest) (*CreateComposeStackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateComposeStack not implemented")
+}
+func (UnimplementedWorkloadServiceServer) ListComposeStacks(context.Context, *ListComposeStacksRequest) (*ListComposeStacksResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListComposeStacks not implemented")
+}
+func (UnimplementedWorkloadServiceServer) GetComposeStack(context.Context, *GetComposeStackRequest) (*GetComposeStackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetComposeStack not implemented")
+}
+func (UnimplementedWorkloadServiceServer) ComposeStackAction(context.Context, *ComposeStackActionRequest) (*ComposeStackActionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ComposeStackAction not implemented")
 }
 func (UnimplementedWorkloadServiceServer) ListWorkloads(context.Context, *ListWorkloadsRequest) (*ListWorkloadsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListWorkloads not implemented")
@@ -476,6 +540,78 @@ func _WorkloadService_DeployComposeStack_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WorkloadServiceServer).DeployComposeStack(ctx, req.(*DeployComposeStackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_CreateComposeStack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateComposeStackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).CreateComposeStack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_CreateComposeStack_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).CreateComposeStack(ctx, req.(*CreateComposeStackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_ListComposeStacks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListComposeStacksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).ListComposeStacks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_ListComposeStacks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).ListComposeStacks(ctx, req.(*ListComposeStacksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_GetComposeStack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetComposeStackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).GetComposeStack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_GetComposeStack_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).GetComposeStack(ctx, req.(*GetComposeStackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkloadService_ComposeStackAction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComposeStackActionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkloadServiceServer).ComposeStackAction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkloadService_ComposeStackAction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkloadServiceServer).ComposeStackAction(ctx, req.(*ComposeStackActionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -776,6 +912,22 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeployComposeStack",
 			Handler:    _WorkloadService_DeployComposeStack_Handler,
+		},
+		{
+			MethodName: "CreateComposeStack",
+			Handler:    _WorkloadService_CreateComposeStack_Handler,
+		},
+		{
+			MethodName: "ListComposeStacks",
+			Handler:    _WorkloadService_ListComposeStacks_Handler,
+		},
+		{
+			MethodName: "GetComposeStack",
+			Handler:    _WorkloadService_GetComposeStack_Handler,
+		},
+		{
+			MethodName: "ComposeStackAction",
+			Handler:    _WorkloadService_ComposeStackAction_Handler,
 		},
 		{
 			MethodName: "ListWorkloads",

@@ -13,6 +13,7 @@ import type { ComposeServiceSpec, Project, Workload } from '../../../gen/v1/work
 import { listNodes } from '../../nodes/services/nodes-api'
 import {
   analyzeComposeFromGit,
+  createComposeStack,
   createWorkload,
   parseVolumeMountsJson,
   deployComposeStack,
@@ -21,6 +22,7 @@ import {
   listWorkloads,
 } from '../services/projects-api'
 import { EnvVarsEditor, envRowsToMap, type EnvRow } from './EnvVarsEditor'
+import { ComposeStacksPanel } from './ComposeStacksPanel'
 
 function artifactLabel(workload: Workload) {
   if (workload.sourceKind === 'git' || workload.gitUrl) {
@@ -48,6 +50,7 @@ export function ProjectDetailPage() {
   const [composeGitRef, setComposeGitRef] = useState('main')
   const [composeStackName, setComposeStackName] = useState('')
   const [composeAnalyzing, setComposeAnalyzing] = useState(false)
+  const [stackRefresh, setStackRefresh] = useState(0)
   const [createEnvRows, setCreateEnvRows] = useState<EnvRow[]>([])
   const [createVolumesJson, setCreateVolumesJson] = useState('[]')
 
@@ -185,15 +188,36 @@ export function ProjectDetailPage() {
     }
   }
 
+  async function onCreateStack(input: { name: string; gitUrl: string; gitRef: string; composePath: string }) {
+    setCreating(true)
+    setError('')
+    setNotice('')
+    try {
+      const stack = await createComposeStack({ projectId, ...input })
+      setModalMode(null)
+      setStackRefresh((value) => value + 1)
+      setNotice(`Stack ${stack?.name ?? input.name} queued. An agent with Docker runs docker compose up on its next heartbeat.`)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not create compose stack')
+    } finally {
+      setCreating(false)
+    }
+  }
+
   async function onAnalyzeCompose(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setComposeAnalyzing(true)
-    setError('')
     const form = new FormData(event.currentTarget)
     const gitUrl = String(form.get('gitUrl') ?? '')
     const gitRef = String(form.get('gitRef') || 'main')
     const composePath = String(form.get('composePath') || 'docker-compose.yml')
     const stackName = String(form.get('stackName') ?? '')
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null
+    if (submitter?.value === 'deploy') {
+      await onCreateStack({ name: stackName, gitUrl, gitRef, composePath })
+      return
+    }
+    setComposeAnalyzing(true)
+    setError('')
     try {
       const result = await analyzeComposeFromGit({ gitUrl, gitRef, composePath })
       setComposeGitUrl(gitUrl)
@@ -366,6 +390,8 @@ export function ProjectDetailPage() {
         ]}
       />
 
+      <ComposeStacksPanel projectId={projectId} refreshKey={stackRefresh} />
+
       <div className="compass-resource-section">
         <div className="compass-toolbar">
           <strong>{loading ? 'Loading…' : `${workloads.length} result${workloads.length === 1 ? '' : 's'}`}</strong>
@@ -455,28 +481,41 @@ export function ProjectDetailPage() {
         footer={composeStep === 'services' ? (
           <>
             <Button type="button" variant="secondary" onClick={() => setComposeStep('repo')}>Back</Button>
-            <Button type="button" disabled={creating || !composeServices.some((s) => s.enabled)} onClick={() => void onDeployCompose()}>
-              {creating ? 'Deploying…' : `Deploy ${composeServices.filter((s) => s.enabled).length} services`}
+            <Button type="button" variant="secondary" disabled={creating || !composeServices.some((s) => s.enabled)} onClick={() => void onDeployCompose()}>
+              Split into workloads (legacy)
+            </Button>
+            <Button
+              type="button"
+              disabled={creating}
+              onClick={() => void onCreateStack({ name: composeStackName, gitUrl: composeGitUrl, gitRef: composeGitRef, composePath: composeFile })}
+            >
+              {creating ? 'Deploying…' : 'Deploy stack'}
             </Button>
           </>
         ) : undefined}
       >
         {composeStep === 'repo' ? (
           <form className="compass-edit-form" onSubmit={(event) => void onAnalyzeCompose(event)}>
-            <p className="muted">Like Coolify: parse docker-compose, review each service, ports and dependencies, then deploy as a linked stack.</p>
+            <p className="muted">
+              The agent clones the repository and runs <code>docker compose up -d --build</code> exactly as the file says:
+              volumes, commands, healthchecks, depends_on and one-shot jobs included. Analyze first to preview the services,
+              or deploy directly (private repositories that only the agent can clone over SSH).
+            </p>
             <FormField id="compose-name" name="stackName" label="Stack name" required placeholder="todo" />
             <FormField id="compose-url" name="gitUrl" label="Git URL" required placeholder="https://github.com/ajeetraina/todo-app-nodejs-docker.git" />
             <FormField id="compose-ref" name="gitRef" label="Ref" defaultValue="main" />
             <FormField id="compose-path" name="composePath" label="Compose file" defaultValue="docker-compose.yml" placeholder="docker-compose.yml" />
             <div className="page-actions">
-              <Button type="submit" disabled={composeAnalyzing}>{composeAnalyzing ? 'Analyzing…' : 'Analyze compose'}</Button>
+              <Button type="submit" variant="secondary" value="analyze" disabled={composeAnalyzing || creating}>{composeAnalyzing ? 'Analyzing…' : 'Analyze compose'}</Button>
+              <Button type="submit" value="deploy" disabled={composeAnalyzing || creating}>{creating ? 'Deploying…' : 'Deploy stack'}</Button>
             </div>
           </form>
         ) : (
           <div className="compose-services-editor">
             <p className="muted">
-              Services talk over docker network <code>norix-stack-*</code> using aliases (service names).
-              Env vars <code>NORIX_SERVICE_&lt;NAME&gt;_URL</code> are injected automatically.
+              <strong>Deploy stack</strong> runs the whole file with docker compose; the table is a preview.
+              The toggles and ports below only apply to <strong>Split into workloads (legacy)</strong>, which turns each
+              service into a separate Norix workload and ignores volumes, commands and healthchecks.
             </p>
             <div className="table-scroll">
               <table className="compass-data-table">

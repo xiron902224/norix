@@ -85,6 +85,8 @@ func isAgentProcedure(procedure string) bool {
 		"/v1.AgentService/ReportBuild",
 		"/v1.AgentService/ReportEdge",
 		"/v1.AgentService/ReportNetwork",
+		"/v1.AgentService/ReportWasm",
+		"/v1.AgentService/ReportComposeStack",
 		"/v1.AgentService/ConnectStream":
 		return true
 	default:

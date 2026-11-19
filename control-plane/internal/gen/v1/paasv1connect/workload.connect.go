@@ -40,6 +40,18 @@ const (
 	// WorkloadServiceDeployComposeStackProcedure is the procedure name of the WorkloadService's
 	// DeployComposeStack RPC.
 	WorkloadServiceDeployComposeStackProcedure = "/v1.WorkloadService/DeployComposeStack"
+	// WorkloadServiceCreateComposeStackProcedure is the procedure name of the WorkloadService's
+	// CreateComposeStack RPC.
+	WorkloadServiceCreateComposeStackProcedure = "/v1.WorkloadService/CreateComposeStack"
+	// WorkloadServiceListComposeStacksProcedure is the procedure name of the WorkloadService's
+	// ListComposeStacks RPC.
+	WorkloadServiceListComposeStacksProcedure = "/v1.WorkloadService/ListComposeStacks"
+	// WorkloadServiceGetComposeStackProcedure is the procedure name of the WorkloadService's
+	// GetComposeStack RPC.
+	WorkloadServiceGetComposeStackProcedure = "/v1.WorkloadService/GetComposeStack"
+	// WorkloadServiceComposeStackActionProcedure is the procedure name of the WorkloadService's
+	// ComposeStackAction RPC.
+	WorkloadServiceComposeStackActionProcedure = "/v1.WorkloadService/ComposeStackAction"
 	// WorkloadServiceListWorkloadsProcedure is the procedure name of the WorkloadService's
 	// ListWorkloads RPC.
 	WorkloadServiceListWorkloadsProcedure = "/v1.WorkloadService/ListWorkloads"
@@ -129,6 +141,34 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("DeployComposeStack"),
 			Procedure:  WorkloadServiceDeployComposeStackProcedure,
+		}
+	})
+	workloadServiceCreateComposeStackSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("CreateComposeStack"),
+			Procedure:  WorkloadServiceCreateComposeStackProcedure,
+		}
+	})
+	workloadServiceListComposeStacksSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("ListComposeStacks"),
+			Procedure:  WorkloadServiceListComposeStacksProcedure,
+		}
+	})
+	workloadServiceGetComposeStackSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("GetComposeStack"),
+			Procedure:  WorkloadServiceGetComposeStackProcedure,
+		}
+	})
+	workloadServiceComposeStackActionSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("WorkloadService").Methods().ByName("ComposeStackAction"),
+			Procedure:  WorkloadServiceComposeStackActionProcedure,
 		}
 	})
 	workloadServiceListWorkloadsSpec = sync.OnceValue(func() connect.Spec {
@@ -245,6 +285,10 @@ type WorkloadServiceClient interface {
 	DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error)
 	AnalyzeComposeFromGit(context.Context, *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error)
 	DeployComposeStack(context.Context, *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error)
+	CreateComposeStack(context.Context, *v1.CreateComposeStackRequest) (*v1.CreateComposeStackResponse, error)
+	ListComposeStacks(context.Context, *v1.ListComposeStacksRequest) (*v1.ListComposeStacksResponse, error)
+	GetComposeStack(context.Context, *v1.GetComposeStackRequest) (*v1.GetComposeStackResponse, error)
+	ComposeStackAction(context.Context, *v1.ComposeStackActionRequest) (*v1.ComposeStackActionResponse, error)
 	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
@@ -275,6 +319,10 @@ type WorkloadServiceHandler interface {
 	DeployFromGit(context.Context, *v1.DeployFromGitRequest) (*v1.DeployFromGitResponse, error)
 	AnalyzeComposeFromGit(context.Context, *v1.AnalyzeComposeFromGitRequest) (*v1.AnalyzeComposeFromGitResponse, error)
 	DeployComposeStack(context.Context, *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error)
+	CreateComposeStack(context.Context, *v1.CreateComposeStackRequest) (*v1.CreateComposeStackResponse, error)
+	ListComposeStacks(context.Context, *v1.ListComposeStacksRequest) (*v1.ListComposeStacksResponse, error)
+	GetComposeStack(context.Context, *v1.GetComposeStackRequest) (*v1.GetComposeStackResponse, error)
+	ComposeStackAction(context.Context, *v1.ComposeStackActionRequest) (*v1.ComposeStackActionResponse, error)
 	ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error)
 	UpdateWorkload(context.Context, *v1.UpdateWorkloadRequest) (*v1.UpdateWorkloadResponse, error)
 	DeleteWorkload(context.Context, *v1.DeleteWorkloadRequest) (*v1.DeleteWorkloadResponse, error)
@@ -301,6 +349,10 @@ func RegisterWorkloadServiceHandler(server *connect.Server, svc WorkloadServiceH
 		connect.Method{Spec: workloadServiceDeployFromGitSpec(), Handler: adapter.deployFromGit},
 		connect.Method{Spec: workloadServiceAnalyzeComposeFromGitSpec(), Handler: adapter.analyzeComposeFromGit},
 		connect.Method{Spec: workloadServiceDeployComposeStackSpec(), Handler: adapter.deployComposeStack},
+		connect.Method{Spec: workloadServiceCreateComposeStackSpec(), Handler: adapter.createComposeStack},
+		connect.Method{Spec: workloadServiceListComposeStacksSpec(), Handler: adapter.listComposeStacks},
+		connect.Method{Spec: workloadServiceGetComposeStackSpec(), Handler: adapter.getComposeStack},
+		connect.Method{Spec: workloadServiceComposeStackActionSpec(), Handler: adapter.composeStackAction},
 		connect.Method{Spec: workloadServiceListWorkloadsSpec(), Handler: adapter.listWorkloads},
 		connect.Method{Spec: workloadServiceUpdateWorkloadSpec(), Handler: adapter.updateWorkload},
 		connect.Method{Spec: workloadServiceDeleteWorkloadSpec(), Handler: adapter.deleteWorkload},
@@ -340,6 +392,22 @@ func (UnimplementedWorkloadServiceHandler) AnalyzeComposeFromGit(context.Context
 
 func (UnimplementedWorkloadServiceHandler) DeployComposeStack(context.Context, *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.DeployComposeStack is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) CreateComposeStack(context.Context, *v1.CreateComposeStackRequest) (*v1.CreateComposeStackResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.CreateComposeStack is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) ListComposeStacks(context.Context, *v1.ListComposeStacksRequest) (*v1.ListComposeStacksResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.ListComposeStacks is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) GetComposeStack(context.Context, *v1.GetComposeStackRequest) (*v1.GetComposeStackResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.GetComposeStack is not implemented")
+}
+
+func (UnimplementedWorkloadServiceHandler) ComposeStackAction(context.Context, *v1.ComposeStackActionRequest) (*v1.ComposeStackActionResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.WorkloadService.ComposeStackAction is not implemented")
 }
 
 func (UnimplementedWorkloadServiceHandler) ListWorkloads(context.Context, *v1.ListWorkloadsRequest) (*v1.ListWorkloadsResponse, error) {
@@ -441,6 +509,38 @@ func (c *workloadServiceClient) AnalyzeComposeFromGit(ctx context.Context, req *
 func (c *workloadServiceClient) DeployComposeStack(ctx context.Context, req *v1.DeployComposeStackRequest) (*v1.DeployComposeStackResponse, error) {
 	var res v1.DeployComposeStackResponse
 	if err := c.client.CallUnary(ctx, workloadServiceDeployComposeStackSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) CreateComposeStack(ctx context.Context, req *v1.CreateComposeStackRequest) (*v1.CreateComposeStackResponse, error) {
+	var res v1.CreateComposeStackResponse
+	if err := c.client.CallUnary(ctx, workloadServiceCreateComposeStackSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) ListComposeStacks(ctx context.Context, req *v1.ListComposeStacksRequest) (*v1.ListComposeStacksResponse, error) {
+	var res v1.ListComposeStacksResponse
+	if err := c.client.CallUnary(ctx, workloadServiceListComposeStacksSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) GetComposeStack(ctx context.Context, req *v1.GetComposeStackRequest) (*v1.GetComposeStackResponse, error) {
+	var res v1.GetComposeStackResponse
+	if err := c.client.CallUnary(ctx, workloadServiceGetComposeStackSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *workloadServiceClient) ComposeStackAction(ctx context.Context, req *v1.ComposeStackActionRequest) (*v1.ComposeStackActionResponse, error) {
+	var res v1.ComposeStackActionResponse
+	if err := c.client.CallUnary(ctx, workloadServiceComposeStackActionSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -622,6 +722,54 @@ func (h workloadServiceHandler) deployComposeStack(ctx context.Context, _ connec
 		return err
 	}
 	res, err := h.svc.DeployComposeStack(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) createComposeStack(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateComposeStackRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateComposeStack(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) listComposeStacks(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListComposeStacksRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListComposeStacks(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) getComposeStack(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetComposeStackRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetComposeStack(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h workloadServiceHandler) composeStackAction(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ComposeStackActionRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ComposeStackAction(ctx, &req)
 	if err != nil {
 		return err
 	}

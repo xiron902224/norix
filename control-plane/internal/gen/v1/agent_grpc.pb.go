@@ -27,6 +27,7 @@ const (
 	AgentService_ReportEdge_FullMethodName         = "/v1.AgentService/ReportEdge"
 	AgentService_ReportNetwork_FullMethodName      = "/v1.AgentService/ReportNetwork"
 	AgentService_ReportWasm_FullMethodName         = "/v1.AgentService/ReportWasm"
+	AgentService_ReportComposeStack_FullMethodName = "/v1.AgentService/ReportComposeStack"
 	AgentService_GetNetworkStatus_FullMethodName   = "/v1.AgentService/GetNetworkStatus"
 	AgentService_UpsertEgressPolicy_FullMethodName = "/v1.AgentService/UpsertEgressPolicy"
 	AgentService_ListEgressPolicies_FullMethodName = "/v1.AgentService/ListEgressPolicies"
@@ -53,6 +54,7 @@ type AgentServiceClient interface {
 	ReportEdge(ctx context.Context, in *ReportEdgeRequest, opts ...grpc.CallOption) (*ReportEdgeResponse, error)
 	ReportNetwork(ctx context.Context, in *ReportNetworkRequest, opts ...grpc.CallOption) (*ReportNetworkResponse, error)
 	ReportWasm(ctx context.Context, in *ReportWasmRequest, opts ...grpc.CallOption) (*ReportWasmResponse, error)
+	ReportComposeStack(ctx context.Context, in *ReportComposeStackRequest, opts ...grpc.CallOption) (*ReportComposeStackResponse, error)
 	GetNetworkStatus(ctx context.Context, in *GetNetworkStatusRequest, opts ...grpc.CallOption) (*GetNetworkStatusResponse, error)
 	UpsertEgressPolicy(ctx context.Context, in *UpsertEgressPolicyRequest, opts ...grpc.CallOption) (*UpsertEgressPolicyResponse, error)
 	ListEgressPolicies(ctx context.Context, in *ListEgressPoliciesRequest, opts ...grpc.CallOption) (*ListEgressPoliciesResponse, error)
@@ -149,6 +151,16 @@ func (c *agentServiceClient) ReportWasm(ctx context.Context, in *ReportWasmReque
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ReportWasmResponse)
 	err := c.cc.Invoke(ctx, AgentService_ReportWasm_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) ReportComposeStack(ctx context.Context, in *ReportComposeStackRequest, opts ...grpc.CallOption) (*ReportComposeStackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportComposeStackResponse)
+	err := c.cc.Invoke(ctx, AgentService_ReportComposeStack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -290,6 +302,7 @@ type AgentServiceServer interface {
 	ReportEdge(context.Context, *ReportEdgeRequest) (*ReportEdgeResponse, error)
 	ReportNetwork(context.Context, *ReportNetworkRequest) (*ReportNetworkResponse, error)
 	ReportWasm(context.Context, *ReportWasmRequest) (*ReportWasmResponse, error)
+	ReportComposeStack(context.Context, *ReportComposeStackRequest) (*ReportComposeStackResponse, error)
 	GetNetworkStatus(context.Context, *GetNetworkStatusRequest) (*GetNetworkStatusResponse, error)
 	UpsertEgressPolicy(context.Context, *UpsertEgressPolicyRequest) (*UpsertEgressPolicyResponse, error)
 	ListEgressPolicies(context.Context, *ListEgressPoliciesRequest) (*ListEgressPoliciesResponse, error)
@@ -335,6 +348,9 @@ func (UnimplementedAgentServiceServer) ReportNetwork(context.Context, *ReportNet
 }
 func (UnimplementedAgentServiceServer) ReportWasm(context.Context, *ReportWasmRequest) (*ReportWasmResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReportWasm not implemented")
+}
+func (UnimplementedAgentServiceServer) ReportComposeStack(context.Context, *ReportComposeStackRequest) (*ReportComposeStackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportComposeStack not implemented")
 }
 func (UnimplementedAgentServiceServer) GetNetworkStatus(context.Context, *GetNetworkStatusRequest) (*GetNetworkStatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetNetworkStatus not implemented")
@@ -533,6 +549,24 @@ func _AgentService_ReportWasm_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AgentServiceServer).ReportWasm(ctx, req.(*ReportWasmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_ReportComposeStack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportComposeStackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).ReportComposeStack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_ReportComposeStack_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).ReportComposeStack(ctx, req.(*ReportComposeStackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -780,6 +814,10 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportWasm",
 			Handler:    _AgentService_ReportWasm_Handler,
+		},
+		{
+			MethodName: "ReportComposeStack",
+			Handler:    _AgentService_ReportComposeStack_Handler,
 		},
 		{
 			MethodName: "GetNetworkStatus",
