@@ -94,8 +94,11 @@ pub fn build_override_yaml(
 pub fn parse_compose_config(raw: &str) -> Result<ComposeModel> {
     let value: Value = serde_json::from_str(raw.trim()).or_else(|_| {
         // `compose config` may print warnings before the JSON document.
-        let start = raw.find('{').ok_or_else(|| anyhow::anyhow!("compose config is not JSON"))?;
-        serde_json::from_str(&raw[start..]).map_err(|err| anyhow::anyhow!("parse compose config: {err}"))
+        let start = raw
+            .find('{')
+            .ok_or_else(|| anyhow::anyhow!("compose config is not JSON"))?;
+        serde_json::from_str(&raw[start..])
+            .map_err(|err| anyhow::anyhow!("parse compose config: {err}"))
     })?;
     let services_obj = value
         .get("services")
@@ -173,7 +176,10 @@ pub fn parse_compose_config(raw: &str) -> Result<ComposeModel> {
 fn container_port(spec: &Value) -> i32 {
     if let Some(ports) = spec.get("ports").and_then(Value::as_array) {
         for port in ports {
-            let proto = port.get("protocol").and_then(Value::as_str).unwrap_or("tcp");
+            let proto = port
+                .get("protocol")
+                .and_then(Value::as_str)
+                .unwrap_or("tcp");
             if proto != "tcp" {
                 continue;
             }
@@ -187,7 +193,12 @@ fn container_port(spec: &Value) -> i32 {
     if let Some(expose) = spec.get("expose").and_then(Value::as_array) {
         for item in expose {
             if let Some(text) = item.as_str() {
-                let number = text.split('/').next().unwrap_or("").parse::<i32>().unwrap_or(0);
+                let number = text
+                    .split('/')
+                    .next()
+                    .unwrap_or("")
+                    .parse::<i32>()
+                    .unwrap_or(0);
                 if (1..=65535).contains(&number) {
                     return number;
                 }
@@ -212,7 +223,11 @@ fn volume_from_config(item: &Value) -> Option<ComposeVolume> {
         });
     }
     let kind = item.get("type").and_then(Value::as_str).unwrap_or("volume");
-    let source = item.get("source").and_then(Value::as_str).unwrap_or("").to_string();
+    let source = item
+        .get("source")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
     if source.is_empty() {
         return None;
     }
@@ -238,9 +253,7 @@ pub fn generated_secret_names(text: &str) -> Vec<String> {
     interpolation_names(text)
         .into_iter()
         .map(|(name, _)| name)
-        .filter(|name| {
-            name.starts_with("SERVICE_PASSWORD_") || name.starts_with("SERVICE_BASE64_")
-        })
+        .filter(|name| name.starts_with("SERVICE_PASSWORD_") || name.starts_with("SERVICE_BASE64_"))
         .collect()
 }
 
@@ -257,9 +270,11 @@ fn interpolation_names(text: &str) -> Vec<(String, bool)> {
                 .find(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
                 .unwrap_or(expr.len());
             let name = &expr[..name_end];
-            if !name.is_empty() && (name.as_bytes()[0].is_ascii_alphabetic() || name.as_bytes()[0] == b'_')
+            if !name.is_empty()
+                && (name.as_bytes()[0].is_ascii_alphabetic() || name.as_bytes()[0] == b'_')
             {
-                let required = expr[name_end..].starts_with('?') || expr[name_end..].starts_with(":?");
+                let required =
+                    expr[name_end..].starts_with('?') || expr[name_end..].starts_with(":?");
                 out.push((name.to_string(), required));
             }
             i += 2 + end;
@@ -277,7 +292,11 @@ fn interpolation_names(text: &str) -> Vec<(String, bool)> {
 pub fn format_env(vars: &BTreeMap<String, String>) -> String {
     let mut out = String::new();
     for (name, value) in vars {
-        if !is_env_name(name) || value.contains('\n') || value.contains('\0') || value.contains('\r') {
+        if !is_env_name(name)
+            || value.contains('\n')
+            || value.contains('\0')
+            || value.contains('\r')
+        {
             continue;
         }
         out.push_str(name);
@@ -305,7 +324,9 @@ fn is_env_name(name: &str) -> bool {
     let bytes = name.as_bytes();
     !bytes.is_empty()
         && (bytes[0].is_ascii_alphabetic() || bytes[0] == b'_')
-        && bytes.iter().all(|c| c.is_ascii_alphanumeric() || *c == b'_')
+        && bytes
+            .iter()
+            .all(|c| c.is_ascii_alphanumeric() || *c == b'_')
 }
 
 const ALNUM: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -325,7 +346,10 @@ pub fn random_bytes(len: usize) -> Result<Vec<u8>> {
 /// `SERVICE_PASSWORD_*`: 32 alphanumeric characters (about 190 bits).
 pub fn generate_password() -> Result<String> {
     let bytes = random_bytes(32)?;
-    Ok(bytes.iter().map(|b| ALNUM[(*b as usize) % ALNUM.len()] as char).collect())
+    Ok(bytes
+        .iter()
+        .map(|b| ALNUM[(*b as usize) % ALNUM.len()] as char)
+        .collect())
 }
 
 /// `SERVICE_BASE64_*`: standard base64 of 32 random bytes (no line breaks).
@@ -343,8 +367,16 @@ pub fn base64_encode(input: &[u8]) -> String {
         let n = (b0 << 16) | (b1 << 8) | b2;
         out.push(B64[((n >> 18) & 63) as usize] as char);
         out.push(B64[((n >> 12) & 63) as usize] as char);
-        out.push(if chunk.len() > 1 { B64[((n >> 6) & 63) as usize] as char } else { '=' });
-        out.push(if chunk.len() > 2 { B64[(n & 63) as usize] as char } else { '=' });
+        out.push(if chunk.len() > 1 {
+            B64[((n >> 6) & 63) as usize] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            B64[(n & 63) as usize] as char
+        } else {
+            '='
+        });
     }
     out
 }
@@ -413,7 +445,9 @@ fn is_dns_name(value: &str) -> bool {
     !bytes.is_empty()
         && bytes.len() <= 128
         && bytes[0].is_ascii_alphanumeric()
-        && bytes.iter().all(|c| c.is_ascii_alphanumeric() || *c == b'_' || *c == b'-' || *c == b'.')
+        && bytes
+            .iter()
+            .all(|c| c.is_ascii_alphanumeric() || *c == b'_' || *c == b'-' || *c == b'.')
 }
 
 pub fn bind_allowlist_from_env(raw: &str) -> Vec<String> {
@@ -446,12 +480,20 @@ mod tests {
             volumes: vec![],
         };
         let project = "3f2504e0-4f89-11d3-9a0c-0305e82c3301";
-        let yaml = build_override_yaml(&model, "stack-1", project, "norix-aaaaaaaaaaaa", &[]).unwrap();
+        let yaml =
+            build_override_yaml(&model, "stack-1", project, "norix-aaaaaaaaaaaa", &[]).unwrap();
         assert!(yaml.contains("name: norix-p-3f2504e04f8911d39a0c0305e82c3301"));
         assert!(yaml.contains("ports: !reset []"));
         assert!(yaml.contains("- postgres-develop"));
         assert!(yaml.contains("- norix-aaaaaaaaaaaa-db"));
-        let public = build_override_yaml(&model, "stack-1", project, "norix-aaaaaaaaaaaa", &["db".into()]).unwrap();
+        let public = build_override_yaml(
+            &model,
+            "stack-1",
+            project,
+            "norix-aaaaaaaaaaaa",
+            &["db".into()],
+        )
+        .unwrap();
         assert!(!public.contains("!reset"));
     }
 
@@ -469,7 +511,10 @@ mod tests {
     fn required_and_generated_names() {
         let text = "image: db\nenvironment:\n  PASSWORD: ${DB_PASSWORD:?required}\n  OPT: ${OPTIONAL:-x}\n  GEN: ${SERVICE_PASSWORD_DB}\n";
         assert_eq!(required_var_names(text), vec!["DB_PASSWORD".to_string()]);
-        assert_eq!(generated_secret_names(text), vec!["SERVICE_PASSWORD_DB".to_string()]);
+        assert_eq!(
+            generated_secret_names(text),
+            vec!["SERVICE_PASSWORD_DB".to_string()]
+        );
     }
 
     #[test]
@@ -480,7 +525,11 @@ mod tests {
         std::fs::create_dir_all(&inside).unwrap();
         assert!(!bind_rejected(&inside.to_string_lossy(), &dir, &[]));
         assert!(bind_rejected("/var/run/docker.sock", &dir, &[]));
-        assert!(!bind_rejected("/var/run/docker.sock", &dir, &["/var/run".into()]));
+        assert!(!bind_rejected(
+            "/var/run/docker.sock",
+            &dir,
+            &["/var/run".into()]
+        ));
         let _ = std::fs::remove_dir_all(&dir);
     }
 

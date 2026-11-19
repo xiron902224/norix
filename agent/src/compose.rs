@@ -292,7 +292,9 @@ impl ComposeStacks {
             }
             let value = match saved.get(&name) {
                 Some(value) => value.clone(),
-                None if name.starts_with("SERVICE_BASE64_") => compose_model::generate_base64_secret()?,
+                None if name.starts_with("SERVICE_BASE64_") => {
+                    compose_model::generate_base64_secret()?
+                }
                 None => compose_model::generate_password()?,
             };
             env.insert(name, value);
@@ -315,7 +317,16 @@ impl ComposeStacks {
         let env_path = dir.join("stack.env");
         write_private_file(&env_path, format_env(&env).as_bytes()).await?;
         let result = self
-            .up_with_env(stack, dir, &src, &compose_file, &project_dir, &env_path, &env, logs)
+            .up_with_env(
+                stack,
+                dir,
+                &src,
+                &compose_file,
+                &project_dir,
+                &env_path,
+                &env,
+                logs,
+            )
             .await;
         let _ = fs::remove_file(&env_path).await;
         result?;
@@ -347,7 +358,10 @@ impl ComposeStacks {
             .await?;
         if !ok {
             logs.extend(tail_lines(&redact_secrets(&out, &secrets), 40));
-            bail!("docker compose config failed: {}", last_line(&redact_secrets(&out, &secrets)));
+            bail!(
+                "docker compose config failed: {}",
+                last_line(&redact_secrets(&out, &secrets))
+            );
         }
         let model = parse_compose_config(&out)?;
 
@@ -366,8 +380,11 @@ impl ComposeStacks {
 
         // #144: one network per project; external networks the file declares must exist.
         let project_network = project_network_name(&stack.project_id)?;
-        self.ensure_network(&project_network, &[("norix.project_id", stack.project_id.as_str())])
-            .await?;
+        self.ensure_network(
+            &project_network,
+            &[("norix.project_id", stack.project_id.as_str())],
+        )
+        .await?;
         for name in &model.external_networks {
             self.ensure_network(name, &[]).await?;
         }
@@ -414,7 +431,10 @@ impl ComposeStacks {
             .await?;
         logs.extend(tail_lines(&redact_secrets(&out, &secrets), MAX_LOG_LINES));
         if !ok {
-            bail!("docker compose up failed: {}", last_line(&redact_secrets(&out, &secrets)));
+            bail!(
+                "docker compose up failed: {}",
+                last_line(&redact_secrets(&out, &secrets))
+            );
         }
         if !stack.domains.is_empty() {
             self.connect_edge(&project_network, logs).await;
@@ -455,7 +475,12 @@ impl ComposeStacks {
     async fn connect_edge(&self, network: &str, logs: &mut Vec<String>) {
         let ids = match self
             .run_bin(
-                &["ps", "-q", "--filter", "label=com.docker.compose.service=caddy"],
+                &[
+                    "ps",
+                    "-q",
+                    "--filter",
+                    "label=com.docker.compose.service=caddy",
+                ],
                 OBSERVE_TIMEOUT,
             )
             .await
