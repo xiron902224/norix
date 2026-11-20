@@ -27,11 +27,13 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 6. [Dominios y TLS](./domains.md)
 7. [Bases de datos](./databases.md)
 8. [Red y edge](./network.md)
+8b. [Entornos preview](./previews.md) — PR → URL única (#21)
 9. [Ops y backups](./ops.md)
 9b. [Límites de escala](./scale-limits.md) — topes configurables (#45)
 9c. [Huella de recursos](./footprint.md) — tamaño / RSS (#43)
 10. [Acceso y equipos](./access.md)
 11. [Solución de problemas](./troubleshooting.md)
+12. [Pruebas de carga (k6)](./load-tests.md) — smoke + escenarios API
 
 ## Qué es Norix
 

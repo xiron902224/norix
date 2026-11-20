@@ -7,9 +7,157 @@ use tracing::{info, warn};
 use crate::client::{DesiredWorkload, ObservedWorkload};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Engine {
+pub(crate) enum Engine {
     Docker,
     Nerdctl,
+}
+
+/// Pure preference: Docker wins over nerdctl when both report healthy.
+pub(crate) fn prefer_engine(docker_ok: bool, nerdctl_ok: bool) -> Option<Engine> {
+    if docker_ok {
+        Some(Engine::Docker)
+    } else if nerdctl_ok {
+        Some(Engine::Nerdctl)
+    } else {
+        None
+    }
+}
+
+/// Snapshot of a container used by pure reconcile decisions (no Docker I/O).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ObservedContainer {
+    pub running: bool,
+    pub generation: i64,
+    pub image: String,
+}
+
+/// What reconcile should do for one desired workload given local observation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ReconcileDecision {
+    /// `action=stop` → remove container.
+    Stop,
+    /// Already at desired generation + image → leave running.
+    Noop,
+    /// No usable container → pull + run.
+    Run,
+    /// Wrong generation/image (or unhealthy) → remove then run.
+    Recreate,
+    /// Wrong generation/image with rolling strategy → surge then cut over.
+    Rolling,
+    /// Present but unhealthy on ensure-only tick → report failed, remove.
+    ReportUnhealthy,
+}
+
+/// Decide run/stop/noop/recreate without talking to the container engine.
+pub(crate) fn decide_reconcile(
+    desired: &DesiredWorkload,
+    observed: Option<&ObservedContainer>,
+) -> ReconcileDecision {
+    if desired.action == "stop" {
+        return ReconcileDecision::Stop;
+    }
+    let ensure_only = desired.action == "none" || desired.action.is_empty();
+    match observed {
+        Some(obs) if obs.running => {
+            if obs.generation == desired.desired_generation
+                && image_matches(&obs.image, &desired.image)
+            {
+                ReconcileDecision::Noop
+            } else if is_rolling(desired) {
+                ReconcileDecision::Rolling
+            } else {
+                ReconcileDecision::Recreate
+            }
+        }
+        Some(_) => {
+            if ensure_only {
+                ReconcileDecision::ReportUnhealthy
+            } else {
+                ReconcileDecision::Recreate
+            }
+        }
+        None => ReconcileDecision::Run,
+    }
+}
+
+/// Builds `docker`/`nerdctl run …` argv (without the binary). Side-effect free.
+pub(crate) fn build_run_argv(desired: &DesiredWorkload, name: &str) -> Vec<String> {
+    let port = format!("{}:{}", desired.host_port, desired.container_port.max(1));
+    let memory = format!("{}m", desired.memory_limit_mb.max(64));
+    let mut args = vec![
+        "run".into(),
+        "-d".into(),
+        "--name".into(),
+        name.into(),
+        "--restart".into(),
+        "unless-stopped".into(),
+        "-p".into(),
+        port,
+        "--memory".into(),
+        memory,
+        "--label".into(),
+        format!("norix.workload_id={}", desired.id),
+        "--label".into(),
+        format!("norix.generation={}", desired.desired_generation),
+        "--label".into(),
+        format!("norix.project_id={}", desired.project_id),
+    ];
+    if desired.cpu_shares > 0 {
+        args.push("--cpu-shares".into());
+        args.push(desired.cpu_shares.to_string());
+    }
+    if !desired.network_name.trim().is_empty() {
+        args.push("--network".into());
+        args.push(desired.network_name.trim().into());
+        if !desired.network_alias.trim().is_empty() {
+            args.push("--network-alias".into());
+            args.push(desired.network_alias.trim().into());
+        }
+    }
+    for (key, value) in &desired.env_vars {
+        args.push("-e".into());
+        args.push(format!("{key}={value}"));
+    }
+    let workload_id = if desired.workload_id.trim().is_empty() {
+        desired.id.as_str()
+    } else {
+        desired.workload_id.trim()
+    };
+    for mount in parse_volume_mounts(&desired.volume_mounts_json) {
+        let docker_name = docker_volume_name(workload_id, &mount.name);
+        let spec = if mount.read_only {
+            format!("{docker_name}:{}:ro", mount.mount_path)
+        } else {
+            format!("{docker_name}:{}", mount.mount_path)
+        };
+        args.push("-v".into());
+        args.push(spec);
+    }
+    args.push(desired.image.clone());
+    args
+}
+
+pub(crate) fn build_remove_argv(name: &str) -> Vec<String> {
+    vec!["rm".into(), "-f".into(), name.into()]
+}
+
+pub(crate) fn build_pull_argv(image: &str) -> Vec<String> {
+    vec!["pull".into(), image.into()]
+}
+
+/// Constructs container-engine argv without executing (production + FakeRuntime).
+#[allow(dead_code)] // default methods exercised via FakeRuntime tests; Runtime uses binary().
+pub(crate) trait ContainerCommandBuilder {
+    fn binary(&self) -> &'static str;
+    fn run_command(&self, desired: &DesiredWorkload, name: &str) -> Vec<String> {
+        build_run_argv(desired, name)
+    }
+    fn remove_command(&self, name: &str) -> Vec<String> {
+        build_remove_argv(name)
+    }
+    fn pull_command(&self, image: &str) -> Vec<String> {
+        build_pull_argv(image)
+    }
 }
 
 #[derive(Clone)]
@@ -17,21 +165,50 @@ pub struct Runtime {
     engine: Engine,
 }
 
+impl ContainerCommandBuilder for Runtime {
+    fn binary(&self) -> &'static str {
+        match self.engine {
+            Engine::Docker => "docker",
+            Engine::Nerdctl => "nerdctl",
+        }
+    }
+}
+
+/// Test double that constructs argv without calling Docker/nerdctl.
+#[cfg(test)]
+#[derive(Debug, Default)]
+pub(crate) struct FakeRuntime {
+    pub binary: &'static str,
+}
+
+#[cfg(test)]
+impl ContainerCommandBuilder for FakeRuntime {
+    fn binary(&self) -> &'static str {
+        self.binary
+    }
+}
+
 impl Runtime {
     pub async fn detect() -> Result<Self> {
-        if command_ok("docker", &["info"]).await {
-            info!("using docker runtime");
-            return Ok(Self {
-                engine: Engine::Docker,
-            });
+        let docker_ok = command_ok("docker", &["info"]).await;
+        let nerdctl_ok = command_ok("nerdctl", &["info"]).await;
+        match prefer_engine(docker_ok, nerdctl_ok) {
+            Some(Engine::Docker) => {
+                info!("using docker runtime");
+                Ok(Self {
+                    engine: Engine::Docker,
+                })
+            }
+            Some(Engine::Nerdctl) => {
+                info!("using nerdctl/containerd runtime");
+                Ok(Self {
+                    engine: Engine::Nerdctl,
+                })
+            }
+            None => {
+                bail!("neither docker nor nerdctl is available; install a container runtime")
+            }
         }
-        if command_ok("nerdctl", &["info"]).await {
-            info!("using nerdctl/containerd runtime");
-            return Ok(Self {
-                engine: Engine::Nerdctl,
-            });
-        }
-        bail!("neither docker nor nerdctl is available; install a container runtime")
     }
 
     pub async fn reconcile(&self, desired: &[DesiredWorkload]) -> Vec<ObservedWorkload> {
@@ -120,37 +297,45 @@ impl Runtime {
             );
         }
         let name = container_name(&desired.id);
-        if desired.action == "stop" {
-            let _ = self.remove_container(&name).await;
-            return Ok(ObservedWorkload {
-                id: desired.id.clone(),
-                status: "stopped".into(),
-                container_id: String::new(),
-                observed_generation: desired.desired_generation,
-                message: String::new(),
-                host_port: desired.host_port,
-                log_lines: vec![format!("stopped {}", name)],
-                ready: true,
-                probe_status_json: "{}".into(),
+
+        let running = self.inspect_running(&name).await?;
+        let any = if running.is_some() {
+            None
+        } else {
+            self.inspect_any(&name).await?
+        };
+        let observed = running
+            .as_ref()
+            .map(|existing| ObservedContainer {
+                running: true,
+                generation: label_generation(existing),
+                image: config_image(existing).to_string(),
+            })
+            .or_else(|| {
+                any.as_ref().map(|info| ObservedContainer {
+                    running: false,
+                    generation: label_generation(info),
+                    image: config_image(info).to_string(),
+                })
             });
-        }
 
-        let ensure_only = desired.action == "none" || desired.action.is_empty();
-
-        if let Some(existing) = self.inspect_running(&name).await? {
-            let generation = existing
-                .get("Config")
-                .and_then(|cfg| cfg.get("Labels"))
-                .and_then(|labels| labels.get("norix.generation"))
-                .and_then(|value| value.as_str())
-                .and_then(|value| value.parse::<i64>().ok())
-                .unwrap_or(0);
-            let image = existing
-                .get("Config")
-                .and_then(|cfg| cfg.get("Image"))
-                .and_then(|value| value.as_str())
-                .unwrap_or_default();
-            if generation == desired.desired_generation && image_matches(image, &desired.image) {
+        match decide_reconcile(desired, observed.as_ref()) {
+            ReconcileDecision::Stop => {
+                let _ = self.remove_container(&name).await;
+                return Ok(ObservedWorkload {
+                    id: desired.id.clone(),
+                    status: "stopped".into(),
+                    container_id: String::new(),
+                    observed_generation: desired.desired_generation,
+                    message: String::new(),
+                    host_port: desired.host_port,
+                    log_lines: vec![format!("stopped {}", name)],
+                    ready: true,
+                    probe_status_json: "{}".into(),
+                });
+            }
+            ReconcileDecision::Noop => {
+                let existing = running.expect("noop requires a running container");
                 let logs = self.logs(&name, 40).await.unwrap_or_default();
                 let container_id = existing
                     .get("Id")
@@ -184,14 +369,11 @@ impl Runtime {
                 }
                 return Ok(observed);
             }
-            if is_rolling(desired) {
+            ReconcileDecision::Rolling => {
                 return self.reconcile_rolling(desired, &name).await;
             }
-            let _ = self.remove_container(&name).await;
-        } else if let Some(info) = self.inspect_any(&name).await? {
-            // Present but unhealthy: on ensure-only ticks, surface failure
-            // instead of rm/recreate thrashing that keeps status="running".
-            if ensure_only {
+            ReconcileDecision::ReportUnhealthy => {
+                let info = any.expect("report unhealthy requires a present container");
                 let logs = self.logs(&name, 40).await.unwrap_or_default();
                 let container_id = info
                     .get("Id")
@@ -212,9 +394,15 @@ impl Runtime {
                     probe_status_json: "{}".into(),
                 });
             }
-            let _ = self.remove_container(&name).await;
-        } else if !ensure_only {
-            let _ = self.remove_container(&name).await;
+            ReconcileDecision::Recreate => {
+                let _ = self.remove_container(&name).await;
+            }
+            ReconcileDecision::Run => {
+                let ensure_only = desired.action == "none" || desired.action.is_empty();
+                if !ensure_only {
+                    let _ = self.remove_container(&name).await;
+                }
+            }
         }
 
         self.pull(&desired.image).await?;
@@ -358,10 +546,7 @@ impl Runtime {
     }
 
     pub(crate) fn bin(&self) -> &'static str {
-        match self.engine {
-            Engine::Docker => "docker",
-            Engine::Nerdctl => "nerdctl",
-        }
+        ContainerCommandBuilder::binary(self)
     }
 
     pub(crate) async fn engine_capture(
@@ -401,8 +586,9 @@ impl Runtime {
         if self.image_exists(image).await {
             return Ok(());
         }
+        let args = build_pull_argv(image);
         let status = Command::new(self.bin())
-            .args(["pull", image])
+            .args(&args)
             .stdout(Stdio::null())
             .stderr(Stdio::piped())
             .status()
@@ -415,42 +601,8 @@ impl Runtime {
     }
 
     async fn run(&self, desired: &DesiredWorkload, name: &str) -> Result<String> {
-        let port = format!("{}:{}", desired.host_port, desired.container_port.max(1));
-        let memory = format!("{}m", desired.memory_limit_mb.max(64));
-        let mut args = vec![
-            "run".into(),
-            "-d".into(),
-            "--name".into(),
-            name.into(),
-            "--restart".into(),
-            "unless-stopped".into(),
-            "-p".into(),
-            port,
-            "--memory".into(),
-            memory,
-            "--label".into(),
-            format!("norix.workload_id={}", desired.id),
-            "--label".into(),
-            format!("norix.generation={}", desired.desired_generation),
-            "--label".into(),
-            format!("norix.project_id={}", desired.project_id),
-        ];
-        if desired.cpu_shares > 0 {
-            args.push("--cpu-shares".into());
-            args.push(desired.cpu_shares.to_string());
-        }
         if !desired.network_name.trim().is_empty() {
             let _ = self.ensure_network(desired.network_name.trim()).await;
-            args.push("--network".into());
-            args.push(desired.network_name.trim().into());
-            if !desired.network_alias.trim().is_empty() {
-                args.push("--network-alias".into());
-                args.push(desired.network_alias.trim().into());
-            }
-        }
-        for (key, value) in &desired.env_vars {
-            args.push("-e".into());
-            args.push(format!("{key}={value}"));
         }
         let workload_id = if desired.workload_id.trim().is_empty() {
             desired.id.as_str()
@@ -465,15 +617,8 @@ impl Runtime {
                 .stderr(Stdio::null())
                 .status()
                 .await;
-            let spec = if mount.read_only {
-                format!("{docker_name}:{}:ro", mount.mount_path)
-            } else {
-                format!("{docker_name}:{}", mount.mount_path)
-            };
-            args.push("-v".into());
-            args.push(spec);
         }
-        args.push(desired.image.clone());
+        let args = build_run_argv(desired, name);
 
         let output = Command::new(self.bin())
             .args(&args)
@@ -490,8 +635,9 @@ impl Runtime {
     }
 
     async fn remove_container(&self, name: &str) -> Result<()> {
+        let args = build_remove_argv(name);
         let _ = Command::new(self.bin())
-            .args(["rm", "-f", name])
+            .args(&args)
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status()
@@ -754,6 +900,22 @@ fn container_name(workload_id: &str) -> String {
     format!("norix-{}", &compact[..compact.len().min(12)])
 }
 
+fn label_generation(info: &serde_json::Value) -> i64 {
+    info.get("Config")
+        .and_then(|cfg| cfg.get("Labels"))
+        .and_then(|labels| labels.get("norix.generation"))
+        .and_then(|value| value.as_str())
+        .and_then(|value| value.parse::<i64>().ok())
+        .unwrap_or(0)
+}
+
+fn config_image(info: &serde_json::Value) -> &str {
+    info.get("Config")
+        .and_then(|cfg| cfg.get("Image"))
+        .and_then(|value| value.as_str())
+        .unwrap_or_default()
+}
+
 fn is_rolling(desired: &DesiredWorkload) -> bool {
     let strategy = desired.update_strategy.trim().to_ascii_lowercase();
     strategy.is_empty() || strategy == "rolling"
@@ -890,7 +1052,38 @@ async fn command_ok(bin: &str, args: &[&str]) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::image_matches;
+    use super::{
+        build_run_argv, container_name, decide_reconcile, image_matches, prefer_engine,
+        ContainerCommandBuilder, Engine, FakeRuntime, ObservedContainer, ReconcileDecision,
+    };
+    use crate::client::DesiredWorkload;
+    use std::collections::HashMap;
+
+    fn desired(action: &str, generation: i64, image: &str) -> DesiredWorkload {
+        DesiredWorkload {
+            id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee".into(),
+            project_id: "proj1".into(),
+            name: "api".into(),
+            image: image.into(),
+            env_vars: HashMap::new(),
+            cpu_shares: 0,
+            memory_limit_mb: 256,
+            host_port: 8080,
+            container_port: 80,
+            desired_generation: generation,
+            action: action.into(),
+            runtime: "container".into(),
+            network_name: String::new(),
+            network_alias: String::new(),
+            update_strategy: "rolling".into(),
+            surge_host_port: 0,
+            readiness_path: String::new(),
+            probe_spec_json: String::new(),
+            volume_mounts_json: String::new(),
+            volume_pending_op_json: String::new(),
+            workload_id: String::new(),
+        }
+    }
 
     #[test]
     fn matches_same_image_and_registry_prefix() {
@@ -917,5 +1110,124 @@ mod tests {
             "ghcr.io/acme/my-nginx:latest",
             "nginx:latest"
         ));
+    }
+
+    #[test]
+    fn prefer_engine_prefers_docker_then_nerdctl() {
+        assert_eq!(prefer_engine(true, true), Some(Engine::Docker));
+        assert_eq!(prefer_engine(true, false), Some(Engine::Docker));
+        assert_eq!(prefer_engine(false, true), Some(Engine::Nerdctl));
+        assert_eq!(prefer_engine(false, false), None);
+    }
+
+    #[test]
+    fn runtime_detection_helpers_classify_kinds() {
+        assert!(super::is_container_runtime(""));
+        assert!(super::is_container_runtime("container"));
+        assert!(super::is_container_runtime("docker-compose"));
+        assert!(super::is_microvm_runtime("microvm"));
+        assert!(super::is_wasm_runtime("wasm"));
+        assert!(!super::is_container_runtime("wasm"));
+        assert!(!super::is_microvm_runtime("container"));
+    }
+
+    #[test]
+    fn decide_reconcile_stop_run_noop_recreate_rolling() {
+        let stop = desired("stop", 1, "nginx:1");
+        assert_eq!(decide_reconcile(&stop, None), ReconcileDecision::Stop);
+
+        let deploy = desired("deploy", 2, "nginx:2");
+        assert_eq!(decide_reconcile(&deploy, None), ReconcileDecision::Run);
+
+        let matched = ObservedContainer {
+            running: true,
+            generation: 2,
+            image: "nginx:2".into(),
+        };
+        assert_eq!(
+            decide_reconcile(&deploy, Some(&matched)),
+            ReconcileDecision::Noop
+        );
+
+        let stale = ObservedContainer {
+            running: true,
+            generation: 1,
+            image: "nginx:1".into(),
+        };
+        assert_eq!(
+            decide_reconcile(&deploy, Some(&stale)),
+            ReconcileDecision::Rolling
+        );
+
+        let mut recreate = deploy.clone();
+        recreate.update_strategy = "recreate".into();
+        assert_eq!(
+            decide_reconcile(&recreate, Some(&stale)),
+            ReconcileDecision::Recreate
+        );
+
+        let ensure = desired("none", 1, "nginx:1");
+        let unhealthy = ObservedContainer {
+            running: false,
+            generation: 1,
+            image: "nginx:1".into(),
+        };
+        assert_eq!(
+            decide_reconcile(&ensure, Some(&unhealthy)),
+            ReconcileDecision::ReportUnhealthy
+        );
+        assert_eq!(
+            decide_reconcile(&deploy, Some(&unhealthy)),
+            ReconcileDecision::Recreate
+        );
+    }
+
+    #[test]
+    fn fake_runtime_constructs_run_remove_pull_commands() {
+        let fake = FakeRuntime { binary: "docker" };
+        let mut d = desired("deploy", 3, "ghcr.io/acme/api:1");
+        d.cpu_shares = 512;
+        d.network_name = "norix-net".into();
+        d.network_alias = "api".into();
+        d.env_vars.insert("FOO".into(), "bar".into());
+        d.volume_mounts_json = r#"[{"name":"data","mount_path":"/data","read_only":true}]"#.into();
+
+        let name = container_name(&d.id);
+        let args = fake.run_command(&d, &name);
+
+        assert_eq!(fake.binary(), "docker");
+        assert_eq!(args[0], "run");
+        assert!(args.windows(2).any(|w| w == ["--name", name.as_str()]));
+        assert!(args.windows(2).any(|w| w == ["-p", "8080:80"]));
+        assert!(args.windows(2).any(|w| w == ["--memory", "256m"]));
+        assert!(args.windows(2).any(|w| w == ["--cpu-shares", "512"]));
+        assert!(args.windows(2).any(|w| w == ["--network", "norix-net"]));
+        assert!(args.windows(2).any(|w| w == ["--network-alias", "api"]));
+        assert!(args.iter().any(|a| a == "FOO=bar"));
+        assert!(args.iter().any(|a| a.contains(":ro")));
+        assert_eq!(args.last().map(String::as_str), Some("ghcr.io/acme/api:1"));
+        assert!(args
+            .iter()
+            .any(|a| a == "norix.generation=3" || a.ends_with("norix.generation=3")));
+
+        assert_eq!(
+            fake.remove_command(&name),
+            vec!["rm".to_string(), "-f".into(), name.clone()]
+        );
+        assert_eq!(
+            fake.pull_command("nginx:latest"),
+            vec!["pull".to_string(), "nginx:latest".into()]
+        );
+
+        // Same pure argv as the helper used by Runtime::run.
+        assert_eq!(args, build_run_argv(&d, &name));
+    }
+
+    #[test]
+    fn container_name_uses_hex_prefix() {
+        assert_eq!(
+            container_name("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+            "norix-aaaaaaaabbbb"
+        );
     }
 }

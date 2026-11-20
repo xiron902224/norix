@@ -313,17 +313,24 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.88.0"
-          components: rustfmt, clippy
+          components: rustfmt, clippy, llvm-tools-preview
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: agent
 
-      - name: Check and build agent
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+
+      - name: Check, test, coverage, and build agent
         run: |
           cargo fmt --check
           cargo clippy --all-targets -- -D warnings
+          cargo test
+          cargo llvm-cov --summary-only
           cargo build --release
 
   build-cli:
@@ -504,10 +511,39 @@ jobs:
           (cd agent && cargo build --release -q)
           ./scripts/measure-footprint.sh --check
 
+  k6-smoke:
+    name: k6 health smoke (#40)
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          set -euo pipefail
+          # Binary install avoids flaky apt keyring on newer Ubuntu runners (#40).
+          ver="v0.54.0"
+          curl -fsSL "https://github.com/grafana/k6/releases/download/${ver}/k6-${ver}-linux-amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin --strip-components=1 "k6-${ver}-linux-amd64/k6"
+          k6 version
+
+      - name: Run health smoke against mock /healthz
+        run: |
+          set -euo pipefail
+          python3 test/load/mock-healthz.py &
+          echo $! > /tmp/mock-healthz.pid
+          for i in 1 2 3 4 5; do
+            curl -sf http://127.0.0.1:8080/healthz && break
+            sleep 0.5
+          done
+          k6 run -e NORIX_API=http://127.0.0.1:8080 -e NORIX_LOAD_DURATION=10s test/load/k6-smoke.js
+          kill "$(cat /tmp/mock-healthz.pid)" || true
+
   build-control-plane:
     name: Build Control Plane (Go)
     runs-on: ubuntu-latest
-    needs: [validate-protos, database-integration, build-web, build-agent, security-audit, railpack-examples, compose-example, footprint]
+    needs: [validate-protos, database-integration, build-web, build-agent, security-audit, railpack-examples, compose-example, footprint, k6-smoke]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

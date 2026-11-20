@@ -60,14 +60,20 @@ make embed-web
 make control-plane
 ```
 
-Playwright smoke (requires a running control plane):
+Playwright E2E (requires a running control plane):
 
 ```bash
+# Smoke + lifecycle (bootstrap → project → image → domain → logs → delete).
+# Deploy-to-running needs an agent — set NORIX_E2E_FULL=1 for that path.
 NORIX_E2E=1 npm run test:e2e
+NORIX_E2E=1 NORIX_E2E_FULL=1 npm run test:e2e
 ```
+
+Specs live under `e2e/` (`smoke.spec.ts`, `lifecycle.spec.ts`). Gate is `NORIX_E2E`; see `playwright.config.ts`.
 
 ## Notes
 
 - Auth bootstrap/login plus an authenticated projects/workloads dashboard.
 - Deploy remains disabled until a runtime agent is enrolled (S3/S4).
 - Same-origin `/api` is the default API URL for the embedded UI.
+- Load tests (k6): [`docs/user/load-tests.md`](../docs/user/load-tests.md).

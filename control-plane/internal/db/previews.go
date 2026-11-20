@@ -118,7 +118,8 @@ func UpsertPRPreview(ctx context.Context, pool *pgxpool.Pool, tenantID string, p
 	return preview, tx.Commit(ctx)
 }
 
-// GCExpiredPRPreviews marks ready/building/pending previews past expires_at as destroyed.
+// GCExpiredPRPreviews marks ready/building/pending previews past expires_at as destroyed
+// and deletes the matching pr-N workloads (#21).
 func GCExpiredPRPreviews(ctx context.Context, pool *pgxpool.Pool, tenantID string) (int64, error) {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -128,16 +129,45 @@ func GCExpiredPRPreviews(ctx context.Context, pool *pgxpool.Pool, tenantID strin
 	if err := WithTenant(ctx, tx, tenantID); err != nil {
 		return 0, err
 	}
-	tag, err := tx.Exec(ctx, `
+	rows, err := tx.Query(ctx, `
 		UPDATE pr_previews
 		SET status = 'destroyed', updated_at = NOW()
 		WHERE organization_id = $1::uuid
 		  AND expires_at < NOW()
-		  AND status IN ('pending', 'building', 'ready')`,
+		  AND status IN ('pending', 'building', 'ready')
+		RETURNING project_id::text, pr_number`,
 		tenantID,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("gc previews: %w", err)
 	}
-	return tag.RowsAffected(), tx.Commit(ctx)
+	type expired struct {
+		projectID string
+		pr        int32
+	}
+	var items []expired
+	for rows.Next() {
+		var item expired
+		if err := rows.Scan(&item.projectID, &item.pr); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		items = append(items, item)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+	for _, item := range items {
+		name := PreviewWorkloadName(item.pr)
+		_, _ = tx.Exec(ctx, `
+			UPDATE workloads
+			SET status = 'deleting', desired_action = 'stop', updated_at = NOW()
+			WHERE project_id = $1::uuid AND name = $2 AND status <> 'deleting'`,
+			item.projectID, name)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+	return int64(len(items)), nil
 }
