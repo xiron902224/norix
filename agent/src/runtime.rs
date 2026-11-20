@@ -546,10 +546,7 @@ impl Runtime {
     }
 
     pub(crate) fn bin(&self) -> &'static str {
-        match self.engine {
-            Engine::Docker => "docker",
-            Engine::Nerdctl => "nerdctl",
-        }
+        ContainerCommandBuilder::binary(self)
     }
 
     pub(crate) async fn engine_capture(
