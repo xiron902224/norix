@@ -1,0 +1,9 @@
+# Thin runtime for a prebuilt agent binary (bind-mounted in compose).
+# Shares the host docker.sock — same limitation as the smoke docs (one Docker host).
+FROM debian:bookworm-slim
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl libgcc-s1 \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=docker:27-cli /usr/local/bin/docker /usr/local/bin/docker
+WORKDIR /var/lib/norix-agent
+ENTRYPOINT ["norix-agent"]

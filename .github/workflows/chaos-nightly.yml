@@ -1,0 +1,71 @@
+name: Chaos nightly
+
+on:
+  schedule:
+    # 05:17 UTC daily — avoid top-of-hour congestion
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+    inputs:
+      skip_network_partition:
+        description: "Skip network-partition scenario"
+        type: boolean
+        default: false
+
+concurrency:
+  group: chaos-nightly
+  cancel-in-progress: true
+
+jobs:
+  chaos:
+    name: Chaos scenarios (#41)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.27.4"
+          cache-dependency-path: control-plane/go.sum
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.88.0"
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: agent
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Build control-plane and agent binaries
+        run: |
+          set -euo pipefail
+          mkdir -p control-plane/internal/webui/dist test/multinode/bin
+          echo '<!doctype html><title>chaos-ci</title>' > control-plane/internal/webui/dist/index.html
+          (cd control-plane && CGO_ENABLED=0 go build -o ../test/multinode/bin/norix-control-plane ./cmd/server)
+          (cd agent && cargo build --release -q)
+          cp agent/target/release/norix-agent test/multinode/bin/norix-agent
+          chmod +x test/multinode/bin/*
+
+      - name: Run chaos suite
+        env:
+          SKIP_NETWORK_PARTITION: ${{ inputs.skip_network_partition && '1' || '0' }}
+        run: |
+          set -euo pipefail
+          chmod +x test/chaos/*.sh test/lib/rpc.sh
+          if [[ "${SKIP_NETWORK_PARTITION}" == "1" ]]; then
+            source test/chaos/lib.sh
+            chaos_setup 2
+            trap chaos_teardown EXIT
+            ./test/chaos/control-plane-restart.sh
+            ./test/chaos/db-restart.sh
+            ./test/chaos/agent-crash.sh
+          else
+            ./test/chaos/run-all.sh
+          fi

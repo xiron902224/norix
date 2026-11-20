@@ -1,0 +1,134 @@
+# Multi-node smoke stack (#37): postgres + control-plane + 3 agents.
+# Agents share the host docker.sock (pragmatic CI MVP — not true multi-host isolation).
+#
+# Binaries are bind-mounted from the host (built by smoke.sh / CI):
+#   NORIX_CP_BIN, NORIX_AGENT_BIN
+
+name: norix-multinode
+
+x-agent-common: &agent-common
+  build:
+    context: .
+    dockerfile: Dockerfile.agent
+  image: norix/test-agent-runtime:local
+  pull_policy: build
+  restart: "no"
+  depends_on:
+    control-plane:
+      condition: service_healthy
+  volumes:
+    - ${NORIX_AGENT_BIN}:/usr/local/bin/norix-agent:ro
+    - /var/run/docker.sock:/var/run/docker.sock
+  networks: [norix-mn]
+  environment:
+    NORIX_CONTROL_PLANE_URL: http://control-plane:8080
+    NORIX_AGENT_WORKDIR: /var/lib/norix-agent
+    NORIX_HEARTBEAT_SECS: "5"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-norix}
+      POSTGRES_USER: ${POSTGRES_USER:-norix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?set POSTGRES_APP_PASSWORD}
+    volumes:
+      - ../../deploy/norix/postgres-init:/docker-entrypoint-initdb.d:ro
+      - mn_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+    networks: [norix-mn]
+
+  control-plane:
+    build:
+      context: .
+      dockerfile: Dockerfile.cp
+    image: norix/test-cp-runtime:local
+    pull_policy: build
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ${NORIX_CP_BIN}:/usr/local/bin/norix-control-plane:ro
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL}
+      HTTP_ADDR: ":8080"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      NORIX_PUBLIC_URL: ${NORIX_PUBLIC_URL:-http://127.0.0.1:18080}
+      NORIX_WEB_ORIGIN: ${NORIX_WEB_ORIGIN:-http://127.0.0.1:18080}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://127.0.0.1:18080}
+      NORIX_BUILD_SECRETS_KEY: ${NORIX_BUILD_SECRETS_KEY:?set NORIX_BUILD_SECRETS_KEY}
+      NORIX_ALLOW_INSECURE_BOOTSTRAP: "1"
+      NORIX_ALLOW_INSECURE_DEV_SECRETS: ${NORIX_ALLOW_INSECURE_DEV_SECRETS:-}
+      NORIX_REGISTRY: none
+    ports:
+      - "${NORIX_HTTP_PORT:-18080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8080/healthz"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 5s
+    networks: [norix-mn]
+
+  agent-1:
+    <<: *agent-common
+    hostname: agent-1
+    container_name: norix-mn-agent-1
+    environment:
+      NORIX_CONTROL_PLANE_URL: http://control-plane:8080
+      NORIX_AGENT_WORKDIR: /var/lib/norix-agent
+      NORIX_HEARTBEAT_SECS: "5"
+      NORIX_JOIN_TOKEN: ${AGENT1_JOIN_TOKEN:-}
+      NORIX_NODE_NAME: agent-1
+    volumes:
+      - ${NORIX_AGENT_BIN}:/usr/local/bin/norix-agent:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - mn_agent1:/var/lib/norix-agent
+
+  agent-2:
+    <<: *agent-common
+    hostname: agent-2
+    container_name: norix-mn-agent-2
+    environment:
+      NORIX_CONTROL_PLANE_URL: http://control-plane:8080
+      NORIX_AGENT_WORKDIR: /var/lib/norix-agent
+      NORIX_HEARTBEAT_SECS: "5"
+      NORIX_JOIN_TOKEN: ${AGENT2_JOIN_TOKEN:-}
+      NORIX_NODE_NAME: agent-2
+    volumes:
+      - ${NORIX_AGENT_BIN}:/usr/local/bin/norix-agent:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - mn_agent2:/var/lib/norix-agent
+
+  agent-3:
+    <<: *agent-common
+    hostname: agent-3
+    container_name: norix-mn-agent-3
+    environment:
+      NORIX_CONTROL_PLANE_URL: http://control-plane:8080
+      NORIX_AGENT_WORKDIR: /var/lib/norix-agent
+      NORIX_HEARTBEAT_SECS: "5"
+      NORIX_JOIN_TOKEN: ${AGENT3_JOIN_TOKEN:-}
+      NORIX_NODE_NAME: agent-3
+    volumes:
+      - ${NORIX_AGENT_BIN}:/usr/local/bin/norix-agent:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - mn_agent3:/var/lib/norix-agent
+
+volumes:
+  mn_pg_data:
+  mn_agent1:
+  mn_agent2:
+  mn_agent3:
+
+networks:
+  norix-mn:
+    driver: bridge

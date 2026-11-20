@@ -479,6 +479,66 @@ jobs:
           DB_PASSWORD: ci-only-not-a-secret
         run: docker compose -f examples/compose-multi-service/docker-compose.yml down -v
 
+  multinode-e2e:
+    name: Multi-node E2E (#37)
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    # Independent of build-control-plane so a heavy smoke does not block the Go gate.
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Possibly skip
+        id: skip
+        run: |
+          if [[ "${SKIP_MULTINODE_E2E:-}" == "1" || "${{ vars.SKIP_MULTINODE_E2E }}" == "1" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping multinode E2E (SKIP_MULTINODE_E2E=1)"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Go
+        if: steps.skip.outputs.skip != 'true'
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.27.4"
+          cache-dependency-path: control-plane/go.sum
+
+      - name: Install Rust toolchain
+        if: steps.skip.outputs.skip != 'true'
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.88.0"
+
+      - name: Cache cargo
+        if: steps.skip.outputs.skip != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: agent
+
+      - name: Install jq
+        if: steps.skip.outputs.skip != 'true'
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Build binaries
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p control-plane/internal/webui/dist test/multinode/bin
+          echo '<!doctype html><title>multinode-ci</title>' > control-plane/internal/webui/dist/index.html
+          (cd control-plane && CGO_ENABLED=0 go build -o ../test/multinode/bin/norix-control-plane ./cmd/server)
+          (cd agent && cargo build --release -q)
+          cp agent/target/release/norix-agent test/multinode/bin/norix-agent
+          chmod +x test/multinode/bin/*
+
+      - name: Run multinode smoke
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          chmod +x test/multinode/smoke.sh test/lib/rpc.sh
+          ./test/multinode/smoke.sh
+
   footprint:
     name: Binary footprint (#43)
     runs-on: ubuntu-latest
