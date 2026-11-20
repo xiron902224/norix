@@ -1033,9 +1033,12 @@ var WorkloadService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ProjectService_CreateProject_FullMethodName = "/v1.ProjectService/CreateProject"
-	ProjectService_ListProjects_FullMethodName  = "/v1.ProjectService/ListProjects"
-	ProjectService_DeleteProject_FullMethodName = "/v1.ProjectService/DeleteProject"
+	ProjectService_CreateProject_FullMethodName             = "/v1.ProjectService/CreateProject"
+	ProjectService_ListProjects_FullMethodName              = "/v1.ProjectService/ListProjects"
+	ProjectService_DeleteProject_FullMethodName             = "/v1.ProjectService/DeleteProject"
+	ProjectService_ListNotificationChannels_FullMethodName  = "/v1.ProjectService/ListNotificationChannels"
+	ProjectService_UpsertNotificationChannel_FullMethodName = "/v1.ProjectService/UpsertNotificationChannel"
+	ProjectService_DeleteNotificationChannel_FullMethodName = "/v1.ProjectService/DeleteNotificationChannel"
 )
 
 // ProjectServiceClient is the client API for ProjectService service.
@@ -1045,6 +1048,9 @@ type ProjectServiceClient interface {
 	CreateProject(ctx context.Context, in *CreateProjectRequest, opts ...grpc.CallOption) (*CreateProjectResponse, error)
 	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
 	DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*DeleteProjectResponse, error)
+	ListNotificationChannels(ctx context.Context, in *ListNotificationChannelsRequest, opts ...grpc.CallOption) (*ListNotificationChannelsResponse, error)
+	UpsertNotificationChannel(ctx context.Context, in *UpsertNotificationChannelRequest, opts ...grpc.CallOption) (*UpsertNotificationChannelResponse, error)
+	DeleteNotificationChannel(ctx context.Context, in *DeleteNotificationChannelRequest, opts ...grpc.CallOption) (*DeleteNotificationChannelResponse, error)
 }
 
 type projectServiceClient struct {
@@ -1085,6 +1091,36 @@ func (c *projectServiceClient) DeleteProject(ctx context.Context, in *DeleteProj
 	return out, nil
 }
 
+func (c *projectServiceClient) ListNotificationChannels(ctx context.Context, in *ListNotificationChannelsRequest, opts ...grpc.CallOption) (*ListNotificationChannelsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListNotificationChannelsResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListNotificationChannels_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) UpsertNotificationChannel(ctx context.Context, in *UpsertNotificationChannelRequest, opts ...grpc.CallOption) (*UpsertNotificationChannelResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertNotificationChannelResponse)
+	err := c.cc.Invoke(ctx, ProjectService_UpsertNotificationChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) DeleteNotificationChannel(ctx context.Context, in *DeleteNotificationChannelRequest, opts ...grpc.CallOption) (*DeleteNotificationChannelResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteNotificationChannelResponse)
+	err := c.cc.Invoke(ctx, ProjectService_DeleteNotificationChannel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProjectServiceServer is the server API for ProjectService service.
 // All implementations must embed UnimplementedProjectServiceServer
 // for forward compatibility.
@@ -1092,6 +1128,9 @@ type ProjectServiceServer interface {
 	CreateProject(context.Context, *CreateProjectRequest) (*CreateProjectResponse, error)
 	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
 	DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error)
+	ListNotificationChannels(context.Context, *ListNotificationChannelsRequest) (*ListNotificationChannelsResponse, error)
+	UpsertNotificationChannel(context.Context, *UpsertNotificationChannelRequest) (*UpsertNotificationChannelResponse, error)
+	DeleteNotificationChannel(context.Context, *DeleteNotificationChannelRequest) (*DeleteNotificationChannelResponse, error)
 	mustEmbedUnimplementedProjectServiceServer()
 }
 
@@ -1110,6 +1149,15 @@ func (UnimplementedProjectServiceServer) ListProjects(context.Context, *ListProj
 }
 func (UnimplementedProjectServiceServer) DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteProject not implemented")
+}
+func (UnimplementedProjectServiceServer) ListNotificationChannels(context.Context, *ListNotificationChannelsRequest) (*ListNotificationChannelsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListNotificationChannels not implemented")
+}
+func (UnimplementedProjectServiceServer) UpsertNotificationChannel(context.Context, *UpsertNotificationChannelRequest) (*UpsertNotificationChannelResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertNotificationChannel not implemented")
+}
+func (UnimplementedProjectServiceServer) DeleteNotificationChannel(context.Context, *DeleteNotificationChannelRequest) (*DeleteNotificationChannelResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteNotificationChannel not implemented")
 }
 func (UnimplementedProjectServiceServer) mustEmbedUnimplementedProjectServiceServer() {}
 func (UnimplementedProjectServiceServer) testEmbeddedByValue()                        {}
@@ -1186,6 +1234,60 @@ func _ProjectService_DeleteProject_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_ListNotificationChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListNotificationChannelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListNotificationChannels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListNotificationChannels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListNotificationChannels(ctx, req.(*ListNotificationChannelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_UpsertNotificationChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertNotificationChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).UpsertNotificationChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_UpsertNotificationChannel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).UpsertNotificationChannel(ctx, req.(*UpsertNotificationChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_DeleteNotificationChannel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteNotificationChannelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).DeleteNotificationChannel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_DeleteNotificationChannel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).DeleteNotificationChannel(ctx, req.(*DeleteNotificationChannelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1204,6 +1306,18 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteProject",
 			Handler:    _ProjectService_DeleteProject_Handler,
+		},
+		{
+			MethodName: "ListNotificationChannels",
+			Handler:    _ProjectService_ListNotificationChannels_Handler,
+		},
+		{
+			MethodName: "UpsertNotificationChannel",
+			Handler:    _ProjectService_UpsertNotificationChannel_Handler,
+		},
+		{
+			MethodName: "DeleteNotificationChannel",
+			Handler:    _ProjectService_DeleteNotificationChannel_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

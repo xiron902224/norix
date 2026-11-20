@@ -494,8 +494,53 @@ message DeleteProjectRequest {
 
 message DeleteProjectResponse {}
 
+message NotificationChannel {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  // webhook | slack | discord | email
+  string kind = 4;
+  // Host only for URLs. The secret path is never returned (#27).
+  string target_hint = 5;
+  repeated string events = 6;
+  bool enabled = 7;
+}
+
+message ListNotificationChannelsRequest {
+  string project_id = 1;
+}
+
+message ListNotificationChannelsResponse {
+  repeated NotificationChannel channels = 1;
+}
+
+message UpsertNotificationChannelRequest {
+  // Empty creates a channel. Set it to update.
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  string kind = 4;
+  // Write-only. Empty on update keeps the stored target.
+  string target = 5;
+  repeated string events = 6;
+  bool enabled = 7;
+}
+
+message UpsertNotificationChannelResponse {
+  NotificationChannel channel = 1;
+}
+
+message DeleteNotificationChannelRequest {
+  string id = 1;
+}
+
+message DeleteNotificationChannelResponse {}
+
 service ProjectService {
   rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
   rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+  rpc ListNotificationChannels(ListNotificationChannelsRequest) returns (ListNotificationChannelsResponse);
+  rpc UpsertNotificationChannel(UpsertNotificationChannelRequest) returns (UpsertNotificationChannelResponse);
+  rpc DeleteNotificationChannel(DeleteNotificationChannelRequest) returns (DeleteNotificationChannelResponse);
 }

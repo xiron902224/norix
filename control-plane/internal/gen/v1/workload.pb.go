@@ -4407,6 +4407,406 @@ func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
 	return file_v1_workload_proto_rawDescGZIP(), []int{67}
 }
 
+type NotificationChannel struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProjectId string                 `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Name      string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	// webhook | slack | discord | email
+	Kind string `protobuf:"bytes,4,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Host only for URLs. The secret path is never returned (#27).
+	TargetHint    string   `protobuf:"bytes,5,opt,name=target_hint,json=targetHint,proto3" json:"target_hint,omitempty"`
+	Events        []string `protobuf:"bytes,6,rep,name=events,proto3" json:"events,omitempty"`
+	Enabled       bool     `protobuf:"varint,7,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NotificationChannel) Reset() {
+	*x = NotificationChannel{}
+	mi := &file_v1_workload_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NotificationChannel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotificationChannel) ProtoMessage() {}
+
+func (x *NotificationChannel) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotificationChannel.ProtoReflect.Descriptor instead.
+func (*NotificationChannel) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{68}
+}
+
+func (x *NotificationChannel) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *NotificationChannel) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *NotificationChannel) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *NotificationChannel) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *NotificationChannel) GetTargetHint() string {
+	if x != nil {
+		return x.TargetHint
+	}
+	return ""
+}
+
+func (x *NotificationChannel) GetEvents() []string {
+	if x != nil {
+		return x.Events
+	}
+	return nil
+}
+
+func (x *NotificationChannel) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type ListNotificationChannelsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListNotificationChannelsRequest) Reset() {
+	*x = ListNotificationChannelsRequest{}
+	mi := &file_v1_workload_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListNotificationChannelsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListNotificationChannelsRequest) ProtoMessage() {}
+
+func (x *ListNotificationChannelsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListNotificationChannelsRequest.ProtoReflect.Descriptor instead.
+func (*ListNotificationChannelsRequest) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *ListNotificationChannelsRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+type ListNotificationChannelsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Channels      []*NotificationChannel `protobuf:"bytes,1,rep,name=channels,proto3" json:"channels,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListNotificationChannelsResponse) Reset() {
+	*x = ListNotificationChannelsResponse{}
+	mi := &file_v1_workload_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListNotificationChannelsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListNotificationChannelsResponse) ProtoMessage() {}
+
+func (x *ListNotificationChannelsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListNotificationChannelsResponse.ProtoReflect.Descriptor instead.
+func (*ListNotificationChannelsResponse) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *ListNotificationChannelsResponse) GetChannels() []*NotificationChannel {
+	if x != nil {
+		return x.Channels
+	}
+	return nil
+}
+
+type UpsertNotificationChannelRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Empty creates a channel. Set it to update.
+	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Name      string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Kind      string `protobuf:"bytes,4,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Write-only. Empty on update keeps the stored target.
+	Target        string   `protobuf:"bytes,5,opt,name=target,proto3" json:"target,omitempty"`
+	Events        []string `protobuf:"bytes,6,rep,name=events,proto3" json:"events,omitempty"`
+	Enabled       bool     `protobuf:"varint,7,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertNotificationChannelRequest) Reset() {
+	*x = UpsertNotificationChannelRequest{}
+	mi := &file_v1_workload_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertNotificationChannelRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertNotificationChannelRequest) ProtoMessage() {}
+
+func (x *UpsertNotificationChannelRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertNotificationChannelRequest.ProtoReflect.Descriptor instead.
+func (*UpsertNotificationChannelRequest) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *UpsertNotificationChannelRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpsertNotificationChannelRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *UpsertNotificationChannelRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpsertNotificationChannelRequest) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *UpsertNotificationChannelRequest) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
+func (x *UpsertNotificationChannelRequest) GetEvents() []string {
+	if x != nil {
+		return x.Events
+	}
+	return nil
+}
+
+func (x *UpsertNotificationChannelRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type UpsertNotificationChannelResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Channel       *NotificationChannel   `protobuf:"bytes,1,opt,name=channel,proto3" json:"channel,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertNotificationChannelResponse) Reset() {
+	*x = UpsertNotificationChannelResponse{}
+	mi := &file_v1_workload_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertNotificationChannelResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertNotificationChannelResponse) ProtoMessage() {}
+
+func (x *UpsertNotificationChannelResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertNotificationChannelResponse.ProtoReflect.Descriptor instead.
+func (*UpsertNotificationChannelResponse) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *UpsertNotificationChannelResponse) GetChannel() *NotificationChannel {
+	if x != nil {
+		return x.Channel
+	}
+	return nil
+}
+
+type DeleteNotificationChannelRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteNotificationChannelRequest) Reset() {
+	*x = DeleteNotificationChannelRequest{}
+	mi := &file_v1_workload_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteNotificationChannelRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteNotificationChannelRequest) ProtoMessage() {}
+
+func (x *DeleteNotificationChannelRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteNotificationChannelRequest.ProtoReflect.Descriptor instead.
+func (*DeleteNotificationChannelRequest) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{73}
+}
+
+func (x *DeleteNotificationChannelRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type DeleteNotificationChannelResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteNotificationChannelResponse) Reset() {
+	*x = DeleteNotificationChannelResponse{}
+	mi := &file_v1_workload_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteNotificationChannelResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteNotificationChannelResponse) ProtoMessage() {}
+
+func (x *DeleteNotificationChannelResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_workload_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteNotificationChannelResponse.ProtoReflect.Descriptor instead.
+func (*DeleteNotificationChannelResponse) Descriptor() ([]byte, []int) {
+	return file_v1_workload_proto_rawDescGZIP(), []int{74}
+}
+
 var File_v1_workload_proto protoreflect.FileDescriptor
 
 const file_v1_workload_proto_rawDesc = "" +
@@ -4799,7 +5199,36 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\bprojects\x18\x01 \x03(\v2\v.v1.ProjectR\bprojects\"&\n" +
 	"\x14DeleteProjectRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x17\n" +
-	"\x15DeleteProjectResponse*\xb7\x01\n" +
+	"\x15DeleteProjectResponse\"\xbf\x01\n" +
+	"\x13NotificationChannel\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
+	"\x04kind\x18\x04 \x01(\tR\x04kind\x12\x1f\n" +
+	"\vtarget_hint\x18\x05 \x01(\tR\n" +
+	"targetHint\x12\x16\n" +
+	"\x06events\x18\x06 \x03(\tR\x06events\x12\x18\n" +
+	"\aenabled\x18\a \x01(\bR\aenabled\"@\n" +
+	"\x1fListNotificationChannelsRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\"W\n" +
+	" ListNotificationChannelsResponse\x123\n" +
+	"\bchannels\x18\x01 \x03(\v2\x17.v1.NotificationChannelR\bchannels\"\xc3\x01\n" +
+	" UpsertNotificationChannelRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
+	"\x04kind\x18\x04 \x01(\tR\x04kind\x12\x16\n" +
+	"\x06target\x18\x05 \x01(\tR\x06target\x12\x16\n" +
+	"\x06events\x18\x06 \x03(\tR\x06events\x12\x18\n" +
+	"\aenabled\x18\a \x01(\bR\aenabled\"V\n" +
+	"!UpsertNotificationChannelResponse\x121\n" +
+	"\achannel\x18\x01 \x01(\v2\x17.v1.NotificationChannelR\achannel\"2\n" +
+	" DeleteNotificationChannelRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"#\n" +
+	"!DeleteNotificationChannelResponse*\xb7\x01\n" +
 	"\vRuntimeType\x12\x1c\n" +
 	"\x18RUNTIME_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16RUNTIME_TYPE_CONTAINER\x10\x01\x12\x1f\n" +
@@ -4833,11 +5262,14 @@ const file_v1_workload_proto_rawDesc = "" +
 	"\x10RollbackWorkload\x12\x1b.v1.RollbackWorkloadRequest\x1a\x1c.v1.RollbackWorkloadResponse\x12P\n" +
 	"\x11RevealWorkloadEnv\x12\x1c.v1.RevealWorkloadEnvRequest\x1a\x1d.v1.RevealWorkloadEnvResponse\x12Y\n" +
 	"\x14BackupWorkloadVolume\x12\x1f.v1.BackupWorkloadVolumeRequest\x1a .v1.BackupWorkloadVolumeResponse\x12Y\n" +
-	"\x14DeleteWorkloadVolume\x12\x1f.v1.DeleteWorkloadVolumeRequest\x1a .v1.DeleteWorkloadVolumeResponse2\xdf\x01\n" +
+	"\x14DeleteWorkloadVolume\x12\x1f.v1.DeleteWorkloadVolumeRequest\x1a .v1.DeleteWorkloadVolumeResponse2\x9a\x04\n" +
 	"\x0eProjectService\x12D\n" +
 	"\rCreateProject\x12\x18.v1.CreateProjectRequest\x1a\x19.v1.CreateProjectResponse\x12A\n" +
 	"\fListProjects\x12\x17.v1.ListProjectsRequest\x1a\x18.v1.ListProjectsResponse\x12D\n" +
-	"\rDeleteProject\x12\x18.v1.DeleteProjectRequest\x1a\x19.v1.DeleteProjectResponseB\x82\x01\n" +
+	"\rDeleteProject\x12\x18.v1.DeleteProjectRequest\x1a\x19.v1.DeleteProjectResponse\x12e\n" +
+	"\x18ListNotificationChannels\x12#.v1.ListNotificationChannelsRequest\x1a$.v1.ListNotificationChannelsResponse\x12h\n" +
+	"\x19UpsertNotificationChannel\x12$.v1.UpsertNotificationChannelRequest\x1a%.v1.UpsertNotificationChannelResponse\x12h\n" +
+	"\x19DeleteNotificationChannel\x12$.v1.DeleteNotificationChannelRequest\x1a%.v1.DeleteNotificationChannelResponseB\x82\x01\n" +
 	"\x06com.v1B\rWorkloadProtoP\x01ZAgithub.com/xiron902224/norix/control-plane/internal/gen/v1;paasv1\xa2\x02\x03VXX\xaa\x02\x02V1\xca\x02\x02V1\xe2\x02\x0eV1\\GPBMetadata\xea\x02\x02V1b\x06proto3"
 
 var (
@@ -4853,95 +5285,102 @@ func file_v1_workload_proto_rawDescGZIP() []byte {
 }
 
 var file_v1_workload_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 80)
+var file_v1_workload_proto_msgTypes = make([]protoimpl.MessageInfo, 87)
 var file_v1_workload_proto_goTypes = []any{
-	(RuntimeType)(0),                      // 0: v1.RuntimeType
-	(*Workload)(nil),                      // 1: v1.Workload
-	(*VolumeMount)(nil),                   // 2: v1.VolumeMount
-	(*ListWorkloadsRequest)(nil),          // 3: v1.ListWorkloadsRequest
-	(*ListWorkloadsResponse)(nil),         // 4: v1.ListWorkloadsResponse
-	(*UpdateWorkloadRequest)(nil),         // 5: v1.UpdateWorkloadRequest
-	(*UpdateWorkloadResponse)(nil),        // 6: v1.UpdateWorkloadResponse
-	(*DeleteWorkloadRequest)(nil),         // 7: v1.DeleteWorkloadRequest
-	(*StopWorkloadRequest)(nil),           // 8: v1.StopWorkloadRequest
-	(*StopWorkloadResponse)(nil),          // 9: v1.StopWorkloadResponse
-	(*DeleteWorkloadResponse)(nil),        // 10: v1.DeleteWorkloadResponse
-	(*CreateWorkloadRequest)(nil),         // 11: v1.CreateWorkloadRequest
-	(*CreateWorkloadResponse)(nil),        // 12: v1.CreateWorkloadResponse
-	(*DeployRequest)(nil),                 // 13: v1.DeployRequest
-	(*DeployResponse)(nil),                // 14: v1.DeployResponse
-	(*GetWorkloadLogsRequest)(nil),        // 15: v1.GetWorkloadLogsRequest
-	(*GetWorkloadLogsResponse)(nil),       // 16: v1.GetWorkloadLogsResponse
-	(*Build)(nil),                         // 17: v1.Build
-	(*DeployFromGitRequest)(nil),          // 18: v1.DeployFromGitRequest
-	(*DeployFromGitResponse)(nil),         // 19: v1.DeployFromGitResponse
-	(*ComposePortMap)(nil),                // 20: v1.ComposePortMap
-	(*ComposeServiceSpec)(nil),            // 21: v1.ComposeServiceSpec
-	(*AnalyzeComposeFromGitRequest)(nil),  // 22: v1.AnalyzeComposeFromGitRequest
-	(*AnalyzeComposeFromGitResponse)(nil), // 23: v1.AnalyzeComposeFromGitResponse
-	(*DeployComposeStackRequest)(nil),     // 24: v1.DeployComposeStackRequest
-	(*DeployComposeStackResponse)(nil),    // 25: v1.DeployComposeStackResponse
-	(*ComposeStackService)(nil),           // 26: v1.ComposeStackService
-	(*ComposeVolume)(nil),                 // 27: v1.ComposeVolume
-	(*ComposeStack)(nil),                  // 28: v1.ComposeStack
-	(*CreateComposeStackRequest)(nil),     // 29: v1.CreateComposeStackRequest
-	(*UpdateComposeStackRequest)(nil),     // 30: v1.UpdateComposeStackRequest
-	(*UpdateComposeStackResponse)(nil),    // 31: v1.UpdateComposeStackResponse
-	(*CreateComposeStackResponse)(nil),    // 32: v1.CreateComposeStackResponse
-	(*ListComposeStacksRequest)(nil),      // 33: v1.ListComposeStacksRequest
-	(*ListComposeStacksResponse)(nil),     // 34: v1.ListComposeStacksResponse
-	(*GetComposeStackRequest)(nil),        // 35: v1.GetComposeStackRequest
-	(*ComposeStackLogLine)(nil),           // 36: v1.ComposeStackLogLine
-	(*GetComposeStackResponse)(nil),       // 37: v1.GetComposeStackResponse
-	(*ComposeStackActionRequest)(nil),     // 38: v1.ComposeStackActionRequest
-	(*ComposeStackActionResponse)(nil),    // 39: v1.ComposeStackActionResponse
-	(*ListBuildsRequest)(nil),             // 40: v1.ListBuildsRequest
-	(*ListBuildsResponse)(nil),            // 41: v1.ListBuildsResponse
-	(*GetBuildLogsRequest)(nil),           // 42: v1.GetBuildLogsRequest
-	(*GetBuildLogsResponse)(nil),          // 43: v1.GetBuildLogsResponse
-	(*DomainRoute)(nil),                   // 44: v1.DomainRoute
-	(*AssignDomainRequest)(nil),           // 45: v1.AssignDomainRequest
-	(*AssignDomainResponse)(nil),          // 46: v1.AssignDomainResponse
-	(*ListDomainsRequest)(nil),            // 47: v1.ListDomainsRequest
-	(*ListDomainsResponse)(nil),           // 48: v1.ListDomainsResponse
-	(*UnassignDomainRequest)(nil),         // 49: v1.UnassignDomainRequest
-	(*UnassignDomainResponse)(nil),        // 50: v1.UnassignDomainResponse
-	(*WorkloadRelease)(nil),               // 51: v1.WorkloadRelease
-	(*ListWorkloadReleasesRequest)(nil),   // 52: v1.ListWorkloadReleasesRequest
-	(*ListWorkloadReleasesResponse)(nil),  // 53: v1.ListWorkloadReleasesResponse
-	(*RollbackWorkloadRequest)(nil),       // 54: v1.RollbackWorkloadRequest
-	(*RollbackWorkloadResponse)(nil),      // 55: v1.RollbackWorkloadResponse
-	(*RevealWorkloadEnvRequest)(nil),      // 56: v1.RevealWorkloadEnvRequest
-	(*RevealWorkloadEnvResponse)(nil),     // 57: v1.RevealWorkloadEnvResponse
-	(*BackupWorkloadVolumeRequest)(nil),   // 58: v1.BackupWorkloadVolumeRequest
-	(*BackupWorkloadVolumeResponse)(nil),  // 59: v1.BackupWorkloadVolumeResponse
-	(*DeleteWorkloadVolumeRequest)(nil),   // 60: v1.DeleteWorkloadVolumeRequest
-	(*DeleteWorkloadVolumeResponse)(nil),  // 61: v1.DeleteWorkloadVolumeResponse
-	(*Project)(nil),                       // 62: v1.Project
-	(*CreateProjectRequest)(nil),          // 63: v1.CreateProjectRequest
-	(*CreateProjectResponse)(nil),         // 64: v1.CreateProjectResponse
-	(*ListProjectsRequest)(nil),           // 65: v1.ListProjectsRequest
-	(*ListProjectsResponse)(nil),          // 66: v1.ListProjectsResponse
-	(*DeleteProjectRequest)(nil),          // 67: v1.DeleteProjectRequest
-	(*DeleteProjectResponse)(nil),         // 68: v1.DeleteProjectResponse
-	nil,                                   // 69: v1.Workload.EnvVarsEntry
-	nil,                                   // 70: v1.Workload.AffinityLabelsEntry
-	nil,                                   // 71: v1.Workload.AntiAffinityLabelsEntry
-	nil,                                   // 72: v1.DeployFromGitRequest.BuildSecretsEntry
-	nil,                                   // 73: v1.ComposeServiceSpec.EnvironmentEntry
-	nil,                                   // 74: v1.ComposeStack.DomainsEntry
-	nil,                                   // 75: v1.CreateComposeStackRequest.DomainsEntry
-	nil,                                   // 76: v1.CreateComposeStackRequest.VariablesEntry
-	nil,                                   // 77: v1.UpdateComposeStackRequest.DomainsEntry
-	nil,                                   // 78: v1.UpdateComposeStackRequest.VariablesEntry
-	nil,                                   // 79: v1.WorkloadRelease.EnvVarsEntry
-	nil,                                   // 80: v1.RevealWorkloadEnvResponse.EnvVarsEntry
+	(RuntimeType)(0),                          // 0: v1.RuntimeType
+	(*Workload)(nil),                          // 1: v1.Workload
+	(*VolumeMount)(nil),                       // 2: v1.VolumeMount
+	(*ListWorkloadsRequest)(nil),              // 3: v1.ListWorkloadsRequest
+	(*ListWorkloadsResponse)(nil),             // 4: v1.ListWorkloadsResponse
+	(*UpdateWorkloadRequest)(nil),             // 5: v1.UpdateWorkloadRequest
+	(*UpdateWorkloadResponse)(nil),            // 6: v1.UpdateWorkloadResponse
+	(*DeleteWorkloadRequest)(nil),             // 7: v1.DeleteWorkloadRequest
+	(*StopWorkloadRequest)(nil),               // 8: v1.StopWorkloadRequest
+	(*StopWorkloadResponse)(nil),              // 9: v1.StopWorkloadResponse
+	(*DeleteWorkloadResponse)(nil),            // 10: v1.DeleteWorkloadResponse
+	(*CreateWorkloadRequest)(nil),             // 11: v1.CreateWorkloadRequest
+	(*CreateWorkloadResponse)(nil),            // 12: v1.CreateWorkloadResponse
+	(*DeployRequest)(nil),                     // 13: v1.DeployRequest
+	(*DeployResponse)(nil),                    // 14: v1.DeployResponse
+	(*GetWorkloadLogsRequest)(nil),            // 15: v1.GetWorkloadLogsRequest
+	(*GetWorkloadLogsResponse)(nil),           // 16: v1.GetWorkloadLogsResponse
+	(*Build)(nil),                             // 17: v1.Build
+	(*DeployFromGitRequest)(nil),              // 18: v1.DeployFromGitRequest
+	(*DeployFromGitResponse)(nil),             // 19: v1.DeployFromGitResponse
+	(*ComposePortMap)(nil),                    // 20: v1.ComposePortMap
+	(*ComposeServiceSpec)(nil),                // 21: v1.ComposeServiceSpec
+	(*AnalyzeComposeFromGitRequest)(nil),      // 22: v1.AnalyzeComposeFromGitRequest
+	(*AnalyzeComposeFromGitResponse)(nil),     // 23: v1.AnalyzeComposeFromGitResponse
+	(*DeployComposeStackRequest)(nil),         // 24: v1.DeployComposeStackRequest
+	(*DeployComposeStackResponse)(nil),        // 25: v1.DeployComposeStackResponse
+	(*ComposeStackService)(nil),               // 26: v1.ComposeStackService
+	(*ComposeVolume)(nil),                     // 27: v1.ComposeVolume
+	(*ComposeStack)(nil),                      // 28: v1.ComposeStack
+	(*CreateComposeStackRequest)(nil),         // 29: v1.CreateComposeStackRequest
+	(*UpdateComposeStackRequest)(nil),         // 30: v1.UpdateComposeStackRequest
+	(*UpdateComposeStackResponse)(nil),        // 31: v1.UpdateComposeStackResponse
+	(*CreateComposeStackResponse)(nil),        // 32: v1.CreateComposeStackResponse
+	(*ListComposeStacksRequest)(nil),          // 33: v1.ListComposeStacksRequest
+	(*ListComposeStacksResponse)(nil),         // 34: v1.ListComposeStacksResponse
+	(*GetComposeStackRequest)(nil),            // 35: v1.GetComposeStackRequest
+	(*ComposeStackLogLine)(nil),               // 36: v1.ComposeStackLogLine
+	(*GetComposeStackResponse)(nil),           // 37: v1.GetComposeStackResponse
+	(*ComposeStackActionRequest)(nil),         // 38: v1.ComposeStackActionRequest
+	(*ComposeStackActionResponse)(nil),        // 39: v1.ComposeStackActionResponse
+	(*ListBuildsRequest)(nil),                 // 40: v1.ListBuildsRequest
+	(*ListBuildsResponse)(nil),                // 41: v1.ListBuildsResponse
+	(*GetBuildLogsRequest)(nil),               // 42: v1.GetBuildLogsRequest
+	(*GetBuildLogsResponse)(nil),              // 43: v1.GetBuildLogsResponse
+	(*DomainRoute)(nil),                       // 44: v1.DomainRoute
+	(*AssignDomainRequest)(nil),               // 45: v1.AssignDomainRequest
+	(*AssignDomainResponse)(nil),              // 46: v1.AssignDomainResponse
+	(*ListDomainsRequest)(nil),                // 47: v1.ListDomainsRequest
+	(*ListDomainsResponse)(nil),               // 48: v1.ListDomainsResponse
+	(*UnassignDomainRequest)(nil),             // 49: v1.UnassignDomainRequest
+	(*UnassignDomainResponse)(nil),            // 50: v1.UnassignDomainResponse
+	(*WorkloadRelease)(nil),                   // 51: v1.WorkloadRelease
+	(*ListWorkloadReleasesRequest)(nil),       // 52: v1.ListWorkloadReleasesRequest
+	(*ListWorkloadReleasesResponse)(nil),      // 53: v1.ListWorkloadReleasesResponse
+	(*RollbackWorkloadRequest)(nil),           // 54: v1.RollbackWorkloadRequest
+	(*RollbackWorkloadResponse)(nil),          // 55: v1.RollbackWorkloadResponse
+	(*RevealWorkloadEnvRequest)(nil),          // 56: v1.RevealWorkloadEnvRequest
+	(*RevealWorkloadEnvResponse)(nil),         // 57: v1.RevealWorkloadEnvResponse
+	(*BackupWorkloadVolumeRequest)(nil),       // 58: v1.BackupWorkloadVolumeRequest
+	(*BackupWorkloadVolumeResponse)(nil),      // 59: v1.BackupWorkloadVolumeResponse
+	(*DeleteWorkloadVolumeRequest)(nil),       // 60: v1.DeleteWorkloadVolumeRequest
+	(*DeleteWorkloadVolumeResponse)(nil),      // 61: v1.DeleteWorkloadVolumeResponse
+	(*Project)(nil),                           // 62: v1.Project
+	(*CreateProjectRequest)(nil),              // 63: v1.CreateProjectRequest
+	(*CreateProjectResponse)(nil),             // 64: v1.CreateProjectResponse
+	(*ListProjectsRequest)(nil),               // 65: v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),              // 66: v1.ListProjectsResponse
+	(*DeleteProjectRequest)(nil),              // 67: v1.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),             // 68: v1.DeleteProjectResponse
+	(*NotificationChannel)(nil),               // 69: v1.NotificationChannel
+	(*ListNotificationChannelsRequest)(nil),   // 70: v1.ListNotificationChannelsRequest
+	(*ListNotificationChannelsResponse)(nil),  // 71: v1.ListNotificationChannelsResponse
+	(*UpsertNotificationChannelRequest)(nil),  // 72: v1.UpsertNotificationChannelRequest
+	(*UpsertNotificationChannelResponse)(nil), // 73: v1.UpsertNotificationChannelResponse
+	(*DeleteNotificationChannelRequest)(nil),  // 74: v1.DeleteNotificationChannelRequest
+	(*DeleteNotificationChannelResponse)(nil), // 75: v1.DeleteNotificationChannelResponse
+	nil, // 76: v1.Workload.EnvVarsEntry
+	nil, // 77: v1.Workload.AffinityLabelsEntry
+	nil, // 78: v1.Workload.AntiAffinityLabelsEntry
+	nil, // 79: v1.DeployFromGitRequest.BuildSecretsEntry
+	nil, // 80: v1.ComposeServiceSpec.EnvironmentEntry
+	nil, // 81: v1.ComposeStack.DomainsEntry
+	nil, // 82: v1.CreateComposeStackRequest.DomainsEntry
+	nil, // 83: v1.CreateComposeStackRequest.VariablesEntry
+	nil, // 84: v1.UpdateComposeStackRequest.DomainsEntry
+	nil, // 85: v1.UpdateComposeStackRequest.VariablesEntry
+	nil, // 86: v1.WorkloadRelease.EnvVarsEntry
+	nil, // 87: v1.RevealWorkloadEnvResponse.EnvVarsEntry
 }
 var file_v1_workload_proto_depIdxs = []int32{
 	0,  // 0: v1.Workload.runtime:type_name -> v1.RuntimeType
-	69, // 1: v1.Workload.env_vars:type_name -> v1.Workload.EnvVarsEntry
-	70, // 2: v1.Workload.affinity_labels:type_name -> v1.Workload.AffinityLabelsEntry
-	71, // 3: v1.Workload.anti_affinity_labels:type_name -> v1.Workload.AntiAffinityLabelsEntry
+	76, // 1: v1.Workload.env_vars:type_name -> v1.Workload.EnvVarsEntry
+	77, // 2: v1.Workload.affinity_labels:type_name -> v1.Workload.AffinityLabelsEntry
+	78, // 3: v1.Workload.anti_affinity_labels:type_name -> v1.Workload.AntiAffinityLabelsEntry
 	2,  // 4: v1.Workload.volume_mounts:type_name -> v1.VolumeMount
 	1,  // 5: v1.ListWorkloadsResponse.workloads:type_name -> v1.Workload
 	1,  // 6: v1.UpdateWorkloadRequest.workload:type_name -> v1.Workload
@@ -4949,19 +5388,19 @@ var file_v1_workload_proto_depIdxs = []int32{
 	1,  // 8: v1.CreateWorkloadRequest.workload:type_name -> v1.Workload
 	1,  // 9: v1.CreateWorkloadResponse.workload:type_name -> v1.Workload
 	1,  // 10: v1.DeployRequest.workload:type_name -> v1.Workload
-	72, // 11: v1.DeployFromGitRequest.build_secrets:type_name -> v1.DeployFromGitRequest.BuildSecretsEntry
+	79, // 11: v1.DeployFromGitRequest.build_secrets:type_name -> v1.DeployFromGitRequest.BuildSecretsEntry
 	20, // 12: v1.ComposeServiceSpec.published_ports:type_name -> v1.ComposePortMap
-	73, // 13: v1.ComposeServiceSpec.environment:type_name -> v1.ComposeServiceSpec.EnvironmentEntry
+	80, // 13: v1.ComposeServiceSpec.environment:type_name -> v1.ComposeServiceSpec.EnvironmentEntry
 	21, // 14: v1.AnalyzeComposeFromGitResponse.services:type_name -> v1.ComposeServiceSpec
 	21, // 15: v1.DeployComposeStackRequest.services:type_name -> v1.ComposeServiceSpec
 	1,  // 16: v1.DeployComposeStackResponse.workloads:type_name -> v1.Workload
 	26, // 17: v1.ComposeStack.services:type_name -> v1.ComposeStackService
-	74, // 18: v1.ComposeStack.domains:type_name -> v1.ComposeStack.DomainsEntry
+	81, // 18: v1.ComposeStack.domains:type_name -> v1.ComposeStack.DomainsEntry
 	27, // 19: v1.ComposeStack.volumes:type_name -> v1.ComposeVolume
-	75, // 20: v1.CreateComposeStackRequest.domains:type_name -> v1.CreateComposeStackRequest.DomainsEntry
-	76, // 21: v1.CreateComposeStackRequest.variables:type_name -> v1.CreateComposeStackRequest.VariablesEntry
-	77, // 22: v1.UpdateComposeStackRequest.domains:type_name -> v1.UpdateComposeStackRequest.DomainsEntry
-	78, // 23: v1.UpdateComposeStackRequest.variables:type_name -> v1.UpdateComposeStackRequest.VariablesEntry
+	82, // 20: v1.CreateComposeStackRequest.domains:type_name -> v1.CreateComposeStackRequest.DomainsEntry
+	83, // 21: v1.CreateComposeStackRequest.variables:type_name -> v1.CreateComposeStackRequest.VariablesEntry
+	84, // 22: v1.UpdateComposeStackRequest.domains:type_name -> v1.UpdateComposeStackRequest.DomainsEntry
+	85, // 23: v1.UpdateComposeStackRequest.variables:type_name -> v1.UpdateComposeStackRequest.VariablesEntry
 	28, // 24: v1.UpdateComposeStackResponse.stack:type_name -> v1.ComposeStack
 	28, // 25: v1.CreateComposeStackResponse.stack:type_name -> v1.ComposeStack
 	28, // 26: v1.ListComposeStacksResponse.stacks:type_name -> v1.ComposeStack
@@ -4972,73 +5411,81 @@ var file_v1_workload_proto_depIdxs = []int32{
 	17, // 31: v1.GetBuildLogsResponse.build:type_name -> v1.Build
 	44, // 32: v1.AssignDomainResponse.route:type_name -> v1.DomainRoute
 	44, // 33: v1.ListDomainsResponse.routes:type_name -> v1.DomainRoute
-	79, // 34: v1.WorkloadRelease.env_vars:type_name -> v1.WorkloadRelease.EnvVarsEntry
+	86, // 34: v1.WorkloadRelease.env_vars:type_name -> v1.WorkloadRelease.EnvVarsEntry
 	51, // 35: v1.ListWorkloadReleasesResponse.releases:type_name -> v1.WorkloadRelease
 	51, // 36: v1.RollbackWorkloadResponse.release:type_name -> v1.WorkloadRelease
-	80, // 37: v1.RevealWorkloadEnvResponse.env_vars:type_name -> v1.RevealWorkloadEnvResponse.EnvVarsEntry
+	87, // 37: v1.RevealWorkloadEnvResponse.env_vars:type_name -> v1.RevealWorkloadEnvResponse.EnvVarsEntry
 	62, // 38: v1.CreateProjectResponse.project:type_name -> v1.Project
 	62, // 39: v1.ListProjectsResponse.projects:type_name -> v1.Project
-	11, // 40: v1.WorkloadService.CreateWorkload:input_type -> v1.CreateWorkloadRequest
-	13, // 41: v1.WorkloadService.Deploy:input_type -> v1.DeployRequest
-	18, // 42: v1.WorkloadService.DeployFromGit:input_type -> v1.DeployFromGitRequest
-	22, // 43: v1.WorkloadService.AnalyzeComposeFromGit:input_type -> v1.AnalyzeComposeFromGitRequest
-	24, // 44: v1.WorkloadService.DeployComposeStack:input_type -> v1.DeployComposeStackRequest
-	29, // 45: v1.WorkloadService.CreateComposeStack:input_type -> v1.CreateComposeStackRequest
-	33, // 46: v1.WorkloadService.ListComposeStacks:input_type -> v1.ListComposeStacksRequest
-	35, // 47: v1.WorkloadService.GetComposeStack:input_type -> v1.GetComposeStackRequest
-	30, // 48: v1.WorkloadService.UpdateComposeStack:input_type -> v1.UpdateComposeStackRequest
-	38, // 49: v1.WorkloadService.ComposeStackAction:input_type -> v1.ComposeStackActionRequest
-	3,  // 50: v1.WorkloadService.ListWorkloads:input_type -> v1.ListWorkloadsRequest
-	5,  // 51: v1.WorkloadService.UpdateWorkload:input_type -> v1.UpdateWorkloadRequest
-	7,  // 52: v1.WorkloadService.DeleteWorkload:input_type -> v1.DeleteWorkloadRequest
-	8,  // 53: v1.WorkloadService.StopWorkload:input_type -> v1.StopWorkloadRequest
-	15, // 54: v1.WorkloadService.GetWorkloadLogs:input_type -> v1.GetWorkloadLogsRequest
-	40, // 55: v1.WorkloadService.ListBuilds:input_type -> v1.ListBuildsRequest
-	42, // 56: v1.WorkloadService.GetBuildLogs:input_type -> v1.GetBuildLogsRequest
-	45, // 57: v1.WorkloadService.AssignDomain:input_type -> v1.AssignDomainRequest
-	47, // 58: v1.WorkloadService.ListDomains:input_type -> v1.ListDomainsRequest
-	49, // 59: v1.WorkloadService.UnassignDomain:input_type -> v1.UnassignDomainRequest
-	52, // 60: v1.WorkloadService.ListWorkloadReleases:input_type -> v1.ListWorkloadReleasesRequest
-	54, // 61: v1.WorkloadService.RollbackWorkload:input_type -> v1.RollbackWorkloadRequest
-	56, // 62: v1.WorkloadService.RevealWorkloadEnv:input_type -> v1.RevealWorkloadEnvRequest
-	58, // 63: v1.WorkloadService.BackupWorkloadVolume:input_type -> v1.BackupWorkloadVolumeRequest
-	60, // 64: v1.WorkloadService.DeleteWorkloadVolume:input_type -> v1.DeleteWorkloadVolumeRequest
-	63, // 65: v1.ProjectService.CreateProject:input_type -> v1.CreateProjectRequest
-	65, // 66: v1.ProjectService.ListProjects:input_type -> v1.ListProjectsRequest
-	67, // 67: v1.ProjectService.DeleteProject:input_type -> v1.DeleteProjectRequest
-	12, // 68: v1.WorkloadService.CreateWorkload:output_type -> v1.CreateWorkloadResponse
-	14, // 69: v1.WorkloadService.Deploy:output_type -> v1.DeployResponse
-	19, // 70: v1.WorkloadService.DeployFromGit:output_type -> v1.DeployFromGitResponse
-	23, // 71: v1.WorkloadService.AnalyzeComposeFromGit:output_type -> v1.AnalyzeComposeFromGitResponse
-	25, // 72: v1.WorkloadService.DeployComposeStack:output_type -> v1.DeployComposeStackResponse
-	32, // 73: v1.WorkloadService.CreateComposeStack:output_type -> v1.CreateComposeStackResponse
-	34, // 74: v1.WorkloadService.ListComposeStacks:output_type -> v1.ListComposeStacksResponse
-	37, // 75: v1.WorkloadService.GetComposeStack:output_type -> v1.GetComposeStackResponse
-	31, // 76: v1.WorkloadService.UpdateComposeStack:output_type -> v1.UpdateComposeStackResponse
-	39, // 77: v1.WorkloadService.ComposeStackAction:output_type -> v1.ComposeStackActionResponse
-	4,  // 78: v1.WorkloadService.ListWorkloads:output_type -> v1.ListWorkloadsResponse
-	6,  // 79: v1.WorkloadService.UpdateWorkload:output_type -> v1.UpdateWorkloadResponse
-	10, // 80: v1.WorkloadService.DeleteWorkload:output_type -> v1.DeleteWorkloadResponse
-	9,  // 81: v1.WorkloadService.StopWorkload:output_type -> v1.StopWorkloadResponse
-	16, // 82: v1.WorkloadService.GetWorkloadLogs:output_type -> v1.GetWorkloadLogsResponse
-	41, // 83: v1.WorkloadService.ListBuilds:output_type -> v1.ListBuildsResponse
-	43, // 84: v1.WorkloadService.GetBuildLogs:output_type -> v1.GetBuildLogsResponse
-	46, // 85: v1.WorkloadService.AssignDomain:output_type -> v1.AssignDomainResponse
-	48, // 86: v1.WorkloadService.ListDomains:output_type -> v1.ListDomainsResponse
-	50, // 87: v1.WorkloadService.UnassignDomain:output_type -> v1.UnassignDomainResponse
-	53, // 88: v1.WorkloadService.ListWorkloadReleases:output_type -> v1.ListWorkloadReleasesResponse
-	55, // 89: v1.WorkloadService.RollbackWorkload:output_type -> v1.RollbackWorkloadResponse
-	57, // 90: v1.WorkloadService.RevealWorkloadEnv:output_type -> v1.RevealWorkloadEnvResponse
-	59, // 91: v1.WorkloadService.BackupWorkloadVolume:output_type -> v1.BackupWorkloadVolumeResponse
-	61, // 92: v1.WorkloadService.DeleteWorkloadVolume:output_type -> v1.DeleteWorkloadVolumeResponse
-	64, // 93: v1.ProjectService.CreateProject:output_type -> v1.CreateProjectResponse
-	66, // 94: v1.ProjectService.ListProjects:output_type -> v1.ListProjectsResponse
-	68, // 95: v1.ProjectService.DeleteProject:output_type -> v1.DeleteProjectResponse
-	68, // [68:96] is the sub-list for method output_type
-	40, // [40:68] is the sub-list for method input_type
-	40, // [40:40] is the sub-list for extension type_name
-	40, // [40:40] is the sub-list for extension extendee
-	0,  // [0:40] is the sub-list for field type_name
+	69, // 40: v1.ListNotificationChannelsResponse.channels:type_name -> v1.NotificationChannel
+	69, // 41: v1.UpsertNotificationChannelResponse.channel:type_name -> v1.NotificationChannel
+	11, // 42: v1.WorkloadService.CreateWorkload:input_type -> v1.CreateWorkloadRequest
+	13, // 43: v1.WorkloadService.Deploy:input_type -> v1.DeployRequest
+	18, // 44: v1.WorkloadService.DeployFromGit:input_type -> v1.DeployFromGitRequest
+	22, // 45: v1.WorkloadService.AnalyzeComposeFromGit:input_type -> v1.AnalyzeComposeFromGitRequest
+	24, // 46: v1.WorkloadService.DeployComposeStack:input_type -> v1.DeployComposeStackRequest
+	29, // 47: v1.WorkloadService.CreateComposeStack:input_type -> v1.CreateComposeStackRequest
+	33, // 48: v1.WorkloadService.ListComposeStacks:input_type -> v1.ListComposeStacksRequest
+	35, // 49: v1.WorkloadService.GetComposeStack:input_type -> v1.GetComposeStackRequest
+	30, // 50: v1.WorkloadService.UpdateComposeStack:input_type -> v1.UpdateComposeStackRequest
+	38, // 51: v1.WorkloadService.ComposeStackAction:input_type -> v1.ComposeStackActionRequest
+	3,  // 52: v1.WorkloadService.ListWorkloads:input_type -> v1.ListWorkloadsRequest
+	5,  // 53: v1.WorkloadService.UpdateWorkload:input_type -> v1.UpdateWorkloadRequest
+	7,  // 54: v1.WorkloadService.DeleteWorkload:input_type -> v1.DeleteWorkloadRequest
+	8,  // 55: v1.WorkloadService.StopWorkload:input_type -> v1.StopWorkloadRequest
+	15, // 56: v1.WorkloadService.GetWorkloadLogs:input_type -> v1.GetWorkloadLogsRequest
+	40, // 57: v1.WorkloadService.ListBuilds:input_type -> v1.ListBuildsRequest
+	42, // 58: v1.WorkloadService.GetBuildLogs:input_type -> v1.GetBuildLogsRequest
+	45, // 59: v1.WorkloadService.AssignDomain:input_type -> v1.AssignDomainRequest
+	47, // 60: v1.WorkloadService.ListDomains:input_type -> v1.ListDomainsRequest
+	49, // 61: v1.WorkloadService.UnassignDomain:input_type -> v1.UnassignDomainRequest
+	52, // 62: v1.WorkloadService.ListWorkloadReleases:input_type -> v1.ListWorkloadReleasesRequest
+	54, // 63: v1.WorkloadService.RollbackWorkload:input_type -> v1.RollbackWorkloadRequest
+	56, // 64: v1.WorkloadService.RevealWorkloadEnv:input_type -> v1.RevealWorkloadEnvRequest
+	58, // 65: v1.WorkloadService.BackupWorkloadVolume:input_type -> v1.BackupWorkloadVolumeRequest
+	60, // 66: v1.WorkloadService.DeleteWorkloadVolume:input_type -> v1.DeleteWorkloadVolumeRequest
+	63, // 67: v1.ProjectService.CreateProject:input_type -> v1.CreateProjectRequest
+	65, // 68: v1.ProjectService.ListProjects:input_type -> v1.ListProjectsRequest
+	67, // 69: v1.ProjectService.DeleteProject:input_type -> v1.DeleteProjectRequest
+	70, // 70: v1.ProjectService.ListNotificationChannels:input_type -> v1.ListNotificationChannelsRequest
+	72, // 71: v1.ProjectService.UpsertNotificationChannel:input_type -> v1.UpsertNotificationChannelRequest
+	74, // 72: v1.ProjectService.DeleteNotificationChannel:input_type -> v1.DeleteNotificationChannelRequest
+	12, // 73: v1.WorkloadService.CreateWorkload:output_type -> v1.CreateWorkloadResponse
+	14, // 74: v1.WorkloadService.Deploy:output_type -> v1.DeployResponse
+	19, // 75: v1.WorkloadService.DeployFromGit:output_type -> v1.DeployFromGitResponse
+	23, // 76: v1.WorkloadService.AnalyzeComposeFromGit:output_type -> v1.AnalyzeComposeFromGitResponse
+	25, // 77: v1.WorkloadService.DeployComposeStack:output_type -> v1.DeployComposeStackResponse
+	32, // 78: v1.WorkloadService.CreateComposeStack:output_type -> v1.CreateComposeStackResponse
+	34, // 79: v1.WorkloadService.ListComposeStacks:output_type -> v1.ListComposeStacksResponse
+	37, // 80: v1.WorkloadService.GetComposeStack:output_type -> v1.GetComposeStackResponse
+	31, // 81: v1.WorkloadService.UpdateComposeStack:output_type -> v1.UpdateComposeStackResponse
+	39, // 82: v1.WorkloadService.ComposeStackAction:output_type -> v1.ComposeStackActionResponse
+	4,  // 83: v1.WorkloadService.ListWorkloads:output_type -> v1.ListWorkloadsResponse
+	6,  // 84: v1.WorkloadService.UpdateWorkload:output_type -> v1.UpdateWorkloadResponse
+	10, // 85: v1.WorkloadService.DeleteWorkload:output_type -> v1.DeleteWorkloadResponse
+	9,  // 86: v1.WorkloadService.StopWorkload:output_type -> v1.StopWorkloadResponse
+	16, // 87: v1.WorkloadService.GetWorkloadLogs:output_type -> v1.GetWorkloadLogsResponse
+	41, // 88: v1.WorkloadService.ListBuilds:output_type -> v1.ListBuildsResponse
+	43, // 89: v1.WorkloadService.GetBuildLogs:output_type -> v1.GetBuildLogsResponse
+	46, // 90: v1.WorkloadService.AssignDomain:output_type -> v1.AssignDomainResponse
+	48, // 91: v1.WorkloadService.ListDomains:output_type -> v1.ListDomainsResponse
+	50, // 92: v1.WorkloadService.UnassignDomain:output_type -> v1.UnassignDomainResponse
+	53, // 93: v1.WorkloadService.ListWorkloadReleases:output_type -> v1.ListWorkloadReleasesResponse
+	55, // 94: v1.WorkloadService.RollbackWorkload:output_type -> v1.RollbackWorkloadResponse
+	57, // 95: v1.WorkloadService.RevealWorkloadEnv:output_type -> v1.RevealWorkloadEnvResponse
+	59, // 96: v1.WorkloadService.BackupWorkloadVolume:output_type -> v1.BackupWorkloadVolumeResponse
+	61, // 97: v1.WorkloadService.DeleteWorkloadVolume:output_type -> v1.DeleteWorkloadVolumeResponse
+	64, // 98: v1.ProjectService.CreateProject:output_type -> v1.CreateProjectResponse
+	66, // 99: v1.ProjectService.ListProjects:output_type -> v1.ListProjectsResponse
+	68, // 100: v1.ProjectService.DeleteProject:output_type -> v1.DeleteProjectResponse
+	71, // 101: v1.ProjectService.ListNotificationChannels:output_type -> v1.ListNotificationChannelsResponse
+	73, // 102: v1.ProjectService.UpsertNotificationChannel:output_type -> v1.UpsertNotificationChannelResponse
+	75, // 103: v1.ProjectService.DeleteNotificationChannel:output_type -> v1.DeleteNotificationChannelResponse
+	73, // [73:104] is the sub-list for method output_type
+	42, // [42:73] is the sub-list for method input_type
+	42, // [42:42] is the sub-list for extension type_name
+	42, // [42:42] is the sub-list for extension extendee
+	0,  // [0:42] is the sub-list for field type_name
 }
 
 func init() { file_v1_workload_proto_init() }
@@ -5052,7 +5499,7 @@ func file_v1_workload_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_workload_proto_rawDesc), len(file_v1_workload_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   80,
+			NumMessages:   87,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

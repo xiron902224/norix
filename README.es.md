@@ -119,7 +119,7 @@ El CLI de usuario `norix` está escrito en **Rust** (mismo lenguaje que el agent
 3. **Schedule.** El control plane coloca réplicas (spread/binpack, zonas, KVM…).
 4. **Reconcile.** Agents aplican `run`/`stop` hasta igualar estado deseado.
 5. **Ruta + TLS.** Dominios vía Caddy; ACME cuando está configurado.
-6. **Operar.** Heartbeats, métricas, backups; cordon/drain antes de reprogramar.
+6. **Operar.** Heartbeats, métricas, backups y notificaciones por proyecto (webhook/Slack/Discord/email); cordon/drain antes de reprogramar.
 
 ---
 
