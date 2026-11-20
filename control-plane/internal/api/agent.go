@@ -65,6 +65,7 @@ func (service AgentService) EnrollNode(ctx context.Context, request *paasv1.Enro
 	if err != nil {
 		return nil, internalError("create node token", err)
 	}
+	// Node cap is checked inside EnrollNode after the join token resolves the org (#45).
 	node, organizationID, err := db.EnrollNode(
 		ctx,
 		service.pool,
@@ -76,6 +77,9 @@ func (service AgentService) EnrollNode(ctx context.Context, request *paasv1.Enro
 	if err != nil {
 		if strings.Contains(err.Error(), "join token is invalid") {
 			return nil, connect.NewError(connect.CodeUnauthenticated, "join token is invalid or expired")
+		}
+		if strings.Contains(err.Error(), "NORIX_MAX_NODES_PER_ORG") {
+			return nil, invalidArgument(err.Error())
 		}
 		return nil, internalError("enroll node", err)
 	}

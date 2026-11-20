@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/xiron902224/norix/control-plane/internal/limits"
 )
 
 type NodeCapabilities struct {
@@ -119,6 +120,15 @@ func EnrollNode(ctx context.Context, pool *pgxpool.Pool, joinTokenHash, nodeToke
 
 	if err := WithTenant(ctx, tx, organizationID); err != nil {
 		return Node{}, "", err
+	}
+
+	scale := limits.FromEnv()
+	var nodeCount int
+	if err := tx.QueryRow(ctx, `SELECT count(*) FROM nodes`).Scan(&nodeCount); err != nil {
+		return Node{}, "", err
+	}
+	if nodeCount >= scale.MaxNodesPerOrg {
+		return Node{}, "", fmt.Errorf("organization already has %d nodes (NORIX_MAX_NODES_PER_ORG=%d)", nodeCount, scale.MaxNodesPerOrg)
 	}
 
 	nodeName, err = uniqueNodeName(ctx, tx, organizationID, nodeName)

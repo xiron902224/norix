@@ -11,6 +11,7 @@ import (
 	"github.com/xiron902224/norix/control-plane/internal/db"
 	paasv1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
 	"github.com/xiron902224/norix/control-plane/internal/gitssrf"
+	"github.com/xiron902224/norix/control-plane/internal/limits"
 )
 
 type WorkloadService struct{ pool *pgxpool.Pool }
@@ -56,6 +57,9 @@ func workloadFromProto(workload *paasv1.Workload) (db.Workload, error) {
 	replicas := workload.GetReplicaCount()
 	if replicas <= 0 {
 		replicas = 1
+	}
+	if err := limits.FromEnv().CheckReplicas(replicas); err != nil {
+		return db.Workload{}, err
 	}
 	return db.Workload{
 		ID:                 workload.GetId(),
@@ -171,12 +175,15 @@ func (service WorkloadService) CreateWorkload(ctx context.Context, request *paas
 	}
 	workload, err := workloadFromProto(request.GetWorkload())
 	if err != nil {
-		return nil, err
+		return nil, invalidArgument(err.Error())
 	}
 	if workload.GitURL != "" {
 		if err := gitssrf.ValidateGitURL(workload.GitURL); err != nil {
 			return nil, invalidArgument(err.Error())
 		}
+	}
+	if err := db.EnsureScaleRoom(ctx, service.pool, identity.OrganizationID, workload.ProjectID, "workload"); err != nil {
+		return nil, invalidArgument(err.Error())
 	}
 	cpu := int32(1)
 	if workload.CPUShares > 0 {
@@ -233,7 +240,7 @@ func (service WorkloadService) UpdateWorkload(ctx context.Context, request *paas
 	}
 	workload, err := workloadFromProto(request.GetWorkload())
 	if err != nil {
-		return nil, err
+		return nil, invalidArgument(err.Error())
 	}
 	existing, err := db.GetWorkload(ctx, service.pool, identity.OrganizationID, workload.ID)
 	if err != nil {

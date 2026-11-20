@@ -29,6 +29,9 @@ func (service ProjectService) CreateProject(ctx context.Context, request *paasv1
 	if strings.TrimSpace(request.GetName()) == "" {
 		return nil, invalidArgument("project name is required")
 	}
+	if err := db.EnsureScaleRoom(ctx, service.pool, identity.OrganizationID, "", "project"); err != nil {
+		return nil, invalidArgument(err.Error())
+	}
 	project, err := db.CreateProject(ctx, service.pool, identity.OrganizationID, request.GetName(), db.AuditActor{
 		UserID: identity.UserID,
 		Email:  identity.Email,
