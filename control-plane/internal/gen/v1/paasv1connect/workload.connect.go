@@ -108,6 +108,15 @@ const (
 	// ProjectServiceDeleteProjectProcedure is the procedure name of the ProjectService's DeleteProject
 	// RPC.
 	ProjectServiceDeleteProjectProcedure = "/v1.ProjectService/DeleteProject"
+	// ProjectServiceListNotificationChannelsProcedure is the procedure name of the ProjectService's
+	// ListNotificationChannels RPC.
+	ProjectServiceListNotificationChannelsProcedure = "/v1.ProjectService/ListNotificationChannels"
+	// ProjectServiceUpsertNotificationChannelProcedure is the procedure name of the ProjectService's
+	// UpsertNotificationChannel RPC.
+	ProjectServiceUpsertNotificationChannelProcedure = "/v1.ProjectService/UpsertNotificationChannel"
+	// ProjectServiceDeleteNotificationChannelProcedure is the procedure name of the ProjectService's
+	// DeleteNotificationChannel RPC.
+	ProjectServiceDeleteNotificationChannelProcedure = "/v1.ProjectService/DeleteNotificationChannel"
 )
 
 var (
@@ -1015,6 +1024,27 @@ var (
 			Procedure:  ProjectServiceDeleteProjectProcedure,
 		}
 	})
+	projectServiceListNotificationChannelsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("ProjectService").Methods().ByName("ListNotificationChannels"),
+			Procedure:  ProjectServiceListNotificationChannelsProcedure,
+		}
+	})
+	projectServiceUpsertNotificationChannelSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("ProjectService").Methods().ByName("UpsertNotificationChannel"),
+			Procedure:  ProjectServiceUpsertNotificationChannelProcedure,
+		}
+	})
+	projectServiceDeleteNotificationChannelSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_workload_proto.Services().ByName("ProjectService").Methods().ByName("DeleteNotificationChannel"),
+			Procedure:  ProjectServiceDeleteNotificationChannelProcedure,
+		}
+	})
 )
 
 // ProjectServiceClient is a client for the v1.ProjectService service.
@@ -1022,6 +1052,9 @@ type ProjectServiceClient interface {
 	CreateProject(context.Context, *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error)
 	ListProjects(context.Context, *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error)
 	DeleteProject(context.Context, *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error)
+	ListNotificationChannels(context.Context, *v1.ListNotificationChannelsRequest) (*v1.ListNotificationChannelsResponse, error)
+	UpsertNotificationChannel(context.Context, *v1.UpsertNotificationChannelRequest) (*v1.UpsertNotificationChannelResponse, error)
+	DeleteNotificationChannel(context.Context, *v1.DeleteNotificationChannelRequest) (*v1.DeleteNotificationChannelResponse, error)
 }
 
 // NewProjectServiceClient constructs a client for the v1.ProjectService service. Multiple service
@@ -1035,6 +1068,9 @@ type ProjectServiceHandler interface {
 	CreateProject(context.Context, *v1.CreateProjectRequest) (*v1.CreateProjectResponse, error)
 	ListProjects(context.Context, *v1.ListProjectsRequest) (*v1.ListProjectsResponse, error)
 	DeleteProject(context.Context, *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error)
+	ListNotificationChannels(context.Context, *v1.ListNotificationChannelsRequest) (*v1.ListNotificationChannelsResponse, error)
+	UpsertNotificationChannel(context.Context, *v1.UpsertNotificationChannelRequest) (*v1.UpsertNotificationChannelResponse, error)
+	DeleteNotificationChannel(context.Context, *v1.DeleteNotificationChannelRequest) (*v1.DeleteNotificationChannelResponse, error)
 }
 
 // RegisterProjectServiceHandler registers svc as the v1.ProjectService implementation on server.
@@ -1044,6 +1080,9 @@ func RegisterProjectServiceHandler(server *connect.Server, svc ProjectServiceHan
 		connect.Method{Spec: projectServiceCreateProjectSpec(), Handler: adapter.createProject},
 		connect.Method{Spec: projectServiceListProjectsSpec(), Handler: adapter.listProjects},
 		connect.Method{Spec: projectServiceDeleteProjectSpec(), Handler: adapter.deleteProject},
+		connect.Method{Spec: projectServiceListNotificationChannelsSpec(), Handler: adapter.listNotificationChannels},
+		connect.Method{Spec: projectServiceUpsertNotificationChannelSpec(), Handler: adapter.upsertNotificationChannel},
+		connect.Method{Spec: projectServiceDeleteNotificationChannelSpec(), Handler: adapter.deleteNotificationChannel},
 	)
 }
 
@@ -1060,6 +1099,18 @@ func (UnimplementedProjectServiceHandler) ListProjects(context.Context, *v1.List
 
 func (UnimplementedProjectServiceHandler) DeleteProject(context.Context, *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.DeleteProject is not implemented")
+}
+
+func (UnimplementedProjectServiceHandler) ListNotificationChannels(context.Context, *v1.ListNotificationChannelsRequest) (*v1.ListNotificationChannelsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.ListNotificationChannels is not implemented")
+}
+
+func (UnimplementedProjectServiceHandler) UpsertNotificationChannel(context.Context, *v1.UpsertNotificationChannelRequest) (*v1.UpsertNotificationChannelResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.UpsertNotificationChannel is not implemented")
+}
+
+func (UnimplementedProjectServiceHandler) DeleteNotificationChannel(context.Context, *v1.DeleteNotificationChannelRequest) (*v1.DeleteNotificationChannelResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.ProjectService.DeleteNotificationChannel is not implemented")
 }
 
 type projectServiceClient struct {
@@ -1085,6 +1136,30 @@ func (c *projectServiceClient) ListProjects(ctx context.Context, req *v1.ListPro
 func (c *projectServiceClient) DeleteProject(ctx context.Context, req *v1.DeleteProjectRequest) (*v1.DeleteProjectResponse, error) {
 	var res v1.DeleteProjectResponse
 	if err := c.client.CallUnary(ctx, projectServiceDeleteProjectSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *projectServiceClient) ListNotificationChannels(ctx context.Context, req *v1.ListNotificationChannelsRequest) (*v1.ListNotificationChannelsResponse, error) {
+	var res v1.ListNotificationChannelsResponse
+	if err := c.client.CallUnary(ctx, projectServiceListNotificationChannelsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *projectServiceClient) UpsertNotificationChannel(ctx context.Context, req *v1.UpsertNotificationChannelRequest) (*v1.UpsertNotificationChannelResponse, error) {
+	var res v1.UpsertNotificationChannelResponse
+	if err := c.client.CallUnary(ctx, projectServiceUpsertNotificationChannelSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *projectServiceClient) DeleteNotificationChannel(ctx context.Context, req *v1.DeleteNotificationChannelRequest) (*v1.DeleteNotificationChannelResponse, error) {
+	var res v1.DeleteNotificationChannelResponse
+	if err := c.client.CallUnary(ctx, projectServiceDeleteNotificationChannelSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -1122,6 +1197,42 @@ func (h projectServiceHandler) deleteProject(ctx context.Context, _ connect.Spec
 		return err
 	}
 	res, err := h.svc.DeleteProject(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h projectServiceHandler) listNotificationChannels(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListNotificationChannelsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListNotificationChannels(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h projectServiceHandler) upsertNotificationChannel(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpsertNotificationChannelRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpsertNotificationChannel(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h projectServiceHandler) deleteNotificationChannel(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DeleteNotificationChannelRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DeleteNotificationChannel(ctx, &req)
 	if err != nil {
 		return err
 	}

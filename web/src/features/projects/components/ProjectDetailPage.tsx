@@ -25,6 +25,7 @@ import {
 import { parseDomainLines, parseServiceList, parseVariableLines } from '../services/compose-stack-form'
 import { EnvVarsEditor, envRowsToMap, type EnvRow } from './EnvVarsEditor'
 import { ComposeStacksPanel } from './ComposeStacksPanel'
+import { NotificationsPanel } from './NotificationsPanel'
 
 function artifactLabel(workload: Workload) {
   if (workload.sourceKind === 'git' || workload.gitUrl) {
@@ -409,6 +410,8 @@ export function ProjectDetailPage() {
       />
 
       <ComposeStacksPanel projectId={projectId} refreshKey={stackRefresh} />
+
+      <NotificationsPanel projectId={projectId} />
 
       <div className="compass-resource-section">
         <div className="compass-toolbar">

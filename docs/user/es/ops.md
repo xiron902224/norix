@@ -2,6 +2,21 @@
 
 Backups, restore, alertas y exports. Haz backup **antes** de actualizar ([guía](../../UPDATE_AND_UNINSTALL.md)). Verifica `/healthz` y agents online después.
 
+## Notificaciones de proyecto
+
+Cada proyecto puede avisar deploys y nodos caídos a webhook, Slack, Discord o email. En la UI: **Projects → proyecto → Notifications**.
+
+| Tipo | Destino | Notas |
+|---|---|---|
+| `webhook` | URL HTTPS | Cuerpo JSON con los campos del evento |
+| `slack` | Incoming webhook | Envía `{ "text": "…" }` |
+| `discord` | Incoming webhook | Envía `{ "content": "…" }` |
+| `email` | Dirección | Requiere `NORIX_SMTP_ADDR` y `NORIX_SMTP_FROM` en el control plane |
+
+Eventos: `deploy.succeeded`, `deploy.failed`, `node.down`. El control plane escribe una fila de outbox en la misma transacción del tenant y un worker la entrega con reintentos (hasta 6). El destino se cifra; la API solo devuelve una pista del host (o el email), nunca la ruta secreta.
+
+Las URLs de webhook pasan por la misma validación SSRF que los clones Git. Destinos privados o loopback necesitan `NORIX_GIT_SSRF_ALLOWLIST`. `NORIX_ALERT_WEBHOOK_URL` sigue siendo el webhook global de ops; los canales de proyecto son la ruta por app.
+
 ## Retención de logs
 
 El líder del control plane poda `workload_logs`, `build_logs` y `log_segments` cada ~20 s, por edad, por número de líneas y por bytes. La ficha del workload muestra esos defaults encima de los paneles de logs. Un deploy de imagen solo tiene logs de runtime; los de build aparecen tras un build desde git. Reinicia el proceso después de cambiar las variables.

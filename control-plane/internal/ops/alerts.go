@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,7 +14,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/xiron902224/norix/control-plane/internal/db"
+	"github.com/xiron902224/norix/control-plane/internal/gitssrf"
+	"github.com/xiron902224/norix/control-plane/internal/notify"
 )
+
+var errMissingTarget = errors.New("notification target is missing")
 
 func Start(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
 	if logger == nil {
@@ -76,7 +82,36 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger) {
 				"kind": "deploy.failed", "organization_id": orgID, "workload_id": workloadID, "message": msg,
 			})
 		}
+		if err := db.EnqueueRecentDeployEvents(ctx, pool, orgID); err != nil {
+			logger.Warn("enqueue deploy notifications", "org", orgID, "error", err)
+		}
+		if err := deliverProjectNotifications(ctx, pool, orgID, logger); err != nil {
+			logger.Warn("deliver notifications", "org", orgID, "error", err)
+		}
 	}
+}
+
+func deliverProjectNotifications(ctx context.Context, pool *pgxpool.Pool, orgID string, logger *slog.Logger) error {
+	due, err := db.ClaimDueNotifications(ctx, pool, orgID, 20)
+	if err != nil {
+		return err
+	}
+	policy := gitssrf.PolicyFromEnv()
+	for _, item := range due {
+		var sendErr error
+		if item.Target == "" {
+			sendErr = errMissingTarget
+		} else {
+			sendErr = notify.Deliver(ctx, item.Kind, item.Target, item.Payload, policy)
+		}
+		if sendErr != nil {
+			logger.Warn("notification delivery", "org", orgID, "id", item.ID, "kind", item.Kind, "error", sendErr)
+		}
+		if err := db.CompleteNotification(ctx, pool, orgID, item.ID, item.Attempts, sendErr); err != nil {
+			logger.Warn("notification complete", "org", orgID, "id", item.ID, "error", err)
+		}
+	}
+	return nil
 }
 
 func markStaleNodes(ctx context.Context, pool *pgxpool.Pool, orgID string) ([]db.Node, error) {
@@ -109,6 +144,21 @@ func markStaleNodes(ctx context.Context, pool *pgxpool.Pool, orgID string) ([]db
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	for _, node := range result {
+		seen := ""
+		if node.LastSeenAt != nil {
+			seen = fmt.Sprintf("%d", node.LastSeenAt.Unix())
+		}
+		payload := map[string]string{
+			"event":     "node.down",
+			"node_id":   node.ID,
+			"node_name": node.Name,
+			"message":   "node went offline (heartbeat timeout)",
+		}
+		if err := db.EnqueueNotification(ctx, tx, orgID, "", "node.down", "node.down:"+node.ID+":"+seen, payload); err != nil {
+			return nil, err
+		}
 	}
 	return result, tx.Commit(ctx)
 }

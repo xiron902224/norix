@@ -7,6 +7,21 @@
 - alert events
 - related audit / usage exports (API)
 
+## Project notifications
+
+Each project can send deploy and node events to webhook, Slack, Discord, or email. Open **Projects → project → Notifications**.
+
+| Kind | Target | Notes |
+|---|---|---|
+| `webhook` | HTTPS URL | JSON body with the event fields |
+| `slack` | Incoming webhook URL | Posts `{ "text": "…" }` |
+| `discord` | Incoming webhook URL | Posts `{ "content": "…" }` |
+| `email` | Address | Needs `NORIX_SMTP_ADDR` and `NORIX_SMTP_FROM` on the control plane |
+
+Events: `deploy.succeeded`, `deploy.failed`, `node.down`. The control plane writes an outbox row in the same tenant transaction as the event, then a worker delivers with exponential backoff (up to 6 attempts). Targets are encrypted at rest; the API only returns a host hint (or the email address), never the secret path.
+
+Webhook URLs go through the same SSRF checks as Git clone URLs. Private or loopback destinations need `NORIX_GIT_SSRF_ALLOWLIST`. The global `NORIX_ALERT_WEBHOOK_URL` still exists for platform-wide ops alerts; project channels are the per-app path.
+
 ## Recommended habit
 
 1. Backup before upgrades ([`UPDATE_AND_UNINSTALL.md`](../UPDATE_AND_UNINSTALL.md))

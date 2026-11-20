@@ -109,6 +109,26 @@ func TestParseAllowlist(t *testing.T) {
 	}
 }
 
+func TestValidateWebhookURL(t *testing.T) {
+	policy := Policy{Resolver: mapResolver{"hooks.slack.com": {net.ParseIP("1.2.3.4")}}}
+	if err := policy.ValidateWebhookURL("https://hooks.slack.com/services/T/B/secret"); err != nil {
+		t.Fatal(err)
+	}
+	if err := policy.ValidateWebhookURL("http://127.0.0.1/hook"); err == nil {
+		t.Fatal("loopback webhook must fail")
+	}
+	if err := policy.ValidateWebhookURL("https://user:token@hooks.slack.com/hook"); err == nil {
+		t.Fatal("credentials in the url must fail")
+	}
+	if err := policy.ValidateWebhookURL("file:///etc/passwd"); err == nil {
+		t.Fatal("file scheme must fail")
+	}
+	allowed := Policy{Allowlist: []string{"127.0.0.1"}}
+	if err := allowed.ValidateWebhookURL("http://127.0.0.1:9/hook"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExtractHost_SCP(t *testing.T) {
 	host, err := extractHost("git@github.com:org/repo.git")
 	if err != nil {

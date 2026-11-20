@@ -89,8 +89,10 @@ func (limiter *RateLimiter) allow(key string, limit int) bool {
 
 func isAuthenticatedMutateProcedure(procedure string) bool {
 	switch procedure {
-	case "/v1.ProjectService/CreateProject",
+	case 		"/v1.ProjectService/CreateProject",
 		"/v1.ProjectService/DeleteProject",
+		"/v1.ProjectService/UpsertNotificationChannel",
+		"/v1.ProjectService/DeleteNotificationChannel",
 		"/v1.WorkloadService/CreateWorkload",
 		"/v1.WorkloadService/UpdateWorkload",
 		"/v1.WorkloadService/DeleteWorkload",

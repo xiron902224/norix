@@ -166,7 +166,7 @@ Deleting a workload marks it **deleting**, stops the container on the owning nod
 | **Multi-replica scheduler** | Spread / binpack, zones, affinity hooks, require-KVM for micro-VMs |
 | **Cordon / drain** | Block scheduling; ordered evacuate + reschedule orphans |
 | **Domains & TLS** | Caddy edge + ACME path for HTTPS hostnames |
-| **Ops** | Postgres backups, node metrics, `node.down` / `deploy.failed` alerts |
+| **Ops** | Postgres backups, node metrics, per-project notifications (webhook/Slack/Discord/email) for `deploy.*` / `node.down` |
 | **Tenancy** | Postgres RLS, sessions, RBAC (owner/admin/member) |
 | **Identity** | OIDC + TOTP (optional) |
 | **SDKs** | TypeScript, Python, Go |

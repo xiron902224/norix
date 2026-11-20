@@ -12,8 +12,12 @@ import {
   type ComposeStackLogLine,
   CreateProjectRequestSchema,
   CreateWorkloadRequestSchema,
+  DeleteNotificationChannelRequestSchema,
   DeleteProjectRequestSchema,
   DeleteWorkloadRequestSchema,
+  ListNotificationChannelsRequestSchema,
+  UpsertNotificationChannelRequestSchema,
+  type NotificationChannel,
   DeployComposeStackRequestSchema,
   DeployFromGitRequestSchema,
   DeployRequestSchema,
@@ -53,6 +57,41 @@ export async function createProject(name: string): Promise<Project> {
 
 export async function deleteProject(id: string): Promise<void> {
   await projectClient.deleteProject(create(DeleteProjectRequestSchema, { id }))
+}
+
+export async function listNotificationChannels(projectId: string): Promise<NotificationChannel[]> {
+  const response = await projectClient.listNotificationChannels(
+    create(ListNotificationChannelsRequestSchema, { projectId }),
+  )
+  return response.channels
+}
+
+export async function upsertNotificationChannel(input: {
+  id?: string
+  projectId: string
+  name: string
+  kind: string
+  target?: string
+  events: string[]
+  enabled: boolean
+}): Promise<NotificationChannel> {
+  const response = await projectClient.upsertNotificationChannel(
+    create(UpsertNotificationChannelRequestSchema, {
+      id: input.id ?? '',
+      projectId: input.projectId,
+      name: input.name,
+      kind: input.kind,
+      target: input.target ?? '',
+      events: input.events,
+      enabled: input.enabled,
+    }),
+  )
+  if (!response.channel) throw new Error('Notification channel was not returned')
+  return response.channel
+}
+
+export async function deleteNotificationChannel(id: string): Promise<void> {
+  await projectClient.deleteNotificationChannel(create(DeleteNotificationChannelRequestSchema, { id }))
 }
 
 export async function listWorkloads(projectId: string): Promise<Workload[]> {

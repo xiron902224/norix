@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Per-project deployment notifications (#27): webhook, Slack, Discord, and email (SMTP). Channels store encrypted targets, subscribe to `deploy.succeeded` / `deploy.failed` / `node.down`, and deliver through a transactional outbox with retries. Webhook URLs reuse the Git SSRF denylist (`NORIX_GIT_SSRF_ALLOWLIST`). Email needs `NORIX_SMTP_ADDR` and `NORIX_SMTP_FROM`. UI: Project → Notifications.
 - Compose stacks share a project network (`norix-p-<project id>`). Every service gets the aliases `<service>` and `<compose project>-<service>`, and `external: true` networks keep their aliases (#144).
 - Compose stack variables: set `NAME=value` in the form or in Settings. Values are write-only and stored encrypted, and `${VAR}`, `${VAR:-default}` and `${VAR:?}` interpolate through `--env-file`. `SERVICE_PASSWORD_*` and `SERVICE_BASE64_*` secrets are generated once and reused (#145).
 - Compose stacks: services are internal by default (host ports removed with `!reset`). **Public services** keeps them. **Domains** route `service=hostname` through Caddy with HTTPS/WSS (#146).

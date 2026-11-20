@@ -69,6 +69,34 @@ func (p Policy) Validate(raw string) error {
 	if err != nil {
 		return err
 	}
+	return p.validateResolvedHost(host)
+}
+
+// ValidateWebhookURL checks an http(s) notification target (#27).
+// It reuses the Git SSRF denylist and NORIX_GIT_SSRF_ALLOWLIST.
+// Credentials in the URL are rejected so a token cannot hide in userinfo.
+func (p Policy) ValidateWebhookURL(raw string) error {
+	raw = strings.TrimSpace(raw)
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Host == "" {
+		return fmt.Errorf("webhook url is invalid")
+	}
+	switch strings.ToLower(parsed.Scheme) {
+	case "https", "http":
+	default:
+		return fmt.Errorf("webhook url scheme %s is not allowed", parsed.Scheme)
+	}
+	if parsed.User != nil {
+		return fmt.Errorf("webhook url must not include credentials")
+	}
+	host := parsed.Hostname()
+	if host == "" {
+		return fmt.Errorf("webhook url missing host")
+	}
+	return p.validateResolvedHost(host)
+}
+
+func (p Policy) validateResolvedHost(host string) error {
 	if hostAllowlisted(host, p.Allowlist) {
 		return nil
 	}
@@ -83,21 +111,21 @@ func (p Policy) Validate(raw string) error {
 	// Literal IP in the URL (https://127.0.0.1/… or https://[::1]/…).
 	if ip := net.ParseIP(host); ip != nil {
 		if err := checkIP(ip, p.Allowlist); err != nil {
-			return fmt.Errorf("git url host %s: %w", host, err)
+			return fmt.Errorf("host %s: %w", host, err)
 		}
 		return nil
 	}
 
 	addrs, err := resolver.LookupIPAddr(ctx, host)
 	if err != nil {
-		return fmt.Errorf("git url dns lookup %q: %w", host, err)
+		return fmt.Errorf("dns lookup %q: %w", host, err)
 	}
 	if len(addrs) == 0 {
-		return fmt.Errorf("git url dns lookup %q: no addresses", host)
+		return fmt.Errorf("dns lookup %q: no addresses", host)
 	}
 	for _, addr := range addrs {
 		if err := checkIP(addr.IP, p.Allowlist); err != nil {
-			return fmt.Errorf("git url host %s resolves to blocked address %s: %w", host, addr.IP, err)
+			return fmt.Errorf("host %s resolves to blocked address %s: %w", host, addr.IP, err)
 		}
 	}
 	return nil

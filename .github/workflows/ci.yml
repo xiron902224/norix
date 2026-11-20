@@ -116,8 +116,8 @@ jobs:
           -- Migrations through 000024 (000023 desired_agent_version; 000024 env_vars encryption comment).
           DO $$
           BEGIN
-            IF NOT (SELECT version = 34 AND NOT dirty FROM schema_migrations) THEN
-              RAISE EXCEPTION 'expected schema_migrations version=34 dirty=false';
+            IF NOT (SELECT version = 35 AND NOT dirty FROM schema_migrations) THEN
+              RAISE EXCEPTION 'expected schema_migrations version=35 dirty=false';
             END IF;
             -- 000033: compose stacks applied as a unit (#143).
             -- 000034: stack variables (encrypted) plus public services / domains / volumes.
@@ -125,6 +125,12 @@ jobs:
                   'compose_stacks', 'compose_stack_logs', 'compose_stack_variables')
                   AND relrowsecurity AND relforcerowsecurity) <> 3 THEN
               RAISE EXCEPTION 'compose stack tables must force RLS';
+            END IF;
+            -- 000035: per-project notification channels and outbox (#27).
+            IF (SELECT count(*) FROM pg_class WHERE relname IN (
+                  'notification_channels', 'notification_outbox')
+                  AND relrowsecurity AND relforcerowsecurity) <> 2 THEN
+              RAISE EXCEPTION 'notification tables must force RLS';
             END IF;
             IF (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename IN (
               'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',
