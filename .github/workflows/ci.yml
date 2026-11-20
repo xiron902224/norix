@@ -472,10 +472,42 @@ jobs:
           DB_PASSWORD: ci-only-not-a-secret
         run: docker compose -f examples/compose-multi-service/docker-compose.yml down -v
 
+  footprint:
+    name: Binary footprint (#43)
+    runs-on: ubuntu-latest
+    needs: validate-protos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.27.4"
+          cache-dependency-path: control-plane/go.sum
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.88.0"
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: agent
+
+      - name: Build release binaries and check budgets
+        run: |
+          mkdir -p control-plane/internal/webui/dist
+          echo '<!doctype html><title>ci</title>' > control-plane/internal/webui/dist/index.html
+          (cd control-plane && CGO_ENABLED=0 go build -o bin/norix-control-plane ./cmd/server)
+          (cd agent && cargo build --release -q)
+          ./scripts/measure-footprint.sh --check
+
   build-control-plane:
     name: Build Control Plane (Go)
     runs-on: ubuntu-latest
-    needs: [validate-protos, database-integration, build-web, build-agent, security-audit, railpack-examples, compose-example]
+    needs: [validate-protos, database-integration, build-web, build-agent, security-audit, railpack-examples, compose-example, footprint]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

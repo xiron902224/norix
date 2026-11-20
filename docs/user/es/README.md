@@ -28,6 +28,8 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 7. [Bases de datos](./databases.md)
 8. [Red y edge](./network.md)
 9. [Ops y backups](./ops.md)
+9b. [Límites de escala](./scale-limits.md) — topes configurables (#45)
+9c. [Huella de recursos](./footprint.md) — tamaño / RSS (#43)
 10. [Acceso y equipos](./access.md)
 11. [Solución de problemas](./troubleshooting.md)
 

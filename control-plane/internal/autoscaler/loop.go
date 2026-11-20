@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/xiron902224/norix/control-plane/internal/db"
+	"github.com/xiron902224/norix/control-plane/internal/limits"
 )
 
 // Enabled reports whether NORIX_AUTOSCALER is truthy (1/true/yes/on).
@@ -34,6 +35,7 @@ func DefaultPolicy() Policy {
 	if v := envInt32("NORIX_AUTOSCALER_MAX"); v > 0 {
 		p.MaxReplicas = v
 	}
+	p.MaxReplicas = limits.FromEnv().ClampAutoscalerMax(p.MaxReplicas)
 	if v := envFloat("NORIX_AUTOSCALER_CPU_TARGET"); v > 0 {
 		p.CPUTarget = v
 	}
