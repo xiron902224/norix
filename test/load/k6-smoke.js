@@ -1,16 +1,20 @@
-// S20: k6 smoke against control-plane health (extend for auth/deploy load).
-import http from 'k6/http';
+// Lightweight health smoke — safe for CI without a real control plane
+// (point NORIX_API at any HTTP server that returns 200 on GET /healthz).
+// Full API scenarios: k6-api.js with NORIX_LOAD_FULL=1.
 import { check, sleep } from 'k6';
+import { healthz } from './lib/connect.js';
 
 export const options = {
-  vus: 5,
-  duration: '15s',
+  vus: Number(__ENV.NORIX_LOAD_VUS || 5),
+  duration: __ENV.NORIX_LOAD_DURATION || '15s',
+  thresholds: {
+    http_req_failed: ['rate<0.01'],
+    http_req_duration: ['p(95)<500'],
+  },
 };
 
-const BASE = __ENV.NORIX_API || 'http://127.0.0.1:8080';
-
 export default function () {
-  const res = http.get(`${BASE}/healthz`);
+  const res = healthz();
   check(res, { 'health 200': (r) => r.status === 200 });
   sleep(0.5);
 }

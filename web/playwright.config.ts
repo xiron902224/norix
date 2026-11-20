@@ -4,10 +4,11 @@ const baseURL = process.env.NORIX_E2E_BASE_URL ?? 'http://127.0.0.1:8080'
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 60_000,
+  timeout: process.env.NORIX_E2E_FULL === '1' ? 120_000 : 60_000,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  workers: 1,
   use: {
     baseURL,
     trace: 'on-first-retry',

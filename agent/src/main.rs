@@ -372,13 +372,18 @@ async fn main() -> Result<()> {
                         warn!(%error, retry_in = ?backoff, "heartbeat failed; reconnecting with backoff");
                         let _started = Instant::now();
                         sleep(backoff).await;
-                        backoff = (backoff * 2).min(max_backoff);
+                        backoff = next_backoff(backoff, max_backoff);
                     }
                 }
             }
         }
     }
     Ok(())
+}
+
+/// Exponential backoff capped at `max` (heartbeat reconnect and operation retries).
+fn next_backoff(current: Duration, max: Duration) -> Duration {
+    current.saturating_mul(2).min(max)
 }
 
 async fn retry_operation<F, Fut, T>(
@@ -398,7 +403,7 @@ where
             Err(error) if attempt < max_attempts => {
                 warn!(%error, operation = label, attempt, backoff = ?backoff, "operation failed; retrying");
                 sleep(backoff).await;
-                backoff = (backoff * 2).min(Duration::from_secs(10));
+                backoff = next_backoff(backoff, Duration::from_secs(10));
             }
             Err(error) => return Err(error),
         }
@@ -496,9 +501,26 @@ fn cpu_usage_percent() -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use super::retry_operation;
+    use super::{next_backoff, retry_operation};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::Duration;
+
+    #[test]
+    fn next_backoff_doubles_until_cap() {
+        let max = Duration::from_secs(30);
+        assert_eq!(
+            next_backoff(Duration::from_secs(1), max),
+            Duration::from_secs(2)
+        );
+        assert_eq!(
+            next_backoff(Duration::from_secs(16), max),
+            Duration::from_secs(30)
+        );
+        assert_eq!(
+            next_backoff(Duration::from_secs(30), max),
+            Duration::from_secs(30)
+        );
+    }
 
     #[tokio::test]
     async fn retry_operation_retries_until_success() {

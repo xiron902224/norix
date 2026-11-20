@@ -29,11 +29,13 @@ Official documentation for **people who run apps on Norix** — after the contro
 7. [Production TLS](./production-tls.md) — domain → DNS → certs → HTTPS panel + apps
 8. [Databases](./databases.md)
 9. [Network & edge](./network.md)
+9b. [Preview environments](./previews.md) — PR → unique URL (#21)
 10. [Ops & backups](./ops.md)
 10b. [Scale limits](./scale-limits.md) — configurable hard caps (#45)
 10c. [Resource footprint](./footprint.md) — binary size / RSS (#43)
 11. [Access & teams](./access.md)
 12. [Troubleshooting](./troubleshooting.md)
+13. [Load tests (k6)](./load-tests.md) — smoke + full API scenarios
 
 ## What Norix is
 
