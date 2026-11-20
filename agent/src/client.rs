@@ -462,41 +462,6 @@ pub struct HeartbeatResult {
     pub desired_compose_stacks: Vec<DesiredComposeStack>,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct WatchDesiredResult {
-    pub fingerprint: String,
-    pub changed: bool,
-    pub timed_out: bool,
-    pub desired: HeartbeatResult,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct WatchDesiredResponse {
-    #[serde(default)]
-    fingerprint: Option<String>,
-    #[serde(default)]
-    changed: Option<bool>,
-    #[serde(default)]
-    timed_out: Option<bool>,
-    #[serde(default)]
-    desired_workloads: Vec<DesiredWorkload>,
-    #[serde(default)]
-    desired_builds: Vec<DesiredBuild>,
-    #[serde(default)]
-    desired_edge: Option<DesiredEdgePlan>,
-    #[serde(default)]
-    desired_network: Option<DesiredNetworkPlan>,
-    #[serde(default)]
-    desired_wasm: Option<DesiredWasmPlan>,
-    #[serde(default)]
-    desired_agent_version: Option<String>,
-    #[serde(default)]
-    desired_managed_databases: Vec<DesiredManagedDatabase>,
-    #[serde(default)]
-    desired_compose_stacks: Vec<DesiredComposeStack>,
-}
-
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct HeartbeatResponse {
@@ -587,56 +552,6 @@ impl AgentClient {
             node_id: parsed.node_id,
             node_token: parsed.node_token,
             organization_id: parsed.organization_id,
-        })
-    }
-
-    pub async fn watch_desired(
-        &self,
-        state: &NodeState,
-        known_fingerprint: &str,
-        timeout_seconds: i32,
-    ) -> Result<WatchDesiredResult> {
-        #[derive(Serialize)]
-        #[serde(rename_all = "camelCase")]
-        struct Body<'a> {
-            node_id: &'a str,
-            known_fingerprint: &'a str,
-            timeout_seconds: i32,
-        }
-        let body = Body {
-            node_id: &state.node_id,
-            known_fingerprint,
-            timeout_seconds,
-        };
-        let response = self
-            .post_json(
-                "/v1.AgentService/WatchDesired",
-                Some(&state.node_token),
-                &body,
-            )
-            .await?;
-        let parsed: WatchDesiredResponse =
-            serde_json::from_value(response).context("decode WatchDesired response")?;
-        Ok(WatchDesiredResult {
-            fingerprint: parsed.fingerprint.unwrap_or_default(),
-            changed: parsed.changed.unwrap_or(false),
-            timed_out: parsed.timed_out.unwrap_or(false),
-            desired: HeartbeatResult {
-                desired_workloads: parsed.desired_workloads,
-                desired_builds: parsed.desired_builds,
-                desired_edge: parsed.desired_edge,
-                desired_network: parsed.desired_network.filter(|plan| plan.generation > 0),
-                desired_wasm: parsed
-                    .desired_wasm
-                    .filter(|plan| !plan.functions.is_empty()),
-                desired_agent_version: parsed
-                    .desired_agent_version
-                    .map(|v| v.trim().to_string())
-                    .filter(|v| !v.is_empty()),
-                rotated_node_token: None,
-                desired_managed_databases: parsed.desired_managed_databases,
-                desired_compose_stacks: parsed.desired_compose_stacks,
-            },
         })
     }
 
