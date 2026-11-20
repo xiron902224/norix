@@ -153,6 +153,10 @@ func PolicyForWorkload(base Policy, env map[string]string) Policy {
 	if p.MaxReplicas < p.MinReplicas {
 		p.MaxReplicas = p.MinReplicas
 	}
+	p.MaxReplicas = limits.FromEnv().ClampAutoscalerMax(p.MaxReplicas)
+	if p.MaxReplicas < p.MinReplicas {
+		p.MinReplicas = p.MaxReplicas
+	}
 	return p
 }
 
