@@ -32,6 +32,7 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 9c. [Huella de recursos](./footprint.md) — tamaño / RSS (#43)
 10. [Acceso y equipos](./access.md)
 11. [Solución de problemas](./troubleshooting.md)
+12. [Pruebas de carga (k6)](./load-tests.md) — smoke + escenarios API
 
 ## Qué es Norix
 
