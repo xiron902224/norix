@@ -41,7 +41,7 @@ Alternativa: CP-only en node-1 (sin agent ahí) y solo node-2/3 como workers —
   - **Público → node-1:** `443` (y/o `80` para ACME HTTP-01). API puede ir en el mismo host vía reverse proxy.
   - **node-2/3 → node-1:** TCP al puerto del CP (443 o 8080)
   - **No** exponer `5432` a Internet
-  - Entre workers: solo hace falta si activas mesh (`NORIX_APPLY_WIREGUARD=1`, UDP WireGuard)
+  - Entre workers: mesh WireGuard aplica por defecto (#48); opt-out `NORIX_APPLY_WIREGUARD=0` (UDP WireGuard)
 
 ### Antes de empezar (beta)
 
@@ -122,7 +122,7 @@ NORIX_BUILD_SECRETS_KEY=   # openssl rand -hex 32
 NORIX_REGISTRY=none
 # Opcional beta:
 # NORIX_AUTOSCALER=1
-# NORIX_APPLY_WIREGUARD=1
+# NORIX_APPLY_WIREGUARD=0   # opt-out mesh apply (#48; default is on)
 # NORIX_ACME_DNS_PROVIDER=cloudflare
 # NORIX_ACME_EMAIL=ops@example.com
 EOF
@@ -216,15 +216,15 @@ workers, `online` confirma los heartbeats. Antes de intentar un build Git,
 4. Drain node-3 → workloads emigran; matar agent en node-3 → reschedule &lt; ~60s hacia nodos sanos (S7).
 5. `curl -sf https://norix.example.com/healthz` y `/status`.
 
-### Mesh (opcional, no requerido para beta básica)
+### Mesh WireGuard (#48)
 
-En el **control plane** (`/etc/norix/control-plane.env`):
+Por defecto el CP marca `DesiredNetworkPlan.apply=true`. Los agents aplican `wg-quick` + `nft` si las herramientas existen; si fallan, revierten a la conf anterior. Para solo escribir configs:
 
 ```bash
-NORIX_APPLY_WIREGUARD=1
+NORIX_APPLY_WIREGUARD=0
 ```
 
-Reinicia CP. Los agents escriben `wg-norix.conf` / `norix.nft` y aplican si el plan lleva `apply`. Abre UDP WireGuard entre nodos y verifica `wg show`. Sin este flag, el scheduler multi-nodo **igual funciona**; el overlay es extra.
+Abre UDP WireGuard entre nodos y verifica `wg show`. El scheduler multi-nodo funciona igual sin mesh.
 
 ---
 
@@ -244,7 +244,7 @@ Reinicia CP. Los agents escriben `wg-norix.conf` / `norix.nft` y aplican si el p
 - Sin tag/release aún → instalar from source desde `main` (`make build` / `cargo build --release`).
 - Tip de integración: **`main`** (rama `develop` retirada). Preferir tag `v1.0.0-beta.5` cuando exista ([#62](https://github.com/xiron902224/norix/issues/62)).
 - Workers necesitan **Docker/containerd** para builds Git ([#60](https://github.com/xiron902224/norix/issues/60), [#66](https://github.com/xiron902224/norix/issues/66)).
-- Mesh / micro-VM / DNS-01: código listo, **opt-in**. Patroni: smoke `#52`. Autoscaler: GA detrás de `NORIX_AUTOSCALER=1` (#49).
+- Mesh: apply on by default (#48); opt-out `=0`. micro-VM / DNS-01: opt-in. Patroni: smoke `#52`. Autoscaler: GA detrás de `NORIX_AUTOSCALER=1` (#49).
 - El `local` node embebido del CP puede aparecer en inventory si Docker está en node-1; el scheduler prioriza agents remotos. Puedes cordonar el local en UI si no quieres workloads ahí.
 - No hay installer “one-click” multi-nodo: este runbook + systemd es el camino soportado en beta.
 

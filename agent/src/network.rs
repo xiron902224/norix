@@ -25,6 +25,9 @@ pub async fn apply_network(plan: &DesiredNetworkPlan, workdir: &Path) -> Observe
     let cert_dir = dir.join("certs");
     let _ = fs::create_dir_all(&cert_dir);
 
+    let prev_wg = fs::read(&wg_path).ok();
+    let prev_nft = fs::read(&nft_path).ok();
+
     if let Err(error) = fs::write(&wg_path, &plan.wg_config) {
         return fail(plan, logs, error.to_string());
     }
@@ -54,7 +57,9 @@ pub async fn apply_network(plan: &DesiredNetworkPlan, workdir: &Path) -> Observe
     }
 
     if !plan.apply {
-        logs.push("dry-run: set NORIX_APPLY_WIREGUARD=1 on control plane to enable apply".into());
+        logs.push(
+            "dry-run: NORIX_APPLY_WIREGUARD=0 on control plane — configs written only".into(),
+        );
         return ObservedNetwork {
             generation: plan.generation,
             status: "ready".into(),
@@ -63,8 +68,28 @@ pub async fn apply_network(plan: &DesiredNetworkPlan, workdir: &Path) -> Observe
         };
     }
 
+    if !mesh_tools_available() {
+        logs.push(
+            "apply requested but wg-quick and/or nft missing — configs written only (safe skip)"
+                .into(),
+        );
+        return ObservedNetwork {
+            generation: plan.generation,
+            status: "ready".into(),
+            message: "configs written (mesh tools unavailable)".into(),
+            log_lines: logs,
+        };
+    }
+
     if let Err(error) = run_wg_quick(&wg_path) {
         logs.push(format!("wg-quick: {error}"));
+        if let Some(prev) = prev_wg.as_ref() {
+            let _ = fs::write(&wg_path, prev);
+            match run_wg_quick(&wg_path) {
+                Ok(()) => logs.push("wg rolled back to previous conf".into()),
+                Err(rb) => logs.push(format!("wg rollback failed: {rb}")),
+            }
+        }
         return ObservedNetwork {
             generation: plan.generation,
             status: "degraded".into(),
@@ -75,6 +100,13 @@ pub async fn apply_network(plan: &DesiredNetworkPlan, workdir: &Path) -> Observe
     logs.push("wg-quick applied".into());
     if let Err(error) = run_nft(&nft_path) {
         logs.push(format!("nft: {error}"));
+        if let Some(prev) = prev_nft.as_ref() {
+            let _ = fs::write(&nft_path, prev);
+            match run_nft(&nft_path) {
+                Ok(()) => logs.push("nft rolled back to previous ruleset".into()),
+                Err(rb) => logs.push(format!("nft rollback failed: {rb}")),
+            }
+        }
         return ObservedNetwork {
             generation: plan.generation,
             status: "degraded".into(),
@@ -96,6 +128,19 @@ pub async fn apply_network(plan: &DesiredNetworkPlan, workdir: &Path) -> Observe
         message: "mesh applied".into(),
         log_lines: logs,
     }
+}
+
+fn mesh_tools_available() -> bool {
+    which("wg-quick") && which("nft")
+}
+
+fn which(bin: &str) -> bool {
+    Command::new("sh")
+        .arg("-c")
+        .arg(format!("command -v {bin}"))
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
 }
 
 /// Merge Norix DNS A/AAAA records into /etc/hosts between markers when writable.
@@ -198,4 +243,26 @@ fn run_nft(path: &PathBuf) -> Result<(), String> {
         return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn render_hosts_maps_workload_fqdn() {
+        let records = vec![crate::client::DesiredNetworkDNSRecord {
+            name: "api.demo.norix.internal".into(),
+            r#type: "A".into(),
+            value: "10.88.0.2".into(),
+            ttl_seconds: 30,
+        }];
+        let hosts = render_hosts(&records);
+        assert!(hosts.contains("10.88.0.2 api.demo.norix.internal"));
+    }
+
+    #[test]
+    fn sanitize_file_keeps_safe_chars() {
+        assert_eq!(sanitize_file("*.example.com"), "wildcard.example.com");
+    }
 }

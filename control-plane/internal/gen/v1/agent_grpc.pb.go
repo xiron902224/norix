@@ -19,28 +19,29 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AgentService_CreateJoinToken_FullMethodName    = "/v1.AgentService/CreateJoinToken"
-	AgentService_EnrollNode_FullMethodName         = "/v1.AgentService/EnrollNode"
-	AgentService_Heartbeat_FullMethodName          = "/v1.AgentService/Heartbeat"
-	AgentService_WatchDesired_FullMethodName       = "/v1.AgentService/WatchDesired"
-	AgentService_ReportObserved_FullMethodName     = "/v1.AgentService/ReportObserved"
-	AgentService_ReportBuild_FullMethodName        = "/v1.AgentService/ReportBuild"
-	AgentService_ReportEdge_FullMethodName         = "/v1.AgentService/ReportEdge"
-	AgentService_ReportNetwork_FullMethodName      = "/v1.AgentService/ReportNetwork"
-	AgentService_ReportWasm_FullMethodName         = "/v1.AgentService/ReportWasm"
-	AgentService_ReportComposeStack_FullMethodName = "/v1.AgentService/ReportComposeStack"
-	AgentService_GetNetworkStatus_FullMethodName   = "/v1.AgentService/GetNetworkStatus"
-	AgentService_UpsertEgressPolicy_FullMethodName = "/v1.AgentService/UpsertEgressPolicy"
-	AgentService_ListEgressPolicies_FullMethodName = "/v1.AgentService/ListEgressPolicies"
-	AgentService_ListNodes_FullMethodName          = "/v1.AgentService/ListNodes"
-	AgentService_CordonNode_FullMethodName         = "/v1.AgentService/CordonNode"
-	AgentService_DrainNode_FullMethodName          = "/v1.AgentService/DrainNode"
-	AgentService_UpdateNodeSchedule_FullMethodName = "/v1.AgentService/UpdateNodeSchedule"
-	AgentService_UpdateNodeAgent_FullMethodName    = "/v1.AgentService/UpdateNodeAgent"
-	AgentService_RotateNodeToken_FullMethodName    = "/v1.AgentService/RotateNodeToken"
-	AgentService_RevokeNodeToken_FullMethodName    = "/v1.AgentService/RevokeNodeToken"
-	AgentService_SetNodeClientCert_FullMethodName  = "/v1.AgentService/SetNodeClientCert"
-	AgentService_ConnectStream_FullMethodName      = "/v1.AgentService/ConnectStream"
+	AgentService_CreateJoinToken_FullMethodName         = "/v1.AgentService/CreateJoinToken"
+	AgentService_EnrollNode_FullMethodName              = "/v1.AgentService/EnrollNode"
+	AgentService_Heartbeat_FullMethodName               = "/v1.AgentService/Heartbeat"
+	AgentService_WatchDesired_FullMethodName            = "/v1.AgentService/WatchDesired"
+	AgentService_ReportObserved_FullMethodName          = "/v1.AgentService/ReportObserved"
+	AgentService_ReportBuild_FullMethodName             = "/v1.AgentService/ReportBuild"
+	AgentService_ReportEdge_FullMethodName              = "/v1.AgentService/ReportEdge"
+	AgentService_ReportNetwork_FullMethodName           = "/v1.AgentService/ReportNetwork"
+	AgentService_ReportWasm_FullMethodName              = "/v1.AgentService/ReportWasm"
+	AgentService_ReportComposeStack_FullMethodName      = "/v1.AgentService/ReportComposeStack"
+	AgentService_GetNetworkStatus_FullMethodName        = "/v1.AgentService/GetNetworkStatus"
+	AgentService_UpsertEgressPolicy_FullMethodName      = "/v1.AgentService/UpsertEgressPolicy"
+	AgentService_ListEgressPolicies_FullMethodName      = "/v1.AgentService/ListEgressPolicies"
+	AgentService_ListNodes_FullMethodName               = "/v1.AgentService/ListNodes"
+	AgentService_CordonNode_FullMethodName              = "/v1.AgentService/CordonNode"
+	AgentService_DrainNode_FullMethodName               = "/v1.AgentService/DrainNode"
+	AgentService_UpdateNodeSchedule_FullMethodName      = "/v1.AgentService/UpdateNodeSchedule"
+	AgentService_UpdateNodeAgent_FullMethodName         = "/v1.AgentService/UpdateNodeAgent"
+	AgentService_RotateNodeToken_FullMethodName         = "/v1.AgentService/RotateNodeToken"
+	AgentService_RotateNodeWireGuardKeys_FullMethodName = "/v1.AgentService/RotateNodeWireGuardKeys"
+	AgentService_RevokeNodeToken_FullMethodName         = "/v1.AgentService/RevokeNodeToken"
+	AgentService_SetNodeClientCert_FullMethodName       = "/v1.AgentService/SetNodeClientCert"
+	AgentService_ConnectStream_FullMethodName           = "/v1.AgentService/ConnectStream"
 )
 
 // AgentServiceClient is the client API for AgentService service.
@@ -67,6 +68,7 @@ type AgentServiceClient interface {
 	UpdateNodeSchedule(ctx context.Context, in *UpdateNodeScheduleRequest, opts ...grpc.CallOption) (*UpdateNodeScheduleResponse, error)
 	UpdateNodeAgent(ctx context.Context, in *UpdateNodeAgentRequest, opts ...grpc.CallOption) (*UpdateNodeAgentResponse, error)
 	RotateNodeToken(ctx context.Context, in *RotateNodeTokenRequest, opts ...grpc.CallOption) (*RotateNodeTokenResponse, error)
+	RotateNodeWireGuardKeys(ctx context.Context, in *RotateNodeWireGuardKeysRequest, opts ...grpc.CallOption) (*RotateNodeWireGuardKeysResponse, error)
 	RevokeNodeToken(ctx context.Context, in *RevokeNodeTokenRequest, opts ...grpc.CallOption) (*RevokeNodeTokenResponse, error)
 	SetNodeClientCert(ctx context.Context, in *SetNodeClientCertRequest, opts ...grpc.CallOption) (*SetNodeClientCertResponse, error)
 	ConnectStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ConnectStreamRequest, ConnectStreamResponse], error)
@@ -270,6 +272,16 @@ func (c *agentServiceClient) RotateNodeToken(ctx context.Context, in *RotateNode
 	return out, nil
 }
 
+func (c *agentServiceClient) RotateNodeWireGuardKeys(ctx context.Context, in *RotateNodeWireGuardKeysRequest, opts ...grpc.CallOption) (*RotateNodeWireGuardKeysResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RotateNodeWireGuardKeysResponse)
+	err := c.cc.Invoke(ctx, AgentService_RotateNodeWireGuardKeys_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *agentServiceClient) RevokeNodeToken(ctx context.Context, in *RevokeNodeTokenRequest, opts ...grpc.CallOption) (*RevokeNodeTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RevokeNodeTokenResponse)
@@ -327,6 +339,7 @@ type AgentServiceServer interface {
 	UpdateNodeSchedule(context.Context, *UpdateNodeScheduleRequest) (*UpdateNodeScheduleResponse, error)
 	UpdateNodeAgent(context.Context, *UpdateNodeAgentRequest) (*UpdateNodeAgentResponse, error)
 	RotateNodeToken(context.Context, *RotateNodeTokenRequest) (*RotateNodeTokenResponse, error)
+	RotateNodeWireGuardKeys(context.Context, *RotateNodeWireGuardKeysRequest) (*RotateNodeWireGuardKeysResponse, error)
 	RevokeNodeToken(context.Context, *RevokeNodeTokenRequest) (*RevokeNodeTokenResponse, error)
 	SetNodeClientCert(context.Context, *SetNodeClientCertRequest) (*SetNodeClientCertResponse, error)
 	ConnectStream(grpc.BidiStreamingServer[ConnectStreamRequest, ConnectStreamResponse]) error
@@ -396,6 +409,9 @@ func (UnimplementedAgentServiceServer) UpdateNodeAgent(context.Context, *UpdateN
 }
 func (UnimplementedAgentServiceServer) RotateNodeToken(context.Context, *RotateNodeTokenRequest) (*RotateNodeTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RotateNodeToken not implemented")
+}
+func (UnimplementedAgentServiceServer) RotateNodeWireGuardKeys(context.Context, *RotateNodeWireGuardKeysRequest) (*RotateNodeWireGuardKeysResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RotateNodeWireGuardKeys not implemented")
 }
 func (UnimplementedAgentServiceServer) RevokeNodeToken(context.Context, *RevokeNodeTokenRequest) (*RevokeNodeTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeNodeToken not implemented")
@@ -769,6 +785,24 @@ func _AgentService_RotateNodeToken_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AgentService_RotateNodeWireGuardKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RotateNodeWireGuardKeysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).RotateNodeWireGuardKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_RotateNodeWireGuardKeys_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).RotateNodeWireGuardKeys(ctx, req.(*RotateNodeWireGuardKeysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AgentService_RevokeNodeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RevokeNodeTokenRequest)
 	if err := dec(in); err != nil {
@@ -894,6 +928,10 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RotateNodeToken",
 			Handler:    _AgentService_RotateNodeToken_Handler,
+		},
+		{
+			MethodName: "RotateNodeWireGuardKeys",
+			Handler:    _AgentService_RotateNodeWireGuardKeys_Handler,
 		},
 		{
 			MethodName: "RevokeNodeToken",

@@ -61,7 +61,7 @@ We label every capability so nobody has to guess. Source: repository audit of 20
 | Preview environments | Experimental | DB rows + TTL; deploy pipeline is a stub |
 | Managed databases | Beta | Postgres/MySQL/Redis containers + URI (#20); Mongo not yet |
 | Autoscaler | GA (flag) | `NORIX_AUTOSCALER=1`; UI/API per-workload policy (#49) |
-| WireGuard mesh | Experimental | Dry-run by default |
+| WireGuard mesh | GA (safe default) | Apply on; opt-out `=0`; rollback + key rotate (#48) |
 | Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; OCI → Wasm materialization incomplete |
 | Micro-VM (Cloud Hypervisor) | Experimental | Needs KVM + kernel/rootfs artifacts |
 | Micro-VM (Firecracker) | Planned | Enum only |
