@@ -22,12 +22,26 @@ norix_rpc() {
     -X POST
     -H "Content-Type: application/json"
     -H "Connect-Protocol-Version: 1"
-    --data "$body"
+    --data-binary "$body"
   )
   if [[ -n "$token" ]]; then
     args+=(-H "Authorization: Bearer ${token}")
   fi
-  curl "${args[@]}" "$url"
+  local http_code body_file
+  body_file="$(mktemp)"
+  http_code="$(curl "${args[@]}" -o "$body_file" -w "%{http_code}" "$url")" || {
+    rm -f "$body_file"
+    return 1
+  }
+  # Surface non-2xx with status so callers do not confuse plain HTTP errors with SPA HTML.
+  if [[ "$http_code" != 2* ]]; then
+    echo "HTTP ${http_code}: $(head -c 400 "$body_file")" >&2
+    cat "$body_file"
+    rm -f "$body_file"
+    return 0
+  fi
+  cat "$body_file"
+  rm -f "$body_file"
 }
 
 norix_rpc_ok() {

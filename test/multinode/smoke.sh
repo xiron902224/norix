@@ -14,7 +14,8 @@ ADMIN_EMAIL="${NORIX_MN_ADMIN_EMAIL:-mn-admin@norix.test}"
 ADMIN_PASSWORD="${NORIX_MN_ADMIN_PASSWORD:-MultinodeSmoke1!}"
 KEEP="${NORIX_MN_KEEP:-0}"
 
-log() { printf '==> %s\n' "$*"; }
+# stderr only — bootstrap_admin / helpers are captured with $() for tokens.
+log() { printf '==> %s\n' "$*" >&2; }
 fail() { echo "error: $*" >&2; exit 1; }
 
 cleanup() {
@@ -139,7 +140,13 @@ set +a
 
 log "starting 3 agents"
 "${COMPOSE[@]}" up -d --build agent-1 agent-2 agent-3
-NODES_JSON="$(wait_nodes_online "$SESSION" 3 180)"
+if ! NODES_JSON="$(wait_nodes_online "$SESSION" 3 180)"; then
+  log "dumping agent containers (glibc mismatch?)"
+  for c in norix-mn-agent-1 norix-mn-agent-2 norix-mn-agent-3; do
+    docker logs "$c" 2>&1 | tail -20 >&2 || true
+  done
+  fail "expected 3 online nodes"
+fi
 log "3 nodes online"
 echo "$NODES_JSON" | jq -r '.nodes[] | "\(.name)\t\(.status)\t\(.id)"'
 

@@ -6,6 +6,8 @@ Pragmatic CI stack: **Postgres + control plane + 3 agents** on one Docker host.
 
 All agents mount the **same host `docker.sock`**. This proves enroll, heartbeats, cordon/drain, and offline-after-kill. It does **not** prove true multi-host scheduling or per-node Docker isolation (that would need DinD / VMs).
 
+The agent image is `debian:trixie-slim` so host-built binaries (ubuntu-latest / Debian 13, glibc ≥ 2.39) can run inside the container.
+
 ## Quick start
 
 ```bash

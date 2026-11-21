@@ -14,7 +14,8 @@ COMPOSE=(docker compose --env-file "$MN_DIR/.env" -f "$MN_DIR/docker-compose.yml
 ADMIN_EMAIL="${NORIX_MN_ADMIN_EMAIL:-mn-admin@norix.test}"
 ADMIN_PASSWORD="${NORIX_MN_ADMIN_PASSWORD:-MultinodeSmoke1!}"
 
-chaos_log() { printf '[chaos] %s\n' "$*"; }
+# stderr only — callers capture chaos_session / setup output as tokens.
+chaos_log() { printf '[chaos] %s\n' "$*" >&2; }
 chaos_fail() { echo "error: $*" >&2; exit 1; }
 
 # Bring up postgres+CP+N agents. Leaves stack running.

@@ -1,6 +1,7 @@
 # Thin runtime for a prebuilt agent binary (bind-mounted in compose).
 # Shares the host docker.sock — same limitation as the smoke docs (one Docker host).
-FROM debian:bookworm-slim
+# Use trixie (glibc ≥ 2.39) so binaries built on ubuntu-latest / Debian 13 run here.
+FROM debian:trixie-slim
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl libgcc-s1 \
     && rm -rf /var/lib/apt/lists/*
