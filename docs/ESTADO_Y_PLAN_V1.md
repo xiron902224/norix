@@ -67,6 +67,7 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | TLS / ACME | Experimental | DNS-01 exists; CP serves plain HTTP by default |
 | Preview environments | Experimental | Stub pipeline; webhook secret required (#11) |
 | Managed databases | Beta | Real Postgres/MySQL/Redis containers (#20) |
+| Postgres HA (Patroni lab) | Beta | Runbook + `test/patroni/failover.sh` + CI `patroni-failover` (#52); RPO async ~1 MiB |
 | Autoscaler | Experimental | `NORIX_AUTOSCALER=1` |
 | WireGuard mesh | Experimental | Dry-run by default |
 | Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; not production-ready |
