@@ -10,6 +10,10 @@ pub struct Config {
     pub node_name: String,
     pub workdir: PathBuf,
     pub heartbeat_secs: u64,
+    /// Long-poll WatchDesired (#44). Default on; set NORIX_WATCH_DESIRED=0 to disable.
+    pub watch_desired: bool,
+    /// WatchDesired timeout seconds (default 25, max 30).
+    pub watch_timeout_secs: u64,
     pub agent_version: String,
 }
 
@@ -38,12 +42,31 @@ impl Config {
         if heartbeat_secs == 0 {
             bail!("NORIX_HEARTBEAT_SECS must be >= 1");
         }
+        let watch_desired = env::var("NORIX_WATCH_DESIRED")
+            .ok()
+            .map(|v| {
+                let v = v.trim().to_ascii_lowercase();
+                !(v == "0" || v == "false" || v == "off" || v == "no")
+            })
+            .unwrap_or(true);
+        let mut watch_timeout_secs = env::var("NORIX_WATCH_TIMEOUT_SECS")
+            .ok()
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(25);
+        if watch_timeout_secs == 0 {
+            bail!("NORIX_WATCH_TIMEOUT_SECS must be >= 1");
+        }
+        if watch_timeout_secs > 30 {
+            watch_timeout_secs = 30;
+        }
         Ok(Self {
             control_plane_url,
             join_token,
             node_name,
             workdir,
             heartbeat_secs,
+            watch_desired,
+            watch_timeout_secs,
             agent_version: env::var("NORIX_AGENT_VERSION")
                 .ok()
                 .map(|v| v.trim().to_string())
@@ -91,6 +114,8 @@ mod tests {
             node_name: "node-1".to_string(),
             workdir: std::env::temp_dir().join("norix-agent-config-test"),
             heartbeat_secs: 10,
+            watch_desired: true,
+            watch_timeout_secs: 25,
             agent_version: "test".to_string(),
         };
 

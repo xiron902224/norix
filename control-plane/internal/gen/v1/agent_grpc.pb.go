@@ -22,6 +22,7 @@ const (
 	AgentService_CreateJoinToken_FullMethodName    = "/v1.AgentService/CreateJoinToken"
 	AgentService_EnrollNode_FullMethodName         = "/v1.AgentService/EnrollNode"
 	AgentService_Heartbeat_FullMethodName          = "/v1.AgentService/Heartbeat"
+	AgentService_WatchDesired_FullMethodName       = "/v1.AgentService/WatchDesired"
 	AgentService_ReportObserved_FullMethodName     = "/v1.AgentService/ReportObserved"
 	AgentService_ReportBuild_FullMethodName        = "/v1.AgentService/ReportBuild"
 	AgentService_ReportEdge_FullMethodName         = "/v1.AgentService/ReportEdge"
@@ -49,6 +50,8 @@ type AgentServiceClient interface {
 	CreateJoinToken(ctx context.Context, in *CreateJoinTokenRequest, opts ...grpc.CallOption) (*CreateJoinTokenResponse, error)
 	EnrollNode(ctx context.Context, in *EnrollNodeRequest, opts ...grpc.CallOption) (*EnrollNodeResponse, error)
 	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
+	// Long-poll desired state so agents converge faster than heartbeat interval (#44).
+	WatchDesired(ctx context.Context, in *WatchDesiredRequest, opts ...grpc.CallOption) (*WatchDesiredResponse, error)
 	ReportObserved(ctx context.Context, in *ReportObservedRequest, opts ...grpc.CallOption) (*ReportObservedResponse, error)
 	ReportBuild(ctx context.Context, in *ReportBuildRequest, opts ...grpc.CallOption) (*ReportBuildResponse, error)
 	ReportEdge(ctx context.Context, in *ReportEdgeRequest, opts ...grpc.CallOption) (*ReportEdgeResponse, error)
@@ -101,6 +104,16 @@ func (c *agentServiceClient) Heartbeat(ctx context.Context, in *HeartbeatRequest
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(HeartbeatResponse)
 	err := c.cc.Invoke(ctx, AgentService_Heartbeat_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentServiceClient) WatchDesired(ctx context.Context, in *WatchDesiredRequest, opts ...grpc.CallOption) (*WatchDesiredResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WatchDesiredResponse)
+	err := c.cc.Invoke(ctx, AgentService_WatchDesired_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -297,6 +310,8 @@ type AgentServiceServer interface {
 	CreateJoinToken(context.Context, *CreateJoinTokenRequest) (*CreateJoinTokenResponse, error)
 	EnrollNode(context.Context, *EnrollNodeRequest) (*EnrollNodeResponse, error)
 	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
+	// Long-poll desired state so agents converge faster than heartbeat interval (#44).
+	WatchDesired(context.Context, *WatchDesiredRequest) (*WatchDesiredResponse, error)
 	ReportObserved(context.Context, *ReportObservedRequest) (*ReportObservedResponse, error)
 	ReportBuild(context.Context, *ReportBuildRequest) (*ReportBuildResponse, error)
 	ReportEdge(context.Context, *ReportEdgeRequest) (*ReportEdgeResponse, error)
@@ -333,6 +348,9 @@ func (UnimplementedAgentServiceServer) EnrollNode(context.Context, *EnrollNodeRe
 }
 func (UnimplementedAgentServiceServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Heartbeat not implemented")
+}
+func (UnimplementedAgentServiceServer) WatchDesired(context.Context, *WatchDesiredRequest) (*WatchDesiredResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method WatchDesired not implemented")
 }
 func (UnimplementedAgentServiceServer) ReportObserved(context.Context, *ReportObservedRequest) (*ReportObservedResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReportObserved not implemented")
@@ -459,6 +477,24 @@ func _AgentService_Heartbeat_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AgentServiceServer).Heartbeat(ctx, req.(*HeartbeatRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AgentService_WatchDesired_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WatchDesiredRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServiceServer).WatchDesired(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AgentService_WatchDesired_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServiceServer).WatchDesired(ctx, req.(*WatchDesiredRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -794,6 +830,10 @@ var AgentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Heartbeat",
 			Handler:    _AgentService_Heartbeat_Handler,
+		},
+		{
+			MethodName: "WatchDesired",
+			Handler:    _AgentService_WatchDesired_Handler,
 		},
 		{
 			MethodName: "ReportObserved",

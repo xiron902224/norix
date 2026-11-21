@@ -1,5 +1,7 @@
 # Nodos y agents
 
+El estado deseado llega en el heartbeat **y** por long-poll `WatchDesired`, así el deploy converge en ~ms–1s en vez de esperar hasta `NORIX_HEARTBEAT_SECS`. Ver [Reconcile más rápido](./faster-reconcile.md).
+
 ## Unir un nodo
 
 1. **Regions & nodes** → join token  

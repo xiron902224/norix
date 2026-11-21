@@ -376,6 +376,34 @@ message HeartbeatResponse {
   repeated DesiredComposeStack desired_compose_stacks = 10;
 }
 
+// Long-poll for desired-state changes (#44). Returns when fingerprint differs from
+// known_fingerprint, or after timeout_seconds (default 25). Does not record a heartbeat;
+// keep Heartbeat for liveness / reclaim.
+message WatchDesiredRequest {
+  string node_id = 1;
+  // Opaque fingerprint from the previous WatchDesiredResponse. Empty = return current state now.
+  string known_fingerprint = 2;
+  // Max seconds to wait (default 25, max 30).
+  int32 timeout_seconds = 3;
+}
+
+message WatchDesiredResponse {
+  string node_id = 1;
+  string fingerprint = 2;
+  // true when fingerprint differs from known_fingerprint (or known was empty).
+  bool changed = 3;
+  // true when the wait ended because timeout elapsed with no change.
+  bool timed_out = 4;
+  repeated DesiredWorkload desired_workloads = 5;
+  repeated DesiredBuild desired_builds = 6;
+  DesiredEdgePlan desired_edge = 7;
+  DesiredNetworkPlan desired_network = 8;
+  DesiredWasmPlan desired_wasm = 9;
+  string desired_agent_version = 10;
+  repeated DesiredManagedDatabase desired_managed_databases = 11;
+  repeated DesiredComposeStack desired_compose_stacks = 12;
+}
+
 message RotateNodeTokenRequest {
   string node_id = 1;
 }
@@ -517,6 +545,8 @@ service AgentService {
   rpc CreateJoinToken(CreateJoinTokenRequest) returns (CreateJoinTokenResponse);
   rpc EnrollNode(EnrollNodeRequest) returns (EnrollNodeResponse);
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  // Long-poll desired state so agents converge faster than heartbeat interval (#44).
+  rpc WatchDesired(WatchDesiredRequest) returns (WatchDesiredResponse);
   rpc ReportObserved(ReportObservedRequest) returns (ReportObservedResponse);
   rpc ReportBuild(ReportBuildRequest) returns (ReportBuildResponse);
   rpc ReportEdge(ReportEdgeRequest) returns (ReportEdgeResponse);

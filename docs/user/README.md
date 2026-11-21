@@ -22,6 +22,7 @@ Official documentation for **people who run apps on Norix** — after the contro
 4d. [Probes](./probes.md) — liveness / readiness HTTP·TCP·exec
 4e. [Persistent volumes](./volumes.md) — named Docker mounts, sticky node, backup/delete
 5. [Nodes & agents](./nodes-agents.md) — workers, join tokens, updates
+5a. [Faster reconcile](./faster-reconcile.md) — WatchDesired long-poll vs heartbeat (#44)
 5b. [Docker socket](./docker-socket.md) — who mounts `docker.sock`, proxy/rootless
 5c. [Agent authentication](./agent-auth.md) — rotate/revoke node token, optional mTLS
 5d. [CLI (`norix`)](./cli.md) — Rust CLI: deploy, logs, nodes, rollback

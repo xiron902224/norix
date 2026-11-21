@@ -208,6 +208,7 @@ func (service WorkloadService) CreateWorkload(ctx context.Context, request *paas
 		}
 		return nil, internalError("create workload", err)
 	}
+	NotifyDesiredChanged("")
 	return &paasv1.CreateWorkloadResponse{Workload: workloadToProto(created)}, nil
 }
 
@@ -257,6 +258,7 @@ func (service WorkloadService) UpdateWorkload(ctx context.Context, request *paas
 		}
 		return nil, internalError("update workload", err)
 	}
+	NotifyDesiredChanged("")
 	return &paasv1.UpdateWorkloadResponse{Workload: workloadToProto(updated)}, nil
 }
 
@@ -280,6 +282,7 @@ func (service WorkloadService) DeleteWorkload(ctx context.Context, request *paas
 		}
 		return nil, internalError("delete workload", err)
 	}
+	NotifyDesiredChanged("")
 	return &paasv1.DeleteWorkloadResponse{}, nil
 }
 
@@ -309,6 +312,7 @@ func (service WorkloadService) StopWorkload(ctx context.Context, request *paasv1
 		}
 		return nil, internalError("stop workload", err)
 	}
+	NotifyDesiredChanged("")
 	return &paasv1.StopWorkloadResponse{Status: "stopped"}, nil
 }
 
@@ -354,6 +358,7 @@ func (service WorkloadService) Deploy(ctx context.Context, request *paasv1.Deplo
 		}
 		return nil, internalError("deploy workload", err)
 	}
+	NotifyDesiredChanged(deployment.NodeID)
 	return &paasv1.DeployResponse{
 		DeploymentId:   deployment.ID,
 		Status:         deployment.Status,
@@ -430,6 +435,7 @@ func (service WorkloadService) DeployFromGit(ctx context.Context, request *paasv
 		}
 		return nil, internalError("create build", err)
 	}
+	NotifyDesiredChanged(build.AssignedNodeID)
 	return &paasv1.DeployFromGitResponse{
 		BuildId:    build.ID,
 		WorkloadId: build.WorkloadID,
@@ -605,6 +611,7 @@ func (service WorkloadService) RollbackWorkload(ctx context.Context, request *pa
 		}
 		return nil, internalError("rollback workload", err)
 	}
+	NotifyDesiredChanged(dep.NodeID)
 	return &paasv1.RollbackWorkloadResponse{
 		DeploymentId:   dep.ID,
 		Status:         dep.Status,
