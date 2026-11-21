@@ -326,6 +326,7 @@ async fn main() -> Result<()> {
 }
 
 /// Applies desired state from Heartbeat or WatchDesired. Serialized by the caller (#44).
+#[allow(clippy::too_many_arguments)]
 async fn apply_desired(
     config: &Config,
     client: &AgentClient,
