@@ -8,6 +8,7 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 | **Usar el dashboard** | Empieza en [Primeros pasos](./getting-started.md) |
 | **English (canónico)** | [`../README.md`](../README.md) |
 | **Actualizar / desinstalar** | [`UPDATE_AND_UNINSTALL.md`](../../UPDATE_AND_UNINSTALL.md) |
+| **Postgres HA (Patroni)** | [`POSTGRES_HA_FAILOVER.es.md`](../../runbooks/POSTGRES_HA_FAILOVER.es.md) (#52) |
 
 ## Contenido
 

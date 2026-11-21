@@ -45,7 +45,7 @@ Nightly: `.github/workflows/chaos-nightly.yml` (`schedule` + `workflow_dispatch`
 
 **Asserted in CI:** postgres restart → (optional CP restart) → healthz + ≥1 online agent.
 
-> Full **Patroni failover** is out of scope for these scripts; see `deploy/postgresql/patroni/`.
+> Full **Patroni failover** is covered by [`docs/runbooks/POSTGRES_HA_FAILOVER.md`](../runbooks/POSTGRES_HA_FAILOVER.md) and `./test/patroni/failover.sh` (#52), not by these chaos scripts.
 
 ### Network partition
 

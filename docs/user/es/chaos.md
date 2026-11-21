@@ -38,7 +38,7 @@ Nightly: `.github/workflows/chaos-nightly.yml`.
 2. Cuando Postgres está sano, el CP debería responder; si el pool quedó roto, **reinicia el contenedor del control plane**.
 3. Los agents reintentan hasta volver `online`.
 
-> Failover Patroni completo está fuera de estos scripts (`deploy/postgresql/patroni/`).
+> Failover Patroni: ver [`POSTGRES_HA_FAILOVER.es.md`](../../runbooks/POSTGRES_HA_FAILOVER.es.md) y `./test/patroni/failover.sh` (#52).
 
 ### Partición de red
 

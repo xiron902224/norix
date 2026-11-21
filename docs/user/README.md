@@ -8,6 +8,7 @@ Official documentation for **people who run apps on Norix** — after the contro
 | **Use the dashboard** (this guide) | Start → [Getting started](./getting-started.md) |
 | **Español** | [`es/README.md`](./es/README.md) |
 | **Upgrade / uninstall** | [`UPDATE_AND_UNINSTALL.md`](../UPDATE_AND_UNINSTALL.md) |
+| **Postgres HA (Patroni)** | [`runbooks/POSTGRES_HA_FAILOVER.md`](../runbooks/POSTGRES_HA_FAILOVER.md) · [ES](../runbooks/POSTGRES_HA_FAILOVER.es.md) (#52) |
 | **Contribute code** | [`CONTRIBUTING.md`](../../CONTRIBUTING.md) |
 
 ## Contents

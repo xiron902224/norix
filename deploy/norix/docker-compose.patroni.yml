@@ -1,15 +1,41 @@
-# Minimal local Patroni HA stack: etcd + 2 Postgres/Patroni nodes + HAProxy.
+# Local Patroni HA stack for Norix (#52): etcd + 2 Patroni/Postgres + HAProxy.
 # Usage:
-#   cd deploy/norix && docker compose -f docker-compose.patroni.yml up -d
-# See ../postgresql/patroni/README.md
+#   cd deploy/norix && docker compose -f docker-compose.patroni.yml up -d --build
+# Runbook: docs/runbooks/POSTGRES_HA_FAILOVER.md
+# Smoke:   ./test/patroni/failover.sh
 
 name: norix-patroni
+
+x-patroni-common: &patroni-common
+  build:
+    context: ../postgresql/patroni
+    dockerfile: Dockerfile
+  image: norix/patroni-pg:local
+  pull_policy: never
+  entrypoint: ["/bin/sh", "/patroni/entrypoint.sh"]
+  volumes:
+    - ../postgresql/patroni/entrypoint.sh:/patroni/entrypoint.sh:ro
+    - ../postgresql/patroni/patroni-template.yml:/patroni/patroni-template.yml:ro
+  environment: &patroni-env
+    PATRONI_SCOPE: norix
+    PATRONI_ETCD3_HOSTS: etcd:2379
+    PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
+    PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
+    PATRONI_POSTGRESQL_DATA_DIR: /home/postgres/pgdata/pgroot/data
+    PATRONI_SUPERUSER_USERNAME: postgres
+    PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD:-norix-patroni}
+    PATRONI_REPLICATION_USERNAME: replicator
+    PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD:-norix-repl}
+    PATRONI_POSTGRESQL_PGPASS: /tmp/pgpass
+  networks: [norix-patroni]
+  depends_on: [etcd]
 
 services:
   etcd:
     image: quay.io/coreos/etcd:v3.5.16
     container_name: norix-patroni-etcd
     environment:
+      ETCD_NAME: etcd
       ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
       ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
       ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
@@ -20,74 +46,38 @@ services:
       ETCD_DATA_DIR: /etcd-data
     volumes:
       - norix_patroni_etcd:/etcd-data
-    networks:
-      - norix-patroni
-    healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+    networks: [norix-patroni]
 
   patroni1:
-    image: postgres:16-alpine
+    <<: *patroni-common
     container_name: norix-patroni-1
     hostname: patroni1
-    depends_on:
-      etcd:
-        condition: service_healthy
     environment:
+      <<: *patroni-env
       PATRONI_NAME: patroni1
-      PATRONI_SCOPE: norix
       PATRONI_RESTAPI_CONNECT_ADDRESS: patroni1:8008
-      PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
       PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni1:5432
-      PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
-      PATRONI_POSTGRESQL_DATA_DIR: /var/lib/postgresql/data
-      PATRONI_SUPERUSER_USERNAME: postgres
-      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD:-norix-patroni}
-      PATRONI_REPLICATION_USERNAME: replicator
-      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD:-norix-repl}
-      PATRONI_ETCD3_HOSTS: etcd:2379
-      PATRONI_POSTGRESQL_PGPASS: /tmp/pgpass
-    entrypoint: ["/bin/sh", "/patroni/entrypoint.sh"]
     volumes:
       - ../postgresql/patroni/entrypoint.sh:/patroni/entrypoint.sh:ro
       - ../postgresql/patroni/patroni-template.yml:/patroni/patroni-template.yml:ro
-      - norix_patroni_pg1:/var/lib/postgresql/data
-    networks:
-      - norix-patroni
+      - norix_patroni_pg1:/home/postgres/pgdata
     ports:
       - "127.0.0.1:5433:5432"
       - "127.0.0.1:8008:8008"
 
   patroni2:
-    image: postgres:16-alpine
+    <<: *patroni-common
     container_name: norix-patroni-2
     hostname: patroni2
-    depends_on:
-      etcd:
-        condition: service_healthy
     environment:
+      <<: *patroni-env
       PATRONI_NAME: patroni2
-      PATRONI_SCOPE: norix
       PATRONI_RESTAPI_CONNECT_ADDRESS: patroni2:8008
-      PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
       PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni2:5432
-      PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
-      PATRONI_POSTGRESQL_DATA_DIR: /var/lib/postgresql/data
-      PATRONI_SUPERUSER_USERNAME: postgres
-      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD:-norix-patroni}
-      PATRONI_REPLICATION_USERNAME: replicator
-      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD:-norix-repl}
-      PATRONI_ETCD3_HOSTS: etcd:2379
-      PATRONI_POSTGRESQL_PGPASS: /tmp/pgpass
-    entrypoint: ["/bin/sh", "/patroni/entrypoint.sh"]
     volumes:
       - ../postgresql/patroni/entrypoint.sh:/patroni/entrypoint.sh:ro
       - ../postgresql/patroni/patroni-template.yml:/patroni/patroni-template.yml:ro
-      - norix_patroni_pg2:/var/lib/postgresql/data
-    networks:
-      - norix-patroni
+      - norix_patroni_pg2:/home/postgres/pgdata
     ports:
       - "127.0.0.1:5434:5432"
       - "127.0.0.1:8009:8008"
@@ -95,16 +85,14 @@ services:
   haproxy:
     image: haproxy:2.9-alpine
     container_name: norix-patroni-haproxy
-    depends_on:
-      - patroni1
-      - patroni2
+    restart: unless-stopped
+    depends_on: [patroni1, patroni2]
     volumes:
       - ../postgresql/patroni/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - "127.0.0.1:5435:5432"
       - "127.0.0.1:7000:7000"
-    networks:
-      - norix-patroni
+    networks: [norix-patroni]
 
 volumes:
   norix_patroni_etcd:

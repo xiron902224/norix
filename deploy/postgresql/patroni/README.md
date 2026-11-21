@@ -2,6 +2,9 @@
 
 Minimal 2-node Postgres + etcd + Patroni + HAProxy for local HA experiments.
 
+**Operator runbook (RPO/RTO, CP reconnect, automated smoke):**  
+[`docs/runbooks/POSTGRES_HA_FAILOVER.md`](../../../docs/runbooks/POSTGRES_HA_FAILOVER.md) · [ES](../../../docs/runbooks/POSTGRES_HA_FAILOVER.es.md)
+
 ## Start
 
 ```bash
@@ -35,10 +38,17 @@ curl -s http://127.0.0.1:8009/patroni | head
 PGPASSWORD=norix-patroni psql -h 127.0.0.1 -p 5435 -U postgres -c 'SELECT pg_is_in_recovery();'
 ```
 
-Failover smoke: stop the primary container (`docker stop norix-patroni-1` or `-2`) and re-check `/patroni` on the survivor + HAProxy `5435`.
+## Automated failover (#52)
+
+```bash
+./test/patroni/failover.sh
+```
+
+Stops the current primary, waits for promotion through HAProxy, asserts a marker row still exists (within documented RPO), and checks the control plane `/healthz` + `GetBootstrapStatus` after pool reconnect.
 
 ## Notes
 
-- Uses `postgres:16-alpine` with Patroni installed at container start (`apk add patroni`).
-- DCS is etcd v3. First boot elects a leader and initializes the cluster.
+- Builds `norix/patroni-pg:local` from `deploy/postgresql/patroni/Dockerfile` (Postgres 16 Alpine + Patroni via pip) + etcd v3 + HAProxy.
+- First boot elects a leader and initializes the cluster.
+- Replication is asynchronous; RPO is documented in the runbook (lab default ≈ last unreplicated WAL, capped by Patroni lag settings).
 - Not for production; intended for local Norix HA validation alongside control-plane leases.
