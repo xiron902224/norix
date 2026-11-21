@@ -57,7 +57,9 @@ pub async fn apply_network(plan: &DesiredNetworkPlan, workdir: &Path) -> Observe
     }
 
     if !plan.apply {
-        logs.push("dry-run: NORIX_APPLY_WIREGUARD=0 on control plane — configs written only".into());
+        logs.push(
+            "dry-run: NORIX_APPLY_WIREGUARD=0 on control plane — configs written only".into(),
+        );
         return ObservedNetwork {
             generation: plan.generation,
             status: "ready".into(),
