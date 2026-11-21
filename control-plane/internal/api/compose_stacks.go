@@ -169,6 +169,7 @@ func (service WorkloadService) CreateComposeStack(ctx context.Context, request *
 		}
 		return nil, internalError("create compose stack", err)
 	}
+	NotifyDesiredChanged(stack.AssignedNodeID)
 	return &paasv1.CreateComposeStackResponse{Stack: composeStackToProto(stack)}, nil
 }
 
@@ -240,6 +241,7 @@ func (service WorkloadService) ComposeStackAction(ctx context.Context, request *
 	if err != nil {
 		return nil, internalError("compose stack action", err)
 	}
+	NotifyDesiredChanged(stack.AssignedNodeID)
 	return &paasv1.ComposeStackActionResponse{Stack: composeStackToProto(stack)}, nil
 }
 
@@ -267,6 +269,7 @@ func (service WorkloadService) UpdateComposeStack(ctx context.Context, request *
 	if err != nil {
 		return nil, internalError("update compose stack", err)
 	}
+	NotifyDesiredChanged(stack.AssignedNodeID)
 	return &paasv1.UpdateComposeStackResponse{Stack: composeStackToProto(stack)}, nil
 }
 

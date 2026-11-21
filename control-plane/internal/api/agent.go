@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/xiron902224/norix/control-plane/internal/auth"
 	"github.com/xiron902224/norix/control-plane/internal/db"
+	"github.com/xiron902224/norix/control-plane/internal/desiredwatch"
 	paasv1 "github.com/xiron902224/norix/control-plane/internal/gen/v1"
 	"github.com/xiron902224/norix/control-plane/internal/gen/v1/paasv1connect"
 	versionpkg "github.com/xiron902224/norix/control-plane/internal/version"
@@ -159,113 +160,91 @@ func (service AgentService) Heartbeat(ctx context.Context, request *paasv1.Heart
 		}
 	}
 	_, _ = db.EnsureProvisioningDatabases(ctx, service.pool, node.OrganizationID, node.ID)
-	desired, err := db.ListDesiredWorkloadsForNode(ctx, service.pool, node.OrganizationID, node.ID)
-	if err != nil {
-		return nil, internalError("list desired workloads", err)
-	}
-	items := make([]*paasv1.DesiredWorkload, 0, len(desired))
-	for _, item := range desired {
-		items = append(items, desiredWorkloadToProto(item))
-	}
-	builds, err := db.ListDesiredBuildsForNode(ctx, service.pool, node.OrganizationID, node.ID)
-	if err != nil {
-		return nil, internalError("list desired builds", err)
-	}
-	desiredBuilds := make([]*paasv1.DesiredBuild, 0, len(builds))
-	for _, item := range builds {
-		desiredBuilds = append(desiredBuilds, &paasv1.DesiredBuild{
-			Id: item.ID, WorkloadId: item.WorkloadID, GitUrl: item.GitURL, GitRef: item.GitRef,
-			DockerfilePath: item.DockerfilePath, ImageTag: item.ImageTag, BuildArgs: item.BuildArgs,
-			Registry: item.Registry,
-		})
-	}
-	var desiredEdge *paasv1.DesiredEdgePlan
-	edgePlan, err := db.GetDesiredEdgePlan(ctx, service.pool, node.OrganizationID, node.ID)
-	if err != nil {
-		return nil, internalError("desired edge plan", err)
-	}
-	if edgePlan.Generation > 0 && len(edgePlan.Routes) > 0 {
-		routes := make([]*paasv1.DesiredEdgeRoute, 0, len(edgePlan.Routes))
-		for _, route := range edgePlan.Routes {
-			routes = append(routes, &paasv1.DesiredEdgeRoute{
-				DomainId: route.DomainID, Hostname: route.Hostname, Upstream: route.Upstream,
-				TlsMode: route.TLSMode, EdgeGeneration: route.EdgeGeneration, Action: route.Action,
-			})
-		}
-		desiredEdge = &paasv1.DesiredEdgePlan{
-			Generation: edgePlan.Generation, Routes: routes,
-			AcmeCa: edgePlan.ACMECA, CaddyAdminUrl: edgePlan.CaddyAdminURL,
-		}
-	}
-	var desiredNetwork *paasv1.DesiredNetworkPlan
-	networkPlan, err := db.GetDesiredNetworkPlan(ctx, service.pool, node.OrganizationID, node.ID)
-	if err != nil {
-		return nil, internalError("desired network plan", err)
-	}
-	if networkPlan.Generation > 0 {
-		desiredNetwork = desiredNetworkToProto(networkPlan)
-	}
-	var desiredWasm *paasv1.DesiredWasmPlan
-	wasmFns, err := db.ListWasmFunctions(ctx, service.pool, node.OrganizationID, "")
-	if err != nil {
-		return nil, internalError("list wasm functions", err)
-	}
-	if len(wasmFns) > 0 {
-		fns := make([]*paasv1.DesiredWasmFunction, 0, len(wasmFns))
-		for _, fn := range wasmFns {
-			fns = append(fns, &paasv1.DesiredWasmFunction{
-				Id: fn.ID, ProjectId: fn.ProjectID, Name: fn.Name, ImageRef: fn.ImageRef,
-				FuelLimit: fn.FuelLimit, MemoryLimitMb: fn.MemoryLimitMB,
-			})
-		}
-		desiredWasm = &paasv1.DesiredWasmPlan{
-			Generation: time.Now().UTC().Unix(),
-			Functions:  fns,
-		}
-	}
 	desiredAgentVersion := strings.TrimSpace(node.DesiredAgentVersion)
 	// Prefer fresh DB value after heartbeat cleared a match.
 	if refreshed, err := db.GetNode(ctx, service.pool, node.OrganizationID, node.ID); err == nil {
 		desiredAgentVersion = strings.TrimSpace(refreshed.DesiredAgentVersion)
 	}
-	desiredDBs, err := db.ListDesiredManagedDatabasesForNode(ctx, service.pool, node.OrganizationID, node.ID)
+	snap, err := loadDesiredSnapshot(ctx, service.pool, node.OrganizationID, node.ID, desiredAgentVersion)
 	if err != nil {
-		return nil, internalError("list desired managed databases", err)
-	}
-	if _, err := db.ClaimComposeStacksForNode(ctx, service.pool, node.OrganizationID, node.ID); err != nil {
-		return nil, internalError("claim compose stacks", err)
-	}
-	stacks, err := db.ListDesiredComposeStacksForNode(ctx, service.pool, node.OrganizationID, node.ID)
-	if err != nil {
-		return nil, internalError("list desired compose stacks", err)
-	}
-	desiredStacks := make([]*paasv1.DesiredComposeStack, 0, len(stacks))
-	for _, stack := range stacks {
-		desiredStacks = append(desiredStacks, &paasv1.DesiredComposeStack{
-			Id: stack.ID, ProjectId: stack.ProjectID, Name: stack.Name, GitUrl: stack.GitURL, GitRef: stack.GitRef,
-			ComposePath: stack.ComposePath, ComposeProject: stack.ComposeProject(),
-			Action: stack.DesiredAction, Generation: stack.DesiredGeneration,
-			PublicServices: stack.PublicServices, Env: stack.Env, Domains: stack.Domains,
-			PurgeVolumes: stack.PurgeVolumes,
-		})
-	}
-	desiredManaged := make([]*paasv1.DesiredManagedDatabase, 0, len(desiredDBs))
-	for _, item := range desiredDBs {
-		desiredManaged = append(desiredManaged, &paasv1.DesiredManagedDatabase{
-			Id: item.ID, ProjectId: item.ProjectID, Name: item.Name, Engine: item.Engine,
-			Image: item.Image, EnvVars: item.EnvVars, Command: item.Command,
-			HostPort: item.HostPort, ContainerPort: item.ContainerPort,
-			VolumeName: item.VolumeName, VolumeMountPath: item.VolumeMountPath, Action: item.Action,
-		})
+		return nil, internalError("load desired snapshot", err)
 	}
 	return &paasv1.HeartbeatResponse{
-		NodeId: node.ID, DesiredWorkloads: items, DesiredBuilds: desiredBuilds,
-		DesiredEdge: desiredEdge, DesiredNetwork: desiredNetwork, DesiredWasm: desiredWasm,
-		DesiredAgentVersion:     desiredAgentVersion,
+		NodeId:                  node.ID,
+		DesiredWorkloads:        snap.Workloads,
+		DesiredBuilds:           snap.Builds,
+		DesiredEdge:             snap.Edge,
+		DesiredNetwork:          snap.Network,
+		DesiredWasm:             snap.Wasm,
+		DesiredAgentVersion:     snap.AgentVersion,
 		RotatedNodeToken:        rotatedToken,
-		DesiredManagedDatabases: desiredManaged,
-		DesiredComposeStacks:    desiredStacks,
+		DesiredManagedDatabases: snap.ManagedDatabases,
+		DesiredComposeStacks:    snap.ComposeStacks,
 	}, nil
+}
+
+func (service AgentService) WatchDesired(ctx context.Context, request *paasv1.WatchDesiredRequest) (*paasv1.WatchDesiredResponse, error) {
+	node, ok := NodeFromContext(ctx)
+	if !ok {
+		return nil, connect.NewError(connect.CodeUnauthenticated, "node credential required")
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		nodeID = node.ID
+	}
+	if nodeID != node.ID {
+		return nil, connect.NewError(connect.CodePermissionDenied, "node_id does not match credential")
+	}
+	timeoutSecs := request.GetTimeoutSeconds()
+	if timeoutSecs <= 0 {
+		timeoutSecs = 25
+	}
+	if timeoutSecs > 30 {
+		timeoutSecs = 30
+	}
+	known := strings.TrimSpace(request.GetKnownFingerprint())
+	notify, cancel := desiredwatch.Default.Subscribe(nodeID)
+	defer cancel()
+
+	snap, changed, timedOut, err := waitForDesiredChange(
+		ctx,
+		service.pool,
+		node.OrganizationID,
+		nodeID,
+		known,
+		time.Duration(timeoutSecs)*time.Second,
+		notify,
+		2*time.Second, // multi-replica safety net; Prefer NotifyDesiredChanged for latency
+	)
+	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return nil, connect.NewError(connect.CodeCanceled, "watch canceled")
+		}
+		return nil, internalError("watch desired", err)
+	}
+	return &paasv1.WatchDesiredResponse{
+		NodeId:                  node.ID,
+		Fingerprint:             snap.Fingerprint,
+		Changed:                 changed,
+		TimedOut:                timedOut,
+		DesiredWorkloads:        snap.Workloads,
+		DesiredBuilds:           snap.Builds,
+		DesiredEdge:             snap.Edge,
+		DesiredNetwork:          snap.Network,
+		DesiredWasm:             snap.Wasm,
+		DesiredAgentVersion:     snap.AgentVersion,
+		DesiredManagedDatabases: snap.ManagedDatabases,
+		DesiredComposeStacks:    snap.ComposeStacks,
+	}, nil
+}
+
+// NotifyDesiredChanged wakes WatchDesired waiters after a mutation (#44).
+func NotifyDesiredChanged(nodeID string) {
+	if strings.TrimSpace(nodeID) == "" {
+		desiredwatch.Default.NotifyAll()
+		return
+	}
+	desiredwatch.Default.Notify(nodeID)
 }
 
 func (service AgentService) ReportComposeStack(ctx context.Context, request *paasv1.ReportComposeStackRequest) (*paasv1.ReportComposeStackResponse, error) {
@@ -726,6 +705,7 @@ func (service AgentService) UpdateNodeAgent(ctx context.Context, request *paasv1
 	if err != nil {
 		return nil, invalidArgument(err.Error())
 	}
+	NotifyDesiredChanged(nodeID)
 	return &paasv1.UpdateNodeAgentResponse{Node: nodeToProto(node)}, nil
 }
 
