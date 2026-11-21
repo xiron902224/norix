@@ -3,7 +3,12 @@
 ## Unreleased
 
 ### Added
+<<<<<<< HEAD
+- Multi-node E2E smoke in CI (`test/multinode/`, job `multinode-e2e`): postgres + control plane + 3 agents (shared `docker.sock`), bootstrap, `replica_count=2`, cordon/drain, kill agent → offline. Skippable with `SKIP_MULTINODE_E2E=1` / repo variable (#37).
+- Chaos scenarios + nightly workflow (`test/chaos/`, `docs/user/chaos.md` EN/ES, `.github/workflows/chaos-nightly.yml`): agent crash, control-plane restart, Postgres restart, network partition via `docker network disconnect` (#41).
+=======
 - Faster reconcile via `WatchDesired` long-poll (#44): agents receive desired-state changes without waiting for the next heartbeat; in-process wake hub + fingerprint for reconnect safety. Docs EN/ES `docs/user/faster-reconcile.md`. Opt out with `NORIX_WATCH_DESIRED=0`.
+>>>>>>> origin/main
 - End-to-end PR preview environments (#21): `pull_request` webhook creates/updates `pr-<n>` git workloads, queues builds, sets a unique preview URL, comments on the PR (`NORIX_GITHUB_TOKEN`), and cleans up on close or TTL.
 - Real k6 load tests (#40): `test/load/k6-smoke.js` (health CI smoke + mock), `k6-api.js` scenarios for login/bootstrap, CreateWorkload/Deploy pressure, API reads, and simulated agent fan-out; docs EN/ES + sample results in `docs/user/load-tests.md`.
 - Playwright lifecycle E2E (#42): bootstrap → project → image app → domain → logs → delete (`web/e2e/lifecycle.spec.ts`); Docker Deploy gated on `NORIX_E2E_FULL=1`; API assertions always under `NORIX_E2E=1`.
@@ -35,6 +40,8 @@
 - Persistent named volumes for workloads: declare mounts, sticky node placement, drain warnings, Backup/Delete API + UI, docs EN/ES (#16)
 
 ### Fixed
+- Multi-node / chaos Connect helpers (`test/lib/rpc.sh`) POST to `/api/v1.Service/Method` (same as Playwright and k6). Bare `/v1.…` hit the embedded SPA HTML and broke bootstrap with `jq: parse error` / `no session token`. Also fixed bash `"${2:-{}}"` which appended a stray `}` to every JSON body (#37).
+- Multi-node smoke: `log`/`chaos_log` write to stderr so `$()` token capture is not polluted (Bearer with embedded newlines → HTTP 400); agent runtime image uses `debian:trixie-slim` for glibc ≥ 2.39 (#37).
 - A git build no longer blocks the agent heartbeat. Deletes, compose actions and image deploys keep flowing while `docker build` runs, and a workload stays `building` (Build logs tab) until the image exists.
 - Compose stack display names may include spaces, dots, and letters outside ASCII (`Infra de abogados`). The Docker Compose project name still comes from the stack id.
 - `ReportWasm` is authenticated with the node token like the other agent reports. Before, the control plane treated it as a user call and rejected it.

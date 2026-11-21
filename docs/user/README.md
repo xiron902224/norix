@@ -34,6 +34,7 @@ Official documentation for **people who run apps on Norix** — after the contro
 10. [Ops & backups](./ops.md)
 10b. [Scale limits](./scale-limits.md) — configurable hard caps (#45)
 10c. [Resource footprint](./footprint.md) — binary size / RSS (#43)
+10d. [Chaos tests](./chaos.md) — agent crash, CP/DB restart, partition (#41)
 11. [Access & teams](./access.md)
 12. [Troubleshooting](./troubleshooting.md)
 13. [Load tests (k6)](./load-tests.md) — smoke + full API scenarios
