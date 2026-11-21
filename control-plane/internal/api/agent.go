@@ -400,7 +400,7 @@ func (service AgentService) GetNetworkStatus(ctx context.Context, _ *paasv1.GetN
 			Name: item.Name, Type: item.Type, Value: item.Value, TtlSeconds: item.TTL,
 		})
 	}
-	// apply_enabled mirrors NORIX_APPLY_WIREGUARD on the control plane (false => mesh dry-run).
+	// apply_enabled mirrors NORIX_APPLY_WIREGUARD (default on; 0/false/dry-run disables) (#48).
 	return &paasv1.GetNetworkStatusResponse{
 		NodesReady: int32(status.NodesReady), NodesTotal: int32(status.NodesTotal),
 		DnsRecords: int32(status.DNSRecords), Certificates: int32(status.Certificates),
@@ -821,6 +821,32 @@ func (service AgentService) RotateNodeToken(ctx context.Context, request *paasv1
 	return &paasv1.RotateNodeTokenResponse{
 		Node:    nodeToProto(node),
 		Message: "Rotation queued. The next agent heartbeat receives a new token and persists it (15m grace for the old token).",
+	}, nil
+}
+
+func (service AgentService) RotateNodeWireGuardKeys(ctx context.Context, request *paasv1.RotateNodeWireGuardKeysRequest) (*paasv1.RotateNodeWireGuardKeysResponse, error) {
+	identity, ok := SessionFromContext(ctx)
+	if err := requireSession(identity, ok); err != nil {
+		return nil, err
+	}
+	if err := requireMutator(identity); err != nil {
+		return nil, err
+	}
+	nodeID := strings.TrimSpace(request.GetNodeId())
+	if nodeID == "" {
+		return nil, invalidArgument("node_id is required")
+	}
+	rotated, err := db.RotateNodeWireGuardKeys(ctx, service.pool, identity.OrganizationID, nodeID, db.AuditActor{
+		UserID: identity.UserID, Email: identity.Email,
+	})
+	if err != nil {
+		return nil, invalidArgument(err.Error())
+	}
+	return &paasv1.RotateNodeWireGuardKeysResponse{
+		Node:        nodeToProto(rotated.Node),
+		Message:     "WireGuard keys rotated; overlay address kept. Peers refresh on next heartbeat (network_generation bumped).",
+		WgPublicKey: rotated.WGPublicKey,
+		WgAddress:   rotated.WGAddress,
 	}, nil
 }
 

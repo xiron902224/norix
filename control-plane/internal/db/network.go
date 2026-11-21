@@ -93,13 +93,19 @@ type NodeNetworkView struct {
 }
 
 // NetworkApplyEnabled gates WireGuard/nft apply on the local runtime and sets DesiredNetworkPlan.apply
-// in agent heartbeats. Default is dry-run (false): configs are written under NORIX_NETWORK_STATE_DIR
-// (control plane) or <agent-workdir>/network (agent) without calling wg-quick/nft.
-// Enable live apply on a single node with NORIX_APPLY_WIREGUARD=1|true|yes on the control plane process.
+// in agent heartbeats (#48). Default is **on** (live apply when the agent has wg-quick + nft).
+// Opt out with NORIX_APPLY_WIREGUARD=0|false|off|no|dry-run (configs still written; no wg-quick/nft).
+// Agents skip live apply when tools/capabilities are missing even if this returns true.
 // GetNetworkStatusResponse.apply_enabled mirrors this flag for the dashboard.
 func NetworkApplyEnabled() bool {
 	value := strings.ToLower(strings.TrimSpace(os.Getenv("NORIX_APPLY_WIREGUARD")))
-	return value == "1" || value == "true" || value == "yes"
+	switch value {
+	case "0", "false", "no", "off", "dry-run", "dryrun":
+		return false
+	default:
+		// empty, 1, true, yes, on, or unknown → apply enabled
+		return true
+	}
 }
 
 func EnsureNodeNetworkIdentity(ctx context.Context, pool *pgxpool.Pool, tenantID, nodeID string) error {
@@ -159,6 +165,80 @@ func EnsureNodeNetworkIdentity(ctx context.Context, pool *pgxpool.Pool, tenantID
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+// WireGuardRotation is the result of RotateNodeWireGuardKeys (#48).
+type WireGuardRotation struct {
+	Node        Node
+	WGPublicKey string
+	WGAddress   string
+}
+
+// RotateNodeWireGuardKeys replaces the node's WireGuard keypair, keeps the overlay address,
+// and bumps network_generation on every node in the org so peers rebuild AllowedIPs/endpoints (#48).
+func RotateNodeWireGuardKeys(ctx context.Context, pool *pgxpool.Pool, tenantID, nodeID string, actor AuditActor) (WireGuardRotation, error) {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return WireGuardRotation{}, err
+	}
+	defer tx.Rollback(ctx)
+	if err := WithTenant(ctx, tx, tenantID); err != nil {
+		return WireGuardRotation{}, err
+	}
+	pair, err := network.GenerateKeyPair()
+	if err != nil {
+		return WireGuardRotation{}, err
+	}
+	key, keyErr := secrets.KeyFromEnv()
+	var enc, nonce []byte
+	if keyErr == nil {
+		enc, nonce, err = secrets.Encrypt(key, []byte(pair.PrivateKey))
+		if err != nil {
+			return WireGuardRotation{}, err
+		}
+	} else {
+		enc = []byte(pair.PrivateKey)
+		nonce = []byte(secrets.DevNonceMarker)
+	}
+	gen := time.Now().Unix()
+	var wgAddress string
+	err = tx.QueryRow(ctx, `
+		UPDATE nodes SET
+			wg_public_key = $2,
+			wg_private_key_enc = $3,
+			wg_private_key_nonce = $4,
+			network_generation = $5,
+			network_status = 'pending',
+			updated_at = NOW()
+		WHERE id = $1::uuid AND organization_id = $6::uuid
+		RETURNING COALESCE(wg_address, '')`,
+		nodeID, pair.PublicKey, enc, nonce, gen, tenantID).Scan(&wgAddress)
+	if err == pgx.ErrNoRows {
+		return WireGuardRotation{}, fmt.Errorf("node not found")
+	}
+	if err != nil {
+		return WireGuardRotation{}, fmt.Errorf("rotate wg keys: %w", err)
+	}
+	_, err = tx.Exec(ctx, `
+		UPDATE nodes SET network_generation = $2, updated_at = NOW()
+		WHERE organization_id = $1::uuid AND id <> $3::uuid`,
+		tenantID, gen, nodeID)
+	if err != nil {
+		return WireGuardRotation{}, fmt.Errorf("bump peer generations: %w", err)
+	}
+	if err := writeAudit(ctx, tx, tenantID, "node.wg_rotate", "node", nodeID, actor, map[string]string{
+		"wg_public_key": pair.PublicKey,
+	}); err != nil {
+		return WireGuardRotation{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return WireGuardRotation{}, err
+	}
+	node, err := GetNode(ctx, pool, tenantID, nodeID)
+	if err != nil {
+		return WireGuardRotation{}, err
+	}
+	return WireGuardRotation{Node: node, WGPublicKey: pair.PublicKey, WGAddress: wgAddress}, nil
 }
 
 func EnsureOrgNetwork(ctx context.Context, pool *pgxpool.Pool, tenantID string) error {

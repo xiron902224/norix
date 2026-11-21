@@ -71,6 +71,9 @@ const (
 	// AgentServiceRotateNodeTokenProcedure is the procedure name of the AgentService's RotateNodeToken
 	// RPC.
 	AgentServiceRotateNodeTokenProcedure = "/v1.AgentService/RotateNodeToken"
+	// AgentServiceRotateNodeWireGuardKeysProcedure is the procedure name of the AgentService's
+	// RotateNodeWireGuardKeys RPC.
+	AgentServiceRotateNodeWireGuardKeysProcedure = "/v1.AgentService/RotateNodeWireGuardKeys"
 	// AgentServiceRevokeNodeTokenProcedure is the procedure name of the AgentService's RevokeNodeToken
 	// RPC.
 	AgentServiceRevokeNodeTokenProcedure = "/v1.AgentService/RevokeNodeToken"
@@ -215,6 +218,13 @@ var (
 			Procedure:  AgentServiceRotateNodeTokenProcedure,
 		}
 	})
+	agentServiceRotateNodeWireGuardKeysSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("RotateNodeWireGuardKeys"),
+			Procedure:  AgentServiceRotateNodeWireGuardKeysProcedure,
+		}
+	})
 	agentServiceRevokeNodeTokenSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -260,6 +270,7 @@ type AgentServiceClient interface {
 	UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error)
 	UpdateNodeAgent(context.Context, *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error)
 	RotateNodeToken(context.Context, *v1.RotateNodeTokenRequest) (*v1.RotateNodeTokenResponse, error)
+	RotateNodeWireGuardKeys(context.Context, *v1.RotateNodeWireGuardKeysRequest) (*v1.RotateNodeWireGuardKeysResponse, error)
 	RevokeNodeToken(context.Context, *v1.RevokeNodeTokenRequest) (*v1.RevokeNodeTokenResponse, error)
 	SetNodeClientCert(context.Context, *v1.SetNodeClientCertRequest) (*v1.SetNodeClientCertResponse, error)
 	ConnectStream(context.Context) (AgentServiceConnectStreamClientStream, error)
@@ -330,6 +341,7 @@ type AgentServiceHandler interface {
 	UpdateNodeSchedule(context.Context, *v1.UpdateNodeScheduleRequest) (*v1.UpdateNodeScheduleResponse, error)
 	UpdateNodeAgent(context.Context, *v1.UpdateNodeAgentRequest) (*v1.UpdateNodeAgentResponse, error)
 	RotateNodeToken(context.Context, *v1.RotateNodeTokenRequest) (*v1.RotateNodeTokenResponse, error)
+	RotateNodeWireGuardKeys(context.Context, *v1.RotateNodeWireGuardKeysRequest) (*v1.RotateNodeWireGuardKeysResponse, error)
 	RevokeNodeToken(context.Context, *v1.RevokeNodeTokenRequest) (*v1.RevokeNodeTokenResponse, error)
 	SetNodeClientCert(context.Context, *v1.SetNodeClientCertRequest) (*v1.SetNodeClientCertResponse, error)
 	ConnectStream(context.Context, AgentServiceConnectStreamServerStream) error
@@ -358,6 +370,7 @@ func RegisterAgentServiceHandler(server *connect.Server, svc AgentServiceHandler
 		connect.Method{Spec: agentServiceUpdateNodeScheduleSpec(), Handler: adapter.updateNodeSchedule},
 		connect.Method{Spec: agentServiceUpdateNodeAgentSpec(), Handler: adapter.updateNodeAgent},
 		connect.Method{Spec: agentServiceRotateNodeTokenSpec(), Handler: adapter.rotateNodeToken},
+		connect.Method{Spec: agentServiceRotateNodeWireGuardKeysSpec(), Handler: adapter.rotateNodeWireGuardKeys},
 		connect.Method{Spec: agentServiceRevokeNodeTokenSpec(), Handler: adapter.revokeNodeToken},
 		connect.Method{Spec: agentServiceSetNodeClientCertSpec(), Handler: adapter.setNodeClientCert},
 		connect.Method{Spec: agentServiceConnectStreamSpec(), Handler: adapter.connectStream},
@@ -466,6 +479,10 @@ func (UnimplementedAgentServiceHandler) UpdateNodeAgent(context.Context, *v1.Upd
 
 func (UnimplementedAgentServiceHandler) RotateNodeToken(context.Context, *v1.RotateNodeTokenRequest) (*v1.RotateNodeTokenResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.RotateNodeToken is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) RotateNodeWireGuardKeys(context.Context, *v1.RotateNodeWireGuardKeysRequest) (*v1.RotateNodeWireGuardKeysResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.RotateNodeWireGuardKeys is not implemented")
 }
 
 func (UnimplementedAgentServiceHandler) RevokeNodeToken(context.Context, *v1.RevokeNodeTokenRequest) (*v1.RevokeNodeTokenResponse, error) {
@@ -631,6 +648,14 @@ func (c *agentServiceClient) UpdateNodeAgent(ctx context.Context, req *v1.Update
 func (c *agentServiceClient) RotateNodeToken(ctx context.Context, req *v1.RotateNodeTokenRequest) (*v1.RotateNodeTokenResponse, error) {
 	var res v1.RotateNodeTokenResponse
 	if err := c.client.CallUnary(ctx, agentServiceRotateNodeTokenSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) RotateNodeWireGuardKeys(ctx context.Context, req *v1.RotateNodeWireGuardKeysRequest) (*v1.RotateNodeWireGuardKeysResponse, error) {
+	var res v1.RotateNodeWireGuardKeysResponse
+	if err := c.client.CallUnary(ctx, agentServiceRotateNodeWireGuardKeysSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -884,6 +909,18 @@ func (h agentServiceHandler) rotateNodeToken(ctx context.Context, _ connect.Spec
 		return err
 	}
 	res, err := h.svc.RotateNodeToken(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) rotateNodeWireGuardKeys(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RotateNodeWireGuardKeysRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RotateNodeWireGuardKeys(ctx, &req)
 	if err != nil {
 		return err
 	}

@@ -69,7 +69,7 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | Managed databases | Beta | Real Postgres/MySQL/Redis containers (#20) |
 | Postgres HA (Patroni lab) | Beta | Runbook + `test/patroni/failover.sh` + CI `patroni-failover` (#52); RPO async ~1 MiB |
 | Autoscaler | GA (flag) | `NORIX_AUTOSCALER=1`; per-workload CPU/mem/RPS + UI/API (#49) |
-| WireGuard mesh | Experimental | Dry-run by default |
+| WireGuard mesh | GA (safe default) | Apply on by default; opt-out `NORIX_APPLY_WIREGUARD=0`; rollback + key rotate (#48) |
 | Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; not production-ready |
 | Micro-VM (Cloud Hypervisor) | Experimental | Needs KVM + artifacts — **not** “ready” |
 | Micro-VM (Firecracker) | Planned | Enum only |

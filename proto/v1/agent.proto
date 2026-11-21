@@ -413,6 +413,18 @@ message RotateNodeTokenResponse {
   string message = 2;
 }
 
+// Rotate WireGuard identity for one node; bumps org network_generation so peers refresh (#48).
+message RotateNodeWireGuardKeysRequest {
+  string node_id = 1;
+}
+
+message RotateNodeWireGuardKeysResponse {
+  Node node = 1;
+  string message = 2;
+  string wg_public_key = 3;
+  string wg_address = 4;
+}
+
 message RevokeNodeTokenRequest {
   string node_id = 1;
 }
@@ -562,6 +574,7 @@ service AgentService {
   rpc UpdateNodeSchedule(UpdateNodeScheduleRequest) returns (UpdateNodeScheduleResponse);
   rpc UpdateNodeAgent(UpdateNodeAgentRequest) returns (UpdateNodeAgentResponse);
   rpc RotateNodeToken(RotateNodeTokenRequest) returns (RotateNodeTokenResponse);
+  rpc RotateNodeWireGuardKeys(RotateNodeWireGuardKeysRequest) returns (RotateNodeWireGuardKeysResponse);
   rpc RevokeNodeToken(RevokeNodeTokenRequest) returns (RevokeNodeTokenResponse);
   rpc SetNodeClientCert(SetNodeClientCertRequest) returns (SetNodeClientCertResponse);
   rpc ConnectStream(stream ConnectStreamRequest) returns (stream ConnectStreamResponse);

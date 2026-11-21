@@ -26,7 +26,7 @@ Requires `docker` or `nerdctl` on PATH for container Deploy/Build. Without a run
 
 | Variable | Purpose |
 |----------|---------|
-| `NORIX_APPLY_WIREGUARD=1` | On **control plane**: sets `DesiredNetworkPlan.apply` so agents run `wg-quick` + `nft` and merge DNS into `/etc/hosts` |
+| `NORIX_APPLY_WIREGUARD` | On **control plane**: default **on** (apply). Set `0`/`false`/`dry-run` for configs-only. Agents still skip live apply if `wg-quick`/`nft` missing; failures roll back (#48) |
 | `NORIX_MICROVM_KERNEL` | Kernel path for Cloud Hypervisor |
 | `NORIX_MICROVM_ROOTFS` | Rootfs disk path for Cloud Hypervisor |
 | `NORIX_CLOUD_HYPERVISOR` | Hypervisor binary (default `cloud-hypervisor`) |
@@ -59,4 +59,4 @@ Heartbeat sends `running_workload_ids` from containers labeled `norix.workload_i
 
 - Full WASI HTTP worker still needs a dedicated wasmtime/WASI host process beyond staging + optional smoke.
 - Micro-VM cold boot requires real KVM + kernel/rootfs artifacts on the node.
-- Mesh apply is opt-in via control-plane `NORIX_APPLY_WIREGUARD=1` (see `docs/ESTADO_Y_PLAN_V1.md`).
+- Mesh apply defaults on; opt out with `NORIX_APPLY_WIREGUARD=0` (see `docs/user/network.md`, #48).
