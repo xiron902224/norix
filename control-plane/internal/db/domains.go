@@ -329,6 +329,13 @@ func getDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 	if composePending {
 		needsApply = true
 	}
+	wasmRoutes, err := WasmEdgeRoutes(ctx, tx)
+	if err != nil {
+		return DesiredEdgePlan{}, err
+	}
+	if len(wasmRoutes) > 0 {
+		needsApply = true
+	}
 	if !needsApply {
 		return DesiredEdgePlan{}, tx.Commit(ctx)
 	}
@@ -367,6 +374,7 @@ func getDesiredEdgePlan(ctx context.Context, pool *pgxpool.Pool, organizationID,
 		plan.Routes = append(plan.Routes, route)
 	}
 	plan.Routes = append(plan.Routes, composeRoutes...)
+	plan.Routes = append(plan.Routes, wasmRoutes...)
 	if composePending {
 		if err := clearComposeEdgePending(ctx, tx, nodeID); err != nil {
 			return DesiredEdgePlan{}, err

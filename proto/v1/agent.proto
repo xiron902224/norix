@@ -143,6 +143,8 @@ message DesiredWasmFunction {
   string image_ref = 4;
   int64 fuel_limit = 5;
   int32 memory_limit_mb = 6;
+  int32 listen_port = 7;
+  string hostname = 8;
 }
 
 message DesiredWasmPlan {

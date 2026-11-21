@@ -83,6 +83,7 @@ func loadDesiredSnapshot(ctx context.Context, pool *pgxpool.Pool, organizationID
 			fns = append(fns, &paasv1.DesiredWasmFunction{
 				Id: fn.ID, ProjectId: fn.ProjectID, Name: fn.Name, ImageRef: fn.ImageRef,
 				FuelLimit: fn.FuelLimit, MemoryLimitMb: fn.MemoryLimitMB,
+				ListenPort: fn.ListenPort, Hostname: fn.Hostname,
 			})
 		}
 		// Stable generation for fingerprinting (Heartbeat historically used wall-clock).

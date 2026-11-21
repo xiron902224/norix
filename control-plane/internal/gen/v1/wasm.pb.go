@@ -30,6 +30,10 @@ type WasmFunction struct {
 	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	FuelLimit     int64                  `protobuf:"varint,6,opt,name=fuel_limit,json=fuelLimit,proto3" json:"fuel_limit,omitempty"`
 	MemoryLimitMb int32                  `protobuf:"varint,7,opt,name=memory_limit_mb,json=memoryLimitMb,proto3" json:"memory_limit_mb,omitempty"`
+	// Stable local listen port for wasmtime serve + edge upstream (#47).
+	ListenPort int32 `protobuf:"varint,8,opt,name=listen_port,json=listenPort,proto3" json:"listen_port,omitempty"`
+	// Hostname published on the edge (default name.project.wasm.norix.internal).
+	Hostname      string `protobuf:"bytes,9,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -111,6 +115,20 @@ func (x *WasmFunction) GetMemoryLimitMb() int32 {
 		return x.MemoryLimitMb
 	}
 	return 0
+}
+
+func (x *WasmFunction) GetListenPort() int32 {
+	if x != nil {
+		return x.ListenPort
+	}
+	return 0
+}
+
+func (x *WasmFunction) GetHostname() string {
+	if x != nil {
+		return x.Hostname
+	}
+	return ""
 }
 
 type ListWasmFunctionsRequest struct {
@@ -325,7 +343,7 @@ var File_v1_wasm_proto protoreflect.FileDescriptor
 
 const file_v1_wasm_proto_rawDesc = "" +
 	"\n" +
-	"\rv1/wasm.proto\x12\x02v1\"\xcd\x01\n" +
+	"\rv1/wasm.proto\x12\x02v1\"\x8a\x02\n" +
 	"\fWasmFunction\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -335,7 +353,10 @@ const file_v1_wasm_proto_rawDesc = "" +
 	"\x06status\x18\x05 \x01(\tR\x06status\x12\x1d\n" +
 	"\n" +
 	"fuel_limit\x18\x06 \x01(\x03R\tfuelLimit\x12&\n" +
-	"\x0fmemory_limit_mb\x18\a \x01(\x05R\rmemoryLimitMb\"9\n" +
+	"\x0fmemory_limit_mb\x18\a \x01(\x05R\rmemoryLimitMb\x12\x1f\n" +
+	"\vlisten_port\x18\b \x01(\x05R\n" +
+	"listenPort\x12\x1a\n" +
+	"\bhostname\x18\t \x01(\tR\bhostname\"9\n" +
 	"\x18ListWasmFunctionsRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\"K\n" +
