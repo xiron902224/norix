@@ -389,8 +389,7 @@ async fn apply_desired(
         if !desired.desired_workloads.is_empty() {
             info!(
                 count = desired.desired_workloads.len(),
-                source,
-                "reconciling desired workloads"
+                source, "reconciling desired workloads"
             );
             let mut observed = Vec::new();
             let mut containers = Vec::new();
@@ -442,8 +441,7 @@ async fn apply_desired(
         if !desired.desired_managed_databases.is_empty() {
             info!(
                 count = desired.desired_managed_databases.len(),
-                source,
-                "reconciling managed databases"
+                source, "reconciling managed databases"
             );
             *last_observed_dbs = runtime
                 .reconcile_managed_databases(&desired.desired_managed_databases)
@@ -473,7 +471,10 @@ async fn apply_desired(
         }
     }
     if let Some(plan) = desired.desired_network.as_ref() {
-        info!(generation = plan.generation, source, "applying network plan");
+        info!(
+            generation = plan.generation,
+            source, "applying network plan"
+        );
         let observed = network::apply_network(plan, &config.workdir).await;
         if let Err(error) = retry_operation(
             "report_network",
