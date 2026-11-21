@@ -10,6 +10,8 @@ Hard caps for a single organization (#45). Defaults match beta.6 supported scale
 | Replicas per workload | 32 | `NORIX_MAX_REPLICAS` |
 | Autoscaler max replicas | 8 | `NORIX_MAX_AUTOSCALER_REPLICAS` (also capped by `NORIX_MAX_REPLICAS`; see `NORIX_AUTOSCALER_MAX`) |
 
+Per-workload HPA policies and UI: [autoscaler.md](./autoscaler.md) (#49).
+
 Creating past a cap returns an invalid-argument error that names the env var. Restart the control plane after changing these variables.
 
 ## What is tested

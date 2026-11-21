@@ -35,6 +35,13 @@ import {
   updateWorkload,
 } from '../services/projects-api'
 import { EnvVarsEditor, envMapToRows, envRowsToMap, type EnvRow } from './EnvVarsEditor'
+import {
+  applyAutoscaleToEnv,
+  defaultAutoscaleForm,
+  parseAutoscaleForm,
+  stripAutoscaleKeys,
+  type AutoscaleForm,
+} from '../lib/autoscale-env'
 import type { WorkloadRelease } from '../../../gen/v1/workload_pb'
 
 type DetailTab = 'summary' | 'build' | 'releases' | 'edit'
@@ -84,6 +91,7 @@ export function ApplicationDetailPage() {
   const [editGitRef, setEditGitRef] = useState('main')
   const [editDockerfile, setEditDockerfile] = useState('Dockerfile')
   const [editEnvRows, setEditEnvRows] = useState<EnvRow[]>([])
+  const [editAutoscale, setEditAutoscale] = useState<AutoscaleForm>(defaultAutoscaleForm)
   const [editUpdateStrategy, setEditUpdateStrategy] = useState('rolling')
   const [editMaxSurge, setEditMaxSurge] = useState(1)
   const [editMaxUnavailable, setEditMaxUnavailable] = useState(0)
@@ -119,7 +127,8 @@ export function ApplicationDetailPage() {
     setEditGitUrl(item.gitUrl || '')
     setEditGitRef(item.gitRef || 'main')
     setEditDockerfile(item.dockerfilePath || 'Dockerfile')
-    setEditEnvRows(envMapToRows(item.envVars))
+    setEditAutoscale(parseAutoscaleForm(item.envVars))
+    setEditEnvRows(envMapToRows(stripAutoscaleKeys(item.envVars || {})))
     setEditUpdateStrategy(item.updateStrategy || 'rolling')
     setEditMaxSurge(item.maxSurge || 1)
     setEditMaxUnavailable(item.maxUnavailable || 0)
@@ -408,7 +417,7 @@ export function ApplicationDetailPage() {
         dockerfilePath: editDockerfile,
         memoryLimitMb: Number(workload.memoryLimitMb || 512n),
         cpuShares: workload.cpuShares || 1024,
-        envVars: envRowsToMap(editEnvRows),
+        envVars: applyAutoscaleToEnv(envRowsToMap(editEnvRows), editAutoscale),
         updateStrategy: editUpdateStrategy,
         maxSurge: editMaxSurge,
         maxUnavailable: editMaxUnavailable,
@@ -555,6 +564,10 @@ export function ApplicationDetailPage() {
               { label: 'Generation', value: `${String(workload.observedGeneration)}/${String(workload.desiredGeneration)}` },
               { label: 'Region', value: workload.preferredZone || 'default' },
               { label: 'Ready', value: workload.ready === false || workload.status === 'unready' ? 'no' : 'yes' },
+              {
+                label: 'Autoscaler',
+                value: parseAutoscaleForm(workload.envVars).enabled ? 'on' : 'off',
+              },
             ]}
           />
           {workload.probeStatusJson && workload.probeStatusJson !== '{}' ? (
@@ -748,6 +761,77 @@ export function ApplicationDetailPage() {
                   <option value="binpack">binpack</option>
                 </select>
               </label>
+              <div className="detail-span" style={{ gridColumn: '1 / -1', display: 'grid', gap: 10, marginTop: 4 }}>
+                <strong>Autoscaler</strong>
+                <span className="muted">
+                  Requires control plane <span className="mono">NORIX_AUTOSCALER=1</span>. Policy is stored as workload env
+                  (<span className="mono">NORIX_AUTOSCALE_*</span>) and applied with cooldown to avoid flapping.
+                </span>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={editAutoscale.enabled}
+                    onChange={(e) => setEditAutoscale({ ...editAutoscale, enabled: e.target.checked })}
+                  />
+                  Enable autoscaling for this app
+                </label>
+                {editAutoscale.enabled ? (
+                  <div className="compass-edit-grid">
+                    <FormField
+                      id="edit-as-min"
+                      label="Min replicas"
+                      type="number"
+                      min={1}
+                      max={32}
+                      value={editAutoscale.minReplicas}
+                      onChange={(e) => setEditAutoscale({ ...editAutoscale, minReplicas: Number(e.target.value || 1) })}
+                    />
+                    <FormField
+                      id="edit-as-max"
+                      label="Max replicas"
+                      type="number"
+                      min={1}
+                      max={32}
+                      value={editAutoscale.maxReplicas}
+                      onChange={(e) => setEditAutoscale({ ...editAutoscale, maxReplicas: Number(e.target.value || 1) })}
+                    />
+                    <FormField
+                      id="edit-as-cpu"
+                      label="CPU target %"
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={editAutoscale.cpuTarget}
+                      onChange={(e) => setEditAutoscale({ ...editAutoscale, cpuTarget: Number(e.target.value || 0) })}
+                    />
+                    <FormField
+                      id="edit-as-mem"
+                      label="Memory target % (0=off)"
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={editAutoscale.memTarget}
+                      onChange={(e) => setEditAutoscale({ ...editAutoscale, memTarget: Number(e.target.value || 0) })}
+                    />
+                    <FormField
+                      id="edit-as-rps"
+                      label="RPS target (0=off)"
+                      type="number"
+                      min={0}
+                      value={editAutoscale.rpsTarget}
+                      onChange={(e) => setEditAutoscale({ ...editAutoscale, rpsTarget: Number(e.target.value || 0) })}
+                    />
+                    <FormField
+                      id="edit-as-cd"
+                      label="Cooldown ms"
+                      type="number"
+                      min={0}
+                      value={editAutoscale.cooldownMs}
+                      onChange={(e) => setEditAutoscale({ ...editAutoscale, cooldownMs: Number(e.target.value || 0) })}
+                    />
+                  </div>
+                ) : null}
+              </div>
               <FormField id="edit-zone" label="Zone" value={editZone} onChange={(e) => setEditZone(e.target.value)} />
               <FormField id="edit-git" label="Git URL" value={editGitUrl} onChange={(e) => setEditGitUrl(e.target.value)} />
               <FormField id="edit-ref" label="Git ref" value={editGitRef} onChange={(e) => setEditGitRef(e.target.value)} />

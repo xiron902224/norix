@@ -244,7 +244,7 @@ Reinicia CP. Los agents escriben `wg-norix.conf` / `norix.nft` y aplican si el p
 - Sin tag/release aún → instalar from source desde `main` (`make build` / `cargo build --release`).
 - Tip de integración: **`main`** (rama `develop` retirada). Preferir tag `v1.0.0-beta.5` cuando exista ([#62](https://github.com/xiron902224/norix/issues/62)).
 - Workers necesitan **Docker/containerd** para builds Git ([#60](https://github.com/xiron902224/norix/issues/60), [#66](https://github.com/xiron902224/norix/issues/66)).
-- Mesh / micro-VM / DNS-01 / Patroni / autoscaler: código listo, **opt-in** y sin smoke GA.
+- Mesh / micro-VM / DNS-01: código listo, **opt-in**. Patroni: smoke `#52`. Autoscaler: GA detrás de `NORIX_AUTOSCALER=1` (#49).
 - El `local` node embebido del CP puede aparecer en inventory si Docker está en node-1; el scheduler prioriza agents remotos. Puedes cordonar el local en UI si no quieres workloads ahí.
 - No hay installer “one-click” multi-nodo: este runbook + systemd es el camino soportado en beta.
 

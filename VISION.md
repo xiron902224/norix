@@ -60,7 +60,7 @@ We label every capability so nobody has to guess. Source: repository audit of 20
 | TLS / ACME | Experimental | DNS-01 path exists; control plane itself serves plain HTTP |
 | Preview environments | Experimental | DB rows + TTL; deploy pipeline is a stub |
 | Managed databases | Beta | Postgres/MySQL/Redis containers + URI (#20); Mongo not yet |
-| Autoscaler | Experimental | `NORIX_AUTOSCALER=1` |
+| Autoscaler | GA (flag) | `NORIX_AUTOSCALER=1`; UI/API per-workload policy (#49) |
 | WireGuard mesh | Experimental | Dry-run by default |
 | Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; OCI → Wasm materialization incomplete |
 | Micro-VM (Cloud Hypervisor) | Experimental | Needs KVM + kernel/rootfs artifacts |

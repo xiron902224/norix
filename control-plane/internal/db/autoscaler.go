@@ -9,11 +9,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// ScalableWorkload is a running/deploying workload considered for HPA (S18).
+// ScalableWorkload is a running/deploying workload considered for HPA (S18 / #49).
 type ScalableWorkload struct {
 	Workload
-	NodeCPUUsagePercent float64
-	HasNodeCPU          bool
+	NodeCPUUsagePercent    float64
+	HasNodeCPU             bool
+	NodeMemoryUsagePercent float64
+	HasNodeMemory          bool
 }
 
 // ListScalableWorkloads returns non-deleting workloads that are running or deploying.
@@ -36,7 +38,8 @@ func ListScalableWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID str
 		       w.affinity_labels::text, w.anti_affinity_labels::text,
 		       COALESCE(w.isolation_mode, 'container'), COALESCE(w.execution_runtime, 'docker'),
 		       COALESCE(w.stack_id::text, ''), COALESCE(w.compose_service, ''), COALESCE(w.compose_spec::text, '{}'),
-		       COALESCE(n.cpu_usage_percent, 0), (n.id IS NOT NULL)
+		       COALESCE(n.cpu_usage_percent, 0), (n.id IS NOT NULL),
+		       COALESCE(n.memory_total_mb, 0), COALESCE(n.memory_free_mb, 0)
 		FROM workloads w
 		LEFT JOIN nodes n ON n.id = w.assigned_node_id
 		WHERE w.organization_id = $1::uuid
@@ -52,6 +55,7 @@ func ListScalableWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID str
 		var item ScalableWorkload
 		var environmentText, affinityText, antiText string
 		var hasNode bool
+		var memTotal, memFree int64
 		if err := rows.Scan(
 			&item.ID, &item.OrganizationID, &item.ProjectID, &item.Name,
 			&item.Runtime, &item.ImageOrSource, &environmentText, &item.CPUShares,
@@ -62,7 +66,7 @@ func ListScalableWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID str
 			&item.ReplicaCount, &item.ScheduleStrategy, &item.RequireKVM, &item.PreferredZone,
 			&affinityText, &antiText, &item.IsolationMode, &item.ExecutionRuntime,
 			&item.StackID, &item.ComposeService, &item.ComposeSpecJSON,
-			&item.NodeCPUUsagePercent, &hasNode,
+			&item.NodeCPUUsagePercent, &hasNode, &memTotal, &memFree,
 		); err != nil {
 			return nil, err
 		}
@@ -74,6 +78,14 @@ func ListScalableWorkloads(ctx context.Context, pool *pgxpool.Pool, tenantID str
 		item.AffinityLabels = decodeLabels([]byte(affinityText))
 		item.AntiAffinityLabels = decodeLabels([]byte(antiText))
 		item.HasNodeCPU = hasNode
+		if memTotal > 0 {
+			used := memTotal - memFree
+			if used < 0 {
+				used = 0
+			}
+			item.NodeMemoryUsagePercent = 100.0 * float64(used) / float64(memTotal)
+			item.HasNodeMemory = true
+		}
 		if item.ReplicaCount <= 0 {
 			item.ReplicaCount = 1
 		}
