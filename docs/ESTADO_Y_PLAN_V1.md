@@ -68,7 +68,7 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | Preview environments | Experimental | Stub pipeline; webhook secret required (#11) |
 | Managed databases | Beta | Real Postgres/MySQL/Redis containers (#20) |
 | Postgres HA (Patroni lab) | Beta | Runbook + `test/patroni/failover.sh` + CI `patroni-failover` (#52); RPO async ~1 MiB |
-| Autoscaler | Experimental | `NORIX_AUTOSCALER=1` |
+| Autoscaler | GA (flag) | `NORIX_AUTOSCALER=1`; per-workload CPU/mem/RPS + UI/API (#49) |
 | WireGuard mesh | Experimental | Dry-run by default |
 | Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; not production-ready |
 | Micro-VM (Cloud Hypervisor) | Experimental | Needs KVM + artifacts — **not** “ready” |

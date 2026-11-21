@@ -34,6 +34,7 @@ Official documentation for **people who run apps on Norix** — after the contro
 9b. [Preview environments](./previews.md) — PR → unique URL (#21)
 10. [Ops & backups](./ops.md)
 10b. [Scale limits](./scale-limits.md) — configurable hard caps (#45)
+10b2. [Autoscaler](./autoscaler.md) — HPA CPU/mem/RPS + UI (#49)
 10c. [Resource footprint](./footprint.md) — binary size / RSS (#43)
 10d. [Chaos tests](./chaos.md) — agent crash, CP/DB restart, partition (#41)
 11. [Access & teams](./access.md)

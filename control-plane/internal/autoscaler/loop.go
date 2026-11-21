@@ -23,11 +23,12 @@ func Enabled() bool {
 // DefaultPolicy reads global HPA knobs from env (S18).
 func DefaultPolicy() Policy {
 	p := Policy{
-		MinReplicas: 1,
-		MaxReplicas: 8,
-		CPUTarget:   70,
-		RPSTarget:   0,
-		CooldownMs:  30_000,
+		MinReplicas:  1,
+		MaxReplicas:  8,
+		CPUTarget:    70,
+		MemoryTarget: 0,
+		RPSTarget:    0,
+		CooldownMs:    30_000,
 	}
 	if v := envInt32("NORIX_AUTOSCALER_MIN"); v > 0 {
 		p.MinReplicas = v
@@ -38,6 +39,9 @@ func DefaultPolicy() Policy {
 	p.MaxReplicas = limits.FromEnv().ClampAutoscalerMax(p.MaxReplicas)
 	if v := envFloat("NORIX_AUTOSCALER_CPU_TARGET"); v > 0 {
 		p.CPUTarget = v
+	}
+	if v := envFloat("NORIX_AUTOSCALER_MEM_TARGET"); v > 0 {
+		p.MemoryTarget = v
 	}
 	if v := envFloat("NORIX_AUTOSCALER_RPS_TARGET"); v > 0 {
 		p.RPSTarget = v
@@ -142,6 +146,9 @@ func PolicyForWorkload(base Policy, env map[string]string) Policy {
 	if v := parseFloat(envValue(env, "NORIX_AUTOSCALE_CPU_TARGET", "AUTOSCALE_CPU_TARGET")); v > 0 {
 		p.CPUTarget = v
 	}
+	if v := parseFloat(envValue(env, "NORIX_AUTOSCALE_MEM_TARGET", "AUTOSCALE_MEM_TARGET", "NORIX_AUTOSCALE_MEMORY_TARGET", "AUTOSCALE_MEMORY_TARGET")); v > 0 {
+		p.MemoryTarget = v
+	}
 	if v := parseFloat(envValue(env, "NORIX_AUTOSCALE_RPS_TARGET", "AUTOSCALE_RPS_TARGET")); v > 0 {
 		p.RPSTarget = v
 	}
@@ -217,8 +224,8 @@ func ScaleAllEnabled() bool {
 }
 
 // Decide reports desired replicas and whether to apply (respects cooldown).
-func Decide(p Policy, current int32, cpuPercent, rps float64, lastScale time.Time, now time.Time, everScaled bool) (desired int32, apply bool) {
-	desired = DesiredReplicas(p, current, cpuPercent, rps)
+func Decide(p Policy, current int32, cpuPercent, rps, memPercent float64, lastScale time.Time, now time.Time, everScaled bool) (desired int32, apply bool) {
+	desired = DesiredReplicas(p, current, cpuPercent, rps, memPercent)
 	if desired == current {
 		return desired, false
 	}
@@ -276,14 +283,14 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, track
 				logger.Debug("autoscaler skip invalid policy", "workload", item.ID, "error", err)
 				continue
 			}
-			cpu, rps, ok := observeSignals(ctx, pool, orgID, item)
+			cpu, rps, mem, ok := observeSignals(ctx, pool, orgID, item)
 			if !ok {
 				continue
 			}
 			if !tracker.Allow(item.ID, policy.CooldownMs, now) {
 				continue
 			}
-			desired := DesiredReplicas(policy, item.ReplicaCount, cpu, rps)
+			desired := DesiredReplicas(policy, item.ReplicaCount, cpu, rps, mem)
 			if desired == item.ReplicaCount {
 				continue
 			}
@@ -304,17 +311,24 @@ func runOnce(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, track
 				"to", updated.ReplicaCount,
 				"cpu", cpu,
 				"rps", rps,
+				"mem", mem,
 			)
 		}
 	}
 }
 
-func observeSignals(ctx context.Context, pool *pgxpool.Pool, orgID string, item db.ScalableWorkload) (cpu, rps float64, ok bool) {
+func observeSignals(ctx context.Context, pool *pgxpool.Pool, orgID string, item db.ScalableWorkload) (cpu, rps, mem float64, ok bool) {
 	cpu = item.NodeCPUUsagePercent
 	hasCPU := item.HasNodeCPU
+	mem = item.NodeMemoryUsagePercent
+	hasMem := item.HasNodeMemory
 	if sample, found, err := db.LatestMetricValue(ctx, pool, orgID, item.AssignedNodeID, "node_cpu_usage_percent", "", ""); err == nil && found {
 		cpu = sample
 		hasCPU = true
+	}
+	if sample, found, err := db.LatestMetricValue(ctx, pool, orgID, item.AssignedNodeID, "node_memory_usage_percent", "", ""); err == nil && found {
+		mem = sample
+		hasMem = true
 	}
 	if sample, found, err := db.LatestMetricValue(ctx, pool, orgID, "", "workload_rps", "workload_id", item.ID); err == nil && found {
 		rps = sample
@@ -324,14 +338,17 @@ func observeSignals(ctx context.Context, pool *pgxpool.Pool, orgID string, item 
 	// Need at least one usable signal matching policy targets.
 	policy := PolicyForWorkload(DefaultPolicy(), item.Environment)
 	if policy.CPUTarget > 0 && hasCPU {
-		return cpu, rps, true
+		return cpu, rps, mem, true
+	}
+	if policy.MemoryTarget > 0 && hasMem {
+		return cpu, rps, mem, true
 	}
 	if policy.RPSTarget > 0 && rps > 0 {
-		return cpu, rps, true
+		return cpu, rps, mem, true
 	}
-	// When RPS target unset and we have node CPU, still OK.
+	// When RPS/mem targets unset and we have node CPU, still OK.
 	if hasCPU {
-		return cpu, rps, true
+		return cpu, rps, mem, true
 	}
-	return 0, 0, false
+	return 0, 0, 0, false
 }

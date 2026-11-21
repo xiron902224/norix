@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Autoscaler GA behind `NORIX_AUTOSCALER=1` (#49): per-workload CPU / memory / RPS targets, min/max, cooldown (anti-flap tests), Edit → Autoscaler UI writing `NORIX_AUTOSCALE_*` env; docs EN/ES `docs/user/autoscaler.md`.
 - Postgres HA runbook + automated Patroni failover smoke (`test/patroni/failover.sh`, docs EN/ES): proves HAProxy promotion, marker data within documented RPO (~1 MiB async lag), and control-plane reconnect (`/healthz` + `GetBootstrapStatus`). CI job `patroni-failover` (skippable via `SKIP_PATRONI_FAILOVER=1`) (#52).
 - Faster reconcile via `WatchDesired` long-poll (#44): agents receive desired-state changes without waiting for the next heartbeat; in-process wake hub + fingerprint for reconnect safety. Docs EN/ES `docs/user/faster-reconcile.md`. Opt out with `NORIX_WATCH_DESIRED=0`.
 - Multi-node E2E smoke in CI (`test/multinode/`, job `multinode-e2e`): postgres + control plane + 3 agents (shared `docker.sock`), bootstrap, `replica_count=2`, cordon/drain, kill agent → offline. Skippable with `SKIP_MULTINODE_E2E=1` / repo variable (#37).

@@ -32,6 +32,7 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 8b. [Entornos preview](./previews.md) — PR → URL única (#21)
 9. [Ops y backups](./ops.md)
 9b. [Límites de escala](./scale-limits.md) — topes configurables (#45)
+9b2. [Autoscaler](./autoscaler.md) — HPA CPU/mem/RPS + UI (#49)
 9c. [Huella de recursos](./footprint.md) — tamaño / RSS (#43)
 9d. [Pruebas de caos](./chaos.md) — crash agent, restart CP/DB, partición (#41)
 10. [Acceso y equipos](./access.md)
