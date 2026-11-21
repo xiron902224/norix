@@ -16,16 +16,20 @@ mod update;
 mod wasm;
 
 use std::path::Path;
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use std::future::Future;
 use tokio::signal;
+use tokio::sync::{mpsc, Mutex};
 use tokio::time::{sleep, Instant};
 use tracing::{info, warn};
 
 use crate::capabilities::detect;
-use crate::client::{AgentClient, DesiredBuild, NodeState, ObservedBuild};
+use crate::client::{
+    AgentClient, DesiredBuild, HeartbeatResult, NodeState, ObservedBuild, WatchDesiredResult,
+};
 use crate::config::Config;
 use crate::runtime::{is_container_runtime, is_microvm_runtime, Runtime};
 
@@ -175,19 +179,98 @@ async fn main() -> Result<()> {
     let compose_stacks = runtime
         .as_ref()
         .map(|rt| compose::ComposeStacks::new(rt.bin(), &config.workdir));
-    let mut state = load_or_enroll(&client, &config, &caps).await?;
-    info!(node_id = %state.node_id, "agent enrolled");
+    let state = Arc::new(Mutex::new(load_or_enroll(&client, &config, &caps).await?));
+    {
+        let guard = state.lock().await;
+        info!(node_id = %guard.node_id, "agent enrolled");
+    }
 
     let mut backoff = Duration::from_secs(1);
     let max_backoff = Duration::from_secs(30);
     let heartbeat = Duration::from_secs(config.heartbeat_secs);
     let mut last_observed_dbs: Vec<client::ObservedManagedDatabase> = Vec::new();
+    let apply_lock = Arc::new(Mutex::new(()));
+    let last_watch_fp = Arc::new(Mutex::new(String::new()));
+
+    // WatchDesired long-poll (#44): parallel with heartbeats; wakes on desired change.
+    let (watch_tx, mut watch_rx) = mpsc::channel::<WatchDesiredResult>(4);
+    if config.watch_desired {
+        let client_w = client.clone();
+        let state_w = Arc::clone(&state);
+        let timeout = config.watch_timeout_secs;
+        let fp_w = Arc::clone(&last_watch_fp);
+        tokio::spawn(async move {
+            let mut backoff = Duration::from_secs(1);
+            let max_backoff = Duration::from_secs(30);
+            loop {
+                let (node_snapshot, known) = {
+                    let s = state_w.lock().await;
+                    let fp = fp_w.lock().await.clone();
+                    (s.clone(), fp)
+                };
+                match client_w
+                    .watch_desired(&node_snapshot, &known, timeout)
+                    .await
+                {
+                    Ok(watch) => {
+                        if backoff > Duration::from_secs(1) {
+                            info!("watch desired restored");
+                        }
+                        backoff = Duration::from_secs(1);
+                        {
+                            let mut fp = fp_w.lock().await;
+                            if !watch.fingerprint.is_empty() {
+                                *fp = watch.fingerprint.clone();
+                            }
+                        }
+                        if watch.changed {
+                            info!(
+                                fingerprint = %watch.fingerprint,
+                                timed_out = watch.timed_out,
+                                "watch desired changed; reconciling"
+                            );
+                            if watch_tx.send(watch).await.is_err() {
+                                return;
+                            }
+                        }
+                    }
+                    Err(error) => {
+                        warn!(%error, retry_in = ?backoff, "watch desired failed; reconnecting with backoff");
+                        sleep(backoff).await;
+                        backoff = next_backoff(backoff, max_backoff);
+                    }
+                }
+            }
+        });
+        info!(
+            timeout_secs = config.watch_timeout_secs,
+            "WatchDesired long-poll enabled"
+        );
+    } else {
+        info!("WatchDesired disabled (NORIX_WATCH_DESIRED=0); heartbeat-only reconcile");
+    }
 
     loop {
         tokio::select! {
             _ = signal::ctrl_c() => {
                 info!("shutdown signal received");
                 break;
+            }
+            Some(watch) = watch_rx.recv() => {
+                let _guard = apply_lock.lock().await;
+                let mut state_guard = state.lock().await;
+                apply_desired(
+                    &config,
+                    &client,
+                    &mut state_guard,
+                    &caps,
+                    runtime.as_ref(),
+                    compose_stacks.as_ref(),
+                    &watch.desired,
+                    &mut last_observed_dbs,
+                    "watch",
+                )
+                .await;
             }
             _ = sleep(heartbeat) => {
                 let memory_free = memory_free_mb();
@@ -197,9 +280,10 @@ async fn main() -> Result<()> {
                 } else {
                     Vec::new()
                 };
+                let state_snapshot = state.lock().await.clone();
                 match client
                     .heartbeat(
-                        &state,
+                        &state_snapshot,
                         &caps,
                         memory_free,
                         cpu_usage,
@@ -213,160 +297,20 @@ async fn main() -> Result<()> {
                             info!("heartbeat restored");
                         }
                         backoff = Duration::from_secs(1);
-                        if let Some(new_token) = desired.rotated_node_token.as_deref() {
-                            state.node_token = new_token.to_string();
-                            if let Err(error) = write_state(&config.state_path(), &state) {
-                                warn!(%error, "failed to persist rotated node token");
-                            } else {
-                                info!("persisted rotated node token from control plane");
-                            }
-                        }
-                        if let Some(target) = desired
-                            .desired_agent_version
-                            .as_deref()
-                            .map(str::trim)
-                            .filter(|v| !v.is_empty())
-                        {
-                            let current = config.agent_version.trim().trim_start_matches('v');
-                            let want = target.trim_start_matches('v');
-                            if !want.is_empty() && want != current {
-                                info!(from = %current, to = %want, "control plane requested agent update");
-                                if let Err(error) = update::apply_desired_version(&config, target).await {
-                                    warn!(%error, "agent self-update failed");
-                                }
-                            }
-                        }
-                        if let Some(stacks) = compose_stacks.as_ref() {
-                            if !desired.desired_compose_stacks.is_empty() {
-                                stacks.reconcile(&client, &state, &desired.desired_compose_stacks);
-                            }
-                        }
-                        if let Some(runtime) = runtime.as_ref() {
-                            if !desired.desired_builds.is_empty() {
-                                // A git build can take many minutes. Running it inside the
-                                // heartbeat loop marked the node offline and froze every
-                                // other action (deletes, image deploys) until it finished.
-                                // Each build gets its own task. build::slots() limits how many run at once (#24).
-                                info!(
-                                    count = desired.desired_builds.len(),
-                                    limit = build::slots().limit(),
-                                    "scheduling desired builds"
-                                );
-                                for build in desired.desired_builds.clone() {
-                                    let runtime = runtime.clone();
-                                    let client = client.clone();
-                                    let state = state.clone();
-                                    tokio::spawn(async move {
-                                        run_build_task(&runtime, &client, &state, &build).await;
-                                    });
-                                }
-                            }
-                            if !desired.desired_workloads.is_empty() {
-                                info!(count = desired.desired_workloads.len(), "reconciling desired workloads");
-                                let mut observed = Vec::new();
-                                let mut containers = Vec::new();
-                                for item in &desired.desired_workloads {
-                                    if is_microvm_runtime(&item.runtime) {
-                                        observed.push(microvm::reconcile_one(&config.workdir, item).await);
-                                    } else if is_container_runtime(&item.runtime) {
-                                        containers.push(item.clone());
-                                    } else if runtime::is_wasm_runtime(&item.runtime) {
-                                        observed.push(client::ObservedWorkload {
-                                            id: item.id.clone(),
-                                            status: "failed".into(),
-                                            container_id: String::new(),
-                                            observed_generation: item.desired_generation,
-                                            message: "use Runtimes / DesiredWasmPlan for wasm functions".into(),
-                                            host_port: item.host_port,
-                                            log_lines: vec!["skipped wasm workload".into()],
-                                            ready: true,
-                                            probe_status_json: "{}".into(),
-                                        });
-                                    } else {
-                                        observed.push(client::ObservedWorkload {
-                                            id: item.id.clone(),
-                                            status: "failed".into(),
-                                            container_id: String::new(),
-                                            observed_generation: item.desired_generation,
-                                            message: format!("unsupported runtime {}", item.runtime),
-                                            host_port: item.host_port,
-                                            log_lines: vec![],
-                                            ready: true,
-                                            probe_status_json: "{}".into(),
-                                        });
-                                    }
-                                }
-                                if !containers.is_empty() {
-                                    observed.extend(runtime.reconcile(&containers).await);
-                                }
-                                if let Err(error) = retry_operation(
-                                    "report_observed",
-                                    || client.report_observed(&state, &observed),
-                                    3,
-                                    Duration::from_millis(250),
-                                )
-                                .await
-                                {
-                                    warn!(%error, "report observed failed after retries");
-                                }
-                            }
-                            if !desired.desired_managed_databases.is_empty() {
-                                info!(
-                                    count = desired.desired_managed_databases.len(),
-                                    "reconciling managed databases"
-                                );
-                                last_observed_dbs = runtime
-                                    .reconcile_managed_databases(&desired.desired_managed_databases)
-                                    .await;
-                            }
-                        } else if !desired.desired_workloads.is_empty()
-                            || !desired.desired_builds.is_empty()
-                            || !desired.desired_managed_databases.is_empty()
-                        {
-                            warn!("desired builds/workloads/DBs pending but no container runtime; degraded mode active");
-                        }
-                        if let Some(plan) = desired.desired_edge.as_ref() {
-                            info!(generation = plan.generation, "applying edge plan");
-                            let observed = edge::apply_edge(plan).await;
-                            if let Err(error) = retry_operation(
-                                "report_edge",
-                                || client.report_edge(&state, &observed),
-                                3,
-                                Duration::from_millis(300),
-                            )
-                            .await
-                            {
-                                warn!(%error, "report edge failed after retries");
-                            }
-                        }
-                        if let Some(plan) = desired.desired_network.as_ref() {
-                            info!(generation = plan.generation, "applying network plan");
-                            let observed = network::apply_network(plan, &config.workdir).await;
-                            if let Err(error) = retry_operation(
-                                "report_network",
-                                || client.report_network(&state, &observed),
-                                3,
-                                Duration::from_millis(300),
-                            )
-                            .await
-                            {
-                                warn!(%error, "report network failed after retries");
-                            }
-                        }
-                        if let Some(plan) = desired.desired_wasm.as_ref() {
-                            info!(generation = plan.generation, count = plan.functions.len(), "applying wasm plan");
-                            let observed = wasm::apply_wasm_plan(&config.workdir, plan).await;
-                            if let Err(error) = retry_operation(
-                                "report_wasm",
-                                || client.report_wasm(&state, &observed),
-                                3,
-                                Duration::from_millis(300),
-                            )
-                            .await
-                            {
-                                warn!(%error, "report wasm failed after retries");
-                            }
-                        }
+                        let _guard = apply_lock.lock().await;
+                        let mut state_guard = state.lock().await;
+                        apply_desired(
+                            &config,
+                            &client,
+                            &mut state_guard,
+                            &caps,
+                            runtime.as_ref(),
+                            compose_stacks.as_ref(),
+                            &desired,
+                            &mut last_observed_dbs,
+                            "heartbeat",
+                        )
+                        .await;
                     }
                     Err(error) => {
                         warn!(%error, retry_in = ?backoff, "heartbeat failed; reconnecting with backoff");
@@ -379,6 +323,188 @@ async fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Applies desired state from Heartbeat or WatchDesired. Serialized by the caller (#44).
+async fn apply_desired(
+    config: &Config,
+    client: &AgentClient,
+    state: &mut NodeState,
+    _caps: &capabilities::Capabilities,
+    runtime: Option<&Runtime>,
+    compose_stacks: Option<&compose::ComposeStacks>,
+    desired: &HeartbeatResult,
+    last_observed_dbs: &mut Vec<client::ObservedManagedDatabase>,
+    source: &str,
+) {
+    if let Some(new_token) = desired.rotated_node_token.as_deref() {
+        state.node_token = new_token.to_string();
+        if let Err(error) = write_state(&config.state_path(), state) {
+            warn!(%error, "failed to persist rotated node token");
+        } else {
+            info!("persisted rotated node token from control plane");
+        }
+    }
+    if let Some(target) = desired
+        .desired_agent_version
+        .as_deref()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+    {
+        let current = config.agent_version.trim().trim_start_matches('v');
+        let want = target.trim_start_matches('v');
+        if !want.is_empty() && want != current {
+            info!(from = %current, to = %want, source, "control plane requested agent update");
+            if let Err(error) = update::apply_desired_version(config, target).await {
+                warn!(%error, "agent self-update failed");
+            }
+        }
+    }
+    if let Some(stacks) = compose_stacks {
+        if !desired.desired_compose_stacks.is_empty() {
+            stacks.reconcile(client, state, &desired.desired_compose_stacks);
+        }
+    }
+    if let Some(runtime) = runtime {
+        if !desired.desired_builds.is_empty() {
+            // A git build can take many minutes. Running it inside the
+            // heartbeat loop marked the node offline and froze every
+            // other action (deletes, image deploys) until it finished.
+            // Each build gets its own task. build::slots() limits how many run at once (#24).
+            info!(
+                count = desired.desired_builds.len(),
+                limit = build::slots().limit(),
+                source,
+                "scheduling desired builds"
+            );
+            for build in desired.desired_builds.clone() {
+                let runtime = runtime.clone();
+                let client = client.clone();
+                let state = state.clone();
+                tokio::spawn(async move {
+                    run_build_task(&runtime, &client, &state, &build).await;
+                });
+            }
+        }
+        if !desired.desired_workloads.is_empty() {
+            info!(
+                count = desired.desired_workloads.len(),
+                source,
+                "reconciling desired workloads"
+            );
+            let mut observed = Vec::new();
+            let mut containers = Vec::new();
+            for item in &desired.desired_workloads {
+                if is_microvm_runtime(&item.runtime) {
+                    observed.push(microvm::reconcile_one(&config.workdir, item).await);
+                } else if is_container_runtime(&item.runtime) {
+                    containers.push(item.clone());
+                } else if runtime::is_wasm_runtime(&item.runtime) {
+                    observed.push(client::ObservedWorkload {
+                        id: item.id.clone(),
+                        status: "failed".into(),
+                        container_id: String::new(),
+                        observed_generation: item.desired_generation,
+                        message: "use Runtimes / DesiredWasmPlan for wasm functions".into(),
+                        host_port: item.host_port,
+                        log_lines: vec!["skipped wasm workload".into()],
+                        ready: true,
+                        probe_status_json: "{}".into(),
+                    });
+                } else {
+                    observed.push(client::ObservedWorkload {
+                        id: item.id.clone(),
+                        status: "failed".into(),
+                        container_id: String::new(),
+                        observed_generation: item.desired_generation,
+                        message: format!("unsupported runtime {}", item.runtime),
+                        host_port: item.host_port,
+                        log_lines: vec![],
+                        ready: true,
+                        probe_status_json: "{}".into(),
+                    });
+                }
+            }
+            if !containers.is_empty() {
+                observed.extend(runtime.reconcile(&containers).await);
+            }
+            if let Err(error) = retry_operation(
+                "report_observed",
+                || client.report_observed(state, &observed),
+                3,
+                Duration::from_millis(250),
+            )
+            .await
+            {
+                warn!(%error, "report observed failed after retries");
+            }
+        }
+        if !desired.desired_managed_databases.is_empty() {
+            info!(
+                count = desired.desired_managed_databases.len(),
+                source,
+                "reconciling managed databases"
+            );
+            *last_observed_dbs = runtime
+                .reconcile_managed_databases(&desired.desired_managed_databases)
+                .await;
+        }
+    } else if !desired.desired_workloads.is_empty()
+        || !desired.desired_builds.is_empty()
+        || !desired.desired_managed_databases.is_empty()
+    {
+        warn!(
+            source,
+            "desired builds/workloads/DBs pending but no container runtime; degraded mode active"
+        );
+    }
+    if let Some(plan) = desired.desired_edge.as_ref() {
+        info!(generation = plan.generation, source, "applying edge plan");
+        let observed = edge::apply_edge(plan).await;
+        if let Err(error) = retry_operation(
+            "report_edge",
+            || client.report_edge(state, &observed),
+            3,
+            Duration::from_millis(300),
+        )
+        .await
+        {
+            warn!(%error, "report edge failed after retries");
+        }
+    }
+    if let Some(plan) = desired.desired_network.as_ref() {
+        info!(generation = plan.generation, source, "applying network plan");
+        let observed = network::apply_network(plan, &config.workdir).await;
+        if let Err(error) = retry_operation(
+            "report_network",
+            || client.report_network(state, &observed),
+            3,
+            Duration::from_millis(300),
+        )
+        .await
+        {
+            warn!(%error, "report network failed after retries");
+        }
+    }
+    if let Some(plan) = desired.desired_wasm.as_ref() {
+        info!(
+            generation = plan.generation,
+            count = plan.functions.len(),
+            source,
+            "applying wasm plan"
+        );
+        let observed = wasm::apply_wasm_plan(&config.workdir, plan).await;
+        if let Err(error) = retry_operation(
+            "report_wasm",
+            || client.report_wasm(state, &observed),
+            3,
+            Duration::from_millis(300),
+        )
+        .await
+        {
+            warn!(%error, "report wasm failed after retries");
+        }
+    }
 }
 
 /// Exponential backoff capped at `max` (heartbeat reconnect and operation retries).

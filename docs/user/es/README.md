@@ -21,6 +21,7 @@ Documentación oficial para quien **usa la plataforma** (dashboard), no para ins
 4d. [Probes](./probes.md) — liveness / readiness HTTP·TCP·exec
 4e. [Volúmenes persistentes](./volumes.md) — montajes Docker, nodo sticky, backup/delete
 5. [Nodos y agents](./nodes-agents.md)
+5a. [Reconcile más rápido](./faster-reconcile.md) — long-poll WatchDesired vs heartbeat (#44)
 5b. [Socket Docker](./docker-socket.md) — quién monta `docker.sock`, proxy/rootless
 5c. [Autenticación del agent](./agent-auth.md) — rotar/revocar token, mTLS opcional
 5d. [CLI (`norix`)](./cli.md) — CLI en Rust: deploy, logs, nodes, rollback

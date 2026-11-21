@@ -2,6 +2,8 @@
 
 Agents are processes on your machines that enroll with the control plane, heartbeat, and reconcile containers.
 
+Desired state is delivered on the heartbeat **and** via a `WatchDesired` long-poll so deploys converge in ~ms–1s instead of waiting up to `NORIX_HEARTBEAT_SECS`. See [Faster reconcile](./faster-reconcile.md).
+
 ## Join a node
 
 1. **Regions & nodes** → **Create join token** (optional suggested name)

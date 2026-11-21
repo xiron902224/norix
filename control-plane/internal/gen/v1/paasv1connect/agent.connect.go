@@ -31,6 +31,8 @@ const (
 	AgentServiceEnrollNodeProcedure = "/v1.AgentService/EnrollNode"
 	// AgentServiceHeartbeatProcedure is the procedure name of the AgentService's Heartbeat RPC.
 	AgentServiceHeartbeatProcedure = "/v1.AgentService/Heartbeat"
+	// AgentServiceWatchDesiredProcedure is the procedure name of the AgentService's WatchDesired RPC.
+	AgentServiceWatchDesiredProcedure = "/v1.AgentService/WatchDesired"
 	// AgentServiceReportObservedProcedure is the procedure name of the AgentService's ReportObserved
 	// RPC.
 	AgentServiceReportObservedProcedure = "/v1.AgentService/ReportObserved"
@@ -99,6 +101,13 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("Heartbeat"),
 			Procedure:  AgentServiceHeartbeatProcedure,
+		}
+	})
+	agentServiceWatchDesiredSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_agent_proto.Services().ByName("AgentService").Methods().ByName("WatchDesired"),
+			Procedure:  AgentServiceWatchDesiredProcedure,
 		}
 	})
 	agentServiceReportObservedSpec = sync.OnceValue(func() connect.Spec {
@@ -234,6 +243,8 @@ type AgentServiceClient interface {
 	CreateJoinToken(context.Context, *v1.CreateJoinTokenRequest) (*v1.CreateJoinTokenResponse, error)
 	EnrollNode(context.Context, *v1.EnrollNodeRequest) (*v1.EnrollNodeResponse, error)
 	Heartbeat(context.Context, *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error)
+	// Long-poll desired state so agents converge faster than heartbeat interval (#44).
+	WatchDesired(context.Context, *v1.WatchDesiredRequest) (*v1.WatchDesiredResponse, error)
 	ReportObserved(context.Context, *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error)
 	ReportBuild(context.Context, *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error)
 	ReportEdge(context.Context, *v1.ReportEdgeRequest) (*v1.ReportEdgeResponse, error)
@@ -302,6 +313,8 @@ type AgentServiceHandler interface {
 	CreateJoinToken(context.Context, *v1.CreateJoinTokenRequest) (*v1.CreateJoinTokenResponse, error)
 	EnrollNode(context.Context, *v1.EnrollNodeRequest) (*v1.EnrollNodeResponse, error)
 	Heartbeat(context.Context, *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error)
+	// Long-poll desired state so agents converge faster than heartbeat interval (#44).
+	WatchDesired(context.Context, *v1.WatchDesiredRequest) (*v1.WatchDesiredResponse, error)
 	ReportObserved(context.Context, *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error)
 	ReportBuild(context.Context, *v1.ReportBuildRequest) (*v1.ReportBuildResponse, error)
 	ReportEdge(context.Context, *v1.ReportEdgeRequest) (*v1.ReportEdgeResponse, error)
@@ -329,6 +342,7 @@ func RegisterAgentServiceHandler(server *connect.Server, svc AgentServiceHandler
 		connect.Method{Spec: agentServiceCreateJoinTokenSpec(), Handler: adapter.createJoinToken},
 		connect.Method{Spec: agentServiceEnrollNodeSpec(), Handler: adapter.enrollNode},
 		connect.Method{Spec: agentServiceHeartbeatSpec(), Handler: adapter.heartbeat},
+		connect.Method{Spec: agentServiceWatchDesiredSpec(), Handler: adapter.watchDesired},
 		connect.Method{Spec: agentServiceReportObservedSpec(), Handler: adapter.reportObserved},
 		connect.Method{Spec: agentServiceReportBuildSpec(), Handler: adapter.reportBuild},
 		connect.Method{Spec: agentServiceReportEdgeSpec(), Handler: adapter.reportEdge},
@@ -388,6 +402,10 @@ func (UnimplementedAgentServiceHandler) EnrollNode(context.Context, *v1.EnrollNo
 
 func (UnimplementedAgentServiceHandler) Heartbeat(context.Context, *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.Heartbeat is not implemented")
+}
+
+func (UnimplementedAgentServiceHandler) WatchDesired(context.Context, *v1.WatchDesiredRequest) (*v1.WatchDesiredResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "v1.AgentService.WatchDesired is not implemented")
 }
 
 func (UnimplementedAgentServiceHandler) ReportObserved(context.Context, *v1.ReportObservedRequest) (*v1.ReportObservedResponse, error) {
@@ -485,6 +503,14 @@ func (c *agentServiceClient) EnrollNode(ctx context.Context, req *v1.EnrollNodeR
 func (c *agentServiceClient) Heartbeat(ctx context.Context, req *v1.HeartbeatRequest) (*v1.HeartbeatResponse, error) {
 	var res v1.HeartbeatResponse
 	if err := c.client.CallUnary(ctx, agentServiceHeartbeatSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *agentServiceClient) WatchDesired(ctx context.Context, req *v1.WatchDesiredRequest) (*v1.WatchDesiredResponse, error) {
+	var res v1.WatchDesiredResponse
+	if err := c.client.CallUnary(ctx, agentServiceWatchDesiredSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -666,6 +692,18 @@ func (h agentServiceHandler) heartbeat(ctx context.Context, _ connect.Spec, stre
 		return err
 	}
 	res, err := h.svc.Heartbeat(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h agentServiceHandler) watchDesired(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.WatchDesiredRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.WatchDesired(ctx, &req)
 	if err != nil {
 		return err
 	}
