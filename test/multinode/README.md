@@ -24,7 +24,7 @@ Optional:
 ## What the smoke asserts
 
 1. `/healthz` on the control plane  
-2. First-admin bootstrap (or login)  
+2. First-admin bootstrap (or login) via Connect JSON `POST /api/v1.AuthService/…` (`test/lib/rpc.sh`)  
 3. Three join tokens → three agents → **3 online** nodes  
 4. Project + workload with `replicaCount=2`  
 5. Deploy (best-effort; `failed_precondition` tolerated when shared-socket runtime is awkward)  

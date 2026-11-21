@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
 # Connect-RPC JSON helpers for Norix smokes (multinode / chaos).
 # Requires: curl, jq. Sets NORIX_CP_URL (default http://127.0.0.1:18080).
+#
+# Paths match the CP mount: mux.Handle("/api/", StripPrefix("/api", …))
+# Same as web/e2e helpers and test/load/lib/connect.js → POST /api/v1.Service/Method
 
 : "${NORIX_CP_URL:=http://127.0.0.1:18080}"
 
 norix_rpc() {
   local procedure="$1"
-  local body="${2:-{}}"
+  # IMPORTANT: use "${2:-"{}"}" — "${2:-{}}" is parsed as default "{" + a stray "}",
+  # so every explicit JSON body became "{…}}" and Connect rejected it.
+  local body="${2:-"{}"}"
   local token="${3:-}"
-  local url="${NORIX_CP_URL%/}/${procedure#/}"
+  # Normalize to /api/v1.Service/Method (accept "v1.…", "/v1.…", or "/api/v1.…").
+  local path="${procedure#/}"
+  path="${path#api/}"
+  local url="${NORIX_CP_URL%/}/api/${path}"
   local args=(
     -sS
     -X POST
@@ -24,13 +32,17 @@ norix_rpc() {
 
 norix_rpc_ok() {
   local procedure="$1"
-  local body="${2:-{}}"
+  local body="${2:-"{}"}"
   local token="${3:-}"
   local resp
   resp="$(norix_rpc "$procedure" "$body" "$token")" || {
     echo "error: RPC transport failed: $procedure" >&2
     return 1
   }
+  if ! echo "$resp" | jq -e . >/dev/null 2>&1; then
+    echo "error: RPC $procedure returned non-JSON (missing /api prefix? SPA HTML?): ${resp:0:160}" >&2
+    return 1
+  fi
   if echo "$resp" | jq -e 'has("code")' >/dev/null 2>&1; then
     echo "error: RPC $procedure → $resp" >&2
     return 1

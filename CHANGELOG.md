@@ -36,6 +36,7 @@
 - Persistent named volumes for workloads: declare mounts, sticky node placement, drain warnings, Backup/Delete API + UI, docs EN/ES (#16)
 
 ### Fixed
+- Multi-node / chaos Connect helpers (`test/lib/rpc.sh`) POST to `/api/v1.Service/Method` (same as Playwright and k6). Bare `/v1.…` hit the embedded SPA HTML and broke bootstrap with `jq: parse error` / `no session token`. Also fixed bash `"${2:-{}}"` which appended a stray `}` to every JSON body (#37).
 - A git build no longer blocks the agent heartbeat. Deletes, compose actions and image deploys keep flowing while `docker build` runs, and a workload stays `building` (Build logs tab) until the image exists.
 - Compose stack display names may include spaces, dots, and letters outside ASCII (`Infra de abogados`). The Docker Compose project name still comes from the stack id.
 - `ReportWasm` is authenticated with the node token like the other agent reports. Before, the control plane treated it as a user call and rejected it.
