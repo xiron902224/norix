@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file v1/wasm.proto.
  */
 export const file_v1_wasm: GenFile = /*@__PURE__*/
-  fileDesc("Cg12MS93YXNtLnByb3RvEgJ2MSKMAQoMV2FzbUZ1bmN0aW9uEgoKAmlkGAEgASgJEhIKCnByb2plY3RfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRIRCglpbWFnZV9yZWYYBCABKAkSDgoGc3RhdHVzGAUgASgJEhIKCmZ1ZWxfbGltaXQYBiABKAMSFwoPbWVtb3J5X2xpbWl0X21iGAcgASgFIi4KGExpc3RXYXNtRnVuY3Rpb25zUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJIkAKGUxpc3RXYXNtRnVuY3Rpb25zUmVzcG9uc2USIwoJZnVuY3Rpb25zGAEgAygLMhAudjEuV2FzbUZ1bmN0aW9uIn0KGUNyZWF0ZVdhc21GdW5jdGlvblJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCWltYWdlX3JlZhgDIAEoCRISCgpmdWVsX2xpbWl0GAQgASgDEhcKD21lbW9yeV9saW1pdF9tYhgFIAEoBSJAChpDcmVhdGVXYXNtRnVuY3Rpb25SZXNwb25zZRIiCghmdW5jdGlvbhgBIAEoCzIQLnYxLldhc21GdW5jdGlvbjK0AQoLV2FzbVNlcnZpY2USUAoRTGlzdFdhc21GdW5jdGlvbnMSHC52MS5MaXN0V2FzbUZ1bmN0aW9uc1JlcXVlc3QaHS52MS5MaXN0V2FzbUZ1bmN0aW9uc1Jlc3BvbnNlElMKEkNyZWF0ZVdhc21GdW5jdGlvbhIdLnYxLkNyZWF0ZVdhc21GdW5jdGlvblJlcXVlc3QaHi52MS5DcmVhdGVXYXNtRnVuY3Rpb25SZXNwb25zZUJ+CgZjb20udjFCCVdhc21Qcm90b1ABWkFnaXRodWIuY29tL3hpcm9uOTAyMjI0L25vcml4L2NvbnRyb2wtcGxhbmUvaW50ZXJuYWwvZ2VuL3YxO3BhYXN2MaICA1ZYWKoCAlYxygICVjHiAg5WMVxHUEJNZXRhZGF0YeoCAlYxYgZwcm90bzM");
+  fileDesc("Cg12MS93YXNtLnByb3RvEgJ2MSKzAQoMV2FzbUZ1bmN0aW9uEgoKAmlkGAEgASgJEhIKCnByb2plY3RfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRIRCglpbWFnZV9yZWYYBCABKAkSDgoGc3RhdHVzGAUgASgJEhIKCmZ1ZWxfbGltaXQYBiABKAMSFwoPbWVtb3J5X2xpbWl0X21iGAcgASgFEhMKC2xpc3Rlbl9wb3J0GAggASgFEhAKCGhvc3RuYW1lGAkgASgJIi4KGExpc3RXYXNtRnVuY3Rpb25zUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJIkAKGUxpc3RXYXNtRnVuY3Rpb25zUmVzcG9uc2USIwoJZnVuY3Rpb25zGAEgAygLMhAudjEuV2FzbUZ1bmN0aW9uIn0KGUNyZWF0ZVdhc21GdW5jdGlvblJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCWltYWdlX3JlZhgDIAEoCRISCgpmdWVsX2xpbWl0GAQgASgDEhcKD21lbW9yeV9saW1pdF9tYhgFIAEoBSJAChpDcmVhdGVXYXNtRnVuY3Rpb25SZXNwb25zZRIiCghmdW5jdGlvbhgBIAEoCzIQLnYxLldhc21GdW5jdGlvbjK0AQoLV2FzbVNlcnZpY2USUAoRTGlzdFdhc21GdW5jdGlvbnMSHC52MS5MaXN0V2FzbUZ1bmN0aW9uc1JlcXVlc3QaHS52MS5MaXN0V2FzbUZ1bmN0aW9uc1Jlc3BvbnNlElMKEkNyZWF0ZVdhc21GdW5jdGlvbhIdLnYxLkNyZWF0ZVdhc21GdW5jdGlvblJlcXVlc3QaHi52MS5DcmVhdGVXYXNtRnVuY3Rpb25SZXNwb25zZUJ+CgZjb20udjFCCVdhc21Qcm90b1ABWkFnaXRodWIuY29tL3hpcm9uOTAyMjI0L25vcml4L2NvbnRyb2wtcGxhbmUvaW50ZXJuYWwvZ2VuL3YxO3BhYXN2MaICA1ZYWKoCAlYxygICVjHiAg5WMVxHUEJNZXRhZGF0YeoCAlYxYgZwcm90bzM");
 
 /**
  * @generated from message v1.WasmFunction
@@ -50,6 +50,20 @@ export type WasmFunction = Message<"v1.WasmFunction"> & {
    * @generated from field: int32 memory_limit_mb = 7;
    */
   memoryLimitMb: number;
+
+  /**
+   * Stable local listen port for wasmtime serve + edge upstream (#47).
+   *
+   * @generated from field: int32 listen_port = 8;
+   */
+  listenPort: number;
+
+  /**
+   * Hostname published on the edge (default name.project.wasm.norix.internal).
+   *
+   * @generated from field: string hostname = 9;
+   */
+  hostname: string;
 };
 
 /**

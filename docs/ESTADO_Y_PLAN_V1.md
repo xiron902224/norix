@@ -70,7 +70,7 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | Postgres HA (Patroni lab) | Beta | Runbook + `test/patroni/failover.sh` + CI `patroni-failover` (#52); RPO async ~1 MiB |
 | Autoscaler | GA (flag) | `NORIX_AUTOSCALER=1`; per-workload CPU/mem/RPS + UI/API (#49) |
 | WireGuard mesh | GA (safe default) | Apply on by default; opt-out `NORIX_APPLY_WIREGUARD=0`; rollback + key rotate (#48) |
-| Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; not production-ready |
+| Wasm (Wasmtime) | GA | OCI→`.wasm`, fuel/mem limits, edge routes; opt-out `NORIX_WASM_SERVE=0` (#47) |
 | Micro-VM (Cloud Hypervisor) | Experimental | Needs KVM + artifacts — **not** “ready” |
 | Micro-VM (Firecracker) | Planned | Enum only |
 | App rollbacks / rolling updates / volumes | Beta | Named Docker volumes + sticky node (#16) |
@@ -80,7 +80,7 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | SDKs | Fuera de este repo | TypeScript, Python, Go — repo propio; aquí solo el contrato proto |
 | User API tokens (PAT) | Planned | |
 
-> **No etiquetar Experimental como “listo”.** Wasm y micro-VM están cableados detrás de flags; no son GA.
+> **No etiquetar Experimental como “listo”.** Micro-VM sigue experimental. Wasm es GA (#47) con opt-out `NORIX_WASM_SERVE=0`.
 
 ---
 
@@ -92,7 +92,7 @@ Misma taxonomía que [`VISION.md` §3](../VISION.md):
 | S1–S21 | Cerrado (código) | Ver `docs/SPRINT_*` |
 | S22 | Release abierto | Tags beta en curso |
 
-Flags útiles: `NORIX_APPLY_WIREGUARD`, `NORIX_MICROVM_*`, `NORIX_AUTOSCALER`, `NORIX_ACME_*`, `NORIX_BACKUP_S3_*`, `NORIX_TELEMETRY`, `NORIX_WASM_SERVE`, `NORIX_ALLOW_INSECURE_DEV_SECRETS`, `NORIX_CORS_ALLOW_WILDCARD`.
+Flags útiles: `NORIX_APPLY_WIREGUARD`, `NORIX_MICROVM_*`, `NORIX_AUTOSCALER`, `NORIX_ACME_*`, `NORIX_BACKUP_S3_*`, `NORIX_TELEMETRY`, `NORIX_WASM_SERVE=0` (opt-out), `NORIX_ALLOW_INSECURE_DEV_SECRETS`, `NORIX_CORS_ALLOW_WILDCARD`.
 
 ---
 

@@ -12,6 +12,10 @@ message WasmFunction {
   string status = 5;
   int64 fuel_limit = 6;
   int32 memory_limit_mb = 7;
+  // Stable local listen port for wasmtime serve + edge upstream (#47).
+  int32 listen_port = 8;
+  // Hostname published on the edge (default name.project.wasm.norix.internal).
+  string hostname = 9;
 }
 
 message ListWasmFunctionsRequest {

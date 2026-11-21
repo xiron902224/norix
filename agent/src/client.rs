@@ -341,6 +341,10 @@ pub struct DesiredWasmFunction {
     pub fuel_limit: i64,
     #[serde(default, deserialize_with = "deserialize_i32")]
     pub memory_limit_mb: i32,
+    #[serde(default, deserialize_with = "deserialize_i32")]
+    pub listen_port: i32,
+    #[serde(default)]
+    pub hostname: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]

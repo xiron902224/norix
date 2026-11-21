@@ -26,6 +26,8 @@ func wasmToProto(item db.WasmFunction) *paasv1.WasmFunction {
 		Status:        item.Status,
 		FuelLimit:     item.FuelLimit,
 		MemoryLimitMb: item.MemoryLimitMB,
+		ListenPort:    item.ListenPort,
+		Hostname:      item.Hostname,
 	}
 }
 

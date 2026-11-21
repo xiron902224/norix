@@ -1132,6 +1132,8 @@ type DesiredWasmFunction struct {
 	ImageRef      string                 `protobuf:"bytes,4,opt,name=image_ref,json=imageRef,proto3" json:"image_ref,omitempty"`
 	FuelLimit     int64                  `protobuf:"varint,5,opt,name=fuel_limit,json=fuelLimit,proto3" json:"fuel_limit,omitempty"`
 	MemoryLimitMb int32                  `protobuf:"varint,6,opt,name=memory_limit_mb,json=memoryLimitMb,proto3" json:"memory_limit_mb,omitempty"`
+	ListenPort    int32                  `protobuf:"varint,7,opt,name=listen_port,json=listenPort,proto3" json:"listen_port,omitempty"`
+	Hostname      string                 `protobuf:"bytes,8,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1206,6 +1208,20 @@ func (x *DesiredWasmFunction) GetMemoryLimitMb() int32 {
 		return x.MemoryLimitMb
 	}
 	return 0
+}
+
+func (x *DesiredWasmFunction) GetListenPort() int32 {
+	if x != nil {
+		return x.ListenPort
+	}
+	return 0
+}
+
+func (x *DesiredWasmFunction) GetHostname() string {
+	if x != nil {
+		return x.Hostname
+	}
+	return ""
 }
 
 type DesiredWasmPlan struct {
@@ -5218,7 +5234,7 @@ const file_v1_agent_proto_rawDesc = "" +
 	"workloadId\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbc\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf9\x01\n" +
 	"\x13DesiredWasmFunction\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -5227,7 +5243,10 @@ const file_v1_agent_proto_rawDesc = "" +
 	"\timage_ref\x18\x04 \x01(\tR\bimageRef\x12\x1d\n" +
 	"\n" +
 	"fuel_limit\x18\x05 \x01(\x03R\tfuelLimit\x12&\n" +
-	"\x0fmemory_limit_mb\x18\x06 \x01(\x05R\rmemoryLimitMb\"h\n" +
+	"\x0fmemory_limit_mb\x18\x06 \x01(\x05R\rmemoryLimitMb\x12\x1f\n" +
+	"\vlisten_port\x18\a \x01(\x05R\n" +
+	"listenPort\x12\x1a\n" +
+	"\bhostname\x18\b \x01(\tR\bhostname\"h\n" +
 	"\x0fDesiredWasmPlan\x12\x1e\n" +
 	"\n" +
 	"generation\x18\x01 \x01(\x03R\n" +

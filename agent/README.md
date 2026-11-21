@@ -38,7 +38,7 @@ Requires `docker` or `nerdctl` on PATH for container Deploy/Build. Without a run
 2. **Git builds** — clone → Dockerfile/compose → tag → `ReportBuild`
 3. **Edge** — Caddy admin `/load` + rollback
 4. **Mesh** — write `wg-norix.conf`, `norix.nft`, `dns-hosts`, certs; apply when `plan.apply`
-5. **Wasm** — `DesiredWasmPlan` from heartbeat → stage `.wasm` / OCI extract → `functions.json` → `ReportWasm` (smoke with `wasmtime` if installed)
+5. **Wasm** — `DesiredWasmPlan` → OCI/HTTP materialize → Wasmtime fuel/mem + default `serve` → edge listen_port → `ReportWasm` (#47; opt-out `NORIX_WASM_SERVE=0`)
 6. **Micro-VM** — KVM check + boot-intent JSON; launches CH when kernel/rootfs env set
 
 Heartbeat sends `running_workload_ids` from containers labeled `norix.workload_id`.
@@ -57,6 +57,6 @@ Heartbeat sends `running_workload_ids` from containers labeled `norix.workload_i
 
 ## Honest v1 limits
 
-- Full WASI HTTP worker still needs a dedicated wasmtime/WASI host process beyond staging + optional smoke.
+- Wasm GA stages real `.wasm` and serves when wasmtime is installed; OCI images must contain a `.wasm` blob.
 - Micro-VM cold boot requires real KVM + kernel/rootfs artifacts on the node.
 - Mesh apply defaults on; opt out with `NORIX_APPLY_WIREGUARD=0` (see `docs/user/network.md`, #48).

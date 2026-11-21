@@ -26,7 +26,7 @@ Most self-hosted PaaS tools are Compose-centric: one server (or SSH to several),
 
 1. **A real scheduler, not just "deploy to server X".** Spread / binpack, zones, affinity / anti-affinity, `require-KVM`, cordon / drain and orphan reclaim — in the control plane, with tests.
 2. **Multi-tenancy as a database property.** Postgres Row-Level Security (`FORCE`, 38 tables, cross-tenant isolation test in CI), plus RBAC, OIDC and TOTP. Tenancy is enforced below the application code.
-3. **Isolation beyond containers (in progress).** Cloud Hypervisor micro-VMs and Wasmtime are wired into the agent so untrusted or multi-tenant workloads don't have to share a kernel. *Experimental today — see §3.*
+3. **Isolation beyond containers (in progress).** Cloud Hypervisor micro-VMs (experimental) and Wasmtime (GA, #47) are wired into the agent so untrusted or multi-tenant workloads don't have to share a kernel.
 4. **Tiny footprint.** Rust agent (~4.4 MiB binary) and a single Go control-plane binary (~30 MiB, UI embedded). No Swarm, no Kubernetes.
 5. **One typed API for everything.** The dashboard, agent, CLI and SDKs speak the same protobuf contracts, so integrations and automation are first-class, not an afterthought.
 6. **Built-in HA and mesh primitives.** Control-plane leases, WireGuard mesh planning, and a Patroni deployment recipe for Postgres.
@@ -62,7 +62,7 @@ We label every capability so nobody has to guess. Source: repository audit of 20
 | Managed databases | Beta | Postgres/MySQL/Redis containers + URI (#20); Mongo not yet |
 | Autoscaler | GA (flag) | `NORIX_AUTOSCALER=1`; UI/API per-workload policy (#49) |
 | WireGuard mesh | GA (safe default) | Apply on; opt-out `=0`; rollback + key rotate (#48) |
-| Wasm (Wasmtime) | Experimental | `NORIX_WASM_SERVE=1`; OCI → Wasm materialization incomplete |
+| Wasm (Wasmtime) | GA | OCI→`.wasm` + Wasmtime limits + edge; opt-out `NORIX_WASM_SERVE=0` (#47) |
 | Micro-VM (Cloud Hypervisor) | Experimental | Needs KVM + kernel/rootfs artifacts |
 | Micro-VM (Firecracker) | Planned | Enum only |
 | App rollbacks / release history | Planned | |

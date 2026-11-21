@@ -3,9 +3,12 @@ package db
 import (
 	"context"
 	"fmt"
+	"hash/crc32"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/xiron902224/norix/control-plane/internal/network"
 )
 
 type WasmFunction struct {
@@ -17,6 +20,18 @@ type WasmFunction struct {
 	Status         string
 	FuelLimit      int64
 	MemoryLimitMB  int32
+	ListenPort     int32
+	Hostname       string
+}
+
+// WasmListenPort returns a stable host port in 19000–19999 from the function id (#47).
+func WasmListenPort(id string) int32 {
+	h := crc32.ChecksumIEEE([]byte(strings.TrimSpace(id)))
+	return 19000 + int32(h%1000)
+}
+
+func wasmHostname(projectName, fnName string) string {
+	return network.ServiceFQDN(projectName+"-wasm", fnName)
 }
 
 func CreateWasmFunction(ctx context.Context, pool *pgxpool.Pool, tenantID string, fn WasmFunction) (WasmFunction, error) {
@@ -39,6 +54,13 @@ func CreateWasmFunction(ctx context.Context, pool *pgxpool.Pool, tenantID string
 	if err := WithTenant(ctx, tx, tenantID); err != nil {
 		return WasmFunction{}, err
 	}
+	var projectName string
+	if err := tx.QueryRow(ctx, `SELECT name FROM projects WHERE id = $1::uuid`, fn.ProjectID).Scan(&projectName); err != nil {
+		if err == pgx.ErrNoRows {
+			return WasmFunction{}, fmt.Errorf("project not found")
+		}
+		return WasmFunction{}, err
+	}
 	err = tx.QueryRow(ctx, `
 		INSERT INTO wasm_functions (organization_id, project_id, name, image_ref, status, fuel_limit, memory_limit_mb)
 		VALUES ($1::uuid, $2::uuid, $3, $4, 'pending', $5, $6)
@@ -51,7 +73,14 @@ func CreateWasmFunction(ctx context.Context, pool *pgxpool.Pool, tenantID string
 	if err != nil {
 		return WasmFunction{}, fmt.Errorf("create wasm function: %w", err)
 	}
-	_, _ = tx.Exec(ctx, `UPDATE wasm_functions SET status = 'ready', updated_at = NOW() WHERE id = $1::uuid`, fn.ID)
+	fn.ListenPort = WasmListenPort(fn.ID)
+	fn.Hostname = wasmHostname(projectName, fn.Name)
+	_, err = tx.Exec(ctx, `
+		UPDATE wasm_functions SET status = 'ready', listen_port = $2, hostname = $3, updated_at = NOW()
+		WHERE id = $1::uuid`, fn.ID, fn.ListenPort, fn.Hostname)
+	if err != nil {
+		return WasmFunction{}, err
+	}
 	fn.Status = "ready"
 	return fn, tx.Commit(ctx)
 }
@@ -102,7 +131,8 @@ func ListWasmFunctions(ctx context.Context, pool *pgxpool.Pool, tenantID, projec
 		return nil, err
 	}
 	query := `
-		SELECT id::text, organization_id::text, project_id::text, name, image_ref, status, fuel_limit, memory_limit_mb
+		SELECT id::text, organization_id::text, project_id::text, name, image_ref, status, fuel_limit, memory_limit_mb,
+		       COALESCE(listen_port, 0), COALESCE(hostname, '')
 		FROM wasm_functions WHERE organization_id = $1::uuid`
 	args := []any{tenantID}
 	if projectID != "" {
@@ -120,9 +150,12 @@ func ListWasmFunctions(ctx context.Context, pool *pgxpool.Pool, tenantID, projec
 		var item WasmFunction
 		if err := rows.Scan(
 			&item.ID, &item.OrganizationID, &item.ProjectID, &item.Name, &item.ImageRef, &item.Status,
-			&item.FuelLimit, &item.MemoryLimitMB,
+			&item.FuelLimit, &item.MemoryLimitMB, &item.ListenPort, &item.Hostname,
 		); err != nil {
 			return nil, err
+		}
+		if item.ListenPort <= 0 {
+			item.ListenPort = WasmListenPort(item.ID)
 		}
 		out = append(out, item)
 	}
@@ -130,4 +163,36 @@ func ListWasmFunctions(ctx context.Context, pool *pgxpool.Pool, tenantID, projec
 		return nil, err
 	}
 	return out, tx.Commit(ctx)
+}
+
+// WasmEdgeRoutes builds Caddy upserts for wasm functions with hostname + listen_port (#47).
+func WasmEdgeRoutes(ctx context.Context, tx pgx.Tx) ([]DesiredEdgeRoute, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT id::text, COALESCE(hostname, ''), COALESCE(listen_port, 0)
+		FROM wasm_functions
+		WHERE status IN ('ready', 'running', 'pending', 'degraded')
+		  AND COALESCE(hostname, '') <> ''
+		  AND COALESCE(listen_port, 0) > 0
+		ORDER BY hostname`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]DesiredEdgeRoute, 0)
+	for rows.Next() {
+		var id, hostname string
+		var port int32
+		if err := rows.Scan(&id, &hostname, &port); err != nil {
+			return nil, err
+		}
+		out = append(out, DesiredEdgeRoute{
+			DomainID:       id,
+			Hostname:       hostname,
+			TLSMode:        "none",
+			Action:         "upsert",
+			Upstream:       fmt.Sprintf("http://%s:%d", EdgeUpstreamHost(), port),
+			EdgeGeneration: 1,
+		})
+	}
+	return out, rows.Err()
 }

@@ -116,8 +116,8 @@ jobs:
           -- Migrations through 000024 (000023 desired_agent_version; 000024 env_vars encryption comment).
           DO $$
           BEGIN
-            IF NOT (SELECT version = 35 AND NOT dirty FROM schema_migrations) THEN
-              RAISE EXCEPTION 'expected schema_migrations version=35 dirty=false';
+            IF NOT (SELECT version = 36 AND NOT dirty FROM schema_migrations) THEN
+              RAISE EXCEPTION 'expected schema_migrations version=36 dirty=false';
             END IF;
             -- 000033: compose stacks applied as a unit (#143).
             -- 000034: stack variables (encrypted) plus public services / domains / volumes.
@@ -131,6 +131,13 @@ jobs:
                   'notification_channels', 'notification_outbox')
                   AND relrowsecurity AND relforcerowsecurity) <> 2 THEN
               RAISE EXCEPTION 'notification tables must force RLS';
+            END IF;
+            -- 000036: wasm listen_port + hostname for edge (#47).
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns
+              WHERE table_name = 'wasm_functions' AND column_name = 'listen_port'
+            ) THEN
+              RAISE EXCEPTION 'wasm_functions.listen_port missing (000036)';
             END IF;
             IF (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename IN (
               'organizations', 'users', 'sessions', 'projects', 'workloads', 'nodes', 'join_tokens',

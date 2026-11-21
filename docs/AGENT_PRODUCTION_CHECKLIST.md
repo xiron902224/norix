@@ -12,7 +12,7 @@ Pendiente ops: E2E agent↔CP y tag `v1.0.0-beta.5` tras merge (GA después; ver
 - [x] Backoff en fallos de heartbeat
 - [x] Reconciliación contenedores (labels, generation, cpu-shares, memory)
 - [x] `running_workload_ids` en heartbeat
-- [x] DesiredWasm + ReportWasm + opcional `wasmtime serve` (`NORIX_WASM_SERVE=1`)
+- [x] DesiredWasm + ReportWasm + OCI materialize + default `wasmtime serve` (opt-out `NORIX_WASM_SERVE=0`) (#47)
 - [x] Micro-VM Cloud Hypervisor cuando hay KVM + kernel/rootfs
 - [x] Mesh apply default-on + opt-out (`NORIX_APPLY_WIREGUARD=0`) + rollback (#48)
 - [x] Modo degraded si runtime no disponible
